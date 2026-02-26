@@ -1,0 +1,138 @@
+# Effect groups — generated from docs/data/keyword.map.md
+# Do not edit manually. Regenerate with: bun app/parse.ts
+groups:
+  - id: shared_mechanics
+    section: §0
+    label: Shared Mechanics (All Schools)
+    types:
+      - fusion_flat_damage
+      - mastery_extra_damage
+      - enlightenment_damage
+      - cooldown
+  - id: base_damage
+    section: §1
+    label: Base Damage
+    types:
+      - base_attack
+      - percent_max_hp_damage
+      - shield_destroy_damage
+  - id: damage_multiplier_zones
+    section: §2
+    label: Damage Multiplier Zones
+    types:
+      - attack_bonus
+      - damage_increase
+      - skill_damage_increase
+      - enemy_skill_damage_reduction
+      - final_damage_bonus
+      - crit_damage_bonus
+      - flat_extra_damage
+  - id: critical_system
+    section: §3
+    label: Critical System
+    types:
+      - guaranteed_crit
+      - probability_multiplier
+      - conditional_crit
+      - conditional_crit_rate
+  - id: conditional_triggers
+    section: §4
+    label: Conditional Triggers
+    types:
+      - conditional_damage
+      - conditional_buff
+      - probability_to_certain
+      - ignore_damage_reduction
+  - id: per_hit_escalation
+    section: §5
+    label: Per-Hit Escalation
+    types:
+      - per_hit_escalation
+      - periodic_escalation
+  - id: hp_based_calculations
+    section: §6
+    label: HP-Based Calculations
+    types:
+      - per_self_lost_hp
+      - per_enemy_lost_hp
+      - min_lost_hp_threshold
+      - self_hp_cost
+      - self_lost_hp_damage
+      - self_damage_taken_increase
+  - id: healing_and_survival
+    section: §7
+    label: Healing and Survival
+    types:
+      - lifesteal
+      - healing_to_damage
+      - healing_increase
+      - self_damage_reduction_during_cast
+  - id: shield_system
+    section: §8
+    label: Shield System
+    types:
+      - shield_strength
+      - on_shield_expire
+      - damage_to_shield
+  - id: state_modifiers
+    section: §9
+    label: State Modifiers
+    types:
+      - buff_strength
+      - debuff_strength
+      - buff_duration
+      - all_state_duration
+      - buff_stack_increase
+      - debuff_stack_increase
+      - debuff_stack_chance
+  - id: damage_over_time
+    section: §10
+    label: Damage over Time (DoT)
+    types:
+      - dot
+      - shield_destroy_dot
+      - dot_extra_per_tick
+      - dot_damage_increase
+      - dot_frequency_increase
+      - extended_dot
+      - on_dispel
+  - id: self_buffs
+    section: §11
+    label: Self Buffs
+    types:
+      - self_buff
+      - self_buff_extend
+      - self_buff_extra
+      - counter_buff
+      - next_skill_buff
+      - enlightenment_bonus
+  - id: debuffs
+    section: §12
+    label: Debuffs
+    types:
+      - debuff
+      - conditional_debuff
+      - cross_slot_debuff
+      - counter_debuff
+      - counter_debuff_upgrade
+  - id: special_mechanics
+    section: §13
+    label: Special Mechanics
+    types:
+      - summon
+      - summon_buff
+      - untargetable_state
+      - periodic_dispel
+      - periodic_cleanse
+      - delayed_burst
+      - delayed_burst_increase
+      - random_buff
+      - random_debuff
+      - attack_reduction
+      - crit_rate_reduction
+      - crit_damage_reduction
+      - per_buff_stack_damage
+      - per_debuff_stack_damage
+      - per_debuff_stack_true_damage
+      - on_buff_debuff_shield_trigger
+      - conditional_heal_buff

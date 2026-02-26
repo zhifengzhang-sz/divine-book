@@ -173,11 +173,11 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
 | `guaranteed_crit` | `必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍` | `base_mult`→multiplier, `enhanced_mult`→multiplier, `enhanced_chance`→probability |
-| `probability_multiplier` | `{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍` | `tiers`→list of {`prob`→probability, `mult`→multiplier} |
+| `probability_multiplier` | `{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍` | `tiers`→list of {`prob`→cumulative\_probability, `mult`→multiplier} (ordered high to low: p1 corresponds to the highest multiplier) |
 | `conditional_crit` | `若敌方[condition]...必定暴击` | `condition`→string |
 | `conditional_crit_rate` | `暴击率提升{x}%` (appears inside a conditional clause) | `value`→probability, `condition`→string |
 
-> **Inference flag**: `probability_multiplier` (心逐神随) — about.md lists three probability tiers totaling less than 100%. The implied fourth tier (remaining probability → 1x multiplier) is not explicitly stated in the source text.
+> **Cumulative probability note**: `probability_multiplier` (心逐神随) percentages are cumulative thresholds, not independent probabilities. The 悟2境 data (x=60, y=80, z=100, sum 240% > 100%) confirms this reading. Meaning: z% chance of at least ×m3, y% chance of at least ×m2, x% chance of ×m1. Marginals: P(×m1)=x, P(×m2)=y−x, P(×m3)=z−y, P(no boost)=100−z.
 
 ---
 
@@ -435,7 +435,7 @@ The following game-mechanic-level details from about.md lack precise formulas an
 
 5. **碎魂剑意 "total annihilated shields" accumulation rule** — Per-tick damage = total count x {x}% ATK, but the accumulation method for "total count" (whether it resets across ticks, how shieldless targets are counted) is only partially described; the complete formula is undefined.
 
-6. **心逐神随 implied fourth tier** — about.md lists three probability tiers summing to 93%. The behavior of the remaining 7% (presumed to be 1x, i.e., no bonus) is not explicitly stated.
+6. **心逐神随 cumulative probabilities** — ~~Resolved~~. The 悟2境 data (x=60, y=80, z=100, sum 240%) confirms percentages are cumulative thresholds. At 悟0境, 49% (=100−z=100−51) is the no-boost probability; at 悟2境, 0% (=100−100) means guaranteed at least ×2.
 
 ---
 

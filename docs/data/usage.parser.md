@@ -95,13 +95,14 @@ bun install
 ## Running the Parser
 
 ```
-bun app/parse.ts <input> <output>
+bun app/parse.ts <normalized-data.md> <keyword-map.md> <output-dir>
 ```
 
 | Argument | Description |
 |:---|:---|
-| `<input>` | Path to a `normalized.data.md` file (English headers) |
-| `<output>` | Path for the generated YAML file |
+| `<normalized-data.md>` | Path to a `normalized.data.md` file (English headers) |
+| `<keyword-map.md>` | Path to `keyword.map.md` (effect type classification) |
+| `<output-dir>` | Directory for the generated YAML files |
 
 The default paths are available via the npm script:
 
@@ -112,12 +113,16 @@ bun run parse
 This expands to:
 
 ```
-bun app/parse.ts docs/data/normalized.data.md data/yaml/effects.yaml
+bun app/parse.ts docs/data/normalized.data.md docs/data/keyword.map.md data/yaml
 ```
 
 ## Output
 
-The parser produces a YAML file with three top-level keys:
+The parser produces two YAML files:
+
+### `effects.yaml`
+
+Three top-level keys:
 
 | Key | Structure | Content |
 |:---|:---|:---|
@@ -126,6 +131,16 @@ The parser produces a YAML file with three top-level keys:
 | `school_affixes` | `Record<school, Record<name, EffectRow[]>>` | 17 school affixes across 4 schools |
 
 Every effect row is validated against the Zod schema (`lib/schemas/effect.ts`) during parsing. If any row fails validation, the parser prints warnings to stderr and exits with code 1.
+
+### `groups.yaml`
+
+Effect type classification extracted from keyword.map.md's section structure (§0–§13):
+
+| Key | Structure | Content |
+|:---|:---|:---|
+| `groups` | `EffectGroup[]` | 14 groups, each with `id`, `section`, `label`, and `types` list |
+
+Each effect type appears in exactly one group. The group assignment is determined by the keyword.map.md section it is defined in.
 
 ## Quality Gates
 
@@ -140,9 +155,9 @@ Both must pass clean before any change to `app/` or `lib/` is committed.
 
 1. Upstream pipeline produces a new `normalized.data.md` (see [usage.dev.md](usage.dev.md)).
 2. Run the parser: `bun run parse`.
-3. Inspect the output diff: `git diff data/yaml/effects.yaml`.
+3. Inspect the output diff: `git diff data/yaml/`.
 4. Run quality gates: `bun run check && bun run test`.
-5. Commit `normalized.data.md` and `effects.yaml` together.
+5. Commit `normalized.data.md`, `effects.yaml`, and `groups.yaml` together.
 
 ## Related Documentation
 

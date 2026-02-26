@@ -83,7 +83,7 @@ strong {
 >
 > Chinese companion: [灵书战斗原理.md](灵书战斗原理.md) — same material, written for Chinese-speaking players with in-game examples.
 >
-> General theory (system-agnostic): [book.combat.md](./abstractons/book.combat.md) — SDE formulation, exit problem, full derivations.
+> General theory (system-agnostic): [theory.combat.md](../docs/abstractions/theory.combat.md) — SDE formulation, exit problem, full derivations.
 >
 
 
