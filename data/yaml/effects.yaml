@@ -413,12 +413,39 @@ books:
         - type: probability_multiplier
           prob: 11
           mult: 4
+          data_state:
+            - enlightenment=0
+            - fusion=50
         - type: probability_multiplier
           prob: 31
           mult: 3
+          data_state:
+            - enlightenment=0
+            - fusion=50
         - type: probability_multiplier
           prob: 51
           mult: 2
+          data_state:
+            - enlightenment=0
+            - fusion=50
+        - type: probability_multiplier
+          prob: 60
+          mult: 4
+          data_state:
+            - enlightenment=2
+            - fusion=63
+        - type: probability_multiplier
+          prob: 80
+          mult: 3
+          data_state:
+            - enlightenment=2
+            - fusion=63
+        - type: probability_multiplier
+          prob: 100
+          mult: 2
+          data_state:
+            - enlightenment=2
+            - fusion=63
   焚圣真魔咒:
     school: Demon
     exclusive_affix:

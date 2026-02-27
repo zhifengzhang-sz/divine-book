@@ -517,13 +517,18 @@ strong {
 
 #### Exclusive Affix【心逐神随】
 
-> 原文: 本神通施放时，会使本次神通所有效果11%概率提升4倍，31%概率提升3倍，51%概率提升2倍
+> 原文: 本神通施放时，会使本次神通所有效果x%概率提升4倍，y%概率提升3倍，z%概率提升2倍
+> 悟0境，融合50重，x=11, y=31, z=51
+> 悟2境，融合63重，x=60, y=80, z=100
 
 | effect_type | fields | data_state |
 |:---|:---|:---|
-| probability_multiplier | prob=11, mult=4 | |
-| probability_multiplier | prob=31, mult=3 | |
-| probability_multiplier | prob=51, mult=2 | |
+| probability_multiplier | prob=11, mult=4 | [enlightenment=0, fusion=50] |
+| probability_multiplier | prob=31, mult=3 | [enlightenment=0, fusion=50] |
+| probability_multiplier | prob=51, mult=2 | [enlightenment=0, fusion=50] |
+| probability_multiplier | prob=60, mult=4 | [enlightenment=2, fusion=63] |
+| probability_multiplier | prob=80, mult=3 | [enlightenment=2, fusion=63] |
+| probability_multiplier | prob=100, mult=2 | [enlightenment=2, fusion=63] |
 
 ---
 
