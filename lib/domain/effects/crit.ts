@@ -12,7 +12,7 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 		type: "conditional_crit",
 		schema: ConditionalCritSchema,
 		group: "standard_crit",
-		zones: [Zone.M_dmg],
+		zones: [Zone.M_crit],
 		scope: Scope.Same,
 		patterns: ["若敌方[condition]...必定暴击"],
 		fields: [{ name: "condition", unit: Unit.Str }],
@@ -21,7 +21,7 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 		type: "conditional_crit_rate",
 		schema: ConditionalCritRateSchema,
 		group: "standard_crit",
-		zones: [Zone.M_dmg],
+		zones: [Zone.M_crit],
 		scope: Scope.Same,
 		patterns: ["暴击率提升{x}%"],
 		fields: [

@@ -67,7 +67,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		type: "crit_damage_bonus",
 		schema: CritDamageBonusSchema,
 		group: "damage_multiplier_zones",
-		zones: [Zone.M_dmg],
+		zones: [Zone.M_crit],
 		scope: Scope.Same,
 		patterns: ["暴击伤害提升{x}%", "致命伤害提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],

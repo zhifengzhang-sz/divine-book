@@ -90,7 +90,7 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 		type: "enlightenment_bonus",
 		schema: EnlightenmentBonusSchema,
 		group: "self_buffs",
-		zones: [Zone.M_dmg],
+		zones: [Zone.M_enlight],
 		scope: Scope.Cross,
 		patterns: ["悟境等级加{x}（最高不超过{m}级）"],
 		fields: [

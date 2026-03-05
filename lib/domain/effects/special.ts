@@ -127,7 +127,7 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		type: "random_buff",
 		schema: RandomBuffSchema,
 		group: "special_mechanics",
-		zones: [Zone.M_dmg],
+		zones: [Zone.S_coeff],
 		scope: Scope.Same,
 		patterns: ["获得以下任意1个加成：[效果列表]"],
 		fields: [{ name: "options", unit: Unit.Str, optional: true }],
