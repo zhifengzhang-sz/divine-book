@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { School, TargetCategory } from "./enums.js";
-import { AFFIX_BINDINGS, getBinding, getBindingsByCategory } from "./bindings.js";
+import {
+	AFFIX_BINDINGS,
+	deriveProvides,
+	getBinding,
+	getBindingsByCategory,
+} from "./bindings.js";
 import { PLATFORMS, getPlatform } from "./platforms.js";
 import { NAMED_ENTITIES, getNamedEntity } from "./named-entities.js";
 import { filterByBinding, discoverChains } from "./chains.js";
@@ -32,6 +37,12 @@ describe("binding registry", () => {
 		expect(new Set(names).size).toBe(names.length);
 	});
 
+	test("every binding has at least one output", () => {
+		for (const b of AFFIX_BINDINGS) {
+			expect(b.outputs.length).toBeGreaterThan(0);
+		}
+	});
+
 	test("exclusive bindings all have book and school", () => {
 		for (const b of getBindingsByCategory("exclusive")) {
 			expect(b.book).toBeDefined();
@@ -50,6 +61,133 @@ describe("binding registry", () => {
 		for (const b of getBindingsByCategory("universal")) {
 			expect(b.school).toBeUndefined();
 			expect(b.book).toBeUndefined();
+		}
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Provides derivation from outputs
+// ---------------------------------------------------------------------------
+
+describe("deriveProvides", () => {
+	test("debuff output → T.Debuff", () => {
+		expect(deriveProvides(["debuff"])).toContain(TargetCategory.Debuff);
+	});
+
+	test("random_buff output → T.Buff", () => {
+		expect(deriveProvides(["random_buff"])).toContain(TargetCategory.Buff);
+	});
+
+	test("dot output → T.Dot", () => {
+		expect(deriveProvides(["dot"])).toContain(TargetCategory.Dot);
+	});
+
+	test("damage_to_shield output → T.Shield", () => {
+		expect(deriveProvides(["damage_to_shield"])).toContain(
+			TargetCategory.Shield,
+		);
+	});
+
+	test("lifesteal output → T.Healing", () => {
+		expect(deriveProvides(["lifesteal"])).toContain(TargetCategory.Healing);
+	});
+
+	test("self_damage_taken_increase output → T.LostHp", () => {
+		expect(deriveProvides(["self_damage_taken_increase"])).toContain(
+			TargetCategory.LostHp,
+		);
+	});
+
+	test("min_lost_hp_threshold output → T.LostHp", () => {
+		expect(deriveProvides(["min_lost_hp_threshold"])).toContain(
+			TargetCategory.LostHp,
+		);
+	});
+
+	test("probability_multiplier output → T.Probability", () => {
+		expect(deriveProvides(["probability_multiplier"])).toContain(
+			TargetCategory.Probability,
+		);
+	});
+
+	test("pure amplifiers produce no categories", () => {
+		expect(deriveProvides(["attack_bonus"])).toEqual([]);
+		expect(deriveProvides(["damage_increase"])).toEqual([]);
+		expect(deriveProvides(["flat_extra_damage"])).toEqual([]);
+		expect(deriveProvides(["dot_extra_per_tick"])).toEqual([]);
+		expect(deriveProvides(["buff_strength"])).toEqual([]);
+		expect(deriveProvides(["debuff_strength"])).toEqual([]);
+	});
+
+	test("multiple outputs derive multiple categories", () => {
+		// 魔骨明心: conditional_heal_buff + conditional_debuff
+		const provides = deriveProvides([
+			"conditional_heal_buff",
+			"conditional_debuff",
+		]);
+		expect(provides).toContain(TargetCategory.Healing);
+		expect(provides).toContain(TargetCategory.Debuff);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Key affix provides verification
+// ---------------------------------------------------------------------------
+
+describe("affix provides derived correctly", () => {
+	test("破釜沉舟 provides T.LostHp (from self_damage_taken_increase)", () => {
+		const b = getBinding("破釜沉舟")!;
+		expect(b.outputs).toContain("self_damage_taken_increase");
+		expect(b.provides).toContain(TargetCategory.LostHp);
+	});
+
+	test("福荫 provides T.Buff (from random_buff)", () => {
+		const b = getBinding("福荫")!;
+		expect(b.outputs).toContain("random_buff");
+		expect(b.provides).toContain(TargetCategory.Buff);
+	});
+
+	test("祸星无妄 provides T.Debuff (from random_debuff)", () => {
+		const b = getBinding("祸星无妄")!;
+		expect(b.outputs).toContain("random_debuff");
+		expect(b.provides).toContain(TargetCategory.Debuff);
+	});
+
+	test("玄女护心 provides T.Shield (from damage_to_shield)", () => {
+		const b = getBinding("玄女护心")!;
+		expect(b.provides).toContain(TargetCategory.Shield);
+	});
+
+	test("仙灵汲元 provides T.Healing (from lifesteal)", () => {
+		const b = getBinding("仙灵汲元")!;
+		expect(b.provides).toContain(TargetCategory.Healing);
+	});
+
+	test("魔骨明心 provides both T.Healing and T.Debuff", () => {
+		const b = getBinding("魔骨明心")!;
+		expect(b.provides).toContain(TargetCategory.Healing);
+		expect(b.provides).toContain(TargetCategory.Debuff);
+	});
+
+	test("意坠深渊 provides T.LostHp (from min_lost_hp_threshold)", () => {
+		const b = getBinding("意坠深渊")!;
+		expect(b.provides).toContain(TargetCategory.LostHp);
+	});
+
+	test("心逐神随 provides T.Probability (from probability_multiplier)", () => {
+		const b = getBinding("心逐神随")!;
+		expect(b.provides).toContain(TargetCategory.Probability);
+	});
+
+	test("玄心剑魄 provides T.Dot (from dot)", () => {
+		const b = getBinding("玄心剑魄")!;
+		expect(b.provides).toContain(TargetCategory.Dot);
+	});
+
+	test("pure amplifiers have empty provides", () => {
+		for (const name of ["咒书", "清灵", "鬼印", "古魔之魂", "天魔真解"]) {
+			const b = getBinding(name)!;
+			expect(b.provides).toEqual([]);
 		}
 	});
 });
@@ -166,6 +304,14 @@ describe("chain discovery", () => {
 		);
 		expect(bridge).toBeDefined();
 		expect(bridge!.nodes.map((n) => n.affix)).toContain("怒血战意");
+	});
+
+	test("chain discovery uses binding.outputs (no separate map)", () => {
+		// Verify that 破釜沉舟's outputs include self_damage_taken_increase
+		// which is what the chain discovery should use
+		const binding = getBinding("破釜沉舟")!;
+		expect(binding.outputs).toContain("self_damage_taken_increase");
+		expect(binding.outputs).toContain("skill_damage_increase");
 	});
 });
 

@@ -265,37 +265,8 @@ export function discoverChains(
 	return chains;
 }
 
-/** Map affix names to their primary effect types (simplified) */
+/** Get effect types for an affix from its binding outputs */
 function getEffectTypesForAffix(affix: string): string[] {
-	const map: Record<string, string[]> = {
-		仙灵汲元: ["lifesteal"],
-		瑶光却邪: ["healing_to_damage"],
-		玄女护心: ["damage_to_shield"],
-		玉石俱焚: ["on_shield_expire"],
-		真极穿空: ["per_buff_stack_damage", "buff_stack_increase"],
-		心魔惑言: ["per_debuff_stack_damage", "debuff_stack_increase"],
-		怒血战意: ["per_self_lost_hp"],
-		战意: ["per_self_lost_hp"],
-		吞海: ["per_enemy_lost_hp"],
-		贪狼吞星: ["per_enemy_lost_hp"],
-		破釜沉舟: ["skill_damage_increase", "self_damage_taken_increase"],
-		意坠深渊: ["min_lost_hp_threshold", "damage_increase"],
-		天命有归: ["probability_to_certain", "damage_increase"],
-		心逐神随: ["probability_multiplier"],
-		长生天则: ["healing_increase"],
-		灵盾: ["shield_strength"],
-		青云灵盾: ["shield_strength"],
-		咒书: ["debuff_strength"],
-		清灵: ["buff_strength"],
-		龙象护身: ["buff_strength"],
-		仙露护元: ["buff_duration"],
-		业焰: ["all_state_duration"],
-		真言不灭: ["all_state_duration"],
-		古魔之魂: ["dot_damage_increase"],
-		天魔真解: ["dot_frequency_increase"],
-		追神真诀: ["dot_extra_per_tick"],
-		鬼印: ["dot_extra_per_tick"],
-		奇能诡道: ["debuff_stack_chance", "conditional_debuff"],
-	};
-	return map[affix] ?? [];
+	const binding = AFFIX_BINDINGS.find((b) => b.affix === affix);
+	return binding?.outputs ?? [];
 }

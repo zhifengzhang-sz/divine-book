@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-26
-dates of modification: [2026-2-26, 2026-2-27, 2026-3-5]
+dates of modification: [2026-2-26, 2026-2-27, 2026-3-5, 2026-3-5]
 ---
 
 <style>
@@ -84,7 +84,15 @@ strong {
 
 ## Target Categories
 
-Formal target categories for the `provides`/`requires` binding model. Each affix **provides** zero or more target categories (what it creates) and **requires** zero or more target categories (what must exist for it to function). Used for deterministic pruning: if `requires=T_N` and no provider of T_N exists in the build, the affix has zero value → prune.
+Formal target categories for the `outputs`/`provides`/`requires` binding model. Used for deterministic pruning: if `requires=T_N` and no provider of T_N exists in the build, the affix has zero value → prune.
+
+**Three-layer model:**
+
+1. **`outputs`** — the effect types an affix produces (from `effects.yaml`). This is the full, uncompressed output of the affix. Example: 【破釜沉舟】has `outputs: [skill_damage_increase, self_damage_taken_increase]`.
+2. **`provides`** — target categories, **derived automatically** from `outputs` via the `EFFECT_PROVIDES` mapping. Each effect type either maps to a target category (e.g., `self_damage_taken_increase` → T9) or to nothing (pure amplifiers like `attack_bonus`). Never hand-curated per affix.
+3. **`requires`** — target categories that must exist for the affix to function. Hand-curated because requirements are about external conditions, not the affix's own outputs.
+
+> **Key principle.** An affix's output is ALL its effect rows, not just a category label. The previous model hand-curated `provides` at the category level, which was lossy — effects like `self_damage_taken_increase` (which accelerates HP loss and feeds T9 consumers) were invisible unless manually annotated. The output-driven model makes `provides` a derived view: add `outputs`, and `provides` falls out automatically.
 
 | ID | Target | Chinese | Description |
 |:---|:---|:---|:---|
@@ -99,11 +107,23 @@ Formal target categories for the `provides`/`requires` binding model. Each affix
 | T9 | 已损气血 | 已损气血值计算 | HP-loss-based damage calculation |
 | T10 | 控制效果 | 控制效果 | CC on enemy |
 
+**Effect type → category mapping** (only provider types listed; amplifiers produce no category):
+
+| Effect type | → Category | Notes |
+|:---|:---|:---|
+| `debuff`, `conditional_debuff`, `counter_debuff`, `cross_slot_debuff`, `random_debuff` | T2 | Creates harmful state on enemy |
+| `self_buff`, `random_buff`, `counter_buff`, `next_skill_buff` | T3 | Creates beneficial state on self |
+| `dot`, `extended_dot`, `shield_destroy_dot` | T4 | Creates periodic damage |
+| `damage_to_shield` | T5 | Creates shield |
+| `lifesteal`, `conditional_heal_buff` | T6 | Creates healing |
+| `probability_multiplier` | T8 | Creates probability-dependent effects |
+| `self_hp_cost`, `self_damage_taken_increase`, `min_lost_hp_threshold` | T9 | Creates/accelerates/floors HP loss |
+
 **Binding rules:**
 - `requires=free` → always active (targets inherent property like 伤害, or is standalone)
 - `requires=T_N` → designated, needs a provider of T_N in the same 灵书 or platform
 - `requires=T_A∨T_B` → needs at least one of T_A or T_B
-- `provides=T_N` → this affix creates/makes available target category T_N for other affixes
+- `provides=T_N` → derived from outputs: this affix's effect types map to category T_N
 
 > **T7 (状态) superset rule.** Any affix that provides T2, T3, T4, T5, or T6 implicitly satisfies `requires=T7`. An affix that `requires=T7` can use any time-based state as its input.
 
@@ -143,7 +163,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 |:------------|:--------|:--------|:----------------|
 | **Probability** (T8, chance-based triggers) | `requires=T8` | 【心逐神随】, 罗天魔咒, 【奇能诡道】, 【怒目】, 【通明】, 【灵犀九重】, 【福荫】, 【景星天佑】, 【祸星无妄】, 星猿弃天 | **【天命有归】** converts probability → certain |
 | **Time-based state** (T7, effects with duration) | `requires=T7` | 仙佑, 命損, 噬心, 怒灵降世, 天哀灵涸, 极怒, all DoTs/buffs/debuffs with duration | **【业焰】**, **【真言不灭】** extend all states; **【仙露护元】** extends buffs |
-| **HP-loss-dependent** (T9, scale with own HP lost) | `requires=T9` | 【怒血战意】, 【战意】, `十方真魄` main (16% kick) | **【破釜沉舟】** (`provides=T9`) accelerates loss; **【意坠深渊】** (`provides=T9`) floors loss; `self_hp_cost` creates loss |
+| **HP-loss-dependent** (T9, scale with own HP lost) | `requires=T9` | 【怒血战意】, 【战意】, `十方真魄` main (16% kick) | **【破釜沉舟】** (`outputs: self_damage_taken_increase` → T9) accelerates loss; **【意坠深渊】** (`outputs: min_lost_hp_threshold` → T9) floors loss; `self_hp_cost` → T9 creates loss |
 | **Debuff-stack-dependent** (T2, scale with enemy debuff count) | `requires=T2` | 【紫心真诀】, 【心魔惑言】 | `大罗幻诀` main (`provides=T2`) creates stacks; **【奇能诡道】** (`provides=T2`) adds extra stacks; **【咒书】** amplifies debuffs |
 | **Buff-stack-dependent** (T3, scale with own buff count) | `requires=T3` | 【真极穿空】 | Any buff-applying main skill (仙佑, 怒灵降世) — platform `provides=T3` |
 | **Shield-dependent** (T5, require shield source) | `requires=T5` | 【灵盾】, 【青云灵盾】, 【玉石俱焚】 | **【玄女护心】** (`provides=T5`) creates shield from damage |
@@ -157,7 +177,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 
 ## Affix Walkthrough
 
-> Convention: each affix lists its effect types from [normalized.data.md](./normalized.data.md), then chain classification, tier, and dependencies. `→` means "depends on" or "modifies."
+> Convention: each affix lists its effect types (= `outputs`) from [normalized.data.md](./normalized.data.md), then chain classification, tier, and dependencies. `→` means "depends on" or "modifies." The `provides` column shows target categories **derived from outputs** via the effect type → category mapping above.
 
 ### I. Universal Affixes (16)
 
@@ -255,7 +275,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 | E16 | 无相魔劫咒 | 【无相魔威】 | T2 | free | `debuff` name=魔劫, healing=-40.8, 8s + `conditional_damage` 105% (205% if no healing on target) | Debuff (anti-heal) + Damage | Source (dual) | Standalone. Anti-heal debuff AND damage boost in one. The 105%→205% escalation when target has no healing creates **strategic interaction**: pair with other anti-heal (【天哀灵涸】/【天倾灵枯】) to suppress all healing, then this affix deals 205% instead of 105%. |
 | E17 | 天魔降临咒 | 【引灵摘魂】 | — | T2 | `conditional_damage` value=104, condition=target_has_debuff | Damage | Amplifier (conditional) | → requires enemy to have debuffs. +104% damage. Near-universal in debuff-heavy builds (most PvP builds apply debuffs). Strongest conditional_damage after 【溃魂击瑕】. |
 | E18 | 天轮魔经 | 【心魔惑言】 | — | T2 | `debuff_stack_increase` 100% + `per_debuff_stack_damage` 5.5%/5stacks, max=27.5% (DoT at half) | Debuff + Stack Exploit | Amplifier + Source | Mirror of 【真极穿空】(E10) for debuffs. Doubles debuff stacks AND converts stacks to damage. Note: DoT receives only half the damage bonus — partial chain interaction. |
-| E19 | 天剎真魔 | 【魔骨明心】 | T6 | T2 | `conditional_heal_buff` (target_has_debuff: +90% healing, 8s) + `conditional_debuff` (enlightenment: -20% final DR per hit, 1s) | Healing + Debuff | Source (conditional) + **Context modifier** | (1) +90% healing when enemy has debuffs — Healing source, needs debuffs on enemy. (2) At enlightenment: stacks -20% enemy final DR per hit. **Per-hit DR shred** — value scales with hit count AND enlightenment level. Dynamic edge on the second effect. |
+| E19 | 天剎真魔 | 【魔骨明心】 | T6, T2 | T2 | `conditional_heal_buff` (target_has_debuff: +90% healing, 8s) + `conditional_debuff` (enlightenment: -20% final DR per hit, 1s) | Healing + Debuff | Source (conditional) + **Context modifier** | (1) `conditional_heal_buff` → T6: +90% healing when enemy has debuffs. (2) `conditional_debuff` → T2: at enlightenment, stacks -20% enemy final DR per hit. **Dual provider**: both T6 and T2 are derived from outputs. Per-hit DR shred value scales with hit count AND enlightenment level. |
 | E20 | 解体化形 | 【心逐神随】 | — | free | `probability_multiplier` (悟0: 11/31/51% → 4/3/2×) (悟2: 60/80/100% → 4/3/2×) | **Cross-cutting** | Amplifier (universal) | Multiplies ALL effects on the skill by 2-4×. Does not belong to any single chain — it amplifies **whatever chain the skill is in**. At 悟2, guaranteed 2× minimum. The most powerful cross-cutting amplifier. → 【天命有归】converts the probability thresholds to certainty (Enabler relationship). Multi-tier: value changes dramatically with enlightenment. |
 | E21 | 焚圣真魔咒 | 【天魔真解】 | — | T4 | `dot_frequency_increase` value=50.5 | DoT | Amplifier | → requires `dot` in build. Ticks 50.5% faster — nearly doubles DoT DPS. Complements 【古魔之魂】(damage per tick) and 【业焰】(duration). |
 
@@ -263,13 +283,53 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 
 | # | Book | Affix | provides | requires | Effect types | Chain(s) | Tier | Dependencies / Notes |
 |:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| E22 | 十方真魄 | 【破釜沉舟】 | T9 | free | `skill_damage_increase` value=380 (fusion=54) + `self_damage_taken_increase` value=50 | Damage + HP Exploit | Amplifier + **Hidden enabler** | +380% skill damage is massive. The +50% self-damage-taken looks like a cost, but it **enables HP exploitation** — you lose HP faster, making 【战意】/【怒血战意】stronger. What appears as downside is actually an enabler for the HP chain. provides=T9 via accelerated HP loss. |
+| E22 | 十方真魄 | 【破釜沉舟】 | T9 | free | `skill_damage_increase` value=380 (fusion=54) + `self_damage_taken_increase` value=50 | Damage + HP Exploit | Amplifier + **Enabler** | +380% skill damage is massive. `self_damage_taken_increase` → T9: the +50% self-damage-taken looks like a cost, but it **enables HP exploitation** — you lose HP faster, making 【战意】/【怒血战意】stronger. The output-driven model derives `provides=T9` automatically from the effect type, making this hidden synergy visible. When consumer count exceeds slot capacity (3), consumption naturally spans multiple slots → cross-slot binding. |
 | E23 | 疾风九变 | 【真言不灭】 | — | T7 | `all_state_duration` value=55 | **Cross-cutting** | Amplifier | → all time-based states. +55% duration on buffs, debuffs, DoTs. Weaker than 【业焰】(69%) but stacks with it. Body-school version. |
 | E24 | 玄煞灵影诀 | 【怒血战意】 | — | T9 | `per_self_lost_hp` per_percent=2 | HP Exploitation | Source | +2% damage per 1% own HP lost (4× stronger than 【战意】's 0.5%). Core of the HP exploitation chain. Needs active HP loss provider. Pairs with 【破釜沉舟】(take more damage → lose more HP → more bonus), 【意坠深渊】(minimum HP floor). |
 | E25 | 惊蛰化龙 | 【紫心真诀】 | — | T2 | `per_debuff_stack_true_damage` 2.1%/stack max=21% + `conditional_buff` (enlightenment: +50% lost_hp damage, +75% damage) | Stack Exploit + Damage | Source + **Context modifier** | (1) True damage per enemy debuff stack — bypasses all defenses. Needs debuffs on enemy. (2) At enlightenment: massive buff (+75% damage, +50% HP-based damage). Dynamic: the second effect is locked behind enlightenment. Bridge: Debuff chain feeds Stack Exploit. |
 | E26 | 煞影千幻 | 【乘胜逐北】 | — | T10 | `conditional_damage` value=100, condition=target_controlled | Damage | Amplifier (conditional) | → any damage source + enemy must be controlled. +100% is very strong (vs 【击瑕】's 40%). Value entirely depends on control uptime. Exclusive to Body but shares condition with 【击瑕】. |
 | E27 | 九重天凤诀 | 【玉石俱焚】 | — | T5 | `on_shield_expire` damage=100% of shield value | Shield | Source (triggered) | → requires shield creation in build (`damage_to_shield`/【玄女护心】). When shield expires, deals 100% of shield value as damage. Creates a damage loop: damage → shield → expire → more damage. Zero value without shield source. |
 | E28 | 天煞破虚诀 | 【天煞破虚】 | — | free | `periodic_dispel` 1/s for 10s, 25.5% skill damage per dispel (double if no buffs) | Debuff (anti-buff) + Damage | Source | Standalone. Strips enemy buffs AND deals damage. Counter to buff-heavy builds. The "double if no buffs" means damage floor even against unbuffed targets. |
+
+---
+
+## Amplification Model
+
+The `provides`/`requires` binding model (T1–T10) answers: **"Can this affix function?"** — gating.
+
+The **amplification model** answers: **"What makes this affix stronger?"** — discovery.
+
+### Three scopes of amplification
+
+| Scope | Mechanism | Example |
+|:------|:----------|:--------|
+| **Cross-cutting** | Multiplies ALL effects on the skill | 【心逐神随】`probability_multiplier` (x2-4); 【天命有归】`probability_to_certain` |
+| **Zone-multiplicative** | Output in a different damage formula zone — multiplicative stacking | 【摧山】`attack_bonus` (S_coeff) amplifies 【怒血战意】`per_self_lost_hp` (M_dmg) |
+| **Zone-additive** | Output in the same damage formula zone — diminishing returns | 【战意】`per_self_lost_hp` (M_dmg) + 【怒血战意】`per_self_lost_hp` (M_dmg) |
+
+Plus **input-side** amplifiers: structural relationships where one effect creates a resource consumed by another (e.g., `self_damage_taken_increase` accelerates HP loss → feeds `per_self_lost_hp`).
+
+### Damage formula zones
+
+Zone data comes from the effect type registry (`lib/domain/effects/*.ts`). Each effect type is annotated with the damage formula zone(s) it contributes to. Two effects in different zones are multiplicative; same zone is additive.
+
+| Zone | Description | Effect types |
+|:-----|:-----------|:-------------|
+| D_base | Base skill damage | `base_attack`, `summon` |
+| D_flat | Flat extra damage | `flat_extra_damage` |
+| S_coeff | ATK coefficient | `attack_bonus`, `self_buff` |
+| M_dmg | General damage multiplier | `damage_increase`, `conditional_damage`, `per_self_lost_hp`, `per_enemy_lost_hp`, `per_hit_escalation`, `crit_damage_bonus` |
+| M_skill | Skill-specific multiplier | `skill_damage_increase`, `next_skill_buff` |
+| M_final | Final multiplier | `final_damage_bonus`, `ignore_damage_reduction` |
+| M_res | Resonance (crit) | `guaranteed_resonance` |
+| M_synchro | Cross-cutting probability | `probability_multiplier`, `probability_to_certain` |
+| D_ortho | Orthogonal damage (DoT, bridges) | `dot`, `on_dispel`, `healing_to_damage`, `on_shield_expire`, etc. |
+
+> **Example: amplifiers for 【怒血战意】** (`per_self_lost_hp`, zone M_dmg). Cross-cutting: 【心逐神随】, 【天命有归】. Zone-multiplicative (25): 【摧山】(S_coeff), 【明王之路】(M_final), 【通明】(M_res), 【破釜沉舟】(M_skill), 【斩岳】(D_flat), etc. Input-side: 【破釜沉舟】(`self_damage_taken_increase`), 【意坠深渊】(`min_lost_hp_threshold`). The previous model found only 2 amplifiers; the zone model finds 47+.
+
+### Implementation
+
+`lib/domain/amplifiers.ts` — `findAmplifiers(affix)` returns categorized results: `{ crossCutting, multiplicative, additive, inputSide }`. Uses the registry's zone annotations for zone relationships and a hand-curated `INPUT_FEEDERS` map for structural input-side relationships.
 
 ---
 
@@ -280,3 +340,5 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 | 1.0 | 2026-02-26 | Initial: framework (chains, tiers, interaction types) + universal (16) + school (17) affix walkthrough |
 | 1.1 | 2026-02-27 | Add subcategory associations table (9 subcategories with member→partner mappings) |
 | 2.0 | 2026-03-05 | Add §Target Categories (T1–T10 binding model). Add `provides`/`requires` columns to all walkthrough tables (61 affixes). Reframe subcategory associations with formal target-category bindings. |
+| 2.1 | 2026-03-05 | Output-driven binding model: `provides` is now derived from `outputs` (effect types) via `EFFECT_PROVIDES` mapping, not hand-curated per affix. Added effect type → category mapping table. Fixed 【魔骨明心】 provides (T6→T6,T2). Updated 【破釜沉舟】 notes to explain how `self_damage_taken_increase` → T9 makes the hidden enabler visible automatically. |
+| 3.0 | 2026-03-05 | Add §Amplification Model: three scopes (cross-cutting, zone-multiplicative, zone-additive) + input-side. Damage formula zone table. `findAmplifiers()` finds 47+ amplifiers for any affix vs 2 with the old chain-specific model. |

@@ -24,9 +24,12 @@ export interface EffectTypeDef {
 	notes?: string;
 }
 
-/** Operator binding: what an affix provides and requires.
+/** Operator binding: what an affix outputs, provides, and requires.
  *  See domain.category.md §Target Categories. */
 export interface Binding {
+	/** Effect types this affix produces (from effects.yaml) */
+	outputs: string[];
+	/** Target categories provided (derived from outputs) */
 	provides: TargetCategory[];
 	requires: TargetCategory[] | "free";
 }
