@@ -22,21 +22,21 @@ describe("candidatesByCategory", () => {
 		expect(candidatesByCategory(data, groups, 99)).toBeNull();
 	});
 
-	test("C3 critical system has known affixes", () => {
+	test("C3 resonance system has known affixes", () => {
 		const result = candidatesByCategory(data, groups, 3);
 		expect(result).not.toBeNull();
-		expect(result?.label).toBe("Critical System");
+		expect(result?.label).toBe("Resonance System (会心)");
 
 		const allAffixes =
 			result?.clusters.flatMap((c) => c.candidates.map((a) => a.affix)) ?? [];
-		expect(allAffixes).toContain("心逐神随");
 		expect(allAffixes).toContain("灵犀九重");
 		expect(allAffixes).toContain("通明");
 	});
 
-	test("C3 心逐神随 is exclusive from 解体化形", () => {
-		const result = candidatesByCategory(data, groups, 3);
+	test("C3b 心逐神随 is exclusive from 解体化形", () => {
+		const result = candidatesByCategory(data, groups, "3b");
 		expect(result).not.toBeNull();
+		expect(result?.label).toBe("Synchrony System (心逐)");
 		const pmCluster = result?.clusters.find(
 			(c) => c.type === "probability_multiplier",
 		);
@@ -66,11 +66,14 @@ describe("candidatesByCategory", () => {
 		}
 	});
 
-	test("all 14 categories are reachable (0-13)", () => {
-		for (let i = 0; i <= 13; i++) {
-			const result = candidatesByCategory(data, groups, i);
+	test("all 16 categories are reachable (0-13 plus 3b, 3c)", () => {
+		const categories: (number | string)[] = [
+			0, 1, 2, 3, "3b", "3c", 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+		];
+		for (const cat of categories) {
+			const result = candidatesByCategory(data, groups, cat);
 			expect(result).not.toBeNull();
-			expect(result?.category).toBe(i);
+			expect(result?.category).toBe(cat);
 		}
 	});
 

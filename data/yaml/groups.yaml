@@ -1,5 +1,5 @@
-# Effect groups — generated from docs/data/keyword.map.md
-# Do not edit manually. Regenerate with: bun app/parse.ts
+# Effect groups — derived from TypeScript registry
+# Do not edit manually. Regenerate with: bun app/generate.ts
 groups:
   - id: shared_mechanics
     section: §0
@@ -26,13 +26,22 @@ groups:
       - enemy_skill_damage_reduction
       - final_damage_bonus
       - crit_damage_bonus
+      - technique_damage_increase
       - flat_extra_damage
-  - id: critical_system
+  - id: resonance_system
     section: §3
-    label: Critical System
+    label: Resonance System (会心)
     types:
-      - guaranteed_crit
+      - guaranteed_resonance
+  - id: synchrony_system
+    section: §3b
+    label: Synchrony System (心逐)
+    types:
       - probability_multiplier
+  - id: standard_crit
+    section: §3c
+    label: Standard Crit (暴击)
+    types:
       - conditional_crit
       - conditional_crit_rate
   - id: conditional_triggers

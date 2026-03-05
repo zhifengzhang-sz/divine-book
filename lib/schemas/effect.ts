@@ -51,7 +51,7 @@ export const DebuffTriggerEnum = z.enum(["on_attacked"]);
 // =============================================================================
 
 /** Fields that can appear on any row for parent/child flattening */
-const structuralFields = {
+export const structuralFields = {
 	parent: z.string().optional(),
 	name: z.string().optional(),
 };
@@ -60,27 +60,27 @@ const structuralFields = {
 // §0. Shared Mechanics (All Schools)
 // =============================================================================
 
-const FusionFlatDamageSchema = z.object({
+export const FusionFlatDamageSchema = z.object({
 	type: z.literal("fusion_flat_damage"),
 	...structuralFields,
 	fusion_level: z.number().describe("unit:count"),
 	value: z.number().describe("unit:%atk"),
 });
 
-const MasteryExtraDamageSchema = z.object({
+export const MasteryExtraDamageSchema = z.object({
 	type: z.literal("mastery_extra_damage"),
 	...structuralFields,
 	fusion_level: z.number().describe("unit:count"),
 	value: z.number().describe("unit:%atk"),
 });
 
-const EnlightenmentDamageSchema = z.object({
+export const EnlightenmentDamageSchema = z.object({
 	type: z.literal("enlightenment_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%atk"),
 });
 
-const CooldownSchema = z.object({
+export const CooldownSchema = z.object({
 	type: z.literal("cooldown"),
 	...structuralFields,
 	value: z.number().describe("unit:seconds"),
@@ -90,21 +90,21 @@ const CooldownSchema = z.object({
 // §1. Base Damage
 // =============================================================================
 
-const BaseAttackSchema = z.object({
+export const BaseAttackSchema = z.object({
 	type: z.literal("base_attack"),
 	...structuralFields,
 	hits: z.number().describe("unit:count").optional(),
 	total: z.number().describe("unit:%atk").optional(),
 });
 
-const PercentMaxHpDamageSchema = z.object({
+export const PercentMaxHpDamageSchema = z.object({
 	type: z.literal("percent_max_hp_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%max_hp"),
 	cap_vs_monster: z.number().describe("unit:%atk"),
 });
 
-const ShieldDestroyDamageSchema = z.object({
+export const ShieldDestroyDamageSchema = z.object({
 	type: z.literal("shield_destroy_damage"),
 	...structuralFields,
 	shields_per_hit: z.number().describe("unit:count"),
@@ -117,79 +117,93 @@ const ShieldDestroyDamageSchema = z.object({
 // §2. Damage Multiplier Zones
 // =============================================================================
 
-const AttackBonusSchema = z.object({
+export const AttackBonusSchema = z.object({
 	type: z.literal("attack_bonus"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const DamageIncreaseSchema = z.object({
+export const DamageIncreaseSchema = z.object({
 	type: z.literal("damage_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const SkillDamageIncreaseSchema = z.object({
+export const SkillDamageIncreaseSchema = z.object({
 	type: z.literal("skill_damage_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const EnemySkillDamageReductionSchema = z.object({
+export const EnemySkillDamageReductionSchema = z.object({
 	type: z.literal("enemy_skill_damage_reduction"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const FinalDamageBonusSchema = z.object({
+export const FinalDamageBonusSchema = z.object({
 	type: z.literal("final_damage_bonus"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const CritDamageBonusSchema = z.object({
+export const CritDamageBonusSchema = z.object({
 	type: z.literal("crit_damage_bonus"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const FlatExtraDamageSchema = z.object({
+export const TechniqueDamageIncreaseSchema = z.object({
+	type: z.literal("technique_damage_increase"),
+	...structuralFields,
+	value: z.number().describe("unit:%stat"),
+});
+
+export const FlatExtraDamageSchema = z.object({
 	type: z.literal("flat_extra_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%atk"),
 });
 
 // =============================================================================
-// §3. Critical System
+// §3. Resonance System (会心)
 // =============================================================================
 
-const GuaranteedCritSchema = z.object({
-	type: z.literal("guaranteed_crit"),
+export const GuaranteedResonanceSchema = z.object({
+	type: z.literal("guaranteed_resonance"),
 	...structuralFields,
 	base_mult: z.number().describe("unit:multiplier"),
 	enhanced_mult: z.number().describe("unit:multiplier"),
 	enhanced_chance: z.number().describe("unit:probability"),
 });
 
+// =============================================================================
+// §3b. Synchrony System (心逐)
+// =============================================================================
+
 /**
  * Each row is one probability tier (prob + mult).
- * keyword.map §3 defines `tiers→list of {prob, mult}` but normalized.data
+ * keyword.map §3b defines `tiers→list of {prob, mult}` but normalized.data
  * emits one row per tier: `prob=11, mult=4` / `prob=31, mult=3` / etc.
  */
-const ProbabilityMultiplierSchema = z.object({
+export const ProbabilityMultiplierSchema = z.object({
 	type: z.literal("probability_multiplier"),
 	...structuralFields,
 	prob: z.number().describe("unit:probability"),
 	mult: z.number().describe("unit:multiplier"),
 });
 
-const ConditionalCritSchema = z.object({
+// =============================================================================
+// §3c. Standard Crit (暴击)
+// =============================================================================
+
+export const ConditionalCritSchema = z.object({
 	type: z.literal("conditional_crit"),
 	...structuralFields,
 	condition: z.union([ConditionEnum, z.string()]),
 });
 
-const ConditionalCritRateSchema = z.object({
+export const ConditionalCritRateSchema = z.object({
 	type: z.literal("conditional_crit_rate"),
 	...structuralFields,
 	value: z.number().describe("unit:probability"),
@@ -200,7 +214,7 @@ const ConditionalCritRateSchema = z.object({
 // §4. Conditional Triggers
 // =============================================================================
 
-const ConditionalDamageSchema = z.object({
+export const ConditionalDamageSchema = z.object({
 	type: z.literal("conditional_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -209,7 +223,7 @@ const ConditionalDamageSchema = z.object({
 });
 
 /** Variable stat fields: percent_max_hp_increase, percent_lost_hp_increase, damage_increase */
-const ConditionalBuffSchema = z.object({
+export const ConditionalBuffSchema = z.object({
 	type: z.literal("conditional_buff"),
 	...structuralFields,
 	condition: z.union([ConditionEnum, z.string()]),
@@ -218,12 +232,12 @@ const ConditionalBuffSchema = z.object({
 	percent_lost_hp_increase: z.number().describe("unit:%stat").optional(),
 });
 
-const ProbabilityToCertainSchema = z.object({
+export const ProbabilityToCertainSchema = z.object({
 	type: z.literal("probability_to_certain"),
 	...structuralFields,
 });
 
-const IgnoreDamageReductionSchema = z.object({
+export const IgnoreDamageReductionSchema = z.object({
 	type: z.literal("ignore_damage_reduction"),
 	...structuralFields,
 });
@@ -232,7 +246,7 @@ const IgnoreDamageReductionSchema = z.object({
 // §5. Per-Hit Escalation
 // =============================================================================
 
-const PerHitEscalationSchema = z.object({
+export const PerHitEscalationSchema = z.object({
 	type: z.literal("per_hit_escalation"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -240,7 +254,7 @@ const PerHitEscalationSchema = z.object({
 	max: z.number().describe("unit:%stat").optional(),
 });
 
-const PeriodicEscalationSchema = z.object({
+export const PeriodicEscalationSchema = z.object({
 	type: z.literal("periodic_escalation"),
 	...structuralFields,
 	every_n_hits: z.number().describe("unit:count"),
@@ -252,31 +266,31 @@ const PeriodicEscalationSchema = z.object({
 // §6. HP-Based Calculations
 // =============================================================================
 
-const PerSelfLostHpSchema = z.object({
+export const PerSelfLostHpSchema = z.object({
 	type: z.literal("per_self_lost_hp"),
 	...structuralFields,
 	per_percent: z.number().describe("unit:%stat"),
 });
 
-const PerEnemyLostHpSchema = z.object({
+export const PerEnemyLostHpSchema = z.object({
 	type: z.literal("per_enemy_lost_hp"),
 	...structuralFields,
 	per_percent: z.number().describe("unit:%stat"),
 });
 
-const MinLostHpThresholdSchema = z.object({
+export const MinLostHpThresholdSchema = z.object({
 	type: z.literal("min_lost_hp_threshold"),
 	...structuralFields,
 	value: z.number().describe("unit:%lost_hp"),
 });
 
-const SelfHpCostSchema = z.object({
+export const SelfHpCostSchema = z.object({
 	type: z.literal("self_hp_cost"),
 	...structuralFields,
 	value: z.number().describe("unit:%current_hp"),
 });
 
-const SelfLostHpDamageSchema = z.object({
+export const SelfLostHpDamageSchema = z.object({
 	type: z.literal("self_lost_hp_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%lost_hp"),
@@ -284,7 +298,7 @@ const SelfLostHpDamageSchema = z.object({
 	heal_equal: z.boolean().optional(),
 });
 
-const SelfDamageTakenIncreaseSchema = z.object({
+export const SelfDamageTakenIncreaseSchema = z.object({
 	type: z.literal("self_damage_taken_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -294,25 +308,25 @@ const SelfDamageTakenIncreaseSchema = z.object({
 // §7. Healing and Survival
 // =============================================================================
 
-const LifestealSchema = z.object({
+export const LifestealSchema = z.object({
 	type: z.literal("lifesteal"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const HealingToDamageSchema = z.object({
+export const HealingToDamageSchema = z.object({
 	type: z.literal("healing_to_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const HealingIncreaseSchema = z.object({
+export const HealingIncreaseSchema = z.object({
 	type: z.literal("healing_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const SelfDamageReductionDuringCastSchema = z.object({
+export const SelfDamageReductionDuringCastSchema = z.object({
 	type: z.literal("self_damage_reduction_during_cast"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -322,19 +336,19 @@ const SelfDamageReductionDuringCastSchema = z.object({
 // §8. Shield System
 // =============================================================================
 
-const ShieldStrengthSchema = z.object({
+export const ShieldStrengthSchema = z.object({
 	type: z.literal("shield_strength"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const OnShieldExpireSchema = z.object({
+export const OnShieldExpireSchema = z.object({
 	type: z.literal("on_shield_expire"),
 	...structuralFields,
 	damage_percent_of_shield: z.number().describe("unit:%stat"),
 });
 
-const DamageToShieldSchema = z.object({
+export const DamageToShieldSchema = z.object({
 	type: z.literal("damage_to_shield"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -345,43 +359,43 @@ const DamageToShieldSchema = z.object({
 // §9. State Modifiers
 // =============================================================================
 
-const BuffStrengthSchema = z.object({
+export const BuffStrengthSchema = z.object({
 	type: z.literal("buff_strength"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const DebuffStrengthSchema = z.object({
+export const DebuffStrengthSchema = z.object({
 	type: z.literal("debuff_strength"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const BuffDurationSchema = z.object({
+export const BuffDurationSchema = z.object({
 	type: z.literal("buff_duration"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const AllStateDurationSchema = z.object({
+export const AllStateDurationSchema = z.object({
 	type: z.literal("all_state_duration"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const BuffStackIncreaseSchema = z.object({
+export const BuffStackIncreaseSchema = z.object({
 	type: z.literal("buff_stack_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const DebuffStackIncreaseSchema = z.object({
+export const DebuffStackIncreaseSchema = z.object({
 	type: z.literal("debuff_stack_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const DebuffStackChanceSchema = z.object({
+export const DebuffStackChanceSchema = z.object({
 	type: z.literal("debuff_stack_chance"),
 	...structuralFields,
 	value: z.number().describe("unit:probability"),
@@ -391,7 +405,7 @@ const DebuffStackChanceSchema = z.object({
 // §10. Damage over Time (DoT)
 // =============================================================================
 
-const DotSchema = z.object({
+export const DotSchema = z.object({
 	type: z.literal("dot"),
 	...structuralFields,
 	tick_interval: z.number().describe("unit:seconds"),
@@ -402,7 +416,7 @@ const DotSchema = z.object({
 	max_stacks: z.number().describe("unit:count").optional(),
 });
 
-const ShieldDestroyDotSchema = z.object({
+export const ShieldDestroyDotSchema = z.object({
 	type: z.literal("shield_destroy_dot"),
 	...structuralFields,
 	tick_interval: z.number().describe("unit:seconds"),
@@ -410,32 +424,32 @@ const ShieldDestroyDotSchema = z.object({
 	no_shield_assumed: z.number().describe("unit:count"),
 });
 
-const DotExtraPerTickSchema = z.object({
+export const DotExtraPerTickSchema = z.object({
 	type: z.literal("dot_extra_per_tick"),
 	...structuralFields,
 	value: z.number().describe("unit:%lost_hp"),
 });
 
-const DotDamageIncreaseSchema = z.object({
+export const DotDamageIncreaseSchema = z.object({
 	type: z.literal("dot_damage_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const DotFrequencyIncreaseSchema = z.object({
+export const DotFrequencyIncreaseSchema = z.object({
 	type: z.literal("dot_frequency_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const ExtendedDotSchema = z.object({
+export const ExtendedDotSchema = z.object({
 	type: z.literal("extended_dot"),
 	...structuralFields,
 	extra_seconds: z.number().describe("unit:seconds"),
 	tick_interval: z.number().describe("unit:seconds"),
 });
 
-const OnDispelSchema = z.object({
+export const OnDispelSchema = z.object({
 	type: z.literal("on_dispel"),
 	...structuralFields,
 	damage: z.number().describe("unit:%atk").optional(),
@@ -446,7 +460,7 @@ const OnDispelSchema = z.object({
 // §11. Self Buffs
 // =============================================================================
 
-const SelfBuffSchema = z.object({
+export const SelfBuffSchema = z.object({
 	type: z.literal("self_buff"),
 	...structuralFields,
 	duration: z.number().describe("unit:seconds"),
@@ -458,7 +472,7 @@ const SelfBuffSchema = z.object({
 	healing_bonus: z.number().describe("unit:%stat").optional(),
 });
 
-const SelfBuffExtendSchema = z.object({
+export const SelfBuffExtendSchema = z.object({
 	type: z.literal("self_buff_extend"),
 	...structuralFields,
 	buff_name: z.string(),
@@ -466,7 +480,7 @@ const SelfBuffExtendSchema = z.object({
 });
 
 /** Variable stat fields (e.g., healing_bonus) */
-const SelfBuffExtraSchema = z.object({
+export const SelfBuffExtraSchema = z.object({
 	type: z.literal("self_buff_extra"),
 	...structuralFields,
 	buff_name: z.string().optional(),
@@ -474,7 +488,7 @@ const SelfBuffExtraSchema = z.object({
 	value: z.number().describe("unit:%stat").optional(),
 });
 
-const CounterBuffSchema = z.object({
+export const CounterBuffSchema = z.object({
 	type: z.literal("counter_buff"),
 	...structuralFields,
 	duration: z.number().describe("unit:seconds"),
@@ -482,14 +496,14 @@ const CounterBuffSchema = z.object({
 	reflect_percent_lost_hp: z.number().describe("unit:%lost_hp").optional(),
 });
 
-const NextSkillBuffSchema = z.object({
+export const NextSkillBuffSchema = z.object({
 	type: z.literal("next_skill_buff"),
 	...structuralFields,
 	stat: NextSkillStatEnum,
 	value: z.number().describe("unit:%stat"),
 });
 
-const EnlightenmentBonusSchema = z.object({
+export const EnlightenmentBonusSchema = z.object({
 	type: z.literal("enlightenment_bonus"),
 	...structuralFields,
 	value: z.number().describe("unit:count"),
@@ -500,7 +514,7 @@ const EnlightenmentBonusSchema = z.object({
 // §12. Debuffs
 // =============================================================================
 
-const DebuffSchema = z.object({
+export const DebuffSchema = z.object({
 	type: z.literal("debuff"),
 	...structuralFields,
 	target: DebuffTargetEnum,
@@ -513,7 +527,7 @@ const DebuffSchema = z.object({
  * Duration can be a number (seconds) or `same_as_trigger` (string).
  * keyword.map §12: `与触发的增益状态相同` → `duration=same_as_trigger`
  */
-const ConditionalDebuffSchema = z.object({
+export const ConditionalDebuffSchema = z.object({
 	type: z.literal("conditional_debuff"),
 	...structuralFields,
 	condition: z.union([ConditionEnum, z.string()]),
@@ -525,7 +539,7 @@ const ConditionalDebuffSchema = z.object({
 	per_hit: z.boolean().optional(),
 });
 
-const CrossSlotDebuffSchema = z.object({
+export const CrossSlotDebuffSchema = z.object({
 	type: z.literal("cross_slot_debuff"),
 	...structuralFields,
 	target: DebuffTargetEnum,
@@ -539,7 +553,7 @@ const CrossSlotDebuffSchema = z.object({
  * The counter_debuff row itself carries only: name, duration,
  * on_attacked_chance, max_stacks.
  */
-const CounterDebuffSchema = z.object({
+export const CounterDebuffSchema = z.object({
 	type: z.literal("counter_debuff"),
 	...structuralFields,
 	duration: z.number().describe("unit:seconds"),
@@ -547,7 +561,7 @@ const CounterDebuffSchema = z.object({
 	max_stacks: z.number().describe("unit:count").optional(),
 });
 
-const CounterDebuffUpgradeSchema = z.object({
+export const CounterDebuffUpgradeSchema = z.object({
 	type: z.literal("counter_debuff_upgrade"),
 	...structuralFields,
 	on_attacked_chance: z.number().describe("unit:probability"),
@@ -559,7 +573,7 @@ const CounterDebuffUpgradeSchema = z.object({
 
 // §13.1 Summons and Clones
 
-const SummonSchema = z.object({
+export const SummonSchema = z.object({
 	type: z.literal("summon"),
 	...structuralFields,
 	inherit_stats: z.number().describe("unit:%stat"),
@@ -567,7 +581,7 @@ const SummonSchema = z.object({
 	damage_taken_multiplier: z.number().describe("unit:%stat"),
 });
 
-const SummonBuffSchema = z.object({
+export const SummonBuffSchema = z.object({
 	type: z.literal("summon_buff"),
 	...structuralFields,
 	damage_taken_reduction_to: z.number().describe("unit:%stat"),
@@ -576,7 +590,7 @@ const SummonBuffSchema = z.object({
 
 // §13.2 Untargetable State
 
-const UntargetableStateSchema = z.object({
+export const UntargetableStateSchema = z.object({
 	type: z.literal("untargetable_state"),
 	...structuralFields,
 	duration: z.number().describe("unit:seconds"),
@@ -584,7 +598,7 @@ const UntargetableStateSchema = z.object({
 
 // §13.3 Dispel and Crowd Control
 
-const PeriodicDispelSchema = z.object({
+export const PeriodicDispelSchema = z.object({
 	type: z.literal("periodic_dispel"),
 	...structuralFields,
 	interval: z.number().describe("unit:seconds"),
@@ -593,7 +607,7 @@ const PeriodicDispelSchema = z.object({
 	no_buff_double: z.boolean(),
 });
 
-const PeriodicCleanseSchema = z.object({
+export const PeriodicCleanseSchema = z.object({
 	type: z.literal("periodic_cleanse"),
 	...structuralFields,
 	chance: z.number().describe("unit:probability"),
@@ -604,7 +618,7 @@ const PeriodicCleanseSchema = z.object({
 
 // §13.4 Delayed Burst
 
-const DelayedBurstSchema = z.object({
+export const DelayedBurstSchema = z.object({
 	type: z.literal("delayed_burst"),
 	...structuralFields,
 	duration: z.number().describe("unit:seconds"),
@@ -613,7 +627,7 @@ const DelayedBurstSchema = z.object({
 	burst_accumulated_pct: z.number().describe("unit:%stat"),
 });
 
-const DelayedBurstIncreaseSchema = z.object({
+export const DelayedBurstIncreaseSchema = z.object({
 	type: z.literal("delayed_burst_increase"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -623,13 +637,13 @@ const DelayedBurstIncreaseSchema = z.object({
 // Each option is a separate child row with `parent=`. The parent row has no
 // `options` array — just the type discriminator (and optionally a name).
 
-const RandomBuffSchema = z.object({
+export const RandomBuffSchema = z.object({
 	type: z.literal("random_buff"),
 	...structuralFields,
 	options: z.string().optional(),
 });
 
-const RandomDebuffSchema = z.object({
+export const RandomDebuffSchema = z.object({
 	type: z.literal("random_debuff"),
 	...structuralFields,
 	options: z.string().optional(),
@@ -637,19 +651,19 @@ const RandomDebuffSchema = z.object({
 
 // §13.5 Random Effect Option Types (child rows with parent=)
 
-const AttackReductionSchema = z.object({
+export const AttackReductionSchema = z.object({
 	type: z.literal("attack_reduction"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const CritRateReductionSchema = z.object({
+export const CritRateReductionSchema = z.object({
 	type: z.literal("crit_rate_reduction"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
 });
 
-const CritDamageReductionSchema = z.object({
+export const CritDamageReductionSchema = z.object({
 	type: z.literal("crit_damage_reduction"),
 	...structuralFields,
 	value: z.number().describe("unit:%stat"),
@@ -657,7 +671,7 @@ const CritDamageReductionSchema = z.object({
 
 // §13.6 Stack-Based Damage
 
-const PerBuffStackDamageSchema = z.object({
+export const PerBuffStackDamageSchema = z.object({
 	type: z.literal("per_buff_stack_damage"),
 	...structuralFields,
 	per_n_stacks: z.number().describe("unit:count"),
@@ -665,7 +679,7 @@ const PerBuffStackDamageSchema = z.object({
 	max: z.number().describe("unit:%stat"),
 });
 
-const PerDebuffStackDamageSchema = z.object({
+export const PerDebuffStackDamageSchema = z.object({
 	type: z.literal("per_debuff_stack_damage"),
 	...structuralFields,
 	per_n_stacks: z.number().describe("unit:count"),
@@ -674,7 +688,7 @@ const PerDebuffStackDamageSchema = z.object({
 	dot_half: z.boolean().optional(),
 });
 
-const PerDebuffStackTrueDamageSchema = z.object({
+export const PerDebuffStackTrueDamageSchema = z.object({
 	type: z.literal("per_debuff_stack_true_damage"),
 	...structuralFields,
 	per_stack: z.number().describe("unit:%max_hp"),
@@ -683,13 +697,13 @@ const PerDebuffStackTrueDamageSchema = z.object({
 
 // §13.7 Other Triggers
 
-const OnBuffDebuffShieldTriggerSchema = z.object({
+export const OnBuffDebuffShieldTriggerSchema = z.object({
 	type: z.literal("on_buff_debuff_shield_trigger"),
 	...structuralFields,
 	damage_percent_of_skill: z.number().describe("unit:%stat"),
 });
 
-const ConditionalHealBuffSchema = z.object({
+export const ConditionalHealBuffSchema = z.object({
 	type: z.literal("conditional_heal_buff"),
 	...structuralFields,
 	condition: z.union([ConditionEnum, z.string()]),
@@ -725,116 +739,13 @@ export const DataStateSchema = z.union([
 export type DataState = z.infer<typeof DataStateSchema>;
 
 // =============================================================================
-// Discriminated union — all effect types
+// Discriminated union — now derived from registry
 // =============================================================================
 
-export const EffectSchema = z.discriminatedUnion("type", [
-	// §0. Shared Mechanics
-	FusionFlatDamageSchema,
-	MasteryExtraDamageSchema,
-	EnlightenmentDamageSchema,
-	CooldownSchema,
+// EffectSchema is exported from lib/domain/registry.ts (registry.effectSchema).
+// It cannot be re-exported here due to circular dependency:
+//   effect.ts → registry.ts → effects/*.ts → effect.ts
+// Consumers should import from registry:
+//   import { registry } from "./domain/registry.js";
+//   const EffectSchema = registry.effectSchema;
 
-	// §1. Base Damage
-	BaseAttackSchema,
-	PercentMaxHpDamageSchema,
-	ShieldDestroyDamageSchema,
-
-	// §2. Damage Multiplier Zones
-	AttackBonusSchema,
-	DamageIncreaseSchema,
-	SkillDamageIncreaseSchema,
-	EnemySkillDamageReductionSchema,
-	FinalDamageBonusSchema,
-	CritDamageBonusSchema,
-	FlatExtraDamageSchema,
-
-	// §3. Critical System
-	GuaranteedCritSchema,
-	ProbabilityMultiplierSchema,
-	ConditionalCritSchema,
-	ConditionalCritRateSchema,
-
-	// §4. Conditional Triggers
-	ConditionalDamageSchema,
-	ConditionalBuffSchema,
-	ProbabilityToCertainSchema,
-	IgnoreDamageReductionSchema,
-
-	// §5. Per-Hit Escalation
-	PerHitEscalationSchema,
-	PeriodicEscalationSchema,
-
-	// §6. HP-Based Calculations
-	PerSelfLostHpSchema,
-	PerEnemyLostHpSchema,
-	MinLostHpThresholdSchema,
-	SelfHpCostSchema,
-	SelfLostHpDamageSchema,
-	SelfDamageTakenIncreaseSchema,
-
-	// §7. Healing and Survival
-	LifestealSchema,
-	HealingToDamageSchema,
-	HealingIncreaseSchema,
-	SelfDamageReductionDuringCastSchema,
-
-	// §8. Shield System
-	ShieldStrengthSchema,
-	OnShieldExpireSchema,
-	DamageToShieldSchema,
-
-	// §9. State Modifiers
-	BuffStrengthSchema,
-	DebuffStrengthSchema,
-	BuffDurationSchema,
-	AllStateDurationSchema,
-	BuffStackIncreaseSchema,
-	DebuffStackIncreaseSchema,
-	DebuffStackChanceSchema,
-
-	// §10. Damage over Time (DoT)
-	DotSchema,
-	ShieldDestroyDotSchema,
-	DotExtraPerTickSchema,
-	DotDamageIncreaseSchema,
-	DotFrequencyIncreaseSchema,
-	ExtendedDotSchema,
-	OnDispelSchema,
-
-	// §11. Self Buffs
-	SelfBuffSchema,
-	SelfBuffExtendSchema,
-	SelfBuffExtraSchema,
-	CounterBuffSchema,
-	NextSkillBuffSchema,
-	EnlightenmentBonusSchema,
-
-	// §12. Debuffs
-	DebuffSchema,
-	ConditionalDebuffSchema,
-	CrossSlotDebuffSchema,
-	CounterDebuffSchema,
-	CounterDebuffUpgradeSchema,
-
-	// §13. Special Mechanics
-	SummonSchema,
-	SummonBuffSchema,
-	UntargetableStateSchema,
-	PeriodicDispelSchema,
-	PeriodicCleanseSchema,
-	DelayedBurstSchema,
-	DelayedBurstIncreaseSchema,
-	RandomBuffSchema,
-	RandomDebuffSchema,
-	AttackReductionSchema,
-	CritRateReductionSchema,
-	CritDamageReductionSchema,
-	PerBuffStackDamageSchema,
-	PerDebuffStackDamageSchema,
-	PerDebuffStackTrueDamageSchema,
-	OnBuffDebuffShieldTriggerSchema,
-	ConditionalHealBuffSchema,
-]);
-
-export type Effect = z.infer<typeof EffectSchema>;

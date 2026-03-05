@@ -9,6 +9,8 @@
 
 import type { GroupsOutput } from "./parse.groups.js";
 import type { EffectRow, ParseOutput } from "./parse.js";
+import type { TargetCategory } from "./domain/enums.js";
+import { AFFIX_BINDINGS } from "./domain/bindings.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +35,7 @@ export interface Cluster {
 }
 
 export interface CategoryCandidates {
-	category: number;
+	category: number | string;
 	label: string;
 	clusters: Cluster[];
 }
@@ -45,7 +47,7 @@ export interface CategoryCandidates {
 export function candidatesByCategory(
 	data: ParseOutput,
 	groups: GroupsOutput,
-	category: number,
+	category: number | string,
 ): CategoryCandidates | null {
 	const group = groups.groups.find((g) => g.section === `§${category}`);
 	if (!group) return null;
@@ -124,4 +126,27 @@ export function candidatesByCategory(
 		.filter((c) => c.candidates.length > 0);
 
 	return { category, label: group.label, clusters };
+}
+
+// ---------------------------------------------------------------------------
+// Binding-aware filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter affix sources by binding satisfaction.
+ *
+ * Given a set of available target categories (from platform + selected affixes),
+ * returns only affix sources whose `requires` are satisfied.
+ */
+export function filterByAvailableCategories(
+	candidates: AffixSource[],
+	availableCategories: Set<TargetCategory>,
+): AffixSource[] {
+	return candidates.filter((source) => {
+		const binding = AFFIX_BINDINGS.find((b) => b.affix === source.affix);
+		if (!binding) return true; // unknown affix, don't prune
+		if (binding.requires === "free") return true;
+		// OR semantics: at least one required category must be available
+		return binding.requires.some((cat) => availableCategories.has(cat));
+	});
 }

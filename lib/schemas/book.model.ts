@@ -25,7 +25,7 @@ export const BookModelSchema = z.object({
 
 	/**
 	 * Evaluated multiplicative damage chain:
-	 * D_skill = (D_base × S_coeff + D_flat) × (1+M_dmg) × (1+M_skill) × (1+M_final) × C_mult
+	 * D_skill = (D_base × S_coeff + D_flat) × (1+M_dmg) × (1+M_skill) × (1+M_final) × M_res × M_synchro
 	 */
 	D_skill: z.number(),
 

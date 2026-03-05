@@ -26,14 +26,18 @@ export const AffixModelSchema = z.object({
 	M_skill: z.number().default(0),
 	M_final: z.number().default(0),
 	S_coeff: z.number().default(0),
-	C_mult: z
+	M_res: z
 		.number()
 		.default(1)
-		.describe("Expected crit multiplier (1 = no crit)"),
-	sigma_C: z
+		.describe("Expected resonance multiplier (1 = no resonance)"),
+	sigma_R: z
 		.number()
 		.default(0)
-		.describe("Crit variance (root-sum-of-squares)"),
+		.describe("Resonance variance (root-sum-of-squares)"),
+	M_synchro: z
+		.number()
+		.default(1)
+		.describe("Expected synchrony multiplier (1 = no synchrony)"),
 	D_ortho: z.number().default(0),
 	H_A: z.number().default(0),
 	DR_A: z.number().default(0),

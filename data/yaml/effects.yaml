@@ -622,7 +622,7 @@ universal_affixes:
     - type: attack_bonus
       value: 20
   通明:
-    - type: guaranteed_crit
+    - type: guaranteed_resonance
       base_mult: 1.2
       enhanced_mult: 1.5
       enhanced_chance: 25
@@ -632,7 +632,7 @@ school_affixes:
       - type: attack_bonus
         value: 55
     灵犀九重:
-      - type: guaranteed_crit
+      - type: guaranteed_resonance
         base_mult: 2.97
         enhanced_mult: 3.97
         enhanced_chance: 25

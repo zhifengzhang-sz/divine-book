@@ -6,7 +6,9 @@
  * structured data with validation warnings.
  */
 
-import { EffectSchema } from "./schemas/effect.js";
+import { registry } from "./domain/registry.js";
+
+const EffectSchema = registry.effectSchema;
 
 // ---------------------------------------------------------------------------
 // Types

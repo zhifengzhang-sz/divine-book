@@ -1,4 +1,7 @@
 /**
+ * @deprecated Groups are now derived from the TypeScript registry
+ * (lib/domain/registry.ts). This parser is kept for reference only.
+ *
  * Parser: keyword.map.md -> effect group classification
  *
  * Pure library — no side effects. Extracts the §0–§13 section structure
@@ -68,8 +71,8 @@ export function parseGroups(markdown: string): GroupsOutput {
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 
-		// Match §N. Group Name (## level) — but stop at non-§ sections
-		const sectionMatch = line.match(/^## (§\d+)\.\s+(.+?)(?:\s*\{.*\})?\s*$/);
+		// Match §N. or §Nb. Group Name (## level) — but stop at non-§ sections
+		const sectionMatch = line.match(/^## (§\d+[a-z]?)\.\s+(.+?)(?:\s*\{.*\})?\s*$/);
 		if (sectionMatch) {
 			const [, section, label] = sectionMatch;
 			current = { id: toId(label), section, label: label.trim(), types: [] };
@@ -87,7 +90,7 @@ export function parseGroups(markdown: string): GroupsOutput {
 		}
 
 		// Extract types from tables within current group
-		if (current && /^\| Effect Type/.test(line)) {
+		if (current && /^\| (Effect Type|效果类型)/.test(line)) {
 			for (const t of extractTypesFromTable(lines, i)) addType(t);
 		}
 
