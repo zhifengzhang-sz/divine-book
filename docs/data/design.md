@@ -32,6 +32,23 @@ code {
   border-radius: 3px !important;
 }
 
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
 table {
   border-collapse: collapse !important;
   width: auto !important;
@@ -66,15 +83,17 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
+
 
 # Design: Divine Book Data Pipeline
 
@@ -105,15 +124,79 @@ The pipeline exists to solve these problems: automated extraction from prose, wi
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart TD
-    A["about.md\n(volatile Chinese prose)"]
-    A -->|"agent.extract + keyword.map"| B["normalized.data\n(strict markdown tables)"]
-    B --> V1["agent.verify.schema\nkeyword.map ↔ normalized.data"]
-    B --> V2["agent.verify.coverage\nabout.md ↔ normalized.data"]
-    B -->|"human reviews diff"| C["code parser, ~100 LOC"]
-    C --> D["effects.yaml"]
-    C --> E["scaling_data"]
-    C --> F["combat_params"]
-    C --> G["effect_vectors"]
+    subgraph SRC ["Source of Truth"]
+        AB["about.md\n28 books, Chinese prose"]
+        KM["keyword.map.md\ntype system, 16 groups"]
+    end
+
+    AB -->|"read by"| EXT["agent.extract\n(LLM)"]
+    KM -->|"pins terminology"| EXT
+    EXT --> ND["normalized.data.md\nstrict tables + verbatim quotes"]
+
+    subgraph VER ["Verification — parallel"]
+        VS["agent.verify.schema\nstructure check"]
+        VC["agent.verify.coverage\ncontent check"]
+    end
+
+    ND --> VS
+    ND --> VC
+    KM -.->|"type defs"| VS
+    AB -.->|"source text"| VC
+
+    VS --> GATE{{"Human diff review"}}
+    VC --> GATE
+
+    subgraph PARSE ["Code Parsing — deterministic"]
+        PT["parse.ts\n~100 LOC"]
+        PG["parse.groups.ts"]
+    end
+
+    GATE --> PT
+    ND --> PT
+    KM -.->|"section headers"| PG
+
+    PT --> EY[("effects.yaml\n~300 effect rows")]
+    PG --> GY[("groups.yaml\n16 groups")]
+
+    subgraph ZOD ["Zod Schemas"]
+        ES["effect.ts\n60+ type union"]
+        EM["effect.model.ts"]
+        AFM["affix.model.ts"]
+        BMZ["book.model.ts"]
+        BSZ["bookset.model.ts"]
+    end
+
+    EY -.->|"validates"| ES
+
+    subgraph COMBAT ["Combat Model — 4-level pipeline"]
+        MAP["Map\neffect type --> factors"]
+        MY[("model.yaml\nstored")]
+        C1["Combinator 1\neffects --> affix vector"]
+        C2["Combinator 2\naffixes --> book vector"]
+        C3["Combinator 3\nbooks --> book-set mu, sigma"]
+    end
+
+    EY --> MAP
+    GY --> MAP
+    MAP --> MY --> C1 --> C2 --> C3
+
+    EM -.->|"validates"| MY
+    AFM -.->|"validates"| C1
+    BMZ -.->|"validates"| C2
+    BSZ -.->|"validates"| C3
+
+    subgraph DOWN ["Downstream"]
+        CAN["candidates.ts\nquery by category"]
+        EMB["Embedding analysis"]
+        SIM["Combat simulation"]
+        STR["Strategy docs\nchain, combos, pvp"]
+    end
+
+    EY --> CAN
+    GY --> CAN
+    C3 --> EMB
+    C3 --> SIM
+    CAN --> STR
 ```
 
 The pipeline has three stages:

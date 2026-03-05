@@ -1,7 +1,4 @@
----
-initial date: 2026-2-24
-dates of modification: [2026-2-24, 2026-2-25]
----
+<!-- Generated from TypeScript registry — do not edit manually -->
 
 <style>
 body {
@@ -30,6 +27,23 @@ code {
   color: #e5c07b !important;
   padding: 2px 6px !important;
   border-radius: 3px !important;
+}
+
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
 }
 
 table {
@@ -66,13 +80,14 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
 
@@ -124,12 +139,12 @@ strong {
 
 The Sword / Spell / Demon / Body schools share the following keyword patterns under their respective "shared mechanics" sections in about.md:
 
-| Effect Type | Chinese Pattern | Fields → Units | Notes |
-|:---|:---|:---|:---|
-| `fusion_flat_damage` | `第{n}重：本神通增加{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk | Identical structure across all four schools |
-| `mastery_extra_damage` | `化境（融合{n}重）：本神通对目标额外造成{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk | Identical structure across all four schools |
-| `enlightenment_damage` | `每次融合使本神通增加{x}%攻击力的悟境伤害` | `value`→%atk | Spell school values differ from the other three |
-| `cooldown` | `施法间隙：{x}秒` | `value`→seconds | Identical across all four schools |
+| Effect Type | Chinese Pattern | Fields → Units |
+|:---|:---|:---|
+| `fusion_flat_damage` | `第{n}重：本神通增加{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk |
+| `mastery_extra_damage` | `化境（融合{n}重）：本神通对目标额外造成{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk |
+| `enlightenment_damage` | `每次融合使本神通增加{x}%攻击力的悟境伤害` | `value`→%atk |
+| `cooldown` | `施法间隙：{x}秒` | `value`→seconds |
 
 ---
 
@@ -137,8 +152,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `base_attack` | `{n}段共(计){x}%攻击力的灵法伤害` | `hits`→count, `total`→%atk |
-| `base_attack` (single-hit variant) | `造成{x}%攻击力的灵法伤害` (no hit-count modifier) | `total`→%atk |
+| `base_attack` | `{n}段共(计){x}%攻击力的灵法伤害` / `造成{x}%攻击力的灵法伤害` | `hits`→count (optional), `total`→%atk (optional) |
 | `percent_max_hp_damage` | `每段攻击造成目标{x}%最大气血值的伤害（对怪物伤害不超过自身{z}%攻击力）` | `value`→%max_hp, `cap_vs_monster`→%atk |
 | `shield_destroy_damage` | `湮灭敌方{n}个护盾，并额外造成{x}%敌方最大气血值的伤害（对怪物最多造成{y}%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成{z}%攻击力的伤害）` | `shields_per_hit`→count, `percent_max_hp`→%max_hp, `cap_vs_monster`→%atk, `no_shield_double_cap`→%atk |
 
@@ -150,34 +164,60 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 ## §2. Damage Multiplier Zones
 
-| Effect Type | Chinese Pattern | Fields → Units |
-|:---|:---|:---|
-| `attack_bonus` | `提升{x}%攻击力的效果` | `value`→%stat |
-| `damage_increase` | `造成的伤害提升{x}%` / `伤害提升{x}%` / `提升{x}%伤害` | `value`→%stat |
-| `skill_damage_increase` | `提升{x}%神通伤害` / `{x}%的神通伤害加深` | `value`→%stat |
-| `enemy_skill_damage_reduction` | `目标对本神通提升{x}%神通伤害减免` | `value`→%stat |
-| `final_damage_bonus` | `最终伤害加深提升{x}%` | `value`→%stat |
-| `crit_damage_bonus` | `暴击伤害提升{x}%` / `致命伤害提升{x}%` | `value`→%stat |
-| `flat_extra_damage` | `(额外)造成{x}%攻击力的伤害` (as a lump-sum addition, not per-hit) | `value`→%atk |
+| Effect Type | Chinese Pattern | Fields → Units | Notes |
+|:---|:---|:---|:---|
+| `attack_bonus` | `提升{x}%攻击力的效果` | `value`→%stat |  |
+| `damage_increase` | `造成的伤害提升{x}%` / `伤害提升{x}%` / `提升{x}%伤害` | `value`→%stat |  |
+| `skill_damage_increase` | `提升{x}%神通伤害` / `{x}%的神通伤害加深` | `value`→%stat |  |
+| `enemy_skill_damage_reduction` | `目标对本神通提升{x}%神通伤害减免` | `value`→%stat |  |
+| `final_damage_bonus` | `最终伤害加深提升{x}%` | `value`→%stat |  |
+| `crit_damage_bonus` | `暴击伤害提升{x}%` / `致命伤害提升{x}%` | `value`→%stat |  |
+| `technique_damage_increase` | `{x}%的技能伤害加深` | `value`→%stat | No data instances in normalized.data.md yet |
+| `flat_extra_damage` | `(额外)造成{x}%攻击力的伤害` | `value`→%atk |  |
 
 > **Multiplier zone hierarchy** (inferred from 奇能诡道 descriptions):
 > - `伤害加深类` = { `神通伤害加深`, `技能伤害加深`, `最终伤害加深` }
 > - `神通伤害加深` → `skill_damage_increase`
+> - `技能伤害加深` → `technique_damage_increase`
 > - `最终伤害加深` → `final_damage_bonus`
 > - Bare `伤害` / `造成的伤害` → `damage_increase`
 
 ---
 
-## §3. Critical System
+## §3. Resonance System (会心)
+
+> **会心 ≠ 暴击.** The game has three distinct multiplier mechanics that were previously conflated under "Critical System." They are now separated into §3, §3b, and §3c. See the note at the end of §3c for details.
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `guaranteed_crit` | `必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍` | `base_mult`→multiplier, `enhanced_mult`→multiplier, `enhanced_chance`→probability |
-| `probability_multiplier` | `{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍` | `tiers`→list of {`prob`→cumulative\_probability, `mult`→multiplier} (ordered high to low: p1 corresponds to the highest multiplier) |
-| `conditional_crit` | `若敌方[condition]...必定暴击` | `condition`→string |
-| `conditional_crit_rate` | `暴击率提升{x}%` (appears inside a conditional clause) | `value`→probability, `condition`→string |
+| `guaranteed_resonance` | `必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍` | `base_mult`→multiplier, `enhanced_mult`→multiplier, `enhanced_chance`→probability |
 
+> **Mechanic**: 会心 (resonance) is a fixed multiplier on the entire skill's damage output. It is deterministic (always applies `base_mult`), with a probability-gated enhancement to `enhanced_mult`. No interaction with 暴击率 (crit rate) or 暴击伤害 (crit damage) stats. Examples: 【灵犀九重】(×2.97), 【通明】(×1.2).
+
+---
+
+## §3b. Synchrony System (心逐)
+
+| Effect Type | Chinese Pattern | Fields → Units |
+|:---|:---|:---|
+| `probability_multiplier` | `{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍` | `prob`→probability, `mult`→multiplier |
+
+> **Mechanic**: 心逐 (synchrony) multiplies **ALL** skill effects (damage, healing, debuffs), not just damage. It is an outer wrapper applied after the damage chain. This is a separate multiplier zone from 会心.
+>
 > **Cumulative probability note**: `probability_multiplier` (心逐神随) percentages are cumulative thresholds, not independent probabilities. The 悟2境 data (x=60, y=80, z=100, sum 240% > 100%) confirms this reading. Meaning: z% chance of at least ×m3, y% chance of at least ×m2, x% chance of ×m1. Marginals: P(×m1)=x, P(×m2)=y−x, P(×m3)=z−y, P(no boost)=100−z.
+
+---
+
+## §3c. Standard Crit (暴击)
+
+| Effect Type | Chinese Pattern | Fields → Units |
+|:---|:---|:---|
+| `conditional_crit` | `若敌方[condition]...必定暴击` | `condition`→string |
+| `conditional_crit_rate` | `暴击率提升{x}%` | `value`→probability, `condition`→string |
+
+> **Mechanic**: Standard crit system — scales with 暴击率 (crit rate) and 暴击伤害 (crit damage) stats. Separate multiplier zone from 会心 (resonance). Both can coexist on the same 灵書 and multiply independently.
+>
+> **Note on `crit_damage_bonus`**: The `crit_damage_bonus` type in §2 (mapping `暴击伤害提升` / `致命伤害提升`) correctly belongs to this system. 致命伤害 and 暴击伤害 are synonyms for the same standard crit damage stat.
 
 ---
 
@@ -186,7 +226,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
 | `conditional_damage` | `若敌方[condition]，则使本次伤害提升{x}%` / `攻击带有[state]的敌方时，(会使本次)伤害提升{x}%` / `伤害提升{x}%，若[condition]，(伤害提升效果)进一步提升至{y}%` | `value`→%stat, `condition`→string, `escalated_value`→%stat (optional) |
-| `conditional_buff` | `在神通悟境(的条件下)：本神通附加[stat]的伤害提高{x}%，并(且/使)造成的伤害提升{y}%` | `condition`→string, variable stat fields→%stat (see list below) |
+| `conditional_buff` | `在神通悟境(的条件下)：本神通附加[stat]的伤害提高{x}%，并(且/使)造成的伤害提升{y}%` | `condition`→string, `damage_increase`→%stat (optional), `percent_max_hp_increase`→%stat (optional), `percent_lost_hp_increase`→%stat (optional) |
 | `probability_to_certain` | `概率触发效果提升为必定触发` | *(no fields)* |
 | `ignore_damage_reduction` | `无视敌方所有伤害减免效果` | *(no fields)* |
 
@@ -266,13 +306,13 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `dot` | `每{t}秒(造成/受到){x}%攻击力的伤害，持续{d}秒` / `每{t}秒额外造成目标{x}%[hp_type]的伤害，持续{d}秒` | `tick_interval`→seconds, `duration`→seconds, `damage_per_tick`→%atk / `percent_current_hp`→%current_hp / `percent_lost_hp`→%lost_hp |
+| `dot` | `每{t}秒(造成/受到){x}%攻击力的伤害，持续{d}秒` / `每{t}秒额外造成目标{x}%[hp_type]的伤害，持续{d}秒` | `tick_interval`→seconds, `duration`→seconds, `damage_per_tick`→%atk (optional), `percent_current_hp`→%current_hp (optional), `percent_lost_hp`→%lost_hp (optional), `max_stacks`→count (optional) |
 | `shield_destroy_dot` | `每{t}秒对目标造成湮灭护盾的总个数*{x}%攻击力的伤害（若...敌方无护盾加持，则计算湮灭{n}个护盾）` | `tick_interval`→seconds, `per_shield_damage`→%atk, `no_shield_assumed`→count |
 | `dot_extra_per_tick` | `持续伤害触发时，额外造成目标{x}%已损失气血值的伤害` | `value`→%lost_hp |
 | `dot_damage_increase` | `持续伤害上升{x}%` / `持续伤害提升{x}%` | `value`→%stat |
 | `dot_frequency_increase` | `持续伤害效果触发间隙缩短{x}%` | `value`→%stat |
 | `extended_dot` | `技能结束后...额外持续存在{x}秒，每{t}秒造成一次伤害` | `extra_seconds`→seconds, `tick_interval`→seconds |
-| `on_dispel` | `若被驱散，立即受到{x}%攻击力的伤害，并眩晕{d}秒` | `damage`→%atk, `stun`→seconds |
+| `on_dispel` | `若被驱散，立即受到{x}%攻击力的伤害，并眩晕{d}秒` | `damage`→%atk (optional), `stun`→seconds (optional) |
 
 > **`[hp_type]` field values**:
 > - `当前气血值` → `percent_current_hp`
@@ -286,10 +326,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `self_buff` | `获得[name](状态)，提升自身{x}%的[stats]，持续{d}秒` / `[name]上限{n}层，持续{d}秒` | `name`→string, `duration`→seconds, `max_stacks`→count (optional), `attack_bonus`→%stat, `defense_bonus`→%stat, `hp_bonus`→%stat, `damage_reduction`→%stat (each optional) |
+| `self_buff` | `获得[name](状态)，提升自身{x}%的[stats]，持续{d}秒` / `[name]上限{n}层，持续{d}秒` | `duration`→seconds, `max_stacks`→count (optional), `attack_bonus`→%stat (optional), `defense_bonus`→%stat (optional), `hp_bonus`→%stat (optional), `damage_reduction`→%stat (optional), `healing_bonus`→%stat (optional) |
 | `self_buff_extend` | `延长{x}秒[name]持续时间` | `buff_name`→string, `value`→seconds |
-| `self_buff_extra` | `[name]状态额外使自身获得{x}%[stat]` | `buff_name`→string, variable stat field→%stat |
-| `counter_buff` | `每秒对目标反射自身所受到伤害值的{x}%与自身{y}%已损失气血值的伤害，持续{d}秒` | `name`→string, `duration`→seconds, `reflect_received_damage`→%stat, `reflect_percent_lost_hp`→%lost_hp |
+| `self_buff_extra` | `[name]状态额外使自身获得{x}%[stat]` | `buff_name`→string (optional), `healing_bonus`→%stat (optional), `value`→%stat (optional) |
+| `counter_buff` | `每秒对目标反射自身所受到伤害值的{x}%与自身{y}%已损失气血值的伤害，持续{d}秒` | `duration`→seconds, `reflect_received_damage`→%stat (optional), `reflect_percent_lost_hp`→%lost_hp (optional) |
 | `next_skill_buff` | `(使)下一个施放的神通(释放时)额外获得{x}%的神通伤害加深` | `stat`→string, `value`→%stat |
 | `enlightenment_bonus` | `悟境等级加{x}（最高不超过{m}级）` | `value`→count, `max`→count |
 
@@ -306,10 +346,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `debuff` | `对敌方添加持续{d}秒的[name]：[stat]降低{x}%` | `name`→string, `target`→string, `value`→%stat, `duration`→seconds, `dispellable`→bool (optional) |
-| `conditional_debuff` | `若敌方[condition]...[stat](降低/减少/增至){x}%` / `在神通悟境的条件下：...对目标施加[name]：[stat]减少{x}(倍/%)...` | `condition`→string, `name`→string (optional), `target`→string, `value`→%stat or multiplier, `duration`→seconds or `与触发的增益状态相同` (optional) |
-| `cross_slot_debuff` | `受到攻击时，额外给目标附加[name]：[stat]减低{x}%，持续{d}秒` | `name`→string, `target`→string, `value`→%stat, `duration`→seconds, `trigger`→string |
-| `counter_debuff` | `受到伤害时，各有{x}%概率对攻击方添加{n}层[name]...最多叠加{n}层...持续{d}秒` | `name`→string, `duration`→seconds, `on_attacked_chance`→probability, `max_stacks`→count, `effects`→list |
+| `debuff` | `对敌方添加持续{d}秒的[name]：[stat]降低{x}%` | `target`→string, `value`→%stat, `duration`→seconds, `dispellable`→bool (optional) |
+| `conditional_debuff` | `若敌方[condition]...[stat](降低/减少/增至){x}%` / `在神通悟境的条件下：...对目标施加[name]：[stat]减少{x}(倍/%)...` | `condition`→string, `target`→string, `value`→%stat, `duration`→seconds (optional), `per_hit`→bool (optional) |
+| `cross_slot_debuff` | `受到攻击时，额外给目标附加[name]：[stat]减低{x}%，持续{d}秒` | `target`→string, `value`→%stat, `duration`→seconds, `trigger`→string |
+| `counter_debuff` | `受到伤害时，各有{x}%概率对攻击方添加{n}层[name]...最多叠加{n}层...持续{d}秒` | `duration`→seconds, `on_attacked_chance`→probability, `max_stacks`→count (optional) |
 | `counter_debuff_upgrade` | `[原效果](状态下附加异常)概率提升至{x}%` | `on_attacked_chance`→probability |
 
 > **`target` field values** (debuff target attributes):
@@ -349,23 +389,18 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `delayed_burst` | `施加[name]，持续{d}秒。期间敌方受到的神通伤害增加{y}%，(并且)时间结束时，对目标造成{z}%期间提升的伤害+{w}%攻击力的伤害` | `name`→string, `duration`→seconds, `damage_increase_during`→%stat, `burst_base`→%atk, `burst_accumulated_pct`→%stat |
+| `delayed_burst` | `施加[name]，持续{d}秒。期间敌方受到的神通伤害增加{y}%，(并且)时间结束时，对目标造成{z}%期间提升的伤害+{w}%攻击力的伤害` | `duration`→seconds, `damage_increase_during`→%stat, `burst_base`→%atk, `burst_accumulated_pct`→%stat |
 | `delayed_burst_increase` | `[name]状态结束时的伤害提升{x}%` | `value`→%stat |
 
 ### §13.5 Random Effects
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `random_buff` | `获得以下任意1个加成：[效果列表]` | `options`→list of {type, value} |
-| `random_debuff` | `对敌方添加以下任意1个减益效果：[效果列表]` | `options`→list of {type, value} |
-
-> **Random effect option keywords**:
-> - `攻击提升{x}%` → `attack_bonus`
-> - `致命伤害提升{x}%` → `crit_damage_bonus`
-> - `造成的伤害提升{x}%` → `damage_increase`
-> - `攻击降低{x}%` → `attack_reduction`
-> - `暴击率降低{x}%` → `crit_rate_reduction`
-> - `暴击伤害降低{x}%` → `crit_damage_reduction`
+| `random_buff` | `获得以下任意1个加成：[效果列表]` | `options`→string (optional) |
+| `random_debuff` | `对敌方添加以下任意1个减益效果：[效果列表]` | `options`→string (optional) |
+| `attack_reduction` | `攻击降低{x}%` | `value`→%stat |
+| `crit_rate_reduction` | `暴击率降低{x}%` | `value`→%stat |
+| `crit_damage_reduction` | `暴击伤害降低{x}%` | `value`→%stat |
 
 ### §13.6 Stack-Based Damage
 
@@ -375,14 +410,22 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | `per_debuff_stack_damage` | `(敌方)每(有){n}层减益状态...伤害提升{x}%，最大(提升){m}%` | `per_n_stacks`→count, `value`→%stat, `max`→%stat, `dot_half`→bool (optional) |
 | `per_debuff_stack_true_damage` | `目标每有1层减益状态...额外造成目标{x}%最大气血值的真实伤害，最多(造成){m}%最大气血值的真实伤害` | `per_stack`→%max_hp, `max`→%max_hp |
 
-> **`dot_half`** corresponds to the keyword: `持续伤害效果受一半伤害加成`
-
 ### §13.7 Other Triggers
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
 | `on_buff_debuff_shield_trigger` | `每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害` | `damage_percent_of_skill`→%stat |
 | `conditional_heal_buff` | `(命中时，)若敌方具有减益状态，则提升自身{x}%的治疗量，持续{d}秒` | `condition`→string, `value`→%stat, `duration`→seconds |
+
+> **Random effect option keywords**:
+> - `攻击提升{x}%` → `attack_bonus`
+> - `致命伤害提升{x}%` → `crit_damage_bonus`
+> - `造成的伤害提升{x}%` → `damage_increase`
+> - `攻击降低{x}%` → `attack_reduction`
+> - `暴击率降低{x}%` → `crit_rate_reduction`
+> - `暴击伤害降低{x}%` → `crit_damage_reduction`
+>
+> **`dot_half`** corresponds to the keyword: `持续伤害效果受一半伤害加成`
 
 ---
 
@@ -436,15 +479,3 @@ The following game-mechanic-level details from about.md lack precise formulas an
 5. **碎魂剑意 "total annihilated shields" accumulation rule** — Per-tick damage = total count x {x}% ATK, but the accumulation method for "total count" (whether it resets across ticks, how shieldless targets are counted) is only partially described; the complete formula is undefined.
 
 6. **心逐神随 cumulative probabilities** — ~~Resolved~~. The 悟2境 data (x=60, y=80, z=100, sum 240%) confirms percentages are cumulative thresholds. At 悟0境, 49% (=100−z=100−51) is the no-boost probability; at 悟2境, 0% (=100−100) means guaranteed at least ×2.
-
----
-
-## Document History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-02-24 | Initial: keyword-to-effect-type mapping for all about.md patterns |
-| 1.1 | 2026-02-25 | Added formatting (frontmatter, style, author, history) |
-| 1.2 | 2026-02-25 | English version (keyword.map.md) |
-| 1.3 | 2026-02-25 | Added unit definitions table; fixed cross-references |
-| 1.4 | 2026-02-25 | Added `conditional_buff` canonical field names; added `on_last_hit`/`heal_equal` to `self_lost_hp_damage` fields; added `same_as_trigger` duration value |

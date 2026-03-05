@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-27
-dates of modification: [2026-2-27]
+dates of modification: [2026-2-27, 2026-3-5]
 ---
 
 <style>
@@ -190,7 +190,7 @@ Nodes that produce output to player terminals. Standalone value — no dependenc
 | `percent_max_hp_damage` | ← B.hp (max); → B.hp | %HP damage. Reads opponent max HP. |
 | `shield_destroy_damage` | ← B.shield; → B.hp | Bonus damage on shield destroy. |
 | `flat_extra_damage` | ← A.stats.attack; → B.hp | Flat ATK% added — additive, not multiplicative. |
-| `guaranteed_crit` | → B.hp (via crit multiplier) | Creates crit state with base multiplier. |
+| `guaranteed_resonance` | → B.hp (via crit multiplier) | Creates crit state with base multiplier. |
 | `conditional_crit` | ← B.state (condition); → B.hp | Guarantees crit when condition met. |
 | `dot` | → B.hp (periodic) | Periodic damage. |
 | `shield_destroy_dot` | ← B.shield (destroyed count); → B.hp | DoT scaling with shields destroyed. |
@@ -297,7 +297,46 @@ Nodes that create resources consumed by other nodes. Not damage themselves, but 
 | `self_hp_cost` | → A.hp (reduce) | A.hp_pct_lost | Spends own HP → creates HP loss for the HP chain. |
 | `self_damage_taken_increase` | ⇄ A.damage_taken (increase) | A.hp_pct_lost (faster) | Hidden enabler. Accelerates HP loss → feeds HP exploitation. |
 
-## V. Bridge Effects
+## V. Named Entity Layer
+
+Named entities are first-class nodes in the graph — not just category labels. Each has specific inputs, outputs, and operator ports that determine which affixes can amplify it. This is more specific than category-level binding: 【极怒】 is categorically "增益效果" (T3), but operationally it's a damage bridge, so affixes that amplify damage output (not buff strength) are the real synergies.
+
+| Named Entity | Created by | Transform | Inputs | Outputs | Operator Ports |
+|:---|:---|:---|:---|:---|:---|
+| 【极怒】 | `疾风九变` main + 星猿复灵 | Counter-reflect | ① received damage ② lost HP | reflected damage (50% of ① + 15% of ②) | Affixes targeting 伤害 (T1) or per_self_lost_hp (T9) amplify outputs |
+| 【仙佑】 | `甲元仙符` main | Self-buff | — (unconditional) | ATK+70%, DEF+70%, HP+70%, 12s | Affixes targeting 增益效果 (T3) amplify stat values/duration |
+| 【寂灭剑心】 | `皓月剑诀` main | Self-buff + %HP | — | buff + 12% max HP/hit | Affixes targeting 增益效果 (T3), 持续伤害 (T4) |
+| 【罗天魔咒】 | `大罗幻诀` main | Counter-debuff | enemy attacks | debuff stacks (30%/attack) → DoT children | Affixes targeting 减益效果 (T2), 持续伤害 (T4), 概率触发 (T8) |
+| 【怒灵降世】 | `十方真魄` main | Self-buff | — | ATK+20%, DR+20%, 7.5s | Affixes targeting 增益效果 (T3) |
+| 【无相魔劫】 | `无相魔劫咒` main | Delayed burst | — | accumulated → burst | Affixes targeting 伤害 (T1) |
+
+> **Key principle.** A named entity's operator ports define which affixes can amplify it. The chain discovery algorithm (§VIII) uses these ports to trace which affixes actually feed a named entity's inputs vs. merely sharing a category label.
+
+## VI. Platform Provides Registry
+
+Each platform (main skill + primary affix) makes a specific set of target categories available. This is the starting point for combo search: given a platform choice, what's the set of affixes that can function?
+
+Target categories from [domain.category.md](./domain.category.md) §Target Categories.
+
+| Platform | Named Entities | Target Categories Provided |
+|:---|:---|:---|
+| `千锋聚灵剑` + 惊神剑光 | — | T1 |
+| `春黎剑阵` + 幻象剑灵 | — | T1 |
+| `皓月剑诀` + 碎魂剑意 | 寂灭剑心 | T1, T3, T4 |
+| `念剑诀` + 雷阵剑影 | — | T1, T4 |
+| `甲元仙符` + 天光虹露 | 仙佑 | T1, T3, T6 |
+| `大罗幻诀` + 魔魂咒界 | 罗天魔咒 | T1, T2, T4, T7, T8 |
+| `无相魔劫咒` + 灭劫魔威 | 无相魔劫 | T1, T2, T7 |
+| `十方真魄` + 星猿弃天 | 怒灵降世 | T1, T3, T6, T9 |
+| `疾风九变` + 星猿复灵 | 极怒 | T1, T3, T6, T9 |
+
+> **Reading the table.** An affix with `requires=T4` (e.g., 【鬼印】, 【古魔之魂】) can only function on a platform that provides T4. From the table: `皓月剑诀`, `念剑诀`, and `大罗幻诀` provide T4. All other platforms require an auxiliary affix that `provides=T4` (e.g., 【玄心剑魄】) before DoT amplifiers become valid.
+
+---
+
+## VII. Bridge Effects
+
+> Section renumbered from V. See §V Named Entity Layer and §VI Platform Provides Registry for new sections.
 
 Some effect types connect two otherwise separate chains. These are the most valuable nodes in the graph — they create paths that wouldn't exist without them.
 
@@ -315,7 +354,7 @@ Some effect types connect two otherwise separate chains. These are the most valu
 | HP Loss → Damage | Self HP lost | Damage scaling | `per_self_lost_hp` | 【怒血战意】(2%/%), 【战意】(0.5%/%) |
 | Self Damage Taken → HP Loss | Incoming damage amplification | HP loss resource | `self_damage_taken_increase` | 【破釜沉舟】(+50% damage taken) |
 
-## VI. Feedback Loops
+## VIII. Feedback Loops
 
 The closed graph contains cycles. These are not bugs — they are the game's depth.
 
@@ -349,18 +388,57 @@ self_hp_cost loses HP → per_self_lost_hp scales damage → lifesteal recovers 
 ```
 Sustainable HP exploitation cycle. 【破釜沉舟】accelerates the loss side; 【仙灵汲元】sustains the recovery side.
 
-## VII. Chain Discovery Algorithm
+## IX. Chain Discovery Algorithm
 
-Given the port annotations, chains can be discovered systematically:
+Given the port annotations and the operator model (§V–VI), chains can be discovered systematically. The revised algorithm adds platform-first pruning (steps 1–2) to the original graph search (steps 3–8).
 
-1. **Enumerate all source nodes** (effect types with empty `consumes` or terminal connectors reading from A/B)
-2. **For each source, follow modifier edges** to find what amplifies it
-3. **For each amplifier, check input ports** — what resources must exist for the amplifier to function?
-4. **Follow bridge edges** to discover cross-chain paths
-5. **Detect cycles** to find feedback loops
-6. **Prune dead ends** — nodes with unmatched input ports (no source provides their required resource)
+1. **Select platform** — choose main skill + primary affix → get target categories provided (from §VI Platform Provides Registry)
+2. **Filter operators** — for each affix candidate, check: does the platform (or another selected affix) provide what it `requires`? If `requires=T_N` and no provider of T_N exists → prune. This is the operator model pruning layer.
+3. **Enumerate all source nodes** from platform + selected affixes with `provides`
+4. **For each source, follow modifier edges** to find what amplifies it
+5. **For each amplifier, check input ports** — resources must exist in the selected subgraph
+6. **Follow bridge edges** for cross-chain paths
+7. **Detect cycles** for feedback loops
+8. **Prune dead ends** — nodes with unmatched input ports (no source provides their required resource)
 
-A chain is valid when every node in it has all input ports satisfied by other nodes in the selected subgraph.
+Steps 1–2 are the **pruning layer** (operator model). Steps 3–8 are the **search layer** (graph framework). A chain is valid when every node in it has all input ports satisfied by other nodes in the selected subgraph.
+
+> **【极怒】 test.** Platform `疾风九变` + 星猿复灵 provides T1, T3, T6, T9. Step 2 admits affixes with `requires∈{free, T1, T3, T6, T9}`. Step 3 identifies 极怒's inputs: ① received damage (from `self_damage_intake` connector), ② lost HP (from `self_hp_resource`). Step 4 finds 【破釜沉舟】 feeds input ① via `self_damage_taken_increase` (+50% damage taken → more received damage), and 【怒血战意】/【战意】 exploit input ② via `per_self_lost_hp` (both `requires=T9`, satisfied by platform). The algorithm mechanically deduces the HP exploitation chain without hand-waving.
+
+## X. Construction Constraints
+
+Formalized from `data/raw/构造规则.md`. These are hard constraints that any valid book set must satisfy.
+
+### Slot composition
+
+- Each 灵书 has **1 主位** (main book) + **2 辅助位** (auxiliary books)
+- The main book determines: the main skill, the primary affix (主词缀), and the exclusive affix (专属词缀)
+- Each auxiliary position draws one 副词缀 (random from the auxiliary book's affix pool)
+- A 灵书 set has **6 灵书**
+
+### Uniqueness constraints
+
+| Constraint | Scope | Rule | Consequence |
+|:---|:---|:---|:---|
+| **核心冲突** (Core conflict) | 主位 across set | Each book appears at most once in 主位 across all 6 灵书 | No duplicate main skills |
+| **副词缀冲突** (Affix conflict) | All 副词缀 across set | Each affix appears at most once across the entire set | Universal/school affixes are one-time resources |
+
+### School matching
+
+- School affixes (修为词缀) must match the school of the 灵书's main book
+- A 剑修 main book can only use 剑修 school affixes in its auxiliary positions
+- Cross-school universal affixes (通用词缀) have no school restriction
+
+### Exclusive locking
+
+- Each book's exclusive affix (专属词缀) is locked to that book
+- Choosing a book as main implicitly selects its exclusive affix
+- The exclusive affix appears only when the book is in an auxiliary position AND its exclusive is rolled
+
+### Same-skill scope
+
+- Effect modifiers that specify "本神通" (this skill) only apply within one 灵书
+- Cross-slot effects (like `next_skill_buff`, `cross_slot_debuff`) are explicitly annotated
 
 ---
 
@@ -369,3 +447,4 @@ A chain is valid when every node in it has all input ports satisfied by other no
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-02-27 | Initial: closed graph model, player terminals, 4 connector types, 75 effect type port annotations, bridge effects, feedback loops, chain discovery algorithm |
+| 2.0 | 2026-03-05 | Add §V Named Entity Layer (6 entities with transforms/ports), §VI Platform Provides Registry (9 platforms with target categories). Revise Chain Discovery Algorithm (6→8 steps with platform-first pruning). Add §X Construction Constraints (slot composition, uniqueness, school matching, scope rules). Renumber §V–VII → §VII–IX. |

@@ -32,6 +32,23 @@ code {
   border-radius: 3px !important;
 }
 
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
 table {
   border-collapse: collapse !important;
   width: auto !important;
@@ -66,13 +83,14 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
 
@@ -711,7 +729,7 @@ strong {
 | 【灵盾】 | shield_strength | value=20 | |
 | 【灵威】 | next_skill_buff | stat=skill_damage_increase, value=118 | max_fusion |
 | 【摧山】 | attack_bonus | value=20 | |
-| 【通明】 | guaranteed_crit | base_mult=1.2, enhanced_mult=1.5, enhanced_chance=25 | |
+| 【通明】 | guaranteed_resonance | base_mult=1.2, enhanced_mult=1.5, enhanced_chance=25 | |
 
 ---
 
@@ -728,7 +746,7 @@ strong {
 | affix | effect_type | fields | data_state |
 |:---|:---|:---|:---|
 | 【摧云折月】 | attack_bonus | value=55 | |
-| 【灵犀九重】 | guaranteed_crit | base_mult=2.97, enhanced_mult=3.97, enhanced_chance=25 | max_fusion |
+| 【灵犀九重】 | guaranteed_resonance | base_mult=2.97, enhanced_mult=3.97, enhanced_chance=25 | max_fusion |
 | 【破碎无双】 | attack_bonus | value=15 | |
 | 【破碎无双】 | damage_increase | value=15 | |
 | 【破碎无双】 | crit_damage_bonus | value=15 | |

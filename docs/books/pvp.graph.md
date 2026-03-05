@@ -66,13 +66,14 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
 
@@ -97,20 +98,20 @@ The asymmetry is the scenario. It shapes which chains are viable.
 
 The build selects 6 paths, one per slot. Each path is a subgraph connecting Player A to Player B through effect nodes.
 
-#### Path 1 — Crit Burst (Slot 1: 春黎剣阵 + 解体化形 + 【灵犀九重】)
+#### Path 1 — Crit Burst (Slot 1: 春黎剑阵 + 解体化形 + 【灵犀九重】)
 
 ```
 A.stats.attack
   → base_attack (22305%, 5 hits)
     → probability_multiplier (×2-4, cross-cutting)
-      → guaranteed_crit (×2.97, 25% ×3.97)
+      → guaranteed_resonance (×2.97, 25% ×3.97)
         → B.hp (E ≈ ×10.95 at 悟2)
 
   → summon (分身, 16s, 54% stats, +200% damage)
     → B.hp (autonomous, follows Slots 2-3)
 ```
 
-**Nodes used:** 2 sources (base_attack, summon), 1 cross-cutting amplifier (probability_multiplier), 1 source (guaranteed_crit)
+**Nodes used:** 2 sources (base_attack, summon), 1 cross-cutting amplifier (probability_multiplier), 1 source (guaranteed_resonance)
 **Terminal connectors:** A.stats → graph → B.hp
 **Cross-path output:** summon persists 16s, amplifying Paths 2-3
 
@@ -173,7 +174,7 @@ A.damage_taken (opponent attacks)
 **Cross-path output:** 命損 removes B.damage_reduction for 8s → enables Path 5. Debuff stacks persist → feeds Path 5's per_debuff_stack_true_damage.
 **Opponent-driven input:** counter_debuff reads B's attacks — the more the opponent attacks, the more debuff stacks accumulate. Feedback loop 4.
 
-#### Path 5 — HP Exploitation Kill (Slot 5: 千锋聚灵剣 + 【怒血战意】 + 【紫心真诀】)
+#### Path 5 — HP Exploitation Kill (Slot 5: 千锋聚灵剑 + 【怒血战意】 + 【紫心真诀】)
 
 ```
 B.damage → A.hp_pct_lost (opponent is stronger → fast HP loss)
@@ -267,7 +268,7 @@ graph LR
 
 | Chain | Nodes in build | Complete? |
 |:---|:---|:---|
-| Crit | guaranteed_crit, probability_multiplier | Yes — source + cross-cutting amplifier |
+| Crit | guaranteed_resonance, probability_multiplier | Yes — source + cross-cutting amplifier |
 | Self Buff | self_buff → buff_strength → buff_duration | Yes — source + 2 amplifiers |
 | Debuff Stacking | counter_debuff → debuff_stack_increase → per_debuff_stack_damage | Yes |
 | DoT | dot → dot_extra_per_tick | Partial — no dot_damage_increase, no dot_frequency_increase, no extended_dot |
@@ -371,7 +372,7 @@ For the first time, we can model the opponent concretely. ye.1 reordered:
 
 | Slot | Book | Key effects |
 |:---|:---|:---|
-| 1 | 春黎剣阵 (Burst) | base_attack + summon + 【天命有归】(probability_to_certain + damage_increase 50%) |
+| 1 | 春黎剑阵 (Burst) | base_attack + summon + 【天命有归】(probability_to_certain + damage_increase 50%) |
 | 2 | 皓月剑诀 (Exploit) | base_attack + percent_max_hp + shield_destroy + dot |
 | 3 | 甲元仙符 (Amplify) | self_buff (仙佑 +70%, 12s, no duration extension) |
 | 4 | 大罗幻诀 (Suppress) | counter_debuff + cross_slot_debuff (命損) |
@@ -424,9 +425,9 @@ The three-layer advantage from pvp.md maps directly to graph properties:
 
 ### What the model doesn't capture
 
-1. **Temporal sequencing within a slot.** The graph shows inter-path dependencies but not the firing order within a skill. 春黎剣阵's summon activates during the skill, not after — timing within the cast window matters but isn't modeled.
+1. **Temporal sequencing within a slot.** The graph shows inter-path dependencies but not the firing order within a skill. 春黎剑阵's summon activates during the skill, not after — timing within the cast window matters but isn't modeled.
 
-2. **Probabilistic edges.** probability_multiplier is ×2-4 with probabilities, not a fixed weight. guaranteed_crit is 75%/25% on two tiers. The graph has unweighted edges; a weighted version would distinguish ×6.00 deterministic from E=10.95 stochastic.
+2. **Probabilistic edges.** probability_multiplier is ×2-4 with probabilities, not a fixed weight. guaranteed_resonance is 75%/25% on two tiers. The graph has unweighted edges; a weighted version would distinguish ×6.00 deterministic from E=10.95 stochastic.
 
 3. **Diminishing returns between zones.** Multiple damage_increase amplifiers in different slots are additive within the same zone but multiplicative across zones. The graph doesn't model zone interactions — two +50% damage_increase nodes don't produce ×2.25, they produce ×2.00.
 

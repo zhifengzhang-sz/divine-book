@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-27
-dates of modification: [2026-2-27]
+dates of modification: [2026-2-27, 2026-3-5]
 ---
 
 <style>
@@ -96,7 +96,7 @@ strong {
 | `base_attack` | Base skill damage (% ATK, per hit) |
 | `percent_max_hp_damage` | Damage as % of target's max HP |
 | `flat_extra_damage` | Flat bonus damage added to each hit (% ATK, additive) |
-| `guaranteed_crit` | Guaranteed critical hit with fixed multiplier |
+| `guaranteed_resonance` | Guaranteed critical hit with fixed multiplier |
 | `conditional_crit` | Guaranteed critical hit when condition is met |
 | `dot` | Damage over time (periodic ticks) |
 | `shield_destroy_damage` | Bonus damage when destroying enemy shield |
@@ -175,22 +175,22 @@ strong {
 
 ## I. Offense Paths (A → B.hp)
 
-| # | Path | Nodes | Book Chains |
-|:---|:---|:---|:---|
-| O1 | Direct damage | `base_attack` | All 9 detailed books (main skill) |
-| O2 | %HP damage | `percent_max_hp_damage` | `千锋聚灵剑`(main: 27%×6)<br>`皓月剑诀`(main via 寂灭剑心: 12%×10) |
-| O3 | Flat extra damage | `flat_extra_damage` | `any skill book`(【斩岳】)<br>`any 体修 book`(【破灭天光】) |
-| O4 | Crit | `guaranteed_crit`, `conditional_crit` | `any skill book`(【通明】)<br>`any 剑修 book`(【灵犀九重】)<br>`any 魔修 book`(【溃魂击瑕】) — conditional: target HP < 30% |
-| O5 | DoT chain | `dot` → amplifiers | See [O5 expanded](#o5-dot-chain) |
-| O6 | Shield-destroy | `shield_destroy_damage`, `shield_destroy_dot` | `皓月剑诀`(main + primary 碎魂剑意) — self-contained |
-| O7 | Delayed burst | `delayed_burst`, `delayed_burst_increase` | `无相魔劫咒`(main + primary 灭劫魔威) — self-contained |
-| O8 | Summon | `summon`, `summon_buff` | `春黎剑阵`(main + primary 幻象剑灵) — self-contained |
-| O9 | Dispel damage | `periodic_dispel` | `天煞破虚诀`(【天煞破虚】) |
-| O10 | Counter reflect | `counter_buff` | `疾风九变`(main: 极怒) |
-| O11 | On-dispel burst | `on_dispel` | `春黎剑阵`(【玄心剑魄】) |
-| O12 | Self-HP → damage | `self_lost_hp_damage` | `十方真魄`(main: 16% lost HP) |
-| O13 | State-trigger damage | `on_buff_debuff_shield_trigger` | See [O13 expanded](#o13-state-trigger-damage) |
-| O14 | True damage (stacks) | `per_debuff_stack_true_damage` | See [O14 expanded](#o14-true-damage) |
+| # | Path | requires | Nodes | Book Chains |
+|:---|:---|:---|:---|:---|
+| O1 | Direct damage | free | `base_attack` | All 9 detailed books (main skill) |
+| O2 | %HP damage | free | `percent_max_hp_damage` | `千锋聚灵剑`(main: 27%×6)<br>`皓月剑诀`(main via 寂灭剑心: 12%×10) |
+| O3 | Flat extra damage | free | `flat_extra_damage` | `any skill book`(【斩岳】)<br>`any 体修 book`(【破灭天光】) |
+| O4 | Crit | free | `guaranteed_resonance`, `conditional_crit` | `any skill book`(【通明】)<br>`any 剑修 book`(【灵犀九重】)<br>`any 魔修 book`(【溃魂击瑕】) — conditional: target HP < 30% |
+| O5 | DoT chain | T4 | `dot` → amplifiers | See [O5 expanded](#o5-dot-chain) |
+| O6 | Shield-destroy | free | `shield_destroy_damage`, `shield_destroy_dot` | `皓月剑诀`(main + primary 碎魂剑意) — self-contained |
+| O7 | Delayed burst | free | `delayed_burst`, `delayed_burst_increase` | `无相魔劫咒`(main + primary 灭劫魔威) — self-contained |
+| O8 | Summon | free | `summon`, `summon_buff` | `春黎剑阵`(main + primary 幻象剑灵) — self-contained |
+| O9 | Dispel damage | free | `periodic_dispel` | `天煞破虚诀`(【天煞破虚】) |
+| O10 | Counter reflect | free | `counter_buff` | `疾风九变`(main: 极怒) |
+| O11 | On-dispel burst | T4 | `on_dispel` | `春黎剑阵`(【玄心剑魄】) |
+| O12 | Self-HP → damage | T9 | `self_lost_hp_damage` | `十方真魄`(main: 16% lost HP) |
+| O13 | State-trigger damage | T3∨T2∨T5 | `on_buff_debuff_shield_trigger` | See [O13 expanded](#o13-state-trigger-damage) |
+| O14 | True damage (stacks) | T2 | `per_debuff_stack_true_damage` | See [O14 expanded](#o14-true-damage) |
 
 ### O5 DoT chain
 
@@ -236,19 +236,19 @@ Nodes: `per_debuff_stack_true_damage` — needs debuff stacks on enemy
 
 ## II. Bridge Paths (resource conversion)
 
-| # | Path | Conversion | Book Chains |
-|:---|:---|:---|:---|
-| B1 | Damage → Healing | `lifesteal` | `星元化岳`(【仙灵汲元】)<br>`疾风九变`(primary 星猿复灵)<br>`星元化岳`(【仙灵汲元】) + `any 法修 book`(【长生天则】)<br>`疾风九变`(primary 星猿复灵) + `any 法修 book`(【长生天则】) |
-| B2 | Healing → Damage | `healing_to_damage` | `any 魔修 book`(【瑶光却邪】) + `星元化岳`(【仙灵汲元】)<br>`any 魔修 book`(【瑶光却邪】) + `疾风九变`(primary 星猿复灵)<br>`any 魔修 book`(【瑶光却邪】) + `天剎真魔`(【魔骨明心】) |
-| B3 | Damage → Shield | `damage_to_shield` | `any 魔修 book`(【玄女护心】)<br>`any 魔修 book`(【玄女护心】) + `any skill book`(【灵盾】)<br>`any 魔修 book`(【玄女护心】) + `any 体修 book`(【青云灵盾】) |
-| B4 | Shield → Damage | `on_shield_expire` | `九重天凤诀`(【玉石俱焚】) + `any 魔修 book`(【玄女护心】) |
-| B5 | Buff stacks → Damage | `per_buff_stack_damage` | `元磁神光`(【真极穿空】) + any buff-stacking source |
-| B6 | Debuff stacks → Damage | `per_debuff_stack_damage` | `天轮魔经`(【心魔惑言】) + any debuff source |
-| B7 | Own HP loss → Damage | `per_self_lost_hp` | See [B7 expanded](#b7-own-hp-loss--damage) |
-| B8 | Enemy HP loss → Damage | `per_enemy_lost_hp` | `any skill book`(【吞海】)<br>`any 体修 book`(【贪狼吞星】) |
-| B9 | Opponent attack → Debuffs | `counter_debuff` | See [B9 expanded](#b9-opponent-attack--debuffs) |
-| B10 | Opponent attack → Damage | `counter_buff` | `疾风九变`(main: 极怒 50% reflect + 15% lost HP) |
-| B11 | Self buff → Opponent debuff | `conditional_debuff` | `周天星元`(【奇能诡道】) + `甲元仙符`(main: 仙佑)<br>`周天星元`(【奇能诡道】) + `十方真魄`(main: 怒灵降世)<br>`周天星元`(【奇能诡道】) + any damage-increase buff source |
+| # | Path | requires | Conversion | Book Chains |
+|:---|:---|:---|:---|:---|
+| B1 | Damage → Healing | T6 source | `lifesteal` | `星元化岳`(【仙灵汲元】)<br>`疾风九变`(primary 星猿复灵)<br>`星元化岳`(【仙灵汲元】) + `any 法修 book`(【长生天则】)<br>`疾风九变`(primary 星猿复灵) + `any 法修 book`(【长生天则】) |
+| B2 | Healing → Damage | T6 | `healing_to_damage` | `any 魔修 book`(【瑶光却邪】) + `星元化岳`(【仙灵汲元】)<br>`any 魔修 book`(【瑶光却邪】) + `疾风九变`(primary 星猿复灵)<br>`any 魔修 book`(【瑶光却邪】) + `天剎真魔`(【魔骨明心】) |
+| B3 | Damage → Shield | T5 creation | `damage_to_shield` | `any 魔修 book`(【玄女护心】)<br>`any 魔修 book`(【玄女护心】) + `any skill book`(【灵盾】)<br>`any 魔修 book`(【玄女护心】) + `any 体修 book`(【青云灵盾】) |
+| B4 | Shield → Damage | T5 | `on_shield_expire` | `九重天凤诀`(【玉石俱焚】) + `any 魔修 book`(【玄女护心】) |
+| B5 | Buff stacks → Damage | T3 | `per_buff_stack_damage` | `元磁神光`(【真极穿空】) + any buff-stacking source |
+| B6 | Debuff stacks → Damage | T2 | `per_debuff_stack_damage` | `天轮魔经`(【心魔惑言】) + any debuff source |
+| B7 | Own HP loss → Damage | T9 | `per_self_lost_hp` | See [B7 expanded](#b7-own-hp-loss--damage) |
+| B8 | Enemy HP loss → Damage | free | `per_enemy_lost_hp` | `any skill book`(【吞海】)<br>`any 体修 book`(【贪狼吞星】) |
+| B9 | Opponent attack → Debuffs | T2 source | `counter_debuff` | See [B9 expanded](#b9-opponent-attack--debuffs) |
+| B10 | Opponent attack → Damage | free | `counter_buff` | `疾风九变`(main: 极怒 50% reflect + 15% lost HP) |
+| B11 | Self buff → Opponent debuff | T3∧T2 | `conditional_debuff` | `周天星元`(【奇能诡道】) + `甲元仙符`(main: 仙佑)<br>`周天星元`(【奇能诡道】) + `十方真魄`(main: 怒灵降世)<br>`周天星元`(【奇能诡道】) + any damage-increase buff source |
 
 ### B7 Own HP loss → Damage
 
@@ -504,7 +504,85 @@ Source: 【破釜沉舟】(`十方真魄` exclusive, also `skill_damage_increase
 
 ---
 
-## IX. Structural Properties
+## IX. Platform-Projected Paths
+
+Given a platform choice, which paths are accessible and which require external providers? This is the "projected path" view — the combo search space for each platform.
+
+### `千锋聚灵剑` + 惊神剑光
+
+- **Platform provides:** T1
+- **Named entities:** —
+- **Accessible (free/T1):** O1, O2, O3, O4, O6, A1, A2, A3, A4, A5, A6, A8, X3
+- **Inaccessible without provider:** O5 (T4), O12 (T9), O13 (T3∨T2∨T5), O14 (T2), B1 (T6), B3 (T5), B7 (T9), B11 (T3∧T2)
+- **Unlockable by aux affixes:** 【天哀灵涸】 unlocks T2 → O14, A6#5; 【玄心剑魄】 unlocks T4 → O5
+
+### `春黎剑阵` + 幻象剑灵
+
+- **Platform provides:** T1
+- **Named entities:** —
+- **Accessible:** O1, O3, O4, O8, A1, A2, A3, A4, A5, A6, A8, X3
+- **Inaccessible without provider:** O5 (T4), O12 (T9), O13 (T3∨T2∨T5), O14 (T2), B1 (T6), B3 (T5), B7 (T9)
+- **Key exclusive:** 【玄心剑魄】 (`provides=T4`) unlocks the entire DoT chain (O5, O11)
+
+### `皓月剑诀` + 碎魂剑意
+
+- **Platform provides:** T1, T3, T4
+- **Named entities:** 寂灭剑心
+- **Accessible:** O1, O2, O3, O4, O5, O6, O11, A1–A8, X2, X3, S1
+- **Inaccessible without provider:** O12 (T9), O13 (needs T2∨T5 beyond T3), O14 (T2), B1 (T6), B3 (T5), B7 (T9)
+- **Key operators:** DoT amplifiers (【古魔之魂】, 【天魔真解】, 【鬼印】) all active due to T4
+
+### `念剑诀` + 雷阵剑影
+
+- **Platform provides:** T1, T4
+- **Named entities:** —
+- **Accessible:** O1, O3, O4, O5, V2, A1–A8, X2, X3
+- **Inaccessible without provider:** O12 (T9), O13 (T3∨T2∨T5), O14 (T2), B1 (T6), B3 (T5), B7 (T9), S1 (T3)
+- **Key feature:** V2 (untargetable 4s) is unique to this platform
+
+### `甲元仙符` + 天光虹露
+
+- **Platform provides:** T1, T3, T6
+- **Named entities:** 仙佑
+- **Accessible:** O1, O3, O4, B1, B2, B5, S1, S4, V5, A1–A6, X2
+- **Inaccessible without provider:** O5 (T4), O12 (T9), O14 (T2), B3 (T5), B7 (T9)
+- **Key operators:** 【龙象护身】 amplifies 仙佑 (T3 satisfied); 【仙露护元】 extends 仙佑; healing chain (T6) enables 【长生天则】, 【瑶光却邪】
+
+### `大罗幻诀` + 魔魂咒界
+
+- **Platform provides:** T1, T2, T4, T7, T8
+- **Named entities:** 罗天魔咒
+- **Accessible:** O1, O3, O4, O5, O14, B6, B9, D1–D7, A1–A6, X2
+- **Inaccessible without provider:** O12 (T9), B1 (T6), B3 (T5), B7 (T9), S1 (T3)
+- **Key operators:** 【古魔之魂】 + 【天魔真解】 amplify DoTs (T4); 【引灵摘魂】 (T2 satisfied); 【天命有归】 converts 罗天魔咒 30% → 100% (T8 satisfied); 【心魔惑言】 doubles debuff stacks (T2 satisfied)
+
+### `无相魔劫咒` + 灭劫魔威
+
+- **Platform provides:** T1, T2, T7
+- **Named entities:** 无相魔劫
+- **Accessible:** O1, O3, O4, O7, D1, D5, A1–A6, X2
+- **Inaccessible without provider:** O5 (T4), O12 (T9), B1 (T6), B3 (T5), B7 (T9), S1 (T3)
+- **Key operators:** 【无相魔威】 provides T2 (anti-heal debuff); 【引灵摘魂】 (T2 satisfied); anti-heal stacking with 【天哀灵涸】/【天倾灵枯】 pushes 【无相魔威】 to +205%
+
+### `十方真魄` + 星猿弃天
+
+- **Platform provides:** T1, T3, T6, T9
+- **Named entities:** 怒灵降世
+- **Accessible:** O1, O3, O4, O12, B1, B7, B8, V1, V4, V5, S1, A1–A6, X2, E2, E4, E5
+- **Inaccessible without provider:** O5 (T4), B3 (T5), B4 (T5), O14 (T2 — needs external debuff stacks)
+- **Key operators:** 【怒血战意】 (`requires=T9`, satisfied: +2%/1% HP lost), 【意坠深渊】 (`provides=T9`, floor 11%), 【破釜沉舟】 (`provides=T9`, accelerator +50% damage taken)
+
+### `疾风九变` + 星猿复灵
+
+- **Platform provides:** T1, T3, T6, T9
+- **Named entities:** 极怒
+- **Accessible:** O1, O3, O4, O10, B1, B7, B8, B10, V1, V5, S1, A1–A6, X2, E2, E4, E5
+- **Inaccessible without provider:** O5 (T4), B3 (T5), B4 (T5), O14 (T2)
+- **Key operators:** 【破釜沉舟】 feeds 极怒 input ① (self_damage_taken_increase → more received damage → more reflected), 【怒血战意】/【战意】 exploit 极怒 input ② (per_self_lost_hp from T9), 【仙灵汲元】 creates healing sustain alongside 星猿复灵's lifesteal
+
+---
+
+## X. Structural Properties
 
 ### Bottleneck paths
 
@@ -576,6 +654,38 @@ Affixes with **identical port signatures** — direct substitutes in the same ch
 
 > All 61 affixes and all 9 detailed skill books appear in at least one chain. The 19 exclusive-affix-only books are covered through their exclusive affixes.
 
+### Provides bottlenecks
+
+Target categories with **few providers** — if the sole provider is excluded, all dependents die.
+
+| Target | Exclusive providers | Platform providers | Bottleneck? |
+|:---|:---|:---|:---|
+| T4 (持续伤害) | 【玄心剑魄】 (sole aux provider) | `皓月剑诀`, `念剑诀`, `大罗幻诀` | Yes — outside these 3 platforms, only 【玄心剑魄】 enables DoT amplifiers |
+| T5 (护盾) | 【玄女护心】 (sole aux provider) | — (no platform provides T5) | **Severe** — ALL shield-dependent affixes (【灵盾】, 【青云灵盾】, 【玉石俱焚】) need this one Demon school affix |
+| T6 (治疗效果) | 【仙灵汲元】, 【魔骨明心】 (2 providers) | `甲元仙符`, `十方真魄`, `疾风九变` | Moderate — 3 platforms provide T6 directly, 2 aux affixes can add it |
+| T8 (概率触发) | — | `大罗幻诀` (sole platform) | Yes — 大罗幻诀 is the only platform with probability-gated mechanics |
+| T9 (已损气血) | 【破釜沉舟】, 【意坠深渊】 (2 aux providers) | `十方真魄`, `疾风九变` | Moderate — 2 platforms + 2 aux providers |
+| T10 (控制效果) | — (no affix provides T10) | — (no platform provides T10) | **External** — CC comes from external sources (PvP opponent, game mechanics), not from the affix system |
+
+### Provides richness
+
+Target categories with **many providers** — maximum construction flexibility.
+
+| Target | Provider count | Providers |
+|:---|:---|:---|
+| T2 (减益效果) | 7 exclusive + 1 school | 【天哀灵涸】, 【天倾灵枯】, 【无相魔威】, 【奇能诡道】, 【祸星无妄】, 【天煞破虚】 (exclusive); 大罗幻诀/无相魔劫咒 (platform); 【祸星无妄】 (school) |
+| T3 (增益效果) | 2 universal + platform | 【福荫】, 【景星天佑】 (aux); `甲元仙符`, `十方真魄`, `疾风九变`, `皓月剑诀` (platform) |
+
+### Named entity monopolies
+
+Named entities that are the **sole bridge** to specific paths.
+
+| Named entity | Unique bridge | Implication |
+|:---|:---|:---|
+| 极怒 | Only `counter_buff` source → O10 + B10 | Counter-reflect damage path requires `疾风九变` platform |
+| 罗天魔咒 | Only `counter_debuff` source → B9 | Counter-debuff stacking path requires `大罗幻诀` platform |
+| 无相魔劫 | Only `delayed_burst` source → O7 | Delayed burst path requires `无相魔劫咒` platform |
+
 ---
 
 ## Document History
@@ -586,3 +696,4 @@ Affixes with **identical port signatures** — direct substitutes in the same ch
 | 2.0 | 2026-02-27 | Restructured: projected from graph space to book space. Replaced split Affixes/Skill Books columns with unified Book Chains using `book`(【affix】) + `book`(【affix】) format. Added expanded sub-sections for complex paths (O5, O13, O14, B7, B9, S1, A6, E1, E2, E3). Fixed E1 to list 法修 carrier books and all connection targets. |
 | 3.0 | 2026-02-27 | Combo evaluation: added convention note. Added X1/X2/X3 expanded pairing tables (cross-cutting amplifiers). Added combo output column to E1 (enablers). Zone quality and attribution notes. |
 | 4.0 | 2026-02-27 | Merged §VIII Enablers + §IX Resource Generators into unified §VIII Enablers. R1/R2 → E4/E5 with combo output tables. Enabler category: produces resource consumed by another affix. Renumbered §X → §IX. |
+| 5.0 | 2026-03-05 | Add `requires` column to all path tables (§I, §II). Add §IX Platform-Projected Paths (9 platforms with accessible/inaccessible paths). Extend §X Structural Properties with provides bottlenecks, provides richness, and named entity monopolies. Renumbered §IX → §X. |

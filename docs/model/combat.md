@@ -147,7 +147,10 @@ Every effect ultimately contributes to one or more of these factors:
 | Healing | $H_A$ | Self HP recovery rate |
 | Healing reduction | $H_{red}$ | Suppression of opponent's healing |
 | Shield | $S_A$ | Piecewise damage absorption |
-| Volatility | $\sigma$ | Stochastic variance from crit system |
+| Resonance multiplier | $M_{res}$ | 会心 expected value (deterministic zone) |
+| Synchrony multiplier | $M_{synchro}$ | 心逐 expected value (outer wrapper on all factors) |
+| Resonance variance | $\sigma_R$ | Stochastic variance from resonance system |
+| Volatility | $\sigma$ | Total stochastic variance |
 
 ### 1.2 Groups as Map Domain
 
@@ -158,7 +161,9 @@ The 14 effect groups from `groups.yaml` organize the mapping. Each group feeds s
 | Shared Mechanics | $D_B$ | Flat damage additions from fusion/mastery |
 | Base Damage | $D_B$ | Primary damage events + orthogonal channels |
 | Damage Multiplier Zones | $D_B$ | Multiplicative scaling of damage events |
-| Critical System | $D_B$, $\sigma$ | Crit multiplier + stochastic variance |
+| Resonance System | $D_B$, $\sigma$ | Resonance multiplier (会心) |
+| Synchrony System | All factors | Outer multiplier on all effects (心逐) |
+| Standard Crit | $D_B$, $\sigma$ | Rate-based crit system (暴击) |
 | Conditional Triggers | $D_B$, $DR_A$ | State-dependent damage/buffs, DR nullification |
 | Per-Hit Escalation | $D_B$ | Within-cast temporal ramp |
 | HP-Based Calculations | $D_B$, $\mu_A$ | Orthogonal damage + self-HP cost |
@@ -182,7 +187,11 @@ The core of the pipeline: for each effect type, what factor(s) does it contribut
 
 A single skill cast produces damage through a chain of multiplicative zones:
 
-$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times C_{mult}$$
+$$D_{chain} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res}$$
+
+$$D_{skill} = D_{chain} \times M_{synchro}$$
+
+Where $M_{res}$ is the resonance zone (会心) and $M_{synchro}$ is the synchrony zone (心逐, applied to ALL output factors as an outer wrapper).
 
 Each zone is fed by specific effect types:
 
@@ -193,7 +202,8 @@ Each zone is fed by specific effect types:
 | Damage zone | $M_{dmg}$ | Multiplier Zones, Conditional Triggers | `damage_increase`, `conditional_damage` | Sum of `value` fields; conditional types weighted by $P(\text{condition})$ |
 | Skill zone | $M_{skill}$ | Multiplier Zones, Self Buffs | `skill_damage_increase`, `next_skill_buff` | Sum of `value` fields |
 | Final zone | $M_{final}$ | Multiplier Zones | `final_damage_bonus` | `value` field |
-| Crit zone | $C_{mult}$ | Critical System | `guaranteed_crit`, `probability_multiplier` | See §2.4 |
+| Resonance zone | $M_{res}$ | Resonance System | `guaranteed_resonance` | See §2.4 |
+| Synchrony zone | $M_{synchro}$ | Synchrony System | `probability_multiplier` | See §2.5 |
 | ATK scaling | $S_{coeff}$ | Multiplier Zones | `attack_bonus` | $1 + \text{value}/100$ |
 
 **Zone scarcity determines marginal value.** [Theory.combat.md §3.3](../abstractions/theory.combat.md#33-structural-properties-of-the-drift) predicts that contributing to a zone where existing multipliers are small yields higher marginal returns. The data confirms:
@@ -228,24 +238,43 @@ Escalation modifies the *temporal shape* of damage within a single cast. Each hi
 |:-----|:--------------------|:-------------------|
 | `per_hit_escalation` (stat=`skill_bonus`) | $M_{skill,k} = M_{skill} + k \cdot \text{value}$ | $\sum_{k=0}^{n-1} k \cdot \text{value} = \frac{n(n-1)}{2} \cdot \text{value}$ |
 | `per_hit_escalation` (stat=`damage`) | $M_{dmg,k} = M_{dmg} + \min(k \cdot \text{value}, \text{max})$ | Capped sum |
-| `periodic_escalation` | Every $m$ hits: $C_{mult} \leftarrow C_{mult} \times \text{multiplier}$ | Geometric growth capped at `max_stacks` |
+| `periodic_escalation` | Every $m$ hits: geometric multiplier | Geometric growth capped at `max_stacks` |
 
 Escalation means damage is **back-loaded** within a cast. For the model, the average per-hit contribution is used for $\mu_B$; the variance between early and late hits contributes to $\sigma_B$.
 
-### 2.4 Critical System
+### 2.4 Resonance System (会心)
 
-The crit zone $C_{mult}$ determines the final multiplier on each damage event. It is the primary source of $\sigma$ in the model.
+The resonance zone $M_{res}$ is a deterministic/probabilistic multiplier on damage. It is independent from the standard crit system.
 
-| Type | Contribution to $C_{mult}$ | Contribution to $\sigma$ |
+| Type | Contribution to $M_{res}$ | Contribution to $\sigma_R$ |
 |:-----|:---------------------------|:-------------------------|
-| `guaranteed_crit` | Deterministic: `base_mult` (always) or `enhanced_mult` (with `enhanced_chance`) | $\sigma^2 = p(1-p)(m_{enh} - m_{base})^2$ |
-| `probability_multiplier` | Stochastic: $E[C] = \sum_i p_i \cdot m_i$ per tier | $\sigma^2 = \sum_i p_i(m_i - E[C])^2$ |
-| `conditional_crit` | Guarantees crit under condition | Collapses $\sigma \to 0$ for that condition |
-| `conditional_crit_rate` | Increases crit probability under condition | Reduces $\sigma$ |
+| `guaranteed_resonance` | Deterministic: `base_mult` (always) or `enhanced_mult` (with `enhanced_chance`) | $\sigma_R^2 = p(1-p)(m_{enh} - m_{base})^2$ |
 
-**The variance-drift tradeoff.** `probability_multiplier` contributes to both $\mu$ (through $E[C]$) and $\sigma$ (through $\text{Var}[C]$). The companion type `probability_to_certain` (Conditional Triggers group) collapses the stochastic multiplier to its maximum tier, eliminating $\sigma$ while raising $\mu$. This pair implements the strategic choice described in [theory.combat.md §3.4](../abstractions/theory.combat.md#34-structural-properties-of-the-diffusion): accept variance for efficiency (one slot) or invest a second slot to eliminate it (pure drift).
+> **Mechanic**: 会心 (resonance) always applies `base_mult` as a floor, with `enhanced_chance` probability of upgrading to `enhanced_mult`. No interaction with 暴击率/暴击伤害.
 
-### 2.5 Conditional Triggers
+### 2.5 Synchrony System (心逐)
+
+The synchrony zone $M_{synchro}$ is an **outer wrapper** that multiplies ALL skill effects (damage, healing, debuffs), not just the damage chain.
+
+| Type | Contribution to $M_{synchro}$ | Contribution to $\sigma$ |
+|:-----|:-------------------------------|:-------------------------|
+| `probability_multiplier` | Stochastic: $E[M] = \sum_i p_i \cdot m_i$ per tier | $\sigma^2 = \sum_i p_i(m_i - E[M])^2$ |
+
+**The variance-drift tradeoff.** `probability_multiplier` contributes to both $\mu$ (through $E[M]$) and $\sigma$ (through $\text{Var}[M]$). The companion type `probability_to_certain` (Conditional Triggers group) collapses the stochastic multiplier to its maximum tier, eliminating $\sigma$ while raising $\mu$. This pair implements the strategic choice described in [theory.combat.md §3.4](../abstractions/theory.combat.md#34-structural-properties-of-the-diffusion): accept variance for efficiency (one slot) or invest a second slot to eliminate it (pure drift).
+
+> **Note**: 心逐 × 会心 is multiplicative (independent zones). E.g., 灵犀九重 E[会心]=3.22 × 心逐 E[心逐]=3.40 yields ×10.95 total.
+
+### 2.6 Standard Crit (暴击)
+
+The standard crit system scales with 暴击率 (crit rate) and 暴击伤害 (crit damage) stats. It is a separate multiplier zone from resonance.
+
+| Type | Role | Contribution to $\sigma$ |
+|:-----|:-----|:-------------------------|
+| `conditional_crit` | Guarantees crit under condition | Collapses crit $\sigma \to 0$ for that condition |
+| `conditional_crit_rate` | Increases crit probability under condition | Reduces crit $\sigma$ |
+| `crit_damage_bonus` (§2) | Additive to crit damage stat | Increases crit multiplier ceiling |
+
+### 2.7 Conditional Triggers
 
 Conditional effects gate their contribution on game state:
 
@@ -253,12 +282,12 @@ Conditional effects gate their contribution on game state:
 |:-----|:-------------|:--------|
 | `conditional_damage` | $M_{dmg}$ | `value` × $P(\text{condition})$ |
 | `conditional_buff` | Various ($D_B$, orthogonal) | Stat bonuses active only when condition met |
-| `probability_to_certain` | $C_{mult}$ | Collapses `probability_multiplier` to max tier |
+| `probability_to_certain` | $M_{synchro}$ | Collapses `probability_multiplier` to max tier |
 | `ignore_damage_reduction` | $DR_B$ | Sets opponent's $DR_B = 0$ for this skill |
 
 `ignore_damage_reduction` is a **parameter nullification**: it doesn't modify $D_B$ but removes the opponent's $DR_B$ from the drift equation entirely. In the model, this means the $(1 - DR_B)$ term becomes 1 for the duration of the skill — a regime switch.
 
-### 2.6 DoT Subsystem
+### 2.8 DoT Subsystem
 
 DoT effects create sustained drift on their own timeline, independent of skill casts:
 
@@ -274,7 +303,7 @@ $$D_{DoT} = \frac{\text{damage\_per\_tick}}{\text{tick\_interval}} \times (1 + M
 | `shield_destroy_dot` | DoT conditional on shield state |
 | `on_dispel` | Triggered damage when DoT is removed |
 
-### 2.7 HP-Based Calculations
+### 2.9 HP-Based Calculations
 
 This group contributes to $D_B$ orthogonally AND modifies $\mu_A$ (self-cost):
 
@@ -289,7 +318,7 @@ This group contributes to $D_B$ orthogonally AND modifies $\mu_A$ (self-cost):
 
 `self_hp_cost` and `self_damage_taken_increase` are the only effect types that *decrease* $\mu_A$ deliberately — they implement a risk-reward tradeoff (sacrifice survivability for damage).
 
-### 2.8 Healing and Survival
+### 2.10 Healing and Survival
 
 | Type | Factor | Formula |
 |:-----|:-------|:--------|
@@ -302,7 +331,7 @@ This group contributes to $D_B$ orthogonally AND modifies $\mu_A$ (self-cost):
 
 $$\Delta\mu_A = -\text{value} \cdot H_A, \qquad \Delta\mu_B = -\text{value} \cdot H_A$$
 
-### 2.9 Shield System
+### 2.11 Shield System
 
 Shields create **regime switches** ([theory.combat.md §3.3](../abstractions/theory.combat.md#33-structural-properties-of-the-drift)). While a shield is active, incoming damage is absorbed:
 
@@ -314,7 +343,7 @@ Shields create **regime switches** ([theory.combat.md §3.3](../abstractions/the
 
 In the regime model: shield activation starts a new regime where $\mu_A$ increases by $D_B(1-DR_A)$ (incoming damage absorbed). Shield depletion ends the regime. The shield's HP determines the regime duration as a state-dependent event ([theory.combat.scenario.md §1.3](../abstractions/theory.combat.scenario.md#13-regime-transitions)).
 
-### 2.10 Debuffs
+### 2.12 Debuffs
 
 Debuffs modify the *opponent's* drift equation — they are the offensive counterpart to Healing/Survival and Shield System.
 
@@ -330,7 +359,7 @@ Debuffs modify the *opponent's* drift equation — they are the offensive counte
 
 $H_{red}$ is the most strategically significant debuff target. [Theory.combat.md §3.2](../abstractions/theory.combat.md#32-sensitivity-analysis) shows that $\partial P(\text{win}) / \partial H_{red}$ scales with the opponent's healing rate $H_B$ — anti-healing is most valuable against well-geared opponents.
 
-### 2.11 State Modifiers (Meta)
+### 2.13 State Modifiers (Meta)
 
 | Type | What it amplifies | Formula |
 |:-----|:------------------|:--------|
@@ -344,7 +373,7 @@ $H_{red}$ is the most strategically significant debuff target. [Theory.combat.md
 
 These are **second-order effects**: they modify the *magnitude* of first-order effects from other groups. In the model, they must be applied *before* computing factor contributions — they change the input values, not the factors directly.
 
-### 2.12 Self Buffs (Temporal)
+### 2.14 Self Buffs (Temporal)
 
 Self buffs create **temporal effects** that propagate across skill slots. At the effect level, each self-buff maps to a factor contribution *plus* temporal metadata (duration, coverage):
 
@@ -359,7 +388,7 @@ Self buffs create **temporal effects** that propagate across skill slots. At the
 
 The temporal metadata is consumed by Combinator 3 (§5), not at the effect level. The effect-level map records the factor contribution and the propagation parameters.
 
-### 2.13 Special Mechanics (Partial)
+### 2.15 Special Mechanics (Partial)
 
 14 effect types resist clean mapping to the factor space. They cluster into six categories:
 
@@ -388,11 +417,12 @@ Effects within an affix combine according to their factor type:
 |:-------|:------------|:----------|
 | $D_{base}$, $D_{flat}$ | Additive sum | Flat damage sources stack |
 | $M_{dmg}$, $M_{skill}$, $M_{final}$ | Additive sum (within zone) | Multiplier zones are additive internally, multiplicative across zones |
-| $C_{mult}$ | Expected value: $E[C] = \sum_i p_i \cdot m_i$ | Stochastic multiplier reduces to its mean |
+| $M_{res}$ | Expected value: $E[M_{res}] = p \cdot m_{enh} + (1-p) \cdot m_{base}$ | Resonance multiplier reduces to its mean |
+| $M_{synchro}$ | Expected value: $E[M_{synchro}] = \sum_i p_i \cdot m_i$ | Synchrony multiplier reduces to its mean |
 | $D_{ortho}$ | Additive sum per channel | Orthogonal channels stack independently |
 | $H_A$, $DR_A$, $S_A$ | Additive sum | Defensive stats stack |
 | $H_{red}$ | Additive sum | Healing reduction stacks |
-| $\sigma$ | Root sum of squares: $\sigma = \sqrt{\sum \sigma_i^2}$ | Independent variance sources |
+| $\sigma_R$ | Root sum of squares: $\sigma_R = \sqrt{\sum \sigma_i^2}$ | Independent resonance/synchrony variance sources |
 
 ### 3.2 Meta-Modifier Application
 
@@ -406,7 +436,7 @@ $$\text{effective\_duration}(e) = e.\text{duration} \times (1 + \text{buff\_dura
 
 The affix factor vector $\mathbf{f}_a$ is a tuple:
 
-$$\mathbf{f}_a = (D_{base}, D_{flat}, M_{dmg}, M_{skill}, M_{final}, S_{coeff}, C_{mult}, \sigma_C, D_{ortho}, H_A, DR_A, S_A, H_{red}, \text{temporal}[])$$
+$$\mathbf{f}_a = (D_{base}, D_{flat}, M_{dmg}, M_{skill}, M_{final}, S_{coeff}, M_{res}, \sigma_R, M_{synchro}, D_{ortho}, H_A, DR_A, S_A, H_{red}, \text{temporal}[])$$
 
 where `temporal[]` carries forward the propagation metadata from Self Buffs and Debuffs for consumption by Combinator 3.
 
@@ -438,15 +468,15 @@ where $\oplus$ denotes the per-factor aggregation (additive for most, root-sum-o
 
 The full multiplicative chain can now be evaluated from the book factor vector:
 
-$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times C_{mult}$$
+$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res} \times M_{synchro}$$
 
-This collapses the book's contribution to $D_B$ into a single scalar. Together with $D_{ortho}$, $H_A$, $DR_A$, $S_A$, $H_{red}$, and $\sigma$, the book factor vector is now ready for temporal composition.
+This collapses the book's contribution to $D_B$ into a single scalar. Together with $D_{ortho}$, $H_A$, $DR_A$, $S_A$, $H_{red}$, and $\sigma_R$, the book factor vector is now ready for temporal composition.
 
 ### 4.4 Output
 
 The book model is a reduced vector:
 
-$$\mathbf{b}_k = (D_{skill,k}, D_{ortho,k}, H_{A,k}, DR_{A,k}, S_{A,k}, H_{red,k}, \sigma_k, \text{temporal}[])$$
+$$\mathbf{b}_k = (D_{skill,k}, D_{ortho,k}, H_{A,k}, DR_{A,k}, S_{A,k}, H_{red,k}, \sigma_{R,k}, \text{temporal}[])$$
 
 where $k$ is the slot position (1–6) and `temporal[]` carries forward propagation metadata.
 
@@ -476,7 +506,7 @@ $$\mu_B^{(k)} = -D_{skill,k} \cdot (1 - DR_B^{(k)}) - D_{ortho,k}$$
 
 $$\mu_A^{(k)} = -D_B^{(k)} \cdot (1 - DR_A^{(k)}) + H_A^{(k)} \cdot (1 - H_{red,A}^{(k)}) + S_A^{(k)}$$
 
-$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sqrt{\text{Var}[C_{mult,k}]}$$
+$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sqrt{\text{Var}[M_{res,k}] + \text{Var}[M_{synchro,k}]}$$
 
 Regime boundaries occur at:
 - Skill cast start/end (every $T_{gap}$)
@@ -524,3 +554,4 @@ Once the book-set model $\mathcal{R}$ is computed:
 | 3.0 | 2026-02-25 | Complete redesign around 14 effect groups from groups.yaml |
 | 3.1 | 2026-02-25 | Replaced keyword.map §N notation with group names |
 | 4.0 | 2026-02-25 | Four-level compositional architecture: effect → affix → book → book-set. Effect-level map (§2) with 13 subsections covering all groups. Three explicit combinators (§3–§5). Separated doc-domain spec from data-domain impl |
+| 5.0 | 2026-03-03 | Split "Critical System" into Resonance (§2.4), Synchrony (§2.5), Standard Crit (§2.6). Renamed C_mult→M_res, sigma_C→sigma_R, added M_synchro. Fixed damage chain: D_chain × M_synchro. Renumbered §2.7–§2.15. |

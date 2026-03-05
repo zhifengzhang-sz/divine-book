@@ -108,7 +108,7 @@ The 14 effect categories from [keyword.map](../data/keyword.map.md) define the v
 | 0 | Shared Mechanics | fusion_flat_damage, mastery_extra_damage, enlightenment_damage | Inherent |
 | 1 | Base Damage | base_attack, percent_max_hp_damage, shield_destroy_damage | Inherent (main skill) |
 | 2 | Damage Multiplier Zones | attack_bonus, damage_increase, skill_damage_increase, final_damage_bonus | Additive within zone |
-| 3 | Critical System | guaranteed_crit, probability_multiplier | **Multiplicative** |
+| 3 | Resonance System | guaranteed_resonance, probability_multiplier | **Multiplicative** |
 | 4 | Conditional Triggers | conditional_damage, probability_to_certain, ignore_damage_reduction | Conditional |
 | 5 | Per-Hit Escalation | per_hit_escalation, periodic_escalation | Hit-count dependent |
 | 6 | HP-Based Calculations | per_self_lost_hp, per_enemy_lost_hp, self_hp_cost, self_lost_hp_damage | State-dependent |
@@ -208,7 +208,7 @@ For each scenario, the optimal allocation of the 3 affix contributions (main pri
 | Position | Target category | Best-in-class |
 |:---------|:---------------|:-------------|
 | Main | $C_1$ Base Damage (high base %) | 春黎剑阵 (22,305% + summon) |
-| Aux 1 | $C_3$ Critical System (multiplicative) | 【心逐神随】(×2/×3/×4, $E = 2.46$) |
+| Aux 1 | $C_3$ Resonance System (multiplicative) | 【心逐神随】(×2/×3/×4, $E = 2.46$) |
 | Aux 2 | $C_4$ + $C_2$ (probability→certain + damage) | 【天命有归】(certain + 50% damage) |
 
 **Why:** $C_3$ provides deterministic ×4.00, $C_4$ converts stochastic to certain, $C_2$ adds +50%. Combined: **×6.00 multiplicative factor**. No additive combination comes close.
@@ -259,7 +259,7 @@ The primary category determines the slot's damage ceiling. Categories are not eq
 
 | Tier | Categories | Mechanism | Ceiling example |
 |:-----|:----------|:----------|:----------------|
-| **Tier 1** | $C_3$ Critical System | Multiplicative on entire output | ×6.00 (心逐神随 + 天命有归) |
+| **Tier 1** | $C_3$ Resonance System | Multiplicative on entire output | ×6.00 (心逐神随 + 天命有归) |
 | **Tier 2** | $C_9$ State Modifiers | Multiplicative on buff/debuff values | ×2.04 (龙象护身 on 仙佑) |
 | **Tier 3** | $C_2$ Damage Multipliers | Additive within zone | +555% (无极剑阵, with penalty) |
 | **Tier 4** | $C_5$, $C_6$ | State/hit-count dependent | +50% (心火淬锋 avg on 10-hit) |
@@ -285,7 +285,7 @@ The primary category must be compatible with the main skill's damage structure:
 | Scenario | Primary category | Why it leads |
 |:---------|:----------------|:-------------|
 | Amplify | $C_{11}$ Self Buffs | The slot's purpose IS the buff — everything else amplifies it |
-| Burst | $C_3$ Critical System | Highest multiplicative ceiling; defines the slot's output |
+| Burst | $C_3$ Resonance System | Highest multiplicative ceiling; defines the slot's output |
 | Exploit | $C_1$ Base Damage (main skill) | Hit count and %HP are fixed by skill choice; auxiliaries enhance |
 | Suppress | $C_{12}$ Debuffs | The debuff IS the strategic objective |
 | Endure | $C_7$ or $C_{11}$ | Survival is the constraint |
@@ -296,7 +296,7 @@ The primary category must be compatible with the main skill's damage structure:
 
 For each category, the best options across all 4 pools, ranked by power.
 
-### 5.1 $C_3$ Critical System
+### 5.1 $C_3$ Resonance System
 
 The scarcest and highest-impact category. Only 3 options exist:
 

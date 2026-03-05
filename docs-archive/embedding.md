@@ -48,8 +48,8 @@ strong { color: #e5c07b; }
 | 3 | dmg_mod | 伤害加成 | % | damage_increase |
 | 4 | skill_dmg_mod | 神通伤害加成 | % | skill_damage_increase, skill_damage_deepen |
 | 5 | final_dmg_mod | 最终伤害加深 | % | final_damage_deepen |
-| 6 | crit_rate_mod | 暴击率加成 | % | crit_rate, guaranteed_crit |
-| 7 | crit_dmg_mod | 暴击伤害倍率 | x | crit_damage, guaranteed_crit value |
+| 6 | crit_rate_mod | 暴击率加成 | % | crit_rate, guaranteed_resonance |
+| 7 | crit_dmg_mod | 暴击伤害倍率 | x | crit_damage, guaranteed_resonance value |
 | 8 | extra_flat_dmg | 额外固定伤害 | %atk | extra_damage (flat) |
 | 9 | hp_pct_dmg | 基于最大HP伤害 | %/hit | percent_max_hp |
 | 10 | lost_hp_pct_dmg | 基于已损HP伤害 | %/hit | scaling_damage (lost_hp variants) |
@@ -77,7 +77,7 @@ model.md 中的 effect type 映射到维度：
 | skill_damage_deepen | 4 | 直接值（同维合并） |
 | final_damage_deepen | 5 | 直接值 |
 | crit_rate | 6 | 直接值 |
-| guaranteed_crit | 6=100, 7=value | 暴击率设满，倍率为值 |
+| guaranteed_resonance | 6=100, 7=value | 暴击率设满，倍率为值 |
 | crit_damage | 7 | 直接值 |
 | crit_upgrade | 7 | p × (upgrade - base) 加到期望 |
 | extra_damage (flat) | 8 | 直接值 |

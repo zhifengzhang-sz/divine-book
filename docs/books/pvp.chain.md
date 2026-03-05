@@ -66,13 +66,14 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
 
@@ -108,7 +109,7 @@ graph LR
 | 7. Slot assignment | 灵書 set + temporal constraints | Ordered 6-slot build | Physical |
 
 > **Scope rule.** All affixes use "本神通" (this skill) — they affect only the 灵書 they are on. Two types of chains exist:
-> - **Same-灵書 chains**: amplifiers that multiply the main skill's output. These affixes MUST be on the same 灵書 as the source they amplify (e.g., `probability_multiplier`, `guaranteed_crit`, `buff_strength`, `buff_duration`).
+> - **Same-灵書 chains**: amplifiers that multiply the main skill's output. These affixes MUST be on the same 灵書 as the source they amplify (e.g., `probability_multiplier`, `guaranteed_resonance`, `buff_strength`, `buff_duration`).
 > - **Cross-灵書 chains**: effects that persist as states on players. These work from ANY slot — buffs remain on self, debuffs remain on enemy (e.g., `cross_slot_debuff` 命損, `debuff` 灵涸, `self_buff` 仙佑).
 
 This distinction is critical: same-灵書 chains constrain construction (what goes together), while cross-灵書 chains constrain slot ordering (what fires when).

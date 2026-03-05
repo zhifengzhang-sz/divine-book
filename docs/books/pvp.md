@@ -66,13 +66,14 @@ table td {
 }
 
 blockquote {
-  border-left: 3px solid #4b5263;
-  padding-left: 10px;
-  color: #5c6370;
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
 }
 
 strong {
-  color: #e5c07b;
+  color: #e5c07b !important;
 }
 </style>
 
@@ -1361,7 +1362,7 @@ Side-by-side at each time step. **Bold** = active buff/debuff. *Italic* = wasted
 | $6\text{s}$ | *Exploit: 皓月剑諾 120%maxHP → our immunity* | Suppress: **【命損】-100% DR** (13.5s), counter-debuffs |
 | $12\text{s}$ | Amplify: +142.8% buff (12s, expires $t=24$); 21,090% ATK | **Burst: 春黎剑阵 $E ≈ 10.95$ × 54,157% ATK** (buffed) under **【命損】** |
 | $18\text{s}$ | **Suppress**: 【命損】-100% DR (8s → Slot 5) | **Exploit: 皓月剑诀** 10-hit under **buff + 分身 + 【命損】(1.5s)** |
-| $24\text{s}$ | **DoT**: 念剣诀 under buff + 【命損】| **Self-HP: 千锋聚灵剑** under **buff + 分身(4s) + 【怒血战意】×2.0** |
+| $24\text{s}$ | **DoT**: 念剑诀 under buff + 【命損】| **Self-HP: 千锋聚灵剑** under **buff + 分身(4s) + 【怒血战意】×2.0** |
 | $30\text{s}$ | Endure: 十方真魄. Buff expired ($t=24$). | **Endure: 十方真魄** under **buff (until $t=48$)** + **-31% anti-heal** |
 | $36\text{s}$ | Burst re-cast: **no buff** (expired), ×6.00 crit | **Amplify re-cast: buff refreshed** + 21,090% ATK damage |
 | $42\text{s}$ | Exploit re-cast: **no buff**, no 【命損】 | **Suppress re-cast: 【命損】refreshed** + 20,265% ATK damage |

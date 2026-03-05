@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-25
-dates of modification: [2026-2-25]
+dates of modification: [2026-2-25, 2026-3-3]
 ---
 
 <style>
@@ -171,8 +171,9 @@ Each effect maps to one or more entries in the factor vector. The factors, from 
 | Skill zone multiplier | `M_skill` | number |
 | Final zone multiplier | `M_final` | number |
 | ATK scaling coefficient | `S_coeff` | number |
-| Crit multiplier (expected) | `C_mult` | number |
-| Crit variance | `sigma_C` | number |
+| Resonance multiplier | `M_res` | number |
+| Synchrony multiplier | `M_synchro` | number |
+| Resonance variance | `sigma_R` | number |
 | Orthogonal damage | `D_ortho` | number |
 | Healing | `H_A` | number |
 | Damage reduction | `DR_A` | number |
@@ -200,18 +201,18 @@ Each group has a distinct mapping rule. The rules are derived from [combat.md §
 | Multiplier Zones | `skill_damage_increase` | `M_skill` | `value` field |
 | Multiplier Zones | `enemy_skill_damage_reduction` | `M_skill` | Opponent's perspective |
 | Multiplier Zones | `final_damage_bonus` | `M_final` | `value` field |
-| Multiplier Zones | `crit_damage_bonus` | `C_mult` | Additive to crit multiplier |
+| Multiplier Zones | `crit_damage_bonus` | `M_res` | Additive to resonance multiplier |
 | Multiplier Zones | `flat_extra_damage` | `D_flat` | `value` field |
-| Critical System | `guaranteed_crit` | `C_mult`, `sigma_C` | $E[C]$, $\text{Var}[C]$ from tier probabilities |
-| Critical System | `probability_multiplier` | `C_mult`, `sigma_C` | $E[C] = \sum p_i m_i$, $\sigma^2 = \sum p_i(m_i - E)^2$ |
-| Critical System | `conditional_crit` | `C_mult`, `sigma_C` | Collapses variance under condition |
-| Critical System | `conditional_crit_rate` | `sigma_C` | Reduces variance |
+| Resonance System | `guaranteed_resonance` | `M_res`, `M_synchro`, `sigma_R` | $E[R]$, $\text{Var}[R]$ from tier probabilities |
+| Synchrony System | `probability_multiplier` | `M_res`, `M_synchro`, `sigma_R` | $E[R] = \sum p_i m_i$, $\sigma^2 = \sum p_i(m_i - E)^2$ |
+| Standard Crit | `conditional_crit` | `M_res`, `M_synchro`, `sigma_R` | Collapses variance under condition |
+| Standard Crit | `conditional_crit_rate` | `sigma_R` | Reduces variance |
 | Conditional Triggers | `conditional_damage` | `M_dmg` | `value` × $P(\text{condition})$ |
 | Conditional Triggers | `conditional_buff` | Various | Stat bonuses gated on condition |
-| Conditional Triggers | `probability_to_certain` | `C_mult`, `sigma_C` | Max tier, zero variance |
+| Conditional Triggers | `probability_to_certain` | `M_res`, `M_synchro`, `sigma_R` | Max tier, zero variance |
 | Conditional Triggers | `ignore_damage_reduction` | — | Regime switch: nullifies opponent $DR$ |
 | Per-Hit Escalation | `per_hit_escalation` | `M_dmg` or `M_skill` | Average over $n$ hits |
-| Per-Hit Escalation | `periodic_escalation` | `C_mult` | Geometric mean over hits |
+| Per-Hit Escalation | `periodic_escalation` | `M_res` | Geometric mean over hits |
 | HP-Based Calculations | `per_enemy_lost_hp` | `D_ortho` | `per_percent` × expected $\%HP_{lost}$ |
 | HP-Based Calculations | `per_self_lost_hp` | `D_ortho` | `per_percent` × expected $\%HP_{lost}$ |
 | HP-Based Calculations | `self_lost_hp_damage` | `D_ortho` | `value` × expected $\%HP_{lost}$ |
@@ -287,10 +288,11 @@ effects:
             coverage_type: duration_based
     exclusive_affix:
       <affix_name>:
-        - type: guaranteed_crit
+        - type: guaranteed_resonance
           factors:
-            C_mult: 2.5
-            sigma_C: 0.3
+            M_res: 2.5
+            M_synchro: 1.2
+            sigma_R: 0.3
 
 universal_affixes:
   <affix_name>:
@@ -336,8 +338,9 @@ Per-factor aggregation rules (from [combat.md §3.1](combat.md#31-aggregation-ru
 | `M_skill` | $\sum$ | Additive within zone |
 | `M_final` | $\sum$ | Additive within zone |
 | `S_coeff` | $\sum$ | ATK scaling stacks |
-| `C_mult` | $E[C]$ | Expected value of stochastic multiplier |
-| `sigma_C` | $\sqrt{\sum \sigma_i^2}$ | Independent variance sources |
+| `M_res` | $E[R]$ | Expected value of resonance multiplier |
+| `M_synchro` | $E[S]$ | Expected value of synchrony multiplier |
+| `sigma_R` | $\sqrt{\sum \sigma_i^2}$ | Independent variance sources |
 | `D_ortho` | $\sum$ per channel | Orthogonal channels stack |
 | `H_A` | $\sum$ | Healing stacks |
 | `DR_A` | $\sum$ | DR stacks |
@@ -374,7 +377,7 @@ $$\mathbf{f}_{book} = \bigoplus_{a \in \text{affixes}(book)} \mathbf{f}_a$$
 
 After combination, the multiplicative damage chain can be evaluated:
 
-$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times C_{mult}$$
+$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res} \times M_{synchro}$$
 
 This collapses the book's offensive contribution into a single scalar $D_{skill}$. The book model is:
 
@@ -410,7 +413,7 @@ $$\mu_B^{(k)} = -D_{skill,k} \cdot (1 - DR_B^{(k)}) - D_{ortho,k}$$
 
 $$\mu_A^{(k)} = -D_B^{(k)} \cdot (1 - DR_A^{(k)}) + H_A^{(k)} \cdot (1 - H_{red,A}^{(k)}) + S_A^{(k)}$$
 
-$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sigma_{C,k}$$
+$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sigma_{R,k}$$
 
 Additional regime boundaries arise from mid-slot events (buff expiry, shield depletion).
 
@@ -431,3 +434,4 @@ This feeds directly into:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-02-25 | Initial: map + three combinators specification |
+| 1.1 | 2026-03-03 | Rename C_mult/sigma_C → M_res/M_synchro/sigma_R; split Critical System into Resonance, Synchrony, Standard Crit groups; update damage chain formula |

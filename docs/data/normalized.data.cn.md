@@ -709,7 +709,7 @@ strong {
 | 【灵盾】 | shield_strength | value=20 | |
 | 【灵威】 | next_skill_buff | stat=skill_damage_increase, value=118 | max_fusion |
 | 【摧山】 | attack_bonus | value=20 | |
-| 【通明】 | guaranteed_crit | base_mult=1.2, enhanced_mult=1.5, enhanced_chance=25 | |
+| 【通明】 | guaranteed_resonance | base_mult=1.2, enhanced_mult=1.5, enhanced_chance=25 | |
 
 ---
 
@@ -726,7 +726,7 @@ strong {
 | 词缀 | 效果类型 | 字段 | data_state |
 |:---|:---|:---|:---|
 | 【摧云折月】 | attack_bonus | value=55 | |
-| 【灵犀九重】 | guaranteed_crit | base_mult=2.97, enhanced_mult=3.97, enhanced_chance=25 | max_fusion |
+| 【灵犀九重】 | guaranteed_resonance | base_mult=2.97, enhanced_mult=3.97, enhanced_chance=25 | max_fusion |
 | 【破碎无双】 | attack_bonus | value=15 | |
 | 【破碎无双】 | damage_increase | value=15 | |
 | 【破碎无双】 | crit_damage_bonus | value=15 | |
