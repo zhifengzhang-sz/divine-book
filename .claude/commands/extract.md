@@ -2,13 +2,13 @@
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Extraction agent.** Reads `about.md` and produces `normalized.data.cn.md` + `normalized.data.md` using `keyword.map` as the parsing specification. This is the first stage of the data pipeline.
+> **Extraction agent.** Reads `data/raw/*.md` (split source files) and produces `docs/data/normalized.data.cn.md` + `docs/data/normalized.data.md` using `docs/data/keyword.map.cn.md` as the parsing specification. This is the first stage of the data pipeline.
 
 ## Inputs
 
 | File | Role |
 |:---|:---|
-| `data/raw/about.md` | Sole data source — volatile Chinese prose |
+| `data/raw/*.md` | Source prose files — e.g. `about.md`, `主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md` |
 | `docs/data/keyword.map.cn.md` | Effect type vocabulary, field specs, units, data_state vocabulary |
 
 ## Outputs
@@ -29,13 +29,14 @@
    - Condition vocabulary (`target_controlled`, `target_has_debuff`, etc.)
    - Default data_state per school (Sword/Demon = max enlightenment, Body = no enlightenment, Spell = unspecified)
 
-2. Read `about.md` fully. Identify the document structure:
-   - 四修为 sections (剑修, 法修, 魔修, 体修), each containing 功法书 entries
-   - 副词缀 section containing 通用词缀, 修为词缀 tables
+2. Read all `data/raw/*.md` files fully. Identify the document structure across files:
+   - 四修为 sections (剑修, 法修, 魔修, 体修) which may be split across multiple files (e.g., `主书.md`)
+   - Affix tables spread across `通用词缀.md`, `修为词缀.md`, `专属词缀.md`
+   - Construction rules in `构造规则.md` (used for exclusions and conventions)
 
 ### §2. Per-Book Extraction (28 books)
 
-For each 功法书 in about.md:
+For each 功法书 found across the raw files:
 
 1. **Identify school** from the section it appears in (剑修/法修/魔修/体修).
 
