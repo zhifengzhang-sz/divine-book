@@ -104,9 +104,10 @@ Purpose: short reference for the pipeline framework, data generation commands, a
 
 **Top-level logic (framework)**
 - Source prose: `data/raw/*.md` (primary sources: `data/raw/about.md`, `data/raw/主书.md`). See: `docs/data/design.md` and `.claude/commands/extract.md` for extraction rationale and prompts.
-- Extraction: an LLM extraction agent converts raw prose → `docs/data/normalized.data.md` (strict markdown tables) using `docs/data/keyword.map.md` as the language decoder. See `docs/data/usage.dev.md` and `docs/data/usage.parser.md`.
+- Source prose: `data/raw/*.md` (primary sources: `data/raw/about.md`, `data/raw/主书.md`). See: `docs/data/design.md` and `.claude/commands/extract.md` for extraction rationale and prompts.
+- Registry generation (first when registry changes): run `bun app/generate.ts` to emit both `docs/data/keyword.map.md` and `docs/data/keyword.map.cn.md` from the TypeScript registry. The CN keyword map (`keyword.map.cn.md`) is the canonical parsing spec used by the extraction agent.
+- Extraction (uses CN spec): run the LLM extraction agent which reads `data/raw/*.md` and `docs/data/keyword.map.cn.md` to produce `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md` (strict markdown tables). The extractor must run after the keyword map is up-to-date.
 - Parsing: `app/parse.ts` (library: `lib/parse.ts`) converts `docs/data/normalized.data.md` → `data/yaml/effects.yaml` + `data/yaml/groups.yaml` and validates rows against Zod schemas (`lib/schemas/effect.ts`). Validation failures/warnings are surfaced and should block data commits.
-- Registry generation: `app/generate.ts` (uses `lib/domain/registry.ts`) produces `docs/data/keyword.map.md` and `data/yaml/groups.yaml` (registry → documentation mapping).
 
 **How to generate data (commands)**
 - Regenerate registry-derived artifacts (keyword map, groups):
@@ -134,9 +135,11 @@ bash scripts/run-verify.sh
 
 **Recommended short workflow when adding books**
 1. Edit `data/raw/主书.md` (add table rows for new books or adjust parameters).
-2. If you add new keywords/affix names, update/generate the keyword map: `bun app/generate.ts`.
-3. Regenerate `docs/data/normalized.data.md` (extraction): run the LLM extraction agent that converts `data/raw/*.md` → `docs/data/normalized.data.md` using `docs/data/keyword.map.md` as the decoding spec (see `.claude/commands/extract.md`). If you don't run the agent, update `docs/data/normalized.data.md` manually to reflect the new raw entries.
+2. If you changed the TypeScript registry (affix/effect definitions) or made a persistent vocabulary change, run the generator to update the keyword maps: `bun app/generate.ts` — this writes `docs/data/keyword.map.md` and `docs/data/keyword.map.cn.md`.
+3. Run the extraction agent (or update normalized files manually): the extractor reads `data/raw/*.md` and `docs/data/keyword.map.cn.md` (CN spec) and writes `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md`. The extractor must be run after the CN keyword map is current.
 4. Parse and validate: `bun app/parse.ts docs/data/normalized.data.md data/yaml`.
+5. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
+6. Inspect `tmp-verify-output/verify-report.json` for:
 5. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
 6. Inspect `tmp-verify-output/verify-report.json` for:
 	 - `missingBooks` (raw vs normalized)
