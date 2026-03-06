@@ -102,12 +102,26 @@ strong {
 
 Purpose: short reference for the pipeline framework, data generation commands, and verification tools. This note is a compact companion to the full docs referenced below.
 
-**Top-level logic (framework)**
-- Source prose: `data/raw/*.md` (primary sources: `data/raw/about.md`, `data/raw/主书.md`). See: `docs/data/design.md` and `.claude/commands/extract.md` for extraction rationale and prompts.
-- Source prose: `data/raw/*.md` (primary sources: `data/raw/about.md`, `data/raw/主书.md`). See: `docs/data/design.md` and `.claude/commands/extract.md` for extraction rationale and prompts.
-- Registry generation (first when registry changes): run `bun app/generate.ts` to emit both `docs/data/keyword.map.md` and `docs/data/keyword.map.cn.md` from the TypeScript registry. The CN keyword map (`keyword.map.cn.md`) is the canonical parsing spec used by the extraction agent.
-- Extraction (uses CN spec): run the LLM extraction agent which reads `data/raw/*.md` and `docs/data/keyword.map.cn.md` to produce `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md` (strict markdown tables). The extractor must run after the keyword map is up-to-date.
-- Parsing: `app/parse.ts` (library: `lib/parse.ts`) converts `docs/data/normalized.data.md` → `data/yaml/effects.yaml` + `data/yaml/groups.yaml` and validates rows against Zod schemas (`lib/schemas/effect.ts`). Validation failures/warnings are surfaced and should block data commits.
+**Top-level concepts & relationships**
+
+- **Source**: `data/raw/*.md` — human-authored Chinese prose (authoritative content).
+- **Keywords**: `docs/data/keyword.map.cn.md` (primary CN spec) and `docs/data/keyword.map.md` (EN). These map Chinese patterns → canonical effect types and field names; they are generated from the TypeScript `Registry` (`bun app/generate.ts`) and may be edited by authors to improve extraction.
+- **Normalized data**: `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md` — strict markdown tables (one row per effect × data_state). Produced by the extraction step that decodes Source using Keywords; reviewable and editable by humans if necessary.
+- **Structured data (YAML)**: `data/yaml/effects.yaml` and `data/yaml/groups.yaml` — parser output from Normalized; validated by Zod schemas and consumed by downstream code and analysis.
+
+Relationships (logical):
+- `Keywords` are the decoding specification used to interpret `Source`.
+- `Normalized = Extract(Source, Keywords)` — the extractor must run after `docs/data/keyword.map.cn.md` is up-to-date.
+- `Structured = Parse(Normalized)` — the parser validates rows and emits the canonical YAML.
+- Change flows:
+  - Registry changes → regenerate `Keywords` (`bun app/generate.ts`) → re-run extraction or update `Normalized` → re-parse.
+  - Source changes → re-run extraction (using current `Keywords`) → re-parse.
+
+Practical rules:
+- Ensure `docs/data/keyword.map.cn.md` is current before extraction.
+- Treat `Source` and `Registry` as primary authoring inputs; `Keywords` bridge code and content.
+- Prefer running the extractor; edit `Normalized` manually only when necessary.
+
 
 **How to generate data (commands)**
 - Regenerate registry-derived artifacts (keyword map, groups):
