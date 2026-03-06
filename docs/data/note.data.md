@@ -107,6 +107,7 @@ Purpose: short reference for the pipeline framework, data generation commands, a
 - **Source**: `data/raw/*.md` — human-authored Chinese prose (authoritative content).
 - **Keywords**: `docs/data/keyword.map.cn.md` (primary CN spec) and `docs/data/keyword.map.md` (EN). These map Chinese patterns → canonical effect types and field names; they are generated from the TypeScript `Registry` (`bun app/generate.ts`) and may be edited by authors to improve extraction.
 - **Normalized data**: `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md` — strict markdown tables (one row per effect × data_state). Produced by the extraction step that decodes Source using Keywords; reviewable and editable by humans if necessary.
+  - **Role:** Normalized data exists to reduce the volatility of free-form `Source`. It captures verbatim numeric and phrase values from the prose, structures them into deterministic table rows, and avoids making logical inferences or merging semantics. In other words, `Normalized` is a faithful, low-interpretation transcription of `Source` intended for machine parsing and human review — the higher-level logic and relationships belong in the `Registry` and the derived `Structured` YAML.
 - **Structured data (YAML)**: `data/yaml/effects.yaml` and `data/yaml/groups.yaml` — parser output from Normalized; validated by Zod schemas and consumed by downstream code and analysis.
 
 Relationships (logical):
