@@ -94,10 +94,10 @@ For the English version (`normalized.data.md`):
 
 ## Rules
 
-1. **No inference.** Only extract values explicitly stated in about.md. If a value requires calculation or interpolation, do not include it.
+1. **No inference.** Only extract values explicitly stated in the source files (`data/raw/*.md`). If a value requires calculation or interpolation, do not include it.
 2. **No prose in fields.** The `fields` column contains only `key=value` pairs — never Chinese sentences.
-3. **Verbatim numbers.** Copy numeric values exactly as they appear in about.md. Do not round, convert, or normalize.
-4. **Verbatim blockquotes.** The `> 原文:` text must be findable in about.md as-is.
+3. **Verbatim numbers.** Copy numeric values exactly as they appear in the source files. Do not round, convert, or normalize.
+4. **Verbatim blockquotes.** The `> 原文:` text must be findable in the source files as-is.
 5. **Exclude shared mechanics.** Fusion damage, enlightenment damage, and cooldown are 功法书 base mechanics — not 灵书 effects. Do not extract them.
 6. **One row per effect × data_state.** Never combine multiple data_state tiers into one row.
 7. **Signed debuff values.** When a debuff reduces a stat, the value must be negative. `value=-31` means "reduces by 31%". Positive values = increases/buffs. Negative values = reductions/debuffs.

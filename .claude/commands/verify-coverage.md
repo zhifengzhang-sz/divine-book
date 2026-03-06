@@ -1,14 +1,14 @@
-# Agent: Verify Coverage (about.md ↔ normalized.data)
+# Agent: Verify Coverage (Source ↔ normalized.data)
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Coverage verification agent.** Validates that `normalized.data` faithfully and completely represents the data in `about.md`. Checks source traceability, numeric accuracy, and completeness. Does not check schema conformance — that is the schema agent's job.
+> **Coverage verification agent.** Validates that `normalized.data` faithfully and completely represents the data in the source files (`data/raw/*.md`). Checks source traceability, numeric accuracy, and completeness. Does not check schema conformance — that is the schema agent's job.
 
 ## Inputs
 
 | File | Role |
 |:---|:---|
-| `data/raw/about.md` | Source of truth — volatile Chinese prose |
+| `data/raw/*.md` | Source of truth — split prose files (`主書.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md`, `about.md`) |
 | `docs/data/normalized.data.cn.md` (or `.md`) | Extraction to validate |
 
 ## Checks
@@ -17,8 +17,8 @@
 
 For every `> 原文:` blockquote in normalized.data:
 
-- **PASS**: The quoted text can be found in about.md (allowing minor whitespace differences).
-- **FAIL**: The quoted text does not appear in about.md.
+- **PASS**: The quoted text can be found in the source files (allowing minor whitespace differences).
+- **FAIL**: The quoted text does not appear in the source files.
 
 Report: list of unmatched blockquotes with their location in normalized.data.
 
@@ -42,7 +42,7 @@ Report: list of missing/extra books, missing sections.
 
 Count and verify all affix entries:
 
-- **通用词缀**: 16 expected (list each by name from about.md)
+- **通用词缀**: 16 expected (list each by name from the source files)
 - **修为词缀**:
   - 剑修: 4 (摧云折月, 灵犀九重, 破碎无双, 心火淬锋)
   - 法修: 4 (长生天则, 明王之路, 天命有归, 景星天佑)
@@ -55,29 +55,29 @@ Report: list of missing/extra affixes.
 
 ### Check 4: Numeric Accuracy
 
-For each data row in normalized.data, trace the numeric values back to about.md:
+For each data row in normalized.data, trace the numeric values back to the source files:
 
-- **PASS**: Every numeric value in the `fields` column matches the corresponding number in the about.md source text.
-- **FAIL**: A value differs from about.md (wrong number, swapped fields, transcription error).
+- **PASS**: Every numeric value in the `fields` column matches the corresponding number in the source text.
+- **FAIL**: A value differs from the source files (wrong number, swapped fields, transcription error).
 
-Report: list of mismatched values with expected (from about.md) vs actual (from normalized.data).
+Report: list of mismatched values with expected (from the source files) vs actual (from normalized.data).
 
 ### Check 5: Data State Tier Coverage
 
-For books with multiple data_state tiers in about.md (千锋聚灵剑, 甲元仙符, etc.):
+For books with multiple data_state tiers in the source files (千锋聚灵剑, 甲元仙符, etc.):
 
-- **PASS**: Every data_state tier mentioned in about.md has corresponding rows in normalized.data.
-- **FAIL**: A tier present in about.md is missing from normalized.data.
+- **PASS**: Every data_state tier mentioned in the source files has corresponding rows in normalized.data.
+- **FAIL**: A tier present in the source files is missing from normalized.data.
 
 Report: list of missing data_state tiers with book name and expected tier.
 
 ### Check 6: Effect Coverage
 
-For each effect description in about.md, verify it has at least one corresponding row in normalized.data:
+For each effect description in the source files, verify it has at least one corresponding row in normalized.data:
 
 - **PASS**: The effect is represented (correct effect_type, fields capture the described behavior).
 - **WARN**: The effect is partially captured (some aspects of the description are not reflected in the fields).
-- **FAIL**: The effect description in about.md has no corresponding row in normalized.data.
+- **FAIL**: The effect description in the source files has no corresponding row in normalized.data.
 
 This is the most judgment-intensive check — it requires understanding both the Chinese source text and the effect type mapping.
 
@@ -122,7 +122,7 @@ Report: list of incorrectly included shared mechanics rows.
 
 ## Process
 
-1. **Parse about.md** to build an inventory:
+1. **Parse source files** (`data/raw/*.md`) to build an inventory:
    - List of all 功法书 with their school
    - For each book: 主技能 text, 主词缀 text, 专属词缀 text (where present)
    - List of 通用词缀 with descriptions

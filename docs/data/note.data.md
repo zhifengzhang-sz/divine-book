@@ -1,7 +1,3 @@
-# Data Pipeline — notes
-
-Purpose: short reference for the pipeline framework, data generation commands, and verification tools.
-
 ---
 initial date: 2026-03-06
 dates of modification: [2026-03-06]
@@ -98,72 +94,198 @@ strong {
 }
 </style>
 
-# Data Pipeline — notes
-
-Purpose: short reference for the pipeline framework, data generation commands, and verification tools. This note is a compact companion to the full docs referenced below.
-
-**Top-level concepts & relationships**
-
-- **Source**: `data/raw/*.md` — human-authored Chinese prose (authoritative content).
-- **Keywords**: `docs/data/keyword.map.cn.md` (primary CN spec) and `docs/data/keyword.map.md` (EN). These map Chinese patterns → canonical effect types and field names; they are generated from the TypeScript `Registry` (`bun app/generate.ts`) and may be edited by authors to improve extraction.
-- **Normalized data**: `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md` — strict markdown tables (one row per effect × data_state). Produced by the extraction step that decodes Source using Keywords; reviewable and editable by humans if necessary.
-  - **Role:** Normalized data exists to reduce the volatility of free-form `Source`. It captures verbatim numeric and phrase values from the prose, structures them into deterministic table rows, and avoids making logical inferences or merging semantics. In other words, `Normalized` is a faithful, low-interpretation transcription of `Source` intended for machine parsing and human review — the higher-level logic and relationships belong in the `Registry` and the derived `Structured` YAML.
-- **Structured data (YAML)**: `data/yaml/effects.yaml` and `data/yaml/groups.yaml` — parser output from Normalized; validated by Zod schemas and consumed by downstream code and analysis.
-
-Relationships (logical):
-- `Keywords` are the decoding specification used to interpret `Source`.
-- `Normalized = Extract(Source, Keywords)` — the extractor must run after `docs/data/keyword.map.cn.md` is up-to-date.
-- `Structured = Parse(Normalized)` — the parser validates rows and emits the canonical YAML.
-- Change flows:
-  - Registry changes → regenerate `Keywords` (`bun app/generate.ts`) → re-run extraction or update `Normalized` → re-parse.
-  - Source changes → re-run extraction (using current `Keywords`) → re-parse.
-
-Practical rules:
-- Ensure `docs/data/keyword.map.cn.md` is current before extraction.
-- Treat `Source` and `Registry` as primary authoring inputs; `Keywords` bridge code and content.
-- Prefer running the extractor; edit `Normalized` manually only when necessary.
-
-
-**How to generate data (commands)**
-- Regenerate registry-derived artifacts (keyword map, groups):
-```
-bun app/generate.ts
-```
-- Parse normalized data into YAML (validation):
-```
-bun app/parse.ts docs/data/normalized.data.md data/yaml
-```
-- Notes: parser prints validation warnings and exits non-zero on failures — see `docs/data/usage.parser.md` for policies.
-
-**Verification: tools & usage (how-to)**
-- Programmatic verification script:
-	- `scripts/verify-pipeline.ts` — runs the parser, computes output checksums, and checks coverage:
-		1) raw table book names present in `docs/data/normalized.data.md`
-		2) backtick token coverage vs `docs/data/keyword.map.md`
-		3) normalized effect-type coverage vs `keyword.map`
-	- Output: `tmp-verify-output/verify-report.json` (machine-readable summary).
-- Convenience workflow (generate → parse → tests → verify):
-```
-bash scripts/run-verify.sh
-```
-- CI: `.github/workflows/verify.yml` runs the convenience script on PRs/branches.
-
-**Recommended short workflow when adding books**
-1. Edit `data/raw/主书.md` (add table rows for new books or adjust parameters).
-2. If you changed the TypeScript registry (affix/effect definitions) or made a persistent vocabulary change, run the generator to update the keyword maps: `bun app/generate.ts` — this writes `docs/data/keyword.map.md` and `docs/data/keyword.map.cn.md`.
-3. Run the extraction agent (or update normalized files manually): the extractor reads `data/raw/*.md` and `docs/data/keyword.map.cn.md` (CN spec) and writes `docs/data/normalized.data.cn.md` and `docs/data/normalized.data.md`. The extractor must be run after the CN keyword map is current.
-4. Parse and validate: `bun app/parse.ts docs/data/normalized.data.md data/yaml`.
-5. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
-6. Inspect `tmp-verify-output/verify-report.json` for:
-5. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
-6. Inspect `tmp-verify-output/verify-report.json` for:
-	 - `missingBooks` (raw vs normalized)
-	 - `rawTokensMissingInKeyword` (tokens to add to `keyword.map.md`)
-	 - `effectTypesMissingInKeyword` (effect types not covered by keyword map)
-	 - parser exit code and SHA diffs for `effects.yaml` / `groups.yaml`.
-
-**Bottom notes & conventions**
-- Keep `docs/data/keyword.map.md` as the authoritative parsing specification — add Chinese patterns there before running extraction to improve deterministic extraction.
-- Validation rule: zero warnings/errors required before committing changes to `lib/` or `data/yaml` (see `docs/data/usage.parser.md`).
+# Data Pipeline Notes
 
 **Authors:** Z. Zhang
+
+> Quick reference for the data pipeline: what each layer does, why it exists, how to run it, and how to verify the output. For architectural rationale, see `docs/data/design.md`. For parser policies, see `docs/data/usage.parser.md`.
+
+---
+
+## 1. Pipeline Layers
+
+The pipeline exists because the game's sole source of truth is volatile Chinese prose, while the combat engine needs deterministic structured data. Each layer solves a specific problem in that transformation.
+
+### Source (`data/raw/*.md`)
+
+Human-authored Chinese prose describing game rules, skills, and affixes. This is the authoritative content — everything downstream derives from it.
+
+**Why it exists:** the game designers write and update rules in natural language. The pipeline must accept this format as-is.
+
+### Keywords (`docs/data/keyword.map.cn.md`, `keyword.map.md`)
+
+Pattern-to-type mappings: Chinese phrases to canonical effect types and field names. Generated from the TypeScript `Registry` (`bun app/generate.ts`); human-editable to refine extraction accuracy.
+
+**Why it exists:** without pinned terminology, the extraction agent would invent inconsistent names across runs (`damage_boost` vs `attack_bonus`). The keyword map eliminates this variance by prescribing exact names, fields, and units. It is the type system for the entire pipeline.
+
+- `keyword.map.cn.md` is the **primary spec** — Chinese patterns matching the Chinese source.
+- `keyword.map.md` is the English translation consumed by the code parser.
+
+### Normalized Data (`docs/data/normalized.data.cn.md`, `normalized.data.md`)
+
+Strict markdown tables — one row per effect per `data_state` tier. Produced by the extraction step; reviewable and manually editable.
+
+**Why it exists:** free-form prose is too volatile and ambiguous for direct machine parsing. Normalized data is a faithful, low-interpretation transcription: it captures **verbatim** numeric and phrase values, structures them into deterministic table rows, and deliberately avoids logical inference or semantic merging. This makes it diff-reviewable by humans and trivially parseable by code. Higher-level logic belongs in the `Registry` and the derived Structured YAML.
+
+### Structured Data (`data/yaml/effects.yaml`, `groups.yaml`)
+
+Parser output from Normalized. Validated by Zod schemas; consumed by downstream code and analysis.
+
+**Why it exists:** the combat engine, candidates query, and analysis tools need typed, schema-validated data — not markdown tables. The parser is trivial (~100 LOC) precisely because Normalized is strict in format.
+
+---
+
+## 2. Data Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
+flowchart TD
+    subgraph AUTH ["Authoring Inputs"]
+        SRC["data/raw/*.md\nChinese prose"]
+        REG["TypeScript Registry\nlib/domain/registry.ts"]
+    end
+
+    REG -->|"bun app/generate.ts"| KW["keyword.map.cn.md + .md\ntype system & patterns"]
+
+    subgraph EXTRACT ["Extraction — LLM agent"]
+        EXT["/extract"]
+    end
+
+    SRC -->|"read by"| EXT
+    KW -->|"pins terminology"| EXT
+    EXT --> ND["normalized.data.cn.md + .md\nstrict tables, verbatim values"]
+
+    subgraph VERIFY ["Verification — parallel, LLM agents"]
+        VS["/verify-schema\nstructure check"]
+        VC["/verify-coverage\ncontent check"]
+    end
+
+    ND --> VS
+    ND --> VC
+    KW -.->|"type defs"| VS
+    SRC -.->|"source text"| VC
+
+    VS --> GATE{{"Human diff review"}}
+    VC --> GATE
+
+    GATE --> PARSE["bun app/parse.ts\n~100 LOC, deterministic"]
+    ND --> PARSE
+
+    PARSE --> YAML[("effects.yaml\ngroups.yaml")]
+    YAML -.->|"validated by"| ZOD["Zod schemas"]
+
+    subgraph PROG ["Programmatic Verification"]
+        VP["scripts/verify-pipeline.ts\nbook + token + effect-type coverage"]
+    end
+
+    YAML --> VP
+    KW -.-> VP
+    ND -.-> VP
+    VP --> RPT[("verify-report.json")]
+```
+
+**Change propagation:**
+- **Registry changes** -> regenerate Keywords (`bun app/generate.ts`) -> re-extract -> re-parse.
+- **Source changes** -> re-extract (with current Keywords) -> re-parse.
+
+### Invariants
+
+- `keyword.map.cn.md` must be current before extraction.
+- `Source` and `Registry` are the primary authoring inputs; Keywords bridge code and content.
+- Prefer running the extractor over editing Normalized manually.
+
+---
+
+## 3. Commands
+
+**Generate** registry-derived artifacts (keyword maps, groups):
+
+```sh
+bun app/generate.ts
+```
+
+**Parse** normalized data into YAML:
+
+```sh
+bun app/parse.ts docs/data/normalized.data.md data/yaml
+```
+
+The parser prints validation warnings and exits non-zero on failures — see `docs/data/usage.parser.md` for policies.
+
+**Sync style** — inject the canonical `<style>` block into all docs under `data/raw/` and `docs/data/`:
+
+```sh
+bun run sync-style
+```
+
+---
+
+## 4. Agent Commands
+
+Three LLM agent tasks are defined as Claude Code slash commands (`.claude/commands/*.md`). They are not shell scripts — invoke them from within a Claude Code session.
+
+| Command | Purpose | Spec |
+|---|---|---|
+| `/extract` | Reads `data/raw/*.md` + `keyword.map.cn.md` and produces both `normalized.data.cn.md` and `normalized.data.md`. This is the primary extraction step that decodes Source using Keywords. | `.claude/commands/extract.md` |
+| `/verify-schema` | Validates that `normalized.data` conforms to the type system in `keyword.map` — effect types, field names, units, data_state vocabulary. Structural correctness only; does not check source faithfulness. | `.claude/commands/verify-schema.md` |
+| `/verify-coverage` | Validates that `normalized.data` faithfully and completely represents the source files — book completeness, numeric accuracy, data_state tier coverage, source traceability via `> 原文:` blockquotes. | `.claude/commands/verify-coverage.md` |
+
+The two verification agents are independent and can run in parallel. Together they catch both structural errors (wrong types/fields) and content errors (wrong numbers/missing effects).
+
+---
+
+## 5. Programmatic Verification
+
+### verify-pipeline.ts
+
+`scripts/verify-pipeline.ts` runs the parser, computes output checksums, and checks three coverage dimensions:
+
+1. **Book coverage** — raw table book names present in `normalized.data.md`.
+2. **Token coverage** — backtick tokens in normalized data vs `keyword.map.md`.
+3. **Effect-type coverage** — normalized effect types vs keyword map types.
+
+Output: `tmp-verify-output/verify-report.json`.
+
+### Convenience script
+
+Runs the full cycle (generate -> parse -> test -> verify):
+
+```sh
+bash scripts/run-verify.sh
+```
+
+### CI
+
+`.github/workflows/verify.yml` runs the convenience script on PRs and branch pushes.
+
+---
+
+## 6. Workflow: Adding or Updating Books
+
+1. **Edit source** — modify `data/raw/主书.md` (add rows, adjust parameters).
+2. **Regenerate keywords** (if registry or vocabulary changed):
+   ```sh
+   bun app/generate.ts
+   ```
+   Outputs both `keyword.map.md` and `keyword.map.cn.md`.
+3. **Extract** — run the extraction agent (or update normalized files manually). The extractor reads `data/raw/*.md` + `keyword.map.cn.md` and writes both normalized files.
+4. **Parse and validate**:
+   ```sh
+   bun app/parse.ts docs/data/normalized.data.md data/yaml
+   ```
+5. **Verify**:
+   ```sh
+   bash scripts/run-verify.sh
+   ```
+6. **Inspect** `tmp-verify-output/verify-report.json` for:
+   - `missingBooks` — raw books absent from normalized data.
+   - `rawTokensMissingInKeyword` — tokens to add to the keyword map.
+   - `effectTypesMissingInKeyword` — effect types not covered by the keyword map.
+   - Parser exit code and SHA diffs for `effects.yaml` / `groups.yaml`.
+
+---
+
+## 7. Conventions
+
+- Add Chinese patterns to `keyword.map.cn.md` **before** running extraction to improve deterministic results.
+- **Zero warnings/errors** required before committing changes to `lib/` or `data/yaml` (see `docs/data/usage.parser.md`).
