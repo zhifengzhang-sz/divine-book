@@ -134,10 +134,11 @@ bash scripts/run-verify.sh
 
 **Recommended short workflow when adding books**
 1. Edit `data/raw/主书.md` (add table rows for new books or adjust parameters).
-2. If you add new keywords/affix names, update/generate keyword map: `bun app/generate.ts`.
-3. Parse and validate: `bun app/parse.ts docs/data/normalized.data.md data/yaml`.
-4. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
-5. Inspect `tmp-verify-output/verify-report.json` for:
+2. If you add new keywords/affix names, update/generate the keyword map: `bun app/generate.ts`.
+3. Regenerate `docs/data/normalized.data.md` (extraction): run the LLM extraction agent that converts `data/raw/*.md` → `docs/data/normalized.data.md` using `docs/data/keyword.map.md` as the decoding spec (see `.claude/commands/extract.md`). If you don't run the agent, update `docs/data/normalized.data.md` manually to reflect the new raw entries.
+4. Parse and validate: `bun app/parse.ts docs/data/normalized.data.md data/yaml`.
+5. Run verification: `bun scripts/verify-pipeline.ts` or `bash scripts/run-verify.sh`.
+6. Inspect `tmp-verify-output/verify-report.json` for:
 	 - `missingBooks` (raw vs normalized)
 	 - `rawTokensMissingInKeyword` (tokens to add to `keyword.map.md`)
 	 - `effectTypesMissingInKeyword` (effect types not covered by keyword map)
