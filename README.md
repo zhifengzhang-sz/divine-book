@@ -163,6 +163,27 @@ bun app/combo-search.ts --list   # list all platforms
 bun app/combo-search.ts -p 疾风九变  # combo search for a platform
 ```
 
+## Style block (visual docs)
+
+The repository uses a canonical HTML/CSS style block for Markdown rendering. The canonical block lives at `docs/style.block.md`.
+
+To apply the canonical style to all Markdown files under `data/raw/` and `docs/data/`, run:
+
+```bash
+bun scripts/sync-style.ts
+```
+
+If you prefer to apply the style manually to a single file, copy the contents of `docs/style.block.md` and paste the `<style>...</style>` block after the file's frontmatter (the YAML `---` block) or at the top of the file.
+
+You can add a short package script in `package.json` for convenience, for example:
+
+```json
+"scripts": {
+  "sync-style": "bun scripts/sync-style.ts"
+}
+```
+
+
 ## Project Structure
 
 ```

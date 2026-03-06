@@ -6,6 +6,7 @@
     "parse": "bun app/parse.ts docs/data/normalized.data.md data/yaml",
     "generate": "bun app/generate.ts",
     "candidates": "bun app/candidates.ts",
+    "sync-style": "bun scripts/sync-style.ts",
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test"
   },
