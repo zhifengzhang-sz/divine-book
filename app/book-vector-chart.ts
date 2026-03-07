@@ -55,7 +55,7 @@ function generateHTML(r: TimeSeriesResult, T_gap: number): string {
 	const varyingFactors = allFactors.filter((f) =>
 		r.samples.some((s) => {
 			const v = s.factors[f] ?? 0;
-			const base = r.static_baseline[f] ?? 0;
+			const base = r.permanent[f] ?? 0;
 			return Math.abs(v - base) > 0.01;
 		}),
 	);
@@ -219,7 +219,7 @@ function generateHTML(r: TimeSeriesResult, T_gap: number): string {
 	const displayFactors = [...new Set([...varyingFactors, ...staticFactors])];
 	const summaryRows = displayFactors
 		.map((f) => {
-			const s = r.static_baseline[f] ?? 0;
+			const s = r.permanent[f] ?? 0;
 			const a = r.averaged[f] ?? 0;
 			const p = r.peak[f] ?? 0;
 			const delta = a - s;
@@ -293,13 +293,13 @@ ${charts.map((c) => `<h2>${c.title}</h2>\n<div class="chart-container"><canvas i
 <h2>Factor Summary</h2>
 <table>
 	<thead>
-		<tr><th>Factor</th><th>Static</th><th>Averaged</th><th>Peak</th><th>&Delta;(avg-static)</th></tr>
+		<tr><th>Factor</th><th>Permanent</th><th>&int;vec(t)dt/T</th><th>Peak</th><th>Temporal</th></tr>
 	</thead>
 	<tbody>
 		${summaryRows}
 	</tbody>
 </table>
-<p class="note">Averaged = time-weighted mean over T_active. Static = always-on baseline (no temporal effects). Yellow = time-varying.</p>
+<p class="note">&int;vec(t)dt/T = time-integrated factor divided by T_active. Permanent = always-on baseline. Temporal = &int; &minus; Permanent. Yellow = time-varying.</p>
 
 <script>
 ${charts.map((c) => buildChartJS(c.id, c.factors)).join("\n")}

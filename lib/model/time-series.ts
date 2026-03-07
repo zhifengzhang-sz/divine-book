@@ -62,7 +62,7 @@ export interface TimeSeriesResult {
 	T_active: number;
 	slot_coverage: number;
 	peak: Record<string, number>;
-	static_baseline: Record<string, number>;
+	permanent: Record<string, number>;   // always-on factors (no temporal gating)
 	summon: SummonEnvelope | null;
 }
 
@@ -416,7 +416,7 @@ export function evaluateBook(
 		T_active,
 		slot_coverage,
 		peak,
-		static_baseline: staticBaseline,
+		permanent: staticBaseline,
 		summon,
 	};
 }

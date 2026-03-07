@@ -3,7 +3,7 @@
  * CLI: Time-series book vector evaluation.
  *
  * Computes vec(t) per second for a divine book (platform + 2 operators),
- * then aggregates to show time-averaged factors and slot coverage.
+ * then integrates over time to produce the book factor vector.
  *
  * Usage:
  *   bun app/book-vector.ts --platform 春黎剑阵 --op1 清灵 --op2 灵威
@@ -63,49 +63,63 @@ if (result.summon) {
 }
 console.log(`${"═".repeat(80)}\n`);
 
-// Factor comparison table
-const factors = Object.keys(result.averaged).filter(
-	(f) => result.averaged[f] !== 0 || result.static_baseline[f] !== 0 || result.peak[f] !== 0,
-);
+// ---------------------------------------------------------------------------
+// Integrated book vector (primary output)
+// ---------------------------------------------------------------------------
 
-// Filter out factors that are default identity (D_res=1, M_synchro=1) and unchanged
+// Identify non-trivial factors
+const allFactors = Object.keys(result.averaged);
 const isIdentity = (f: string, v: number) =>
 	(f === "D_res" || f === "M_synchro") && v === 1;
 
-const displayFactors = factors.filter(
+const displayFactors = allFactors.filter(
 	(f) =>
 		!(
 			isIdentity(f, result.averaged[f]) &&
-			isIdentity(f, result.static_baseline[f]) &&
+			isIdentity(f, result.permanent[f]) &&
 			isIdentity(f, result.peak[f])
+		) &&
+		(result.averaged[f] !== 0 || result.permanent[f] !== 0 || result.peak[f] !== 0),
+);
+
+// Identify which factors have temporal variation
+const temporalFactors = new Set(
+	displayFactors.filter((f) =>
+		result.samples.some(
+			(s) => Math.abs((s.factors[f] ?? 0) - (result.permanent[f] ?? 0)) > 0.01,
 		),
+	),
 );
 
 console.log(
-	`${"Factor".padEnd(12)}  ${"Static".padStart(10)}  ${"Averaged".padStart(10)}  ${"Peak".padStart(10)}  ${"Δ(avg-static)".padStart(14)}`,
+	`${"Factor".padEnd(12)}  ${"∫ vec(t)dt/T".padStart(12)}  ${"Peak".padStart(10)}  ${"Permanent".padStart(10)}  ${"Temporal".padStart(10)}`,
 );
-console.log(`${"─".repeat(62)}`);
+console.log(`${"─".repeat(68)}`);
 
 for (const f of displayFactors) {
-	const s = result.static_baseline[f] ?? 0;
-	const a = result.averaged[f] ?? 0;
-	const p = result.peak[f] ?? 0;
-	const delta = a - s;
-	const deltaStr = delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2);
+	const perm = result.permanent[f] ?? 0;
+	const avg = result.averaged[f] ?? 0;
+	const peak = result.peak[f] ?? 0;
+	const temporal = avg - perm;
+	const tempStr = temporalFactors.has(f)
+		? (temporal > 0 ? `+${fmt(temporal)}` : fmt(temporal))
+		: "—";
+
 	console.log(
-		`${f.padEnd(12)}  ${fmt(s).padStart(10)}  ${fmt(a).padStart(10)}  ${fmt(p).padStart(10)}  ${deltaStr.padStart(14)}`,
+		`${f.padEnd(12)}  ${fmt(avg).padStart(12)}  ${fmt(peak).padStart(10)}  ${fmt(perm).padStart(10)}  ${tempStr.padStart(10)}`,
 	);
 }
 console.log();
 
-// Per-second samples
+// ---------------------------------------------------------------------------
+// Per-second samples (optional)
+// ---------------------------------------------------------------------------
+
 if (values.samples) {
-	const sampleFactors = displayFactors.filter((f) =>
-		result.samples.some((s) => s.factors[f] !== result.static_baseline[f]),
-	);
+	const sampleFactors = [...temporalFactors];
 
 	if (sampleFactors.length > 0) {
-		console.log("Per-second samples (factors that vary over time):");
+		console.log("vec(t) per second (time-varying factors only):");
 		console.log(
 			`${"t".padStart(4)}  ${sampleFactors.map((f) => f.padStart(10)).join("  ")}`,
 		);
@@ -118,7 +132,7 @@ if (values.samples) {
 		}
 		console.log();
 	} else {
-		console.log("No time-varying factors — static model is sufficient.\n");
+		console.log("No time-varying factors — all factors are permanent.\n");
 	}
 }
 
