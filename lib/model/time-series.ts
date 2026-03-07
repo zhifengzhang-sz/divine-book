@@ -327,12 +327,12 @@ export function sampleTimeSeries(
 			}
 		}
 
-		// Summon envelope: multiplicative on all additive factors
+		// Summon: adds a clone that copies the base skill attack.
+		// The clone inherits stats and gets damage_increase, but does NOT
+		// trigger affix effects (DoTs, debuffs, buffs, etc.).
+		// Only D_base is amplified: total = player + summon = D_base × (1 + multiplier).
 		if (summon && t < summon.duration) {
-			for (const f of FACTOR_NAMES) {
-				if (f === "D_res" || f === "M_synchro" || f === "sigma_R") continue;
-				vec[f] = round(vec[f] * (1 + summon.multiplier));
-			}
+			vec.D_base = round(vec.D_base * (1 + summon.multiplier));
 		}
 
 		samples.push({ t, factors: vec });
