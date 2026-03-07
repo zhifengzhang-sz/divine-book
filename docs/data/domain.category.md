@@ -98,7 +98,7 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Domain-driven affix taxonomy for book set construction.** Parser categories ($C_0$–$C_{13}$) group effect types by Chinese text patterns — useful for extraction, useless for construction. This document classifies all 61 affixes by their combat role and interaction structure. Source: [about.md](../../data/raw/about.md) via [normalized.data.md](./normalized.data.md).
+> **Domain-driven affix taxonomy for book set construction.** Parser categories ($C_0$–$C_{13}$) group effect types by Chinese text patterns — useful for extraction, useless for construction. This document classifies all 61 affixes by their combat role and interaction structure. Source: `data/raw/*.md` via `data/normalized/normalized.data.md`.
 
 ## Target Categories
 
@@ -179,15 +179,15 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 
 | Subcategory | Binding | Members | Natural partners (providers) |
 |:------------|:--------|:--------|:----------------|
-| **Probability** (T8, chance-based triggers) | `requires=T8` | 【心逐神随】, 罗天魔咒, 【奇能诡道】, 【怒目】, 【通明】, 【灵犀九重】, 【福荫】, 【景星天佑】, 【祸星无妄】, 星猿弃天 | **【天命有归】** converts probability → certain |
+| **Probability** (T8, chance-based triggers) | `requires=T8` or probability-related | 【心逐神随】(`requires=free`, but provides T8); 罗天魔咒, 【奇能诡道】 (probability-gated outputs); 【怒目】, 【通明】, 【灵犀九重】, 【福荫】, 【景星天佑】, 【祸星无妄】, 星猿弃天 (probability-gated values) | **【天命有归】** converts probability → certain |
 | **Time-based state** (T7, effects with duration) | `requires=T7` | 仙佑, 命損, 噬心, 怒灵降世, 天哀灵涸, 极怒, all DoTs/buffs/debuffs with duration | **【业焰】**, **【真言不灭】** extend all states; **【仙露护元】** extends buffs |
 | **HP-loss-dependent** (T9, scale with own HP lost) | `requires=T9` | 【怒血战意】, 【战意】, `十方真魄` main (16% kick) | **【破釜沉舟】** (`outputs: self_damage_taken_increase` → T9) accelerates loss; **【意坠深渊】** (`outputs: min_lost_hp_threshold` → T9) floors loss; `self_hp_cost` → T9 creates loss |
 | **Debuff-stack-dependent** (T2, scale with enemy debuff count) | `requires=T2` | 【紫心真诀】, 【心魔惑言】 | `大罗幻诀` main (`provides=T2`) creates stacks; **【奇能诡道】** (`provides=T2`) adds extra stacks; **【咒书】** amplifies debuffs |
 | **Buff-stack-dependent** (T3, scale with own buff count) | `requires=T3` | 【真极穿空】 | Any buff-applying main skill (仙佑, 怒灵降世) — platform `provides=T3` |
 | **Shield-dependent** (T5, require shield source) | `requires=T5` | 【灵盾】, 【青云灵盾】, 【玉石俱焚】 | **【玄女护心】** (`provides=T5`) creates shield from damage |
-| **Healing-dependent** (T6, require healing source) | `requires=T6` | 【长生天则】, 【瑶光却邪】, 【魔骨明心】 | **【仙灵汲元】** (`provides=T6`), 星猿复灵 (`provides=T6`) create healing via lifesteal |
+| **Healing-dependent** (T6, require healing source) | `requires=T6` | 【长生天则】, 【瑶光却邪】 | **【仙灵汲元】** (`provides=T6`), 星猿复灵 (`provides=T6`) create healing via lifesteal; **【魔骨明心】** (`provides=T6`, but `requires=T2`) |
 | **DoT-dependent** (T4, amplify DoTs) | `requires=T4` | 【古魔之魂】, 【天魔真解】, 【鬼印】, 【追神真诀】 | **【玄心剑魄】** (`provides=T4`) creates DoT; `大罗幻诀` main (`provides=T4`) creates DoTs |
-| **Debuff-condition** (T2, activate when target has debuffs) | `requires=T2` | 【引灵摘魂】, 【无相魔威】(+205% branch), 【魔骨明心】(heal branch) | Any debuff source: 【天哀灵涸】 (`provides=T2`), 【天倾灵枯】 (`provides=T2`), `大罗幻诀` main (`provides=T2`) |
+| **Debuff-condition** (T2, activate when target has debuffs) | `requires=T2` | 【引灵摘魂】, 【魔骨明心】(heal+DR shred branches) | Any debuff source: 【天哀灵涸】 (`provides=T2`), 【天倾灵枯】 (`provides=T2`), 【无相魔威】 (`provides=T2`, `requires=free`), `大罗幻诀` main (`provides=T2`) |
 
 > **Reading the table.** Members are affixes/effects that HAVE the property (`requires=T_N`). Partners are affixes/effects that CREATE what members need (`provides=T_N`). In construction: if a member is in the build, its partners become high-priority candidates for the remaining slots. If no provider of T_N exists, all members with `requires=T_N` have zero value → prune.
 
@@ -195,7 +195,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 
 ## Affix Walkthrough
 
-> Convention: each affix lists its effect types (= `outputs`) from [normalized.data.md](./normalized.data.md), then chain classification, tier, and dependencies. `→` means "depends on" or "modifies." The `provides` column shows target categories **derived from outputs** via the effect type → category mapping above.
+> Convention: each affix lists its effect types (= `outputs`) from `data/normalized/normalized.data.md`, then chain classification, tier, and dependencies. `→` means "depends on" or "modifies." The `provides` column shows target categories **derived from outputs** via the effect type → category mapping above.
 
 ### I. Universal Affixes (16)
 
@@ -214,7 +214,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 | U11 | 【斩岳】 | — | free | `flat_extra_damage` value=2000 | Damage | Source | Standalone. Flat 2000% ATK extra damage — bypasses multiplier zones (additive, not multiplicative). |
 | U12 | 【吞海】 | — | free | `per_enemy_lost_hp` per_percent=0.4 | HP Exploitation | Source | Standalone. +0.4% damage per 1% enemy HP lost. Stronger in long fights. |
 | U13 | 【灵盾】 | — | T5 | `shield_strength` value=20 | Shield | Amplifier | → requires shield-generating effect in build (`damage_to_shield`, or `self_buff` with shield). |
-| U14 | 【灵威】 | — | free | `next_skill_buff` stat=skill_damage_increase, value=118 (max_fusion) | Damage | Amplifier (temporal) | → the **next** skill's damage, not this one's. Value depends on slot ordering — strongest when preceding a burst skill. Cross-slot interaction. |
+| U14 | 【灵威】 | T3 | free | `next_skill_buff` stat=skill_damage_increase, value=118 (max_fusion) | Damage | Amplifier (temporal) | → the **next** skill's damage, not this one's. Value depends on slot ordering — strongest when preceding a burst skill. Cross-slot interaction. |
 | U15 | 【摧山】 | — | free | `attack_bonus` value=20 | Damage | Amplifier | → any damage source. Generic +20% ATK. Always useful, never transformative. |
 | U16 | 【通明】 | — | free | `guaranteed_resonance` base_mult=1.2, enhanced_mult=1.5, enhanced_chance=25 | Crit | Source | Standalone crit source. Weak compared to school version (【灵犀九重】2.97×). Universal fallback. |
 
@@ -270,7 +270,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 | E3 | 皓月剑诀 | 【追神真诀】 | — | T4 | `dot_extra_per_tick` 26.5% + `conditional_buff` (enlightenment_10: +50% max_hp damage, +300% damage) | DoT + Damage | Amplifier + **Context modifier** | The `dot_extra_per_tick` → requires DoT. The `conditional_buff` is ONLY active at enlightenment=10 (max) — **dynamic edge**: value depends on the book's enlightenment level. At e10, this is transformative (+300% damage). Below e10, it's just a DoT amplifier. |
 | E4 | 念剑诀 | 【仙露护元】 | — | T3 | `buff_duration` value=300 (max_fusion) | Self Buff | Amplifier (**cross-cutting**) | → any buff in build. +300% duration is extreme — a 4s buff becomes 16s. Value scales with how many and how powerful the buffs in the build are. Cross-slot: amplifies buffs from OTHER skills in the book set too. |
 | E5 | 通天剑诀 | 【神威冲云】 | — | free | `ignore_damage_reduction` + `damage_increase` value=36 | Damage | Enabler + Amplifier | Enabler: bypasses ALL enemy DR — unique effect. Makes all damage sources bypass a defensive layer. Also standalone +36% damage. Compare to 【天命有归】's dual nature. |
-| E6 | 新-青元剑诀 | 【天威煌煌】 | — | free | `next_skill_buff` skill_damage_increase=50 | Damage | Amplifier (temporal) | → the **next** skill's damage, not this one's. Weaker version of 【灵威】(50% vs 118%). Value depends entirely on slot ordering — what skill follows this one? Cross-slot interaction. |
+| E6 | 新-青元剑诀 | 【天威煌煌】 | T3 | free | `next_skill_buff` skill_damage_increase=50 | Damage | Amplifier (temporal) | → the **next** skill's damage, not this one's. Weaker version of 【灵威】(50% vs 118%). Value depends entirely on slot ordering — what skill follows this one? Cross-slot interaction. |
 | E7 | 无极御剑诀 | 【无极剑阵】 | — | free | `skill_damage_increase` value=555 + `enemy_skill_damage_reduction` value=350 | Damage | Source (net) | +555% skill damage but enemy gets +350% skill DR against this skill. Net effect depends on the damage formula — NOT simply 555-350=205%. Requires understanding the multiplicative zones. Self-contained, no dependencies. |
 
 #### Spell (7)
@@ -294,7 +294,7 @@ Each subcategory now maps to a formal **target category binding** — the `requi
 | E17 | 天魔降临咒 | 【引灵摘魂】 | — | T2 | `conditional_damage` value=104, condition=target_has_debuff | Damage | Amplifier (conditional) | → requires enemy to have debuffs. +104% damage. Near-universal in debuff-heavy builds (most PvP builds apply debuffs). Strongest conditional_damage after 【溃魂击瑕】. |
 | E18 | 天轮魔经 | 【心魔惑言】 | — | T2 | `debuff_stack_increase` 100% + `per_debuff_stack_damage` 5.5%/5stacks, max=27.5% (DoT at half) | Debuff + Stack Exploit | Amplifier + Source | Mirror of 【真极穿空】(E10) for debuffs. Doubles debuff stacks AND converts stacks to damage. Note: DoT receives only half the damage bonus — partial chain interaction. |
 | E19 | 天剎真魔 | 【魔骨明心】 | T6, T2 | T2 | `conditional_heal_buff` (target_has_debuff: +90% healing, 8s) + `conditional_debuff` (enlightenment: -20% final DR per hit, 1s) | Healing + Debuff | Source (conditional) + **Context modifier** | (1) `conditional_heal_buff` → T6: +90% healing when enemy has debuffs. (2) `conditional_debuff` → T2: at enlightenment, stacks -20% enemy final DR per hit. **Dual provider**: both T6 and T2 are derived from outputs. Per-hit DR shred value scales with hit count AND enlightenment level. |
-| E20 | 解体化形 | 【心逐神随】 | — | free | `probability_multiplier` (悟0: 11/31/51% → 4/3/2×) (悟2: 60/80/100% → 4/3/2×) | **Cross-cutting** | Amplifier (universal) | Multiplies ALL effects on the skill by 2-4×. Does not belong to any single chain — it amplifies **whatever chain the skill is in**. At 悟2, guaranteed 2× minimum. The most powerful cross-cutting amplifier. → 【天命有归】converts the probability thresholds to certainty (Enabler relationship). Multi-tier: value changes dramatically with enlightenment. |
+| E20 | 解体化形 | 【心逐神随】 | T8 | free | `probability_multiplier` (悟0: 11/31/51% → 4/3/2×) (悟2: 60/80/100% → 4/3/2×) | **Cross-cutting** | Amplifier (universal) | Multiplies ALL effects on the skill by 2-4×. Does not belong to any single chain — it amplifies **whatever chain the skill is in**. At 悟2, guaranteed 2× minimum. The most powerful cross-cutting amplifier. → 【天命有归】converts the probability thresholds to certainty (Enabler relationship). Multi-tier: value changes dramatically with enlightenment. |
 | E21 | 焚圣真魔咒 | 【天魔真解】 | — | T4 | `dot_frequency_increase` value=50.5 | DoT | Amplifier | → requires `dot` in build. Ticks 50.5% faster — nearly doubles DoT DPS. Complements 【古魔之魂】(damage per tick) and 【业焰】(duration). |
 
 #### Body (7)
@@ -329,7 +329,7 @@ Plus **input-side** amplifiers: structural relationships where one effect create
 
 ### Damage formula zones
 
-Zone data comes from the effect type registry (`lib/domain/effects/*.ts`). Each effect type is annotated with the damage formula zone(s) it contributes to. Two effects in different zones are multiplicative; same zone is additive.
+Zone data comes from the effect type registry (`lib/domain/effects/*.ts`). Each effect type is annotated with the damage formula zone(s) it contributes to. Two effects in different zones are multiplicative; same zone is additive. The table below lists the 9 damage-relevant zones (of 18 total in the `Zone` enum); the remaining zones cover defensive, healing, and state-duration parameters.
 
 | Zone | Description | Effect types |
 |:-----|:-----------|:-------------|
@@ -339,11 +339,11 @@ Zone data comes from the effect type registry (`lib/domain/effects/*.ts`). Each 
 | M_dmg | General damage multiplier | `damage_increase`, `conditional_damage`, `per_self_lost_hp`, `per_enemy_lost_hp`, `per_hit_escalation`, `crit_damage_bonus` |
 | M_skill | Skill-specific multiplier | `skill_damage_increase`, `next_skill_buff` |
 | M_final | Final multiplier | `final_damage_bonus`, `ignore_damage_reduction` |
-| M_res | Resonance (crit) | `guaranteed_resonance` |
+| D_res | Resonance (灵力 damage) | `guaranteed_resonance` |
 | M_synchro | Cross-cutting probability | `probability_multiplier`, `probability_to_certain` |
 | D_ortho | Orthogonal damage (DoT, bridges) | `dot`, `on_dispel`, `healing_to_damage`, `on_shield_expire`, etc. |
 
-> **Example: amplifiers for 【怒血战意】** (`per_self_lost_hp`, zone M_dmg). Cross-cutting: 【心逐神随】, 【天命有归】. Zone-multiplicative (25): 【摧山】(S_coeff), 【明王之路】(M_final), 【通明】(M_res), 【破釜沉舟】(M_skill), 【斩岳】(D_flat), etc. Input-side: 【破釜沉舟】(`self_damage_taken_increase`), 【意坠深渊】(`min_lost_hp_threshold`). The previous model found only 2 amplifiers; the zone model finds 47+.
+> **Example: amplifiers for 【怒血战意】** (`per_self_lost_hp`, zone M_dmg). Cross-cutting: 【心逐神随】, 【天命有归】. Zone-multiplicative (25): 【摧山】(S_coeff), 【明王之路】(M_final), 【通明】(D_res), 【破釜沉舟】(M_skill), 【斩岳】(D_flat), etc. Input-side: 【破釜沉舟】(`self_damage_taken_increase`), 【意坠深渊】(`min_lost_hp_threshold`). The previous model found only 2 amplifiers; the zone model finds 47+.
 
 ### Implementation
 

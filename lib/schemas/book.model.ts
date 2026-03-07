@@ -24,10 +24,13 @@ export const BookModelSchema = z.object({
 	slot: z.number().int().min(1).max(6),
 
 	/**
-	 * Evaluated multiplicative damage chain:
-	 * D_skill = (D_base × S_coeff + D_flat) × (1+M_dmg) × (1+M_skill) × (1+M_final) × M_res × M_synchro
+	 * Evaluated multiplicative damage chain (气血):
+	 * D_skill = (D_base × S_coeff + D_flat) × (1+M_dmg) × (1+M_skill) × (1+M_final) × M_synchro
 	 */
 	D_skill: z.number(),
+
+	/** Resonance 灵力 damage — parallel attack line, not part of 气血 chain */
+	D_res: z.number().default(1),
 
 	/** Orthogonal damage (additive: %maxHP + lost-HP + DoT) */
 	D_ortho: z.number().default(0),

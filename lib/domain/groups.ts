@@ -28,7 +28,7 @@ export const GROUPS: GroupDef[] = [
 		id: "resonance_system",
 		section: "§3",
 		label: "Resonance System (会心)",
-		primaryZones: [Zone.M_res],
+		primaryZones: [Zone.D_res],
 	},
 	{
 		id: "synchrony_system",

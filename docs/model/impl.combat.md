@@ -189,7 +189,7 @@ Each effect maps to one or more entries in the factor vector. The factors, from 
 | Skill zone multiplier | `M_skill` | number |
 | Final zone multiplier | `M_final` | number |
 | ATK scaling coefficient | `S_coeff` | number |
-| Resonance multiplier | `M_res` | number |
+| Resonance damage (灵力) | `D_res` | number |
 | Synchrony multiplier | `M_synchro` | number |
 | Resonance variance | `sigma_R` | number |
 | Orthogonal damage | `D_ortho` | number |
@@ -217,20 +217,20 @@ Each group has a distinct mapping rule. The rules are derived from [combat.md §
 | Multiplier Zones | `attack_bonus` | `S_coeff` | $1 + \text{value}/100$ |
 | Multiplier Zones | `damage_increase` | `M_dmg` | `value` field |
 | Multiplier Zones | `skill_damage_increase` | `M_skill` | `value` field |
-| Multiplier Zones | `enemy_skill_damage_reduction` | `M_skill` | Opponent's perspective |
+| Defensive | `enemy_skill_damage_reduction` | `DR_A` | Reduces damage received from enemy skills |
 | Multiplier Zones | `final_damage_bonus` | `M_final` | `value` field |
-| Multiplier Zones | `crit_damage_bonus` | `M_res` | Additive to resonance multiplier |
+| Multiplier Zones | `crit_damage_bonus` | `D_res` | Additive to resonance 灵力 damage |
 | Multiplier Zones | `flat_extra_damage` | `D_flat` | `value` field |
-| Resonance System | `guaranteed_resonance` | `M_res`, `M_synchro`, `sigma_R` | $E[R]$, $\text{Var}[R]$ from tier probabilities |
-| Synchrony System | `probability_multiplier` | `M_res`, `M_synchro`, `sigma_R` | $E[R] = \sum p_i m_i$, $\sigma^2 = \sum p_i(m_i - E)^2$ |
-| Standard Crit | `conditional_crit` | `M_res`, `M_synchro`, `sigma_R` | Collapses variance under condition |
+| Resonance System | `guaranteed_resonance` | `D_res`, `M_synchro`, `sigma_R` | $E[R]$, $\text{Var}[R]$ from tier probabilities |
+| Synchrony System | `probability_multiplier` | `D_res`, `M_synchro`, `sigma_R` | $E[R] = \sum p_i m_i$, $\sigma^2 = \sum p_i(m_i - E)^2$ |
+| Standard Crit | `conditional_crit` | `D_res`, `M_synchro`, `sigma_R` | Collapses variance under condition |
 | Standard Crit | `conditional_crit_rate` | `sigma_R` | Reduces variance |
 | Conditional Triggers | `conditional_damage` | `M_dmg` | `value` × $P(\text{condition})$ |
 | Conditional Triggers | `conditional_buff` | Various | Stat bonuses gated on condition |
-| Conditional Triggers | `probability_to_certain` | `M_res`, `M_synchro`, `sigma_R` | Max tier, zero variance |
+| Conditional Triggers | `probability_to_certain` | `D_res`, `M_synchro`, `sigma_R` | Max tier, zero variance |
 | Conditional Triggers | `ignore_damage_reduction` | — | Regime switch: nullifies opponent $DR$ |
 | Per-Hit Escalation | `per_hit_escalation` | `M_dmg` or `M_skill` | Average over $n$ hits |
-| Per-Hit Escalation | `periodic_escalation` | `M_res` | Geometric mean over hits |
+| Per-Hit Escalation | `periodic_escalation` | `D_res` | Geometric mean over hits |
 | HP-Based Calculations | `per_enemy_lost_hp` | `D_ortho` | `per_percent` × expected $\%HP_{lost}$ |
 | HP-Based Calculations | `per_self_lost_hp` | `D_ortho` | `per_percent` × expected $\%HP_{lost}$ |
 | HP-Based Calculations | `self_lost_hp_damage` | `D_ortho` | `value` × expected $\%HP_{lost}$ |
@@ -308,7 +308,7 @@ effects:
       <affix_name>:
         - type: guaranteed_resonance
           factors:
-            M_res: 2.5
+            D_res: 2.5
             M_synchro: 1.2
             sigma_R: 0.3
 
@@ -356,7 +356,7 @@ Per-factor aggregation rules (from [combat.md §3.1](combat.md#31-aggregation-ru
 | `M_skill` | $\sum$ | Additive within zone |
 | `M_final` | $\sum$ | Additive within zone |
 | `S_coeff` | $\sum$ | ATK scaling stacks |
-| `M_res` | $E[R]$ | Expected value of resonance multiplier |
+| `D_res` | $E[R]$ | Expected value of resonance 灵力 damage |
 | `M_synchro` | $E[S]$ | Expected value of synchrony multiplier |
 | `sigma_R` | $\sqrt{\sum \sigma_i^2}$ | Independent variance sources |
 | `D_ortho` | $\sum$ per channel | Orthogonal channels stack |
@@ -395,11 +395,11 @@ $$\mathbf{f}_{book} = \bigoplus_{a \in \text{affixes}(book)} \mathbf{f}_a$$
 
 After combination, the multiplicative damage chain can be evaluated:
 
-$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res} \times M_{synchro}$$
+$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{synchro}$$
 
-This collapses the book's offensive contribution into a single scalar $D_{skill}$. The book model is:
+This collapses the book's 气血 offensive contribution into a single scalar $D_{skill}$. The 灵力 damage ($D_{res}$) is carried separately as a parallel attack line. The book model is:
 
-$$\mathbf{b} = (D_{skill}, D_{ortho}, H_A, DR_A, S_A, H_{red}, \sigma, \text{temporal}[])$$
+$$\mathbf{b} = (D_{skill}, D_{res}, D_{ortho}, H_A, DR_A, S_A, H_{red}, \sigma, \text{temporal}[])$$
 
 ---
 
@@ -453,3 +453,4 @@ This feeds directly into:
 |---------|------|---------|
 | 1.0 | 2026-02-25 | Initial: map + three combinators specification |
 | 1.1 | 2026-03-03 | Rename C_mult/sigma_C → M_res/M_synchro/sigma_R; split Critical System into Resonance, Synchrony, Standard Crit groups; update damage chain formula |
+| 2.0 | 2026-03-07 | **Breaking**: M_res→D_res. 会心 is 灵力 damage (parallel attack line), not 气血 multiplier. Removed from damage chain. Added D_res to book model vector. |

@@ -13,7 +13,7 @@ export enum Zone {
 	M_skill = "M_skill",
 	M_final = "M_final",
 	S_coeff = "S_coeff",
-	M_res = "M_res",
+	D_res = "D_res",
 	sigma_R = "sigma_R",
 	M_crit = "M_crit",
 	M_buff = "M_buff",

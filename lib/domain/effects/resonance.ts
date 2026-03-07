@@ -9,7 +9,7 @@ export const RESONANCE_DEFS: EffectTypeDef[] = [
 		type: "guaranteed_resonance",
 		schema: GuaranteedResonanceSchema,
 		group: "resonance_system",
-		zones: [Zone.M_res, Zone.sigma_R],
+		zones: [Zone.D_res, Zone.sigma_R],
 		scope: Scope.Same,
 		patterns: [
 			"必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍",

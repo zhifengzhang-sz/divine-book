@@ -37,9 +37,9 @@ describe("getOffenseZones", () => {
 		expect(zones.has(Zone.M_final)).toBe(true);
 	});
 
-	test("通明 (guaranteed_resonance) → M_res + sigma_R", () => {
+	test("通明 (guaranteed_resonance) → D_res + sigma_R", () => {
 		const zones = getOffenseZones("通明");
-		expect(zones.has(Zone.M_res)).toBe(true);
+		expect(zones.has(Zone.D_res)).toBe(true);
 		expect(zones.has(Zone.sigma_R)).toBe(true);
 	});
 
@@ -98,7 +98,7 @@ describe("findAmplifiers for 怒血战意", () => {
 		expect(names).toContain("灵威");
 		// M_final zone: final_damage_bonus
 		expect(names).toContain("明王之路");
-		// M_res zone: guaranteed_resonance
+		// D_res zone: guaranteed_resonance
 		expect(names).toContain("通明");
 		expect(names).toContain("灵犀九重");
 		// D_flat zone: flat_extra_damage
@@ -164,7 +164,7 @@ describe("findAmplifiers for 玄心剑魄 (dot)", () => {
 		// D_ortho is the target zone; M_dmg, M_skill, S_coeff etc are multiplicative
 		expect(names).toContain("摧山"); // S_coeff
 		expect(names).toContain("明王之路"); // M_final
-		expect(names).toContain("通明"); // M_res
+		expect(names).toContain("通明"); // D_res
 	});
 
 	test("finds input-side amplifiers (dot chain)", () => {
@@ -212,8 +212,8 @@ describe("findAmplifiers for 破釜沉舟 (skill_damage + self_damage_taken)", (
 
 	test("finds multiplicative amplifiers for skill_damage zone", () => {
 		const names = result.multiplicative.map((a) => a.affix);
-		// M_skill is target; S_coeff, M_dmg, M_final, M_res are all different
+		// M_skill is target; S_coeff, M_dmg, M_final, D_res are all different
 		expect(names).toContain("摧山"); // S_coeff
-		expect(names).toContain("通明"); // M_res
+		expect(names).toContain("通明"); // D_res
 	});
 });

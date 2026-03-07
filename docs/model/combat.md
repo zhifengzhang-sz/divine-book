@@ -160,15 +160,17 @@ Every effect ultimately contributes to one or more of these factors:
 
 | Factor | Symbol | Role in drift |
 |:-------|:-------|:--------------|
-| Damage dealt | $D_B$ | Opponent's HP loss rate |
+| Damage dealt (气血) | $D_B$ | Opponent's 气血 loss rate |
 | Damage reduction | $DR_A$ | Fraction of incoming damage absorbed |
 | Healing | $H_A$ | Self HP recovery rate |
 | Healing reduction | $H_{red}$ | Suppression of opponent's healing |
-| Shield | $S_A$ | Piecewise damage absorption |
-| Resonance multiplier | $M_{res}$ | 会心 expected value (deterministic zone) |
+| Shield | $S_A$ | Piecewise damage absorption (generated from 灵力) |
+| Resonance damage (灵力) | $D_{res}$ | 会心 — damage to opponent's 灵力, drains shield generation capacity |
 | Synchrony multiplier | $M_{synchro}$ | 心逐 expected value (outer wrapper on all factors) |
 | Resonance variance | $\sigma_R$ | Stochastic variance from resonance system |
 | Volatility | $\sigma$ | Total stochastic variance |
+
+> **Two combat resources.** Characters have 气血 (HP) and 灵力 (spiritual power). 灵力 is consumed to generate 护盾 (shields) that block incoming damage. 攻击 damages 气血; 会心 (resonance) damages 灵力. These are **parallel attack lines** — see [战斗属性](../../data/属性/战斗属性.md). Draining 灵力 removes the opponent's ability to generate shields, leaving 气血 unprotected.
 
 ### 1.2 Groups as Map Domain
 
@@ -179,7 +181,7 @@ The 14 effect groups from `groups.yaml` organize the mapping. Each group feeds s
 | Shared Mechanics | $D_B$ | Flat damage additions from fusion/mastery |
 | Base Damage | $D_B$ | Primary damage events + orthogonal channels |
 | Damage Multiplier Zones | $D_B$ | Multiplicative scaling of damage events |
-| Resonance System | $D_B$, $\sigma$ | Resonance multiplier (会心) |
+| Resonance System | $D_{res}$, $\sigma$ | 会心 — parallel attack on opponent's 灵力 |
 | Synchrony System | All factors | Outer multiplier on all effects (心逐) |
 | Standard Crit | $D_B$, $\sigma$ | Rate-based crit system (暴击) |
 | Conditional Triggers | $D_B$, $DR_A$ | State-dependent damage/buffs, DR nullification |
@@ -201,15 +203,13 @@ The 14 effect groups from `groups.yaml` organize the mapping. Each group feeds s
 
 The core of the pipeline: for each effect type, what factor(s) does it contribute to, and how? This section specifies the mapping rules that produce `model.yaml` from `effects.yaml`.
 
-### 2.1 The Multiplicative Damage Chain
+### 2.1 The Multiplicative Damage Chain (气血)
 
-A single skill cast produces damage through a chain of multiplicative zones:
+A single skill cast produces damage to 气血 through a chain of multiplicative zones:
 
-$$D_{chain} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res}$$
+$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{synchro}$$
 
-$$D_{skill} = D_{chain} \times M_{synchro}$$
-
-Where $M_{res}$ is the resonance zone (会心) and $M_{synchro}$ is the synchrony zone (心逐, applied to ALL output factors as an outer wrapper).
+Where $M_{synchro}$ is the synchrony zone (心逐, applied to ALL output factors as an outer wrapper). 会心 (resonance) is **not** part of this chain — it is a separate attack line targeting 灵力 (see §2.4).
 
 Each zone is fed by specific effect types:
 
@@ -220,7 +220,6 @@ Each zone is fed by specific effect types:
 | Damage zone | $M_{dmg}$ | Multiplier Zones, Conditional Triggers | `damage_increase`, `conditional_damage` | Sum of `value` fields; conditional types weighted by $P(\text{condition})$ |
 | Skill zone | $M_{skill}$ | Multiplier Zones, Self Buffs | `skill_damage_increase`, `next_skill_buff` | Sum of `value` fields |
 | Final zone | $M_{final}$ | Multiplier Zones | `final_damage_bonus` | `value` field |
-| Resonance zone | $M_{res}$ | Resonance System | `guaranteed_resonance` | See §2.4 |
 | Synchrony zone | $M_{synchro}$ | Synchrony System | `probability_multiplier` | See §2.5 |
 | ATK scaling | $S_{coeff}$ | Multiplier Zones | `attack_bonus` | $1 + \text{value}/100$ |
 
@@ -260,15 +259,17 @@ Escalation modifies the *temporal shape* of damage within a single cast. Each hi
 
 Escalation means damage is **back-loaded** within a cast. For the model, the average per-hit contribution is used for $\mu_B$; the variance between early and late hits contributes to $\sigma_B$.
 
-### 2.4 Resonance System (会心)
+### 2.4 Resonance System (会心) — 灵力 Attack Line
 
-The resonance zone $M_{res}$ is a deterministic/probabilistic multiplier on damage. It is independent from the standard crit system.
+会心 (resonance) is a **separate attack line targeting 灵力**, not a multiplier on 气血 damage. 灵力 is consumed to generate 护盾 (shields); draining it removes the opponent's shield generation capacity.
 
-| Type | Contribution to $M_{res}$ | Contribution to $\sigma_R$ |
+| Type | Contribution to $D_{res}$ | Contribution to $\sigma_R$ |
 |:-----|:---------------------------|:-------------------------|
 | `guaranteed_resonance` | Deterministic: `base_mult` (always) or `enhanced_mult` (with `enhanced_chance`) | $\sigma_R^2 = p(1-p)(m_{enh} - m_{base})^2$ |
 
-> **Mechanic**: 会心 (resonance) always applies `base_mult` as a floor, with `enhanced_chance` probability of upgrading to `enhanced_mult`. No interaction with 暴击率/暴击伤害.
+> **Mechanic**: 会心 always applies `base_mult` as a damage floor on 灵力, with `enhanced_chance` probability of upgrading to `enhanced_mult`. No interaction with 暴击率/暴击伤害 (standard crit system) or the 气血 damage chain.
+
+**Strategic significance**: Once 灵力 is depleted, the opponent cannot generate shields. All subsequent 气血 damage (from $D_{skill}$ and orthogonal channels) lands unmitigated. This makes 会心 one of the highest-value attack vectors — it doesn't just deal damage, it removes a defense layer for the entire rotation.
 
 ### 2.5 Synchrony System (心逐)
 
@@ -280,7 +281,7 @@ The synchrony zone $M_{synchro}$ is an **outer wrapper** that multiplies ALL ski
 
 **The variance-drift tradeoff.** `probability_multiplier` contributes to both $\mu$ (through $E[M]$) and $\sigma$ (through $\text{Var}[M]$). The companion type `probability_to_certain` (Conditional Triggers group) collapses the stochastic multiplier to its maximum tier, eliminating $\sigma$ while raising $\mu$. This pair implements the strategic choice described in [theory.combat.md §3.4](../abstractions/theory.combat.md#34-structural-properties-of-the-diffusion): accept variance for efficiency (one slot) or invest a second slot to eliminate it (pure drift).
 
-> **Note**: 心逐 × 会心 is multiplicative (independent zones). E.g., 灵犀九重 E[会心]=3.22 × 心逐 E[心逐]=3.40 yields ×10.95 total.
+> **Note**: 心逐 amplifies ALL effects including 会心's 灵力 damage. E.g., 灵犀九重 E[会心]=3.22 × 心逐 E[心逐]=3.40 yields ×10.95 total 灵力 damage — devastating to opponent's shield generation.
 
 ### 2.6 Standard Crit (暴击)
 
@@ -435,7 +436,7 @@ Effects within an affix combine according to their factor type:
 |:-------|:------------|:----------|
 | $D_{base}$, $D_{flat}$ | Additive sum | Flat damage sources stack |
 | $M_{dmg}$, $M_{skill}$, $M_{final}$ | Additive sum (within zone) | Multiplier zones are additive internally, multiplicative across zones |
-| $M_{res}$ | Expected value: $E[M_{res}] = p \cdot m_{enh} + (1-p) \cdot m_{base}$ | Resonance multiplier reduces to its mean |
+| $D_{res}$ | Expected value: $E[D_{res}] = p \cdot m_{enh} + (1-p) \cdot m_{base}$ | Resonance 灵力 damage reduces to its mean |
 | $M_{synchro}$ | Expected value: $E[M_{synchro}] = \sum_i p_i \cdot m_i$ | Synchrony multiplier reduces to its mean |
 | $D_{ortho}$ | Additive sum per channel | Orthogonal channels stack independently |
 | $H_A$, $DR_A$, $S_A$ | Additive sum | Defensive stats stack |
@@ -454,7 +455,7 @@ $$\text{effective\_duration}(e) = e.\text{duration} \times (1 + \text{buff\_dura
 
 The affix factor vector $\mathbf{f}_a$ is a tuple:
 
-$$\mathbf{f}_a = (D_{base}, D_{flat}, M_{dmg}, M_{skill}, M_{final}, S_{coeff}, M_{res}, \sigma_R, M_{synchro}, D_{ortho}, H_A, DR_A, S_A, H_{red}, \text{temporal}[])$$
+$$\mathbf{f}_a = (D_{base}, D_{flat}, M_{dmg}, M_{skill}, M_{final}, S_{coeff}, D_{res}, \sigma_R, M_{synchro}, D_{ortho}, H_A, DR_A, S_A, H_{red}, \text{temporal}[])$$
 
 where `temporal[]` carries forward the propagation metadata from Self Buffs and Debuffs for consumption by Combinator 3.
 
@@ -486,15 +487,15 @@ where $\oplus$ denotes the per-factor aggregation (additive for most, root-sum-o
 
 The full multiplicative chain can now be evaluated from the book factor vector:
 
-$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{res} \times M_{synchro}$$
+$$D_{skill} = (D_{base} \times S_{coeff} + D_{flat}) \times (1 + M_{dmg}) \times (1 + M_{skill}) \times (1 + M_{final}) \times M_{synchro}$$
 
-This collapses the book's contribution to $D_B$ into a single scalar. Together with $D_{ortho}$, $H_A$, $DR_A$, $S_A$, $H_{red}$, and $\sigma_R$, the book factor vector is now ready for temporal composition.
+This collapses the book's contribution to 气血 damage ($D_B$) into a single scalar. The 灵力 damage ($D_{res}$) is carried separately as a parallel attack line. Together with $D_{ortho}$, $D_{res}$, $H_A$, $DR_A$, $S_A$, $H_{red}$, and $\sigma_R$, the book factor vector is now ready for temporal composition.
 
 ### 4.4 Output
 
 The book model is a reduced vector:
 
-$$\mathbf{b}_k = (D_{skill,k}, D_{ortho,k}, H_{A,k}, DR_{A,k}, S_{A,k}, H_{red,k}, \sigma_{R,k}, \text{temporal}[])$$
+$$\mathbf{b}_k = (D_{skill,k}, D_{res,k}, D_{ortho,k}, H_{A,k}, DR_{A,k}, S_{A,k}, H_{red,k}, \sigma_{R,k}, \text{temporal}[])$$
 
 where $k$ is the slot position (1–6) and `temporal[]` carries forward propagation metadata.
 
@@ -522,9 +523,13 @@ Each slot $k$ defines a **regime** ([theory.combat.scenario.md §1.1](../abstrac
 
 $$\mu_B^{(k)} = -D_{skill,k} \cdot (1 - DR_B^{(k)}) - D_{ortho,k}$$
 
+$$\mu_{灵,B}^{(k)} = -D_{res,k}$$
+
 $$\mu_A^{(k)} = -D_B^{(k)} \cdot (1 - DR_A^{(k)}) + H_A^{(k)} \cdot (1 - H_{red,A}^{(k)}) + S_A^{(k)}$$
 
-$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sqrt{\text{Var}[M_{res,k}] + \text{Var}[M_{synchro,k}]}$$
+$$\sigma_B^{(k)} = D_{skill,k} \cdot (1 - DR_B^{(k)}) \cdot \sqrt{\text{Var}[M_{synchro,k}]}$$
+
+> **Two drift processes.** $\mu_B^{(k)}$ tracks opponent's 气血 loss rate. $\mu_{灵,B}^{(k)}$ tracks opponent's 灵力 loss rate from 会心. When 灵力 is depleted, $S_B$ (shield generation) drops to zero, removing the shield absorption term from $\mu_B$ — a regime switch that exposes 气血 to full damage.
 
 Regime boundaries occur at:
 - Skill cast start/end (every $T_{gap}$)
@@ -573,3 +578,4 @@ Once the book-set model $\mathcal{R}$ is computed:
 | 3.1 | 2026-02-25 | Replaced keyword.map §N notation with group names |
 | 4.0 | 2026-02-25 | Four-level compositional architecture: effect → affix → book → book-set. Effect-level map (§2) with 13 subsections covering all groups. Three explicit combinators (§3–§5). Separated doc-domain spec from data-domain impl |
 | 5.0 | 2026-03-03 | Split "Critical System" into Resonance (§2.4), Synchrony (§2.5), Standard Crit (§2.6). Renamed C_mult→M_res, sigma_C→sigma_R, added M_synchro. Fixed damage chain: D_chain × M_synchro. Renumbered §2.7–§2.15. |
+| 6.0 | 2026-03-07 | **Breaking**: 会心 (resonance) is NOT a multiplier in the 气血 damage chain — it is a separate attack line targeting 灵力 (spiritual power). Renamed M_res→D_res. Removed M_res from damage chain formula. Added 灵力 drift process to regime construction. Two combat resources (气血/灵力) documented per 战斗属性. |

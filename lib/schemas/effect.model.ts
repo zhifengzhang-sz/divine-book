@@ -40,7 +40,7 @@ export const FactorsSchema = z
 		M_skill: z.number().describe("Skill zone multiplier").optional(),
 		M_final: z.number().describe("Final zone multiplier").optional(),
 		S_coeff: z.number().describe("ATK scaling coefficient").optional(),
-		M_res: z.number().describe("Resonance multiplier (expected value)").optional(),
+		D_res: z.number().describe("Resonance 灵力 damage (expected value)").optional(),
 		sigma_R: z.number().describe("Resonance variance").optional(),
 		M_synchro: z.number().describe("Synchrony multiplier (expected value)").optional(),
 		D_ortho: z.number().describe("Orthogonal damage").optional(),

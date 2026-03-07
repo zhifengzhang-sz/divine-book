@@ -26,10 +26,10 @@ export const AffixModelSchema = z.object({
 	M_skill: z.number().default(0),
 	M_final: z.number().default(0),
 	S_coeff: z.number().default(0),
-	M_res: z
+	D_res: z
 		.number()
 		.default(1)
-		.describe("Expected resonance multiplier (1 = no resonance)"),
+		.describe("Resonance 灵力 damage (1 = no resonance)"),
 	sigma_R: z
 		.number()
 		.default(0)

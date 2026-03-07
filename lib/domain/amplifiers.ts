@@ -37,7 +37,7 @@ const OFFENSE_ZONES = new Set([
 	Zone.M_state,
 	Zone.M_enlight,
 	Zone.S_coeff,
-	Zone.M_res,
+	Zone.D_res,
 	Zone.sigma_R,
 	Zone.M_synchro,
 	Zone.D_ortho,
