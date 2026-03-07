@@ -26,10 +26,17 @@ const outPath = join(yamlDir, "model.yaml");
 interface Factors {
 	[k: string]: number;
 }
+interface SummonMeta {
+	inherit_stats: number;
+	duration: number;
+	damage_increase: number;
+}
 interface EffectModel {
 	type: string;
 	factors?: Factors;
 	temporal?: { duration: number; coverage_type: string };
+	modifier_value?: number;
+	summon?: SummonMeta;
 }
 
 // ---------------------------------------------------------------------------
@@ -297,10 +304,15 @@ function mapEffect(effect: any): EffectModel {
 		case "all_state_duration":
 		case "buff_stack_increase":
 		case "debuff_stack_increase":
-		case "debuff_stack_chance":
-			// Second-order: applied by the combinator, not stored as direct factors.
-			// We still emit an entry for traceability, but factors stay empty.
-			break;
+		case "debuff_stack_chance": {
+			// Second-order: applied by the time-series module, not stored as direct factors.
+			// We emit modifier_value for consumption by time-series evaluation.
+			const model: EffectModel = { type: t };
+			if (effect.value != null) model.modifier_value = effect.value;
+			const temporal = deriveTemporal(effect, def);
+			if (temporal) model.temporal = temporal;
+			return model;
+		}
 
 		// §10 DoT
 		case "dot": {
@@ -377,7 +389,30 @@ function mapEffect(effect: any): EffectModel {
 		case "counter_debuff_upgrade":
 			break; // reactive meta
 
-		// §13 Special Mechanics — partial/unmapped
+		// §13 Special Mechanics
+		case "summon": {
+			const model: EffectModel = { type: t };
+			model.summon = {
+				inherit_stats: effect.inherit_stats ?? 0,
+				duration: effect.duration ?? 0,
+				damage_increase: 0,
+			};
+			model.temporal = {
+				duration: effect.duration ?? 0,
+				coverage_type: "duration_based",
+			};
+			return model;
+		}
+		case "summon_buff": {
+			const model: EffectModel = { type: t };
+			model.summon = {
+				inherit_stats: 0,
+				duration: 0,
+				damage_increase: effect.damage_increase ?? 0,
+			};
+			return model;
+		}
+
 		default:
 			break;
 	}

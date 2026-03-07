@@ -59,10 +59,20 @@ export type Factors = z.infer<typeof FactorsSchema>;
 // Effect model entry — one per effect in model.yaml
 // ---------------------------------------------------------------------------
 
+export const SummonMetaSchema = z.object({
+	inherit_stats: z.number().describe("% of player stats inherited by summon"),
+	duration: z.number().describe("summon lifetime in seconds"),
+	damage_increase: z.number().describe("% damage increase from summon_buff"),
+});
+
+export type SummonMeta = z.infer<typeof SummonMetaSchema>;
+
 export const EffectModelSchema = z.object({
 	type: z.string().describe("Original effect type for traceability"),
 	factors: FactorsSchema.optional(),
 	temporal: TemporalSchema.optional(),
+	modifier_value: z.number().optional().describe("Raw value for §9 meta-modifiers (buff_strength, etc.)"),
+	summon: SummonMetaSchema.optional().describe("Summon metadata (merged from summon + summon_buff)"),
 });
 
 export type EffectModel = z.infer<typeof EffectModelSchema>;

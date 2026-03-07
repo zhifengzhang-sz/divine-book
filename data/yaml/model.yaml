@@ -29,9 +29,20 @@ effects:
         factors:
           D_base: 22305
       - type: summon
+        summon:
+          inherit_stats: 54
+          duration: 16
+          damage_increase: 0
+        temporal:
+          duration: 16
+          coverage_type: duration_based
     primary_affix:
       幻象剑灵:
         - type: summon_buff
+          summon:
+            inherit_stats: 0
+            duration: 0
+            damage_increase: 200
     exclusive_affix:
       玄心剑魄:
         - type: dot
@@ -93,6 +104,7 @@ effects:
     exclusive_affix:
       仙露护元:
         - type: buff_duration
+          modifier_value: 300
           temporal:
             duration: 0
             coverage_type: permanent
@@ -158,6 +170,7 @@ effects:
     exclusive_affix:
       龙象护身:
         - type: buff_strength
+          modifier_value: 104
           temporal:
             duration: 0
             coverage_type: permanent
@@ -165,6 +178,7 @@ effects:
     exclusive_affix:
       真极穿空:
         - type: buff_stack_increase
+          modifier_value: 100
           temporal:
             duration: 0
             coverage_type: permanent
@@ -173,6 +187,7 @@ effects:
     exclusive_affix:
       奇能诡道:
         - type: debuff_stack_chance
+          modifier_value: 20
           temporal:
             duration: 0
             coverage_type: permanent
@@ -272,6 +287,7 @@ effects:
     exclusive_affix:
       心魔惑言:
         - type: debuff_stack_increase
+          modifier_value: 100
           temporal:
             duration: 0
             coverage_type: permanent
@@ -359,6 +375,7 @@ effects:
     exclusive_affix:
       真言不灭:
         - type: all_state_duration
+          modifier_value: 55
           temporal:
             duration: 0
             coverage_type: permanent
@@ -370,7 +387,7 @@ effects:
             M_dmg: 2
   惊蛰化龙:
     exclusive_affix:
-      紫心真诀:
+      索心真诀:
         - type: per_debuff_stack_true_damage
         - type: conditional_buff
           factors:
@@ -395,16 +412,19 @@ effects:
 universal_affixes:
   咒书:
     - type: debuff_strength
+      modifier_value: 20
       temporal:
         duration: 0
         coverage_type: permanent
   清灵:
     - type: buff_strength
+      modifier_value: 20
       temporal:
         duration: 0
         coverage_type: permanent
   业焰:
     - type: all_state_duration
+      modifier_value: 69
       temporal:
         duration: 0
         coverage_type: permanent
