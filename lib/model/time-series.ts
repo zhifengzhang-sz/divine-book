@@ -59,6 +59,7 @@ export interface TimeSeriesResult {
 	op2: string;
 	samples: Array<{ t: number; factors: Record<string, number> }>;
 	averaged: Record<string, number>;
+	total: Record<string, number>;     // ∫ vec(t)dt — factor-seconds per activation
 	T_active: number;
 	slot_coverage: number;
 	peak: Record<string, number>;
@@ -348,33 +349,35 @@ export function sampleTimeSeries(
 export function aggregateTimeSeries(
 	samples: Array<{ t: number; factors: Record<string, number> }>,
 	T_gap: number,
-): { averaged: Record<string, number>; slot_coverage: number; peak: Record<string, number> } {
-	const averaged: Record<string, number> = {};
+): { averaged: Record<string, number>; total: Record<string, number>; slot_coverage: number; peak: Record<string, number> } {
+	const total: Record<string, number> = {};
 	const peak: Record<string, number> = {};
 
 	for (const f of FACTOR_NAMES) {
-		averaged[f] = 0;
+		total[f] = 0;
 		peak[f] = -Infinity;
 	}
 
 	for (const s of samples) {
 		for (const f of FACTOR_NAMES) {
 			const v = s.factors[f] ?? 0;
-			averaged[f] += v;
+			total[f] += v;
 			if (v > peak[f]) peak[f] = v;
 		}
 	}
 
 	const n = samples.length || 1;
+	const averaged: Record<string, number> = {};
 	for (const f of FACTOR_NAMES) {
-		averaged[f] = round(averaged[f] / n);
+		total[f] = round(total[f]);
+		averaged[f] = round(total[f] / n);
 		if (peak[f] === -Infinity) peak[f] = 0;
 	}
 
 	const T_active = samples.length;
 	const slot_coverage = Math.floor(T_active / T_gap);
 
-	return { averaged, slot_coverage, peak };
+	return { averaged, total, slot_coverage, peak };
 }
 
 // ---------------------------------------------------------------------------
@@ -405,7 +408,7 @@ export function evaluateBook(
 	const T_active = Math.max(maxEventEnd, summonEnd, T_gap);
 
 	const samples = sampleTimeSeries(staticBaseline, events, summon, T_active);
-	const { averaged, slot_coverage, peak } = aggregateTimeSeries(samples, T_gap);
+	const { averaged, total, slot_coverage, peak } = aggregateTimeSeries(samples, T_gap);
 
 	return {
 		platform: platformBook,
@@ -413,6 +416,7 @@ export function evaluateBook(
 		op2: op2Affix,
 		samples,
 		averaged,
+		total,
 		T_active,
 		slot_coverage,
 		peak,

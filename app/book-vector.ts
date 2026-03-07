@@ -92,13 +92,14 @@ const temporalFactors = new Set(
 );
 
 console.log(
-	`${"Factor".padEnd(12)}  ${"∫ vec(t)dt/T".padStart(12)}  ${"Peak".padStart(10)}  ${"Permanent".padStart(10)}  ${"Temporal".padStart(10)}`,
+	`${"Factor".padEnd(12)}  ${"∫/T".padStart(10)}  ${"∫ total".padStart(10)}  ${"Peak".padStart(10)}  ${"Permanent".padStart(10)}  ${"Temporal".padStart(10)}`,
 );
-console.log(`${"─".repeat(68)}`);
+console.log(`${"─".repeat(76)}`);
 
 for (const f of displayFactors) {
 	const perm = result.permanent[f] ?? 0;
 	const avg = result.averaged[f] ?? 0;
+	const tot = result.total[f] ?? 0;
 	const peak = result.peak[f] ?? 0;
 	const temporal = avg - perm;
 	const tempStr = temporalFactors.has(f)
@@ -106,7 +107,7 @@ for (const f of displayFactors) {
 		: "—";
 
 	console.log(
-		`${f.padEnd(12)}  ${fmt(avg).padStart(12)}  ${fmt(peak).padStart(10)}  ${fmt(perm).padStart(10)}  ${tempStr.padStart(10)}`,
+		`${f.padEnd(12)}  ${fmt(avg).padStart(10)}  ${fmt(tot).padStart(10)}  ${fmt(peak).padStart(10)}  ${fmt(perm).padStart(10)}  ${tempStr.padStart(10)}`,
 	);
 }
 console.log();
