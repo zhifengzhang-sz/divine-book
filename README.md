@@ -158,7 +158,8 @@ flowchart TD
 bun install
 bun run parse                    # normalized.data.md → effects.yaml
 bun run check                    # typecheck + lint
-bun run test                     # 88 unit + integration tests
+bun run test                     # unit + integration tests
+bun run verify-domain            # domain docs vs code
 bun app/combo-search.ts --list   # list all platforms
 bun app/combo-search.ts -p 疾风九变  # combo search for a platform
 ```
@@ -214,14 +215,17 @@ lib/
     constraints.ts               Construction constraint validator
 docs/
   data/
-    keyword.map.md / .cn.md      Effect type vocabulary (parsing spec)
-    normalized.data.md / .cn.md  Extracted data (all data_state tiers)
+    design.md                    System design — containers, components, boundaries
+    impl.parser.md               Parser implementation details
+    note.data.md                 Pipeline quick reference
+    usage.parser.md              Parser operational guide
+    usage.domain.md              Domain analysis workflow
     domain.category.md           Affix taxonomy with provides/requires
     domain.graph.md              Graph model, named entities, platforms
     domain.path.md               Path catalog, platform projections
-    design.md                    Architectural rationale
-    usage.dev.md                 Full pipeline workflow
-    usage.domain.md              Domain analysis workflow
+    model.binding.md             Binding model — platform/operator/contract
+    chain.md                     Construction methodology (objectives, functions, scoring)
+    function.combos.md           Scored combo tables per function
     references/元宝/             Chinese reference docs
   model/
     combat.md                    Combat model — effect → factor mapping
@@ -239,6 +243,12 @@ data/
     修为词缀.md                  School affixes
     专属词缀.md                  Exclusive affixes
     构造规则.md                  Construction rules
+  keyword/                       Effect type vocabulary (parsing spec)
+    keyword.map.cn.md            Chinese patterns (primary)
+    keyword.map.md               English translation
+  normalized/                    Extracted data (all data_state tiers)
+    normalized.data.cn.md        Chinese headers
+    normalized.data.md           English headers
   yaml/
     effects.yaml                 Parsed effect data
     groups.yaml                  Parsed group data
@@ -253,21 +263,25 @@ data/
 | Document | Purpose |
 |:---|:---|
 | **Workflow** | |
-| [usage.dev.md](docs/data/usage.dev.md) | Day-to-day pipeline operation |
+| [note.data.md](docs/data/note.data.md) | Pipeline quick reference — layers, commands, agents, workflow |
 | [usage.parser.md](docs/data/usage.parser.md) | Running the parser |
 | [usage.domain.md](docs/data/usage.domain.md) | Domain analysis workflow — raw data to combo search |
 | **Data design** | |
-| [design.md](docs/data/design.md) | Why the pipeline is structured this way |
+| [design.md](docs/data/design.md) | System design — containers, components, boundaries |
 | [impl.parser.md](docs/data/impl.parser.md) | How the parser works — flow, components, tests |
-| [keyword.map.md](docs/data/keyword.map.md) | Effect type vocabulary (80+ types) |
+| [keyword.map.md](data/keyword/keyword.map.md) | Effect type vocabulary (80+ types) |
 | **Domain model** | |
 | [domain.category.md](docs/data/domain.category.md) | Affix taxonomy with provides/requires bindings |
 | [domain.graph.md](docs/data/domain.graph.md) | Graph model, named entities, platform provides |
 | [domain.path.md](docs/data/domain.path.md) | Path catalog, platform projections |
+| **Construction** | |
+| [model.binding.md](docs/data/model.binding.md) | Binding model — platform, operator, contract |
+| [chain.md](docs/data/chain.md) | Construction methodology — objectives, functions, scoring |
+| [function.combos.md](docs/data/function.combos.md) | Scored combo tables per function |
 | **Combat model** | |
 | [combat.md](docs/model/combat.md) | Effect → factor mapping (four-level pipeline) |
 | [combat.qualitative.md](docs/model/combat.qualitative.md) | Qualitative combat analysis |
-| [guide.chain.md](docs/books/guide.chain.md) | Chain construction guide |
+| [guide.chain.md](docs/books/guide.chain.md) | Chain construction guide (PvP walkthrough) |
 
 ---
 

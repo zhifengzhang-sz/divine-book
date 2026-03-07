@@ -109,12 +109,12 @@ strong {
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart LR
-    ND["docs/data/normalized.data.md"] -->|"markdown string"| P["lib/parse.ts"]
+    ND["data/normalized/normalized.data.md"] -->|"markdown string"| P["lib/parse.ts"]
     ES["lib/schemas/effect.ts"] -->|"Zod EffectSchema"| P
     P -->|"{ data, warnings }"| OUT["data/yaml/effects.yaml"]
 ```
 
-**Input**: `docs/data/normalized.data.md` — strict markdown tables produced by the extraction agent. The parser reads this file as a UTF-8 string. No other data file is read at parse time.
+**Input**: `data/normalized/normalized.data.md` — strict markdown tables produced by the extraction agent. The parser reads this file as a UTF-8 string. No other data file is read at parse time.
 
 **Output**: `data/yaml/effects.yaml` — structured YAML grouping all effects by book, section, and affix. Every effect row in the output has been validated against the Zod schema.
 
@@ -129,7 +129,7 @@ The parser does not read `keyword.map.md` at runtime. The relationship is indire
 flowchart TD
     KM["keyword.map.md"]
     KM -->|"human authors derive\n(design time)"| ES["lib/schemas/effect.ts"]
-    KM -->|"extraction agent reads\n(extraction time)"| ND["docs/data/normalized.data.md"]
+    KM -->|"extraction agent reads\n(extraction time)"| ND["data/normalized/normalized.data.md"]
     ES -->|"Zod discriminated union"| P["lib/parse.ts\nvalidates each row"]
     ND -->|"strict markdown tables"| P
 ```
@@ -226,7 +226,7 @@ Each `EffectRow` contains `type` (the effect type discriminator), all `key=value
 | `lib/parse.ts` | Parser module + CLI entry point |
 | `lib/schemas/effect.ts` | Zod schema (derived from keyword.map.md) |
 | `lib/parse.test.ts` | Unit and integration tests |
-| `docs/data/normalized.data.md` | Input (read at parse time) |
+| `data/normalized/normalized.data.md` | Input (read at parse time) |
 | `data/yaml/effects.yaml` | Output (written at parse time) |
 
 ### Component diagram

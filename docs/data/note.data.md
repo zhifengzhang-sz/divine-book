@@ -98,7 +98,7 @@ strong {
 
 **Authors:** Z. Zhang
 
-> Quick reference for the data pipeline: what each layer does, why it exists, how to run it, and how to verify the output. For architectural rationale, see `docs/data/design.md`. For parser policies, see `docs/data/usage.parser.md`.
+> Quick reference for the data pipeline: what each layer does, why it exists, how to run it, and how to verify the output. For system design (containers, components, boundaries), see `docs/data/design.md`. For parser policies, see `docs/data/usage.parser.md`.
 
 ---
 
@@ -112,7 +112,7 @@ Human-authored Chinese prose describing game rules, skills, and affixes. This is
 
 **Why it exists:** the game designers write and update rules in natural language. The pipeline must accept this format as-is.
 
-### Keywords (`docs/data/keyword.map.cn.md`, `keyword.map.md`)
+### Keywords (`data/keyword/keyword.map.cn.md`, `data/keyword/keyword.map.md`)
 
 Pattern-to-type mappings: Chinese phrases to canonical effect types and field names. Generated from the TypeScript `Registry` (`bun app/generate.ts`); human-editable to refine extraction accuracy.
 
@@ -121,7 +121,7 @@ Pattern-to-type mappings: Chinese phrases to canonical effect types and field na
 - `keyword.map.cn.md` is the **primary spec** — Chinese patterns matching the Chinese source.
 - `keyword.map.md` is the English translation consumed by the code parser.
 
-### Normalized Data (`docs/data/normalized.data.cn.md`, `normalized.data.md`)
+### Normalized Data (`data/normalized/normalized.data.cn.md`, `data/normalized/normalized.data.md`)
 
 Strict markdown tables — one row per effect per `data_state` tier. Produced by the extraction step; reviewable and manually editable.
 
@@ -141,11 +141,11 @@ Parser output from Normalized. Validated by Zod schemas; consumed by downstream 
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart TD
     subgraph AUTH ["Authoring Inputs"]
-        SRC["data/raw/*.md\nChinese prose"]
-        REG["TypeScript Registry\nlib/domain/registry.ts"]
+        SRC["data/raw/*.md<br>Chinese prose"]
+        REG["TypeScript Registry<br>lib/domain/registry.ts"]
     end
 
-    REG -->|"bun app/generate.ts"| KW["keyword.map.cn.md + .md\ntype system & patterns"]
+    REG -->|"bun app/generate.ts"| KW["keyword.map.cn.md + .md<br>type system &amp; patterns"]
 
     subgraph EXTRACT ["Extraction — LLM agent"]
         EXT["/extract"]
@@ -153,11 +153,11 @@ flowchart TD
 
     SRC -->|"read by"| EXT
     KW -->|"pins terminology"| EXT
-    EXT --> ND["normalized.data.cn.md + .md\nstrict tables, verbatim values"]
+    EXT --> ND["normalized.data.cn.md + .md<br>strict tables, verbatim values"]
 
     subgraph VERIFY ["Verification — parallel, LLM agents"]
-        VS["/verify-schema\nstructure check"]
-        VC["/verify-coverage\ncontent check"]
+        VS["/verify-schema<br>structure check"]
+        VC["/verify-coverage<br>content check"]
     end
 
     ND --> VS
@@ -168,116 +168,111 @@ flowchart TD
     VS --> GATE{{"Human diff review"}}
     VC --> GATE
 
-    GATE --> PARSE["bun app/parse.ts\n~100 LOC, deterministic"]
+    GATE --> PARSE["bun app/parse.ts<br>~100 LOC, deterministic"]
     ND --> PARSE
 
-    PARSE --> YAML[("effects.yaml\ngroups.yaml")]
+    PARSE --> YAML[("effects.yaml<br>groups.yaml")]
     YAML -.->|"validated by"| ZOD["Zod schemas"]
 
+    YAML --> MAP["bun app/map.ts<br>effect → factor mapping"]
+    REG -.->|"zone annotations"| MAP
+    MAP --> MODEL[("model.yaml")]
+    MODEL -.->|"validated by"| ZOD
+
     subgraph PROG ["Programmatic Verification"]
-        VP["scripts/verify-pipeline.ts\nbook + token + effect-type coverage"]
+        VP["scripts/verify-pipeline.ts<br>book + token + effect-type coverage"]
+        VM["scripts/verify-model.ts<br>zone alignment + numeric checks"]
     end
 
     YAML --> VP
     KW -.-> VP
     ND -.-> VP
     VP --> RPT[("verify-report.json")]
+    MODEL --> VM
+    YAML -.-> VM
 ```
 
 **Change propagation:**
-- **Registry changes** -> regenerate Keywords (`bun app/generate.ts`) -> re-extract -> re-parse.
-- **Source changes** -> re-extract (with current Keywords) -> re-parse.
+- **Registry changes** -> regenerate Keywords (`bun app/generate.ts`) -> re-extract -> re-parse -> re-map.
+- **Source changes** -> re-extract (with current Keywords) -> re-parse -> re-map.
 
 ### Invariants
 
 - `keyword.map.cn.md` must be current before extraction.
 - `Source` and `Registry` are the primary authoring inputs; Keywords bridge code and content.
 - Prefer running the extractor over editing Normalized manually.
+- `model.yaml` must be regenerated after any change to `effects.yaml` or registry zone annotations.
 
 ---
 
-## 3. Commands
+## 3. Operational Workflow
 
-**Generate** registry-derived artifacts (keyword maps, groups):
+The pipeline runs as a numbered sequence. Each step consumes the output of the previous one.
+
+### Step 1 — Generate keywords
+
+Regenerate keyword maps from the TypeScript registry. Required whenever registry types, fields, or patterns change.
 
 ```sh
 bun app/generate.ts
 ```
 
-**Parse** normalized data into YAML:
+Outputs `data/keyword/keyword.map.cn.md` and `data/keyword/keyword.map.md`.
 
-```sh
-bun app/parse.ts docs/data/normalized.data.md data/yaml
+### Step 2 — Extract normalized data
+
+Run the LLM extraction agent. It reads `data/raw/*.md` + `keyword.map.cn.md` and produces both `normalized.data.cn.md` and `normalized.data.md`.
+
+```
+/extract
 ```
 
-The parser prints validation warnings and exits non-zero on failures — see `docs/data/usage.parser.md` for policies.
+This is a Claude Code slash command (`.claude/commands/extract.md`), not a shell script.
 
-**Sync style** — inject the canonical `<style>` block into all docs under `data/raw/` and `docs/data/`:
+### Step 3 — Verify extraction
 
-```sh
-bun run sync-style
+Two independent LLM agents check the extraction output. Run in parallel.
+
+```
+/verify-schema        # structure: types, fields, units vs keyword.map
+/verify-coverage      # content: numbers, completeness vs source
 ```
 
----
+Review the diff, fix issues, re-extract if needed.
 
-## 4. Agent Commands
+### Step 4 — Parse
 
-Three LLM agent tasks are defined as Claude Code slash commands (`.claude/commands/*.md`). They are not shell scripts — invoke them from within a Claude Code session.
+Deterministic parser: normalized markdown tables → YAML.
 
-| Command | Purpose | Spec |
-|---|---|---|
-| `/extract` | Reads `data/raw/*.md` + `keyword.map.cn.md` and produces both `normalized.data.cn.md` and `normalized.data.md`. This is the primary extraction step that decodes Source using Keywords. | `.claude/commands/extract.md` |
-| `/verify-schema` | Validates that `normalized.data` conforms to the type system in `keyword.map` — effect types, field names, units, data_state vocabulary. Structural correctness only; does not check source faithfulness. | `.claude/commands/verify-schema.md` |
-| `/verify-coverage` | Validates that `normalized.data` faithfully and completely represents the source files — book completeness, numeric accuracy, data_state tier coverage, source traceability via `> 原文:` blockquotes. | `.claude/commands/verify-coverage.md` |
+```sh
+bun app/parse.ts data/normalized/normalized.data.md data/yaml
+```
 
-The two verification agents are independent and can run in parallel. Together they catch both structural errors (wrong types/fields) and content errors (wrong numbers/missing effects).
+Produces `effects.yaml` and `groups.yaml`. Prints validation warnings; exits non-zero on failures — see `docs/data/usage.parser.md` for policies.
 
----
+### Step 5 — Map
 
-## 5. Programmatic Verification
+Map effects to model factor contributions using registry zone annotations and `combat.md` §2 rules.
 
-### verify-pipeline.ts
+```sh
+bun app/map.ts
+```
 
-`scripts/verify-pipeline.ts` runs the parser, computes output checksums, and checks three coverage dimensions:
+Produces `model.yaml`. Validates output against `ModelYamlSchema`; exits non-zero on failures.
 
-1. **Book coverage** — raw table book names present in `normalized.data.md`.
-2. **Token coverage** — backtick tokens in normalized data vs `keyword.map.md`.
-3. **Effect-type coverage** — normalized effect types vs keyword map types.
+### Step 6 — Verify
 
-Output: `tmp-verify-output/verify-report.json`.
-
-### Convenience script
-
-Runs the full cycle (generate -> parse -> test -> verify):
+Programmatic checks across the full pipeline.
 
 ```sh
 bash scripts/run-verify.sh
 ```
 
-### CI
+This runs: generate → parse → test → verify-pipeline → verify-domain → verify-model.
 
-`.github/workflows/verify.yml` runs the convenience script on PRs and branch pushes.
+### Step 7 — Inspect
 
----
-
-## 6. Workflow: Adding or Updating Books
-
-1. **Edit source** — modify `data/raw/主书.md` (add rows, adjust parameters).
-2. **Regenerate keywords** (if registry or vocabulary changed):
-   ```sh
-   bun app/generate.ts
-   ```
-   Outputs both `keyword.map.md` and `keyword.map.cn.md`.
-3. **Extract** — run the extraction agent (or update normalized files manually). The extractor reads `data/raw/*.md` + `keyword.map.cn.md` and writes both normalized files.
-4. **Parse and validate**:
-   ```sh
-   bun app/parse.ts docs/data/normalized.data.md data/yaml
-   ```
-5. **Verify**:
-   ```sh
-   bash scripts/run-verify.sh
-   ```
-6. **Inspect** `tmp-verify-output/verify-report.json` for:
+Check `tmp-verify-output/verify-report.json` for:
    - `missingBooks` — raw books absent from normalized data.
    - `rawTokensMissingInKeyword` — tokens to add to the keyword map.
    - `effectTypesMissingInKeyword` — effect types not covered by the keyword map.
@@ -285,7 +280,93 @@ bash scripts/run-verify.sh
 
 ---
 
-## 7. Conventions
+## 4. Verification Scripts
+
+Three programmatic verification scripts check different layers:
+
+| Script | Checks | Command |
+|---|---|---|
+| `scripts/verify-pipeline.ts` | Book coverage, token coverage, effect-type coverage (normalized ↔ keyword map) | `bash scripts/run-verify.sh` |
+| `scripts/verify-domain.ts` | Binding accuracy, platform coverage, named entities, provider claims (docs ↔ TypeScript) | `bun run verify-domain` |
+| `scripts/verify-model.ts` | Zone–factor alignment, unmapped detection, numeric spot-checks, temporal metadata, structural completeness (model.yaml ↔ effects.yaml ↔ registry) | `bun scripts/verify-model.ts` |
+
+The convenience script `bash scripts/run-verify.sh` runs the full cycle. CI (`.github/workflows/verify.yml`) runs it on PRs and branch pushes.
+
+---
+
+## 5. Documentation Map
+
+The docs span four containers connected by boundary artifacts. See `design.md` for the full architecture.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
+flowchart TD
+    subgraph PIPELINE ["C1 — Data Pipeline"]
+        DESIGN["design.md<br>containers &amp; components"]
+        NOTE["note.data.md<br>what — quick reference"]
+        IMPL["impl.parser.md<br>how — parser internals"]
+        UPARSE["usage.parser.md<br>how-to — CLI, output, gates"]
+
+        DESIGN -.->|"rationale for"| NOTE
+        NOTE -->|"references"| UPARSE
+        UPARSE -->|"details in"| IMPL
+    end
+
+    NOTE -->|"pipeline produces"| YAML[("effects.yaml<br>groups.yaml")]
+
+    subgraph DOMAIN ["C2 — Domain Analysis"]
+        UDOM["usage.domain.md<br>how-to — raw data to combo search"]
+        CAT["domain.category.md<br>61 affixes: provides / requires"]
+        GRAPH["domain.graph.md<br>dependency network"]
+        PATH["domain.path.md<br>qualified paths"]
+
+        UDOM -->|"workflow for"| CAT
+        CAT -->|"taxonomy feeds"| GRAPH
+        GRAPH -->|"network projected to"| PATH
+    end
+
+    subgraph VALUE ["C4 — Value Model (docs/model/)"]
+        COMBAT["combat.md<br>effect → factor mapping"]
+        IMPLC["impl.combat.md<br>combinators implementation"]
+        QUAL["combat.qualitative.md<br>qualitative framework"]
+
+        COMBAT -->|"implemented by"| IMPLC
+        COMBAT -.->|"complements"| QUAL
+    end
+
+    YAML -->|"structured input"| CAT
+    YAML -->|"effect data"| COMBAT
+    UDOM -.->|"upstream steps"| NOTE
+    UDOM -.->|"parse step"| UPARSE
+
+    subgraph CONSTRUCT ["C3 — Construction"]
+        BIND["model.binding.md<br>platform / operator / contract"]
+        CHAIN["chain.md<br>objectives, functions, scoring"]
+        COMBOS["function.combos.md<br>scored combo tables"]
+
+        BIND -->|"contracts for"| CHAIN
+        CHAIN -->|"produces"| COMBOS
+    end
+
+    PATH -->|"qualified paths"| BIND
+    CAT -->|"provides / requires"| BIND
+    COMBAT -->|"factor values"| CHAIN
+    YAML -->|"effect data"| CHAIN
+```
+
+| Container | Docs | Scope |
+|---|---|---|
+| **C1 Data Pipeline** | design, note.data, impl.parser, usage.parser | Source prose → keyword maps → normalized tables → YAML |
+| **C2 Domain Analysis** | usage.domain, domain.category, domain.graph, domain.path | YAML → affix taxonomy → graph model → qualified paths |
+| **C4 Value Model** | combat, impl.combat, combat.qualitative (`docs/model/`) | Effects → factor contributions → affix/book/book-set combinators → regime parameters |
+| **C3 Construction** | model.binding, chain, function.combos | Binding contracts + factor values → objectives → functions → scored combos |
+
+Three boundaries: B1 (`effects.yaml`) separates data production from interpretation; B2 (qualified paths) separates classification from construction; B3 (factor contributions) separates value assessment from scoring.
+
+---
+
+## 6. Conventions
 
 - Add Chinese patterns to `keyword.map.cn.md` **before** running extraction to improve deterministic results.
 - **Zero warnings/errors** required before committing changes to `lib/` or `data/yaml` (see `docs/data/usage.parser.md`).
+- Run `bun run sync-style` after adding new docs to inject the canonical `<style>` block.

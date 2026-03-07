@@ -9,7 +9,7 @@
 | File | Role |
 |:---|:---|
 | `data/raw/*.md` | Source of truth — split prose files (`主書.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md`, `about.md`) |
-| `docs/data/normalized.data.cn.md` (or `.md`) | Extraction to validate |
+| `data/normalized/normalized.data.cn.md` (or `.md`) | Extraction to validate |
 
 ## Checks
 

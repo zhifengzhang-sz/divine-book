@@ -8,8 +8,8 @@
 
 | File | Role |
 |:---|:---|
-| `docs/data/keyword.map.md` (or `.cn.md`) | Schema definition — effect types, fields, units, vocabularies |
-| `docs/data/normalized.data.md` (or `.cn.md`) | Data to validate |
+| `data/keyword/keyword.map.md` (or `.cn.md`) | Schema definition — effect types, fields, units, vocabularies |
+| `data/normalized/normalized.data.md` (or `.cn.md`) | Data to validate |
 
 ## Checks
 

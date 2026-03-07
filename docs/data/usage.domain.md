@@ -167,7 +167,7 @@ bun run parse        # normalized.data.md → effects.yaml
 bun run test         # verify parsing
 ```
 
-See [usage.parser.md](./usage.parser.md) and [usage.dev.md](./usage.dev.md) for details.
+See [usage.parser.md](./usage.parser.md) and [note.data.md](./note.data.md) for details.
 
 ---
 

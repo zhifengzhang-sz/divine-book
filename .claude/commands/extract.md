@@ -2,21 +2,21 @@
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Extraction agent.** Reads `data/raw/*.md` (split source files) and produces `docs/data/normalized.data.cn.md` + `docs/data/normalized.data.md` using `docs/data/keyword.map.cn.md` as the parsing specification. This is the first stage of the data pipeline.
+> **Extraction agent.** Reads `data/raw/*.md` (split source files) and produces `data/normalized/normalized.data.cn.md` + `data/normalized/normalized.data.md` using `data/keyword/keyword.map.cn.md` as the parsing specification. This is the first stage of the data pipeline.
 
 ## Inputs
 
 | File | Role |
 |:---|:---|
 | `data/raw/*.md` | Source prose files — e.g. `about.md`, `主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md` |
-| `docs/data/keyword.map.cn.md` | Effect type vocabulary, field specs, units, data_state vocabulary |
+| `data/keyword/keyword.map.cn.md` | Effect type vocabulary, field specs, units, data_state vocabulary |
 
 ## Outputs
 
 | File | Description |
 |:---|:---|
-| `docs/data/normalized.data.cn.md` | Chinese version — table headers in Chinese, all content |
-| `docs/data/normalized.data.md` | English version — table headers in English, `> 原文:` blockquotes preserved in Chinese |
+| `data/normalized/normalized.data.cn.md` | Chinese version — table headers in Chinese, all content |
+| `data/normalized/normalized.data.md` | English version — table headers in English, `> 原文:` blockquotes preserved in Chinese |
 
 ## Process
 

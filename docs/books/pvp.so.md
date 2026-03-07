@@ -98,7 +98,7 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Mechanical application of [chain.md](chain.md) Construction Methodology (§A–§F).** Three table lookups and one optimization — no narrative reasoning. Every value is read from chain.md's catalogs and solution tables.
+> **Mechanical application of [chain.md](../data/chain.md) Construction Methodology (§A–§F).** Three table lookups and one optimization — no narrative reasoning. Every value is read from [chain.md](../data/chain.md)'s catalogs and solution tables.
 
 ---
 

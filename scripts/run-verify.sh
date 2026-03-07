@@ -15,12 +15,15 @@ bun app/generate.ts
 
 echo "Parsing normalized data -> tmp-verify-output (app/parse.ts)..."
 rm -rf tmp-verify-output && mkdir -p tmp-verify-output
-bun app/parse.ts docs/data/normalized.data.md tmp-verify-output
+bun app/parse.ts data/normalized/normalized.data.md tmp-verify-output
 
 echo "Running test suite..."
 bun test
 
-echo "Running verification script..."
+echo "Running pipeline verification..."
 bun scripts/verify-pipeline.ts
+
+echo "Running domain verification..."
+bun scripts/verify-domain.ts
 
 echo "Verification workflow complete. Report at tmp-verify-output/verify-report.json"

@@ -15,7 +15,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const NORMALIZED = resolve(ROOT, "docs/data/normalized.data.md");
+const NORMALIZED = resolve(ROOT, "data/normalized/normalized.data.md");
 
 // ---------------------------------------------------------------------------
 // parseValue

@@ -2,7 +2,7 @@
  * CLI: Generate markdown and YAML from TypeScript registry
  *
  * Generates:
- * - docs/data/keyword.map.md — keyword → effect type mapping
+ * - data/keyword/keyword.map.md — keyword → effect type mapping
  * - data/yaml/groups.yaml — effect group classification
  *
  * Usage: bun app/generate.ts
@@ -21,12 +21,12 @@ const ROOT = resolve(__dirname, "..");
 // --- keyword.map.md (English) and keyword.map.cn.md (Chinese patterns preserved) ---
 
 const keywordMapContent = generateKeywordMap(registry);
-const keywordMapPath = join(ROOT, "docs/data/keyword.map.md");
+const keywordMapPath = join(ROOT, "data/keyword/keyword.map.md");
 writeFileSync(keywordMapPath, keywordMapContent);
 console.log(`Wrote ${keywordMapPath}`);
 
 // Also write the canonical CN file for pipeline authors who prefer the Chinese primary document.
-const keywordMapCnPath = join(ROOT, "docs/data/keyword.map.cn.md");
+const keywordMapCnPath = join(ROOT, "data/keyword/keyword.map.cn.md");
 writeFileSync(keywordMapCnPath, keywordMapContent);
 console.log(`Wrote ${keywordMapCnPath}`);
 

@@ -131,7 +131,7 @@ bun run parse
 This expands to:
 
 ```
-bun app/parse.ts docs/data/normalized.data.md docs/data/keyword.map.md data/yaml
+bun app/parse.ts data/normalized/normalized.data.md data/keyword/keyword.map.md data/yaml
 ```
 
 ## Output
@@ -169,22 +169,14 @@ Each effect type appears in exactly one group. The group assignment is determine
 
 Both must pass clean before any change to `app/` or `lib/` is committed.
 
-## Typical Workflow
-
-1. Upstream pipeline produces a new `normalized.data.md` (see [usage.dev.md](usage.dev.md)).
-2. Run the parser: `bun run parse`.
-3. Inspect the output diff: `git diff data/yaml/`.
-4. Run quality gates: `bun run check && bun run test`.
-5. Commit `normalized.data.md`, `effects.yaml`, and `groups.yaml` together.
-
 ## Related Documentation
 
 | Document | Role |
 |:---|:---|
+| [note.data.md](note.data.md) | Pipeline quick reference — layers, commands, agents, full workflow |
 | [impl.parser.md](impl.parser.md) | Implementation details — logical flow, components, test coverage |
-| [design.md](design.md) | Architectural rationale for the pipeline |
-| [usage.dev.md](usage.dev.md) | Full pipeline workflow (extraction, verification, parsing) |
-| [keyword.map.md](keyword.map.md) | Effect type vocabulary — the schema's source of truth |
+| [design.md](design.md) | System design — containers, components, boundaries |
+| [keyword.map.md](../../data/keyword/keyword.map.md) | Effect type vocabulary — the schema's source of truth |
 
 ---
 

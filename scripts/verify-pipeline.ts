@@ -5,8 +5,8 @@ import { resolve, join } from "node:path";
 
 const ROOT = resolve(".");
 const RAW_DIR = join(ROOT, "data/raw");
-const NORMALIZED = join(ROOT, "docs/data/normalized.data.md");
-const KEYWORD_MAP = join(ROOT, "docs/data/keyword.map.md");
+const NORMALIZED = join(ROOT, "data/normalized/normalized.data.md");
+const KEYWORD_MAP = join(ROOT, "data/keyword/keyword.map.md");
 const DATA_YAML = join(ROOT, "data/yaml/effects.yaml");
 
 function extractBacktickTokens(path: string) {

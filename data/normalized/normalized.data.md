@@ -107,7 +107,7 @@ strong {
 ## Meta
 
 - **Data source**: `data/raw/about.md` (sole data source)
-- **Effect type vocabulary**: `docs/data/keyword.map.md`
+- **Effect type vocabulary**: `data/keyword/keyword.map.md`
 - **Scope**: Divine Book effects (main skill, primary affix, exclusive affix, universal affix, school affix)
 - **Excluded**: shared mechanics (fusion damage, enlightenment damage, cast gap) — skill book base mechanics, not Divine Book effects
 - **Skill book count**: 28 (Sword 7, Spell 7, Demon 7, Body 7)

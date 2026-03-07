@@ -4,7 +4,7 @@
  * Each function specifies what effect types qualify an affix for that role,
  * which platforms can serve it, and how to score combos.
  *
- * Source: chain.md §D Function Catalog.
+ * Source: docs/data/chain.md §D Function Catalog.
  */
 
 import type { AffixBinding } from "./bindings.js";
@@ -13,6 +13,8 @@ import { filterByBinding } from "./chains.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS } from "./platforms.js";
 import { Zone } from "./enums.js";
+import { buildFactorVector, comboDistance } from "../model/model-data.js";
+import type { AffixModel } from "../schemas/affix.model.js";
 
 // ---------------------------------------------------------------------------
 // Function definition
@@ -213,6 +215,10 @@ export interface Combo {
 	zoneCount: number;
 	/** Zone relationship between the two operators */
 	relationship: "multiplicative" | "additive" | "independent" | "cross-cutting";
+	/** Combined factor vector (platform + primary + two operators) */
+	factors: AffixModel;
+	/** Distance from platform baseline across all factor dimensions */
+	distance: number;
 }
 
 function classifyRole(
@@ -294,6 +300,9 @@ export function enumerateCombos(
 				}
 			}
 
+			const factors = buildFactorVector(platform.book, op1.affix, op2.affix);
+			const distance = comboDistance(platform.book, op1.affix, op2.affix);
+
 			combos.push({
 				op1,
 				op2,
@@ -303,23 +312,14 @@ export function enumerateCombos(
 				zones: combined,
 				zoneCount: combined.size,
 				relationship,
+				factors,
+				distance,
 			});
 		}
 	}
 
-	// Sort: both-serve first, then cross-cutting > multiplicative, then zone count
-	const relOrder = {
-		"cross-cutting": 0,
-		multiplicative: 1,
-		independent: 2,
-		additive: 3,
-	};
-	combos.sort(
-		(a, b) =>
-			(a.bothServe === b.bothServe ? 0 : a.bothServe ? -1 : 1) ||
-			relOrder[a.relationship] - relOrder[b.relationship] ||
-			b.zoneCount - a.zoneCount,
-	);
+	// Sort by distance from platform baseline (all dimensions)
+	combos.sort((a, b) => b.distance - a.distance);
 
 	return combos;
 }

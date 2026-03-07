@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "parse": "bun app/parse.ts docs/data/normalized.data.md data/yaml",
+    "parse": "bun app/parse.ts data/normalized/normalized.data.md data/yaml",
+    "map": "bun app/map.ts",
     "generate": "bun app/generate.ts",
     "candidates": "bun app/candidates.ts",
     "sync-style": "bun scripts/sync-style.ts",
+    "verify-domain": "bun scripts/verify-domain.ts",
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test"
   },

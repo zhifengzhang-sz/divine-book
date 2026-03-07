@@ -364,7 +364,7 @@ Some effect types connect two otherwise separate chains. These are the most valu
 | Healing → Damage | Healing output | Opponent HP reduction | `healing_to_damage` | 【瑶光却邪】(50%) |
 | Damage → Shield | Damage output | Self shield creation | `damage_to_shield` | 【玄女护心】(50%, 8s) |
 | Shield → Damage | Shield expiry | Opponent HP reduction | `on_shield_expire` | 【玉石俱焚】(100% of shield) |
-| Opponent Attack → Self Damage | Opponent offense | Self damage output | `counter_buff` | 极怒 (十方真魄 primary: reflect 50% received + 15% lost HP) |
+| Opponent Attack → Self Damage | Opponent offense | Self damage output | `counter_buff` | 极怒 (疾风九变 main + 星猿复灵 primary: reflect 50% received + 15% lost HP) |
 | Opponent Attack → Debuff | Opponent offense | Opponent debuff stack | `counter_debuff` | 罗天魔咒 (大罗幻诀 main: 30% per attack → DoT stacks) |
 | Self Buff Count → Damage | Buff accumulation | Damage scaling | `per_buff_stack_damage` | 【真极穿空】(5.5%/5 stacks) |
 | Opponent Debuff Count → Damage | Debuff accumulation | Damage scaling | `per_debuff_stack_damage` | 【心魔惑言】(5.5%/5 stacks), 【紫心真诀】(2.1%/stack true) |

@@ -164,15 +164,15 @@ Each function is an atomic 灵書-level purpose. The catalog maps functions to t
 |:---|:--------|:----------------------|:-----------------------|
 | F_burst | Maximize single-slot damage output | `base_attack`, `guaranteed_resonance`, `probability_multiplier` | F1, F2, F3, F4 (high base); F5, F6, F7, F8, F9 (moderate) |
 | F_dr_remove | Remove / bypass enemy DR | `cross_slot_debuff`(命損), `ignore_damage_reduction` | F6(命損 cross, 8s); any+【神威冲云】(same-灵書 only) |
-| F_buff | Persistent team stat buff | `self_buff`(cross), `buff_strength`, `buff_duration` | F5(【仙佑】 +142.8%, 48s); F8(怒灵降世 +20%, 7.5s) |
-| F_hp_exploit | Convert own HP loss → damage | `per_self_lost_hp`, `self_hp_cost` | any+【怒血战意】; F8/F9(HP cost creates resource) |
-| F_antiheal | Suppress enemy healing | `debuff`(healing reduction) | any+【天哀灵涸】(−31% undispellable); any+【天倾灵枯】(−31%/−51%, 20s); F7+【无相魔威】(−40.8%) |
-| F_survive | CC cleanse + damage reduction | `periodic_cleanse`, `self_damage_reduction_during_cast`, `untargetable_state` | F8(cleanse monopoly); F4(untargetable 4s); any+【金刚护体】(+55% DR) |
+| F_buff | Persistent team stat buff | `self_buff`, `random_buff` | F5(【仙佑】 +142.8%, 48s); F8(怒灵降世 +20%, 7.5s) |
+| F_hp_exploit | Convert own HP loss → damage | `per_self_lost_hp` | any+【怒血战意】; F8/F9(HP cost creates resource) |
+| F_antiheal | Suppress enemy healing | `debuff`, `conditional_debuff`, `random_debuff` | any+【天哀灵涸】(−31% undispellable); any+【天倾灵枯】(−31%/−51%, 20s); F7+【无相魔威】(−40.8%) |
+| F_survive | CC cleanse + damage reduction | `periodic_cleanse`, `self_damage_reduction_during_cast`, `untargetable_state` | F8(cleanse monopoly) |
 | F_truedmg | True damage from debuff stacks | `per_debuff_stack_true_damage` | any+【紫心真诀】(`惊蛰化龙`, monopoly) |
 | F_exploit | Secondary high-damage source | `percent_max_hp_damage`, `shield_destroy_damage` | F1(27%×6=162%maxHP); F3(24%×10=240%maxHP shieldless) |
-| F_dot | Sustained DoT damage | `dot`, `extended_dot`, dot amplifiers | F4(extended 6.5s, ×28.9 peak); F6(counter DoTs); any+【玄心剑魄】(噬心 550%/tick) |
+| F_dot | Sustained DoT damage | `dot`, `extended_dot`, `shield_destroy_dot`, `on_dispel` | F4(extended 6.5s, ×28.9 peak); F6(counter DoTs); any+【玄心剑魄】(噬心 550%/tick) |
 | F_counter | Reflect enemy attacks | `counter_buff` | F9(极怒: 50% reflect + 15% lost HP, 4s) |
-| F_sustain | Lifesteal / self-healing | `lifesteal`, `healing_increase` | F9(82% lifesteal via 星猿复灵); any+【仙灵汲元】(55%) |
+| F_sustain | Lifesteal / self-healing | `lifesteal`, `conditional_heal_buff` | F9(82% lifesteal via 星猿复灵); any+【仙灵汲元】(55%) |
 | F_dispel | Strip enemy buffs | `periodic_dispel` | any+【天煞破虚】(1 buff/s, 10s) |
 | F_delayed | Delayed burst accumulation | `delayed_burst` | F7(无相魔劫: 10% accumulated + 5,000% ATK) |
 

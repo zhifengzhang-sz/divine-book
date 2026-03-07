@@ -459,7 +459,7 @@ Value = main_output × 1.36 × $\frac{1}{1 - \text{DR}}$. Scales with opponent D
 Affix: 【天命有归】(Spell school, also `damage_increase` +50%)
 Carrier: `any 法修 book` — `甲元仙符`, `浩然星灵诀`, `元磁神光`, `周天星元`, `星元化岳`, `玉书天戈符`, `九天真雷诀`
 
-> **Uniqueness constraint:** each affix can only appear **once** across the entire 6-book set (about.md §核心冲突/副词缀冲突). 【天命有归】 goes on exactly one 法修 book — the choice of which book carries it determines which slot gets probability→certainty conversion. The +50% `damage_increase` also applies only to that one slot.
+> **Uniqueness constraint:** each affix can only appear **once** across the entire 6-book set (`data/raw/构造规则.md` §核心冲突/副词缀冲突). 【天命有归】 goes on exactly one 法修 book — the choice of which book carries it determines which slot gets probability→certainty conversion. The +50% `damage_increase` also applies only to that one slot.
 
 | # | Book Chain | What becomes certain | Combo output |
 |:---|:---|:---|:---|
@@ -580,7 +580,7 @@ Given a platform choice, which paths are accessible and which require external p
 - **Named entities:** 无相魔劫
 - **Accessible:** O1, O3, O4, O7, D1, D5, A1–A6, X2
 - **Inaccessible without provider:** O5 (T4), O12 (T9), B1 (T6), B3 (T5), B7 (T9), S1 (T3)
-- **Key operators:** 【无相魔威】 provides T2 (anti-heal debuff); 【引灵摘魂】 (T2 satisfied); anti-heal stacking with 【天哀灵涸】/【天倾灵枯】 pushes 【无相魔威】 to +205%
+- **Key operators:** 【无相魔威】 provides T2 (anti-heal debuff); 【引灵摘魂】 consumes T2 (conditional damage); anti-heal stacking with 【天哀灵涸】/【天倾灵枯】 pushes 【无相魔威】 to +205%
 
 ### `十方真魄` + 星猿弃天
 
@@ -691,7 +691,7 @@ Target categories with **many providers** — maximum construction flexibility.
 
 | Target | Provider count | Providers |
 |:---|:---|:---|
-| T2 (减益效果) | 7 exclusive + 1 school | 【天哀灵涸】, 【天倾灵枯】, 【无相魔威】, 【奇能诡道】, 【祸星无妄】, 【天煞破虚】 (exclusive); 大罗幻诀/无相魔劫咒 (platform); 【祸星无妄】 (school) |
+| T2 (减益效果) | 5 exclusive + 1 school + 1 conditional | 【天哀灵涸】, 【天倾灵枯】, 【无相魔威】, 【奇能诡道】, 【魔骨明心】 (exclusive); 【祸星无妄】 (school); 大罗幻诀/无相魔劫咒 (platform) |
 | T3 (增益效果) | 2 universal + platform | 【福荫】, 【景星天佑】 (aux); `甲元仙符`, `十方真魄`, `疾风九变`, `皓月剑诀` (platform) |
 
 ### Named entity monopolies
