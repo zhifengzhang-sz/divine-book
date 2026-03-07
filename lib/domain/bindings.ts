@@ -203,7 +203,7 @@ const EXCLUSIVE_BODY: AffixBinding[] = [
 	b({ affix: "破釜沉舟", category: "exclusive", school: School.Body, book: "十方真魄", outputs: ["skill_damage_increase", "self_damage_taken_increase"], requires: "free" }),
 	b({ affix: "真言不灭", category: "exclusive", school: School.Body, book: "疾风九变", outputs: ["all_state_duration"], requires: [T.State] }),
 	b({ affix: "怒血战意", category: "exclusive", school: School.Body, book: "玄煞灵影诀", outputs: ["per_self_lost_hp"], requires: [T.LostHp] }),
-	b({ affix: "紫心真诀", category: "exclusive", school: School.Body, book: "惊蛰化龙", outputs: ["per_debuff_stack_true_damage", "conditional_buff"], requires: [T.Debuff] }),
+	b({ affix: "索心真诀", category: "exclusive", school: School.Body, book: "惊蛰化龙", outputs: ["per_debuff_stack_true_damage", "conditional_buff"], requires: [T.Debuff] }),
 	b({ affix: "乘胜逐北", category: "exclusive", school: School.Body, book: "煞影千幻", outputs: ["conditional_damage"], requires: [T.Control] }),
 	b({ affix: "玉石俱焚", category: "exclusive", school: School.Body, book: "九重天凤诀", outputs: ["on_shield_expire"], requires: [T.Shield] }),
 	b({ affix: "天煞破虚", category: "exclusive", school: School.Body, book: "天煞破虚诀", outputs: ["periodic_dispel"], requires: "free" }),

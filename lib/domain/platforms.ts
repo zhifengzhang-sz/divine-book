@@ -33,7 +33,7 @@ export const PLATFORMS: Platform[] = [
 		primaryAffix: "幻象剑灵",
 		school: School.Sword,
 		namedEntities: [],
-		provides: [TargetCategory.Damage],
+		provides: [TargetCategory.Damage, TargetCategory.Buff],
 	},
 	{
 		book: "皓月剑诀",
