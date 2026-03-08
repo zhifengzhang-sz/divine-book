@@ -112,6 +112,8 @@ strong {
 | `combo-rank.ts` | Absolute scoring of all valid combos per platform |
 | `combo-cluster.ts` | K-means clustering to discover strategic archetypes |
 | `binding-quality.ts` | Per-combo validation + BQ (utilization, platform fit, zone coverage) |
+| `book-vector.ts` | Time-series factor evaluation: per-second vec(t), modifiers, summon |
+| `book-vector-chart.ts` | Interactive HTML visualization of time-series factors |
 
 ### Scoring Model
 
@@ -131,7 +133,9 @@ Where BQ (v3) = `utilization × (0.4 × platformFit + 0.25 × zoneCoverage + 0.2
 
 **What the model captures**: Single-slot damage output across all chain zones (气血, 灵力, orthogonal, anti-heal, survival), penalized by binding inefficiency and rewarded by zone breadth.
 
-**What the model does NOT capture**: Cross-slot interactions, persistent effects (分身, DoT, buffs), %maxHP damage (game mechanic, not in affix outputs), debuff stacking synergy, or cycle 2+ carry effects.
+**What the static model does NOT capture**: Cross-slot interactions, %maxHP damage (game mechanic, not in affix outputs), debuff stacking synergy, or cycle 2+ carry effects.
+
+**What the time-series model adds**: Persistent effects (分身 summon, DoT, temporal buffs), modifier interactions (buff_strength, buff_duration, all_state_duration), slot coverage metrics, and per-second factor vectors.
 
 ### Process
 
@@ -203,6 +207,24 @@ The per-slot ranking misses a critical system effect: choosing【灵犀九重】
 **Strategy B beats Strategy A by +184 (+1.3%).** Slot 1 sacrifices 4654 points, but【心逐神随】on `甲元仙符` gains 4702 — a net positive. The freed【心逐神随】applies its M_synchro wrapper to a completely different platform's damage chain, creating multiplicative value that the greedy approach wastes by stacking it on an already-dominant slot.
 
 The unconstrained optimum (Strategy C) goes further — putting【通明】+【灵犀九重】on slot 1 instead — scoring 15431 total (+8.5% over greedy). But this redistributes affixes in ways that conflict with cross-slot design intent.
+
+### Time-Series Analysis
+
+The static model has no representation for 春黎剑阵's 分身 (summon). The time-series model reveals:
+
+```
+bun app/book-vector.ts --platform 春黎剑阵 --op1 灵犀九重 --op2 破碎无双
+```
+
+| Factor | ∫/T | ∫ total | Peak | Permanent | Temporal |
+|:-------|:----|:--------|:-----|:----------|:---------|
+| D_base | 58439 | 935026 | 58439 | 22305 | +36134 |
+| D_res | 3.22 | 51.52 | 3.22 | 3.22 | — |
+| D_ortho | 3575 | 57200 | 3850 | 3300 | +275 |
+
+The summon (×1.62 for 16s) amplifies D_base from 22305 → 58439 — a **+162% effective base damage per activation**. This is invisible to the static model's `compositeScore()`, which only sees the unamplified D_base. The summon covers 4 slot windows (slot_coverage=4 at T_gap=4s), meaning subsequent skill activations during the 16s window also benefit.
+
+The 玄心剑魄 DoT (D_ortho=550, 8s duration) appears as +275 temporal contribution: active for half the summon window, then drops to the permanent on_dispel baseline (3300).
 
 ### Verdict: 【灵犀九重】+【破碎无双】IS THE RIGHT CHOICE
 
@@ -286,9 +308,36 @@ Neither affix produces significant per-slot damage. Their value is:
 
 `甲元仙符` supports 9 archetypes. The chosen combo doesn't appear in any cluster's top 5. The H_A + M_skill cluster includes buff/healing combos (【长生天则】+【天倾灵枯】at 450.0) — the closest archetype to a "buff bot."
 
-### Verdict: OUTSIDE MODEL SCOPE
+### Time-Series Analysis
 
-The tool has no mechanism to evaluate cross-slot buff amplification. Rank #546 is correct for per-slot damage — and irrelevant for the slot's actual purpose. This slot's value is measured by how much it amplifies slots 4-6, not by its own damage output.
+The time-series model now quantifies the modifier interactions that make this a buff bot:
+
+```
+bun app/book-vector.ts --platform 甲元仙符 --op1 龙象护身 --op2 奇能诡道
+```
+
+| Factor | ∫/T | ∫ total | Peak | Permanent | Temporal |
+|:-------|:----|:--------|:-----|:----------|:---------|
+| S_coeff | 85.68 | 1713.60 | 142.80 | 0 | +85.68 |
+| H_A | 190 | 3800 | 190 | 190 | — |
+| H_red | 82 | 1640 | 82 | 51 | +31 |
+
+Key insight: 龙象护身's buff_strength (+104%) amplifies the self_buff S_coeff from 70 → **142.80** (peak). The buff lasts 12s, covering 5 slot windows.
+
+#### Modifier Tradeoff: Strength vs Duration
+
+| Modifier | S_coeff peak | S_coeff ∫ total | Slot coverage |
+|:---------|:-------------|:----------------|:--------------|
+| 龙象护身 (strength +104%) | 142.80 | 1713.60 | 5 |
+| 仙露护元 (duration +300%) | 70.00 | 3360.00 | 12 |
+
+仙露护元 doubles the total S_coeff contribution (3360 vs 1714 factor-seconds) because it extends the buff from 12s → 48s — but at lower peak intensity. 龙象护身 gives a more intense burst covering fewer slots. The choice depends on whether the build values burst windows (龙象护身) or sustained coverage (仙露护元).
+
+Note: neither modifier's value is captured by the static `compositeScore()`, which sees buff_strength and buff_duration as empty factors.
+
+### Verdict: PARTIALLY MODELED (was: outside scope)
+
+The time-series model quantifies the self-buff amplification and modifier tradeoffs within this slot. What remains outside scope: how the amplified 仙佑 buff (+280% ATK/DEF/HP) propagates to slots 4-6. The slot's cross-slot value still cannot be evaluated.
 
 **Data note**: `甲元仙符`'s high ghost-combo rejection rate (448/1035 = 43%) suggests its narrow provides ([Damage]) limits combo options significantly.
 
@@ -367,7 +416,7 @@ The 6-slot optimization problem is not 4 independent maximizations — it's a co
 |:-----|:---------|:-------------|:----------|:------|:--------|
 | 1 | `春黎剑阵` | 【灵犀九重】+【破碎无双】 | #5/417 | 6712.9 | **Globally optimal** — BQ=1.00, frees【心逐神随】 |
 | 2 | `皓月剑诀` | 【玄心剑魄】+【无极剑阵】 | #78/725 | 1468.2 | Model boundary — cross-slot value |
-| 3 | `甲元仙符` | 【龙象护身】+【奇能诡道】 | #546/587 | 420.2 | Outside scope — buff bot |
+| 3 | `甲元仙符` | 【龙象护身】+【奇能诡道】 | #546/587 | 420.2 | Partially modeled — buff amplification visible, cross-slot propagation not |
 | 4 | `千锋聚灵剑` | 【追神真诀】+【破釜沉舟】 | INVALID | — | Data gap — [Dot] provider missing |
 
 ### What the Tools Validate
@@ -377,11 +426,13 @@ The 6-slot optimization problem is not 4 independent maximizations — it's a co
 - BQ correctly identifies【无极剑阵】's penalty output as a quality reduction
 
 ### What the Tools Cannot Validate
-- Cross-slot buff amplification (slot 3's buff bot role)
+- Cross-slot buff propagation (slot 3's 仙佑 amplifying slots 4-6)
 - %maxHP damage (game mechanic, not in affix model)
-- Persistent effects carrying across slots (分身, 噬心, 惊神剑光 stacking)
+- Cross-slot DoT state (slot 2's 噬心 enabling slot 4's【追神真诀】)
 - Debuff stack accumulation across the rotation
 - Cycle 2+ carry effects
+
+*Note: persistent effects within a single slot (分身, temporal buffs, modifiers) are now captured by the time-series model (`book-vector.ts`).*
 
 ### Data Issues Found
 - `千锋聚灵剑` may need `provides: [Damage, Dot]` if 惊神剑光 generates DoT effects
@@ -515,10 +566,17 @@ The per-slot model is a **necessary but insufficient** layer. It correctly optim
 - BQ correctly identifies【无极剑阵】's penalty output as a quality reduction
 - Greedy allocation wastes 1.3-8.5% of total per-slot score vs global optimum
 
-### What the Tools Cannot Validate
-- Cross-slot buff amplification (slot 3's buff bot role)
+### What the Time-Series Model Now Captures
+- Summon (分身): 春黎剑阵's ×1.62 multiplier on D_base for 16s
+- Temporal buffs/debuffs: per-second factor vectors with duration gating
+- Modifier interactions: buff_strength, buff_duration, all_state_duration amplifying temporal effects
+- Slot coverage: how many consecutive skill windows an effect spans
+- Total vs efficiency: both ∫ total (factor-seconds) and ∫/T (per-second rate)
+
+### What the Tools Still Cannot Validate
+- Cross-slot buff propagation (slot 3's 仙佑 amplifying slots 4-6)
 - %maxHP damage (game mechanic, not in affix model)
-- Persistent effects carrying across slots (分身, 噬心, 惊神剑光 stacking)
+- Cross-slot DoT state (slot 2's 噬心 enabling slot 4's【追神真诀】)
 - Debuff stack accumulation across the rotation
 - Cycle 2+ carry effects
 
@@ -567,7 +625,7 @@ This naturally rewards zone diversity — the same insight captured by BQ's zone
 
 ### Needed Extensions
 1. **Vector-valued objective**: Replace scalar scoring with multiplicative product of combined zone factors across slots
-2. **Cross-slot state model**: Track which buffs/DoTs persist beyond their slot's cast window
+2. **Cross-slot state model**: Track which buffs/DoTs persist beyond their slot's cast window (partially addressed by `book-vector.ts` slot_coverage)
 3. **Global allocation with cross-slot value**: The 4-slot assignment problem with both per-slot products and cross-slot interaction terms
 4. **%maxHP / true damage channel**: Model game mechanics that bypass the affix damage chain
 5. **Cycle 2+ modeling**: Evaluate how persistent effects compound across rotation cycles
