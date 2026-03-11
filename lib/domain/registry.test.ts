@@ -10,8 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../..");
 
 describe("Registry", () => {
-	test("has 80 effect types", () => {
-		expect(registry.size).toBe(80);
+	test("has 86 effect types", () => {
+		expect(registry.size).toBe(86);
 	});
 
 	test("has 16 groups", () => {

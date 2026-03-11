@@ -22,7 +22,9 @@ export const CoverageTypeEnum = z.enum([
 ]);
 
 export const TemporalSchema = z.object({
-	duration: z.number().describe("unit:seconds"),
+	duration: z
+		.union([z.number().describe("unit:seconds"), z.literal("permanent")])
+		.describe("Duration in seconds, or 'permanent' for combat-long effects"),
 	coverage_type: CoverageTypeEnum,
 });
 

@@ -18,6 +18,17 @@ export interface Platform {
 	namedEntities: string[];
 	/** Target categories this platform makes available */
 	provides: TargetCategory[];
+	/** Effect types the primary affix produces (from effects.yaml) */
+	primaryAffixOutputs: string[];
+	/**
+	 * Baseline factor values from the platform's skill + primary + exclusive affix.
+	 * Used for function qualification thresholds (e.g., F_burst needs high D_base).
+	 */
+	baseline: {
+		D_base: number;
+		S_coeff: number;
+		DR_A: number;
+	};
 }
 
 export const PLATFORMS: Platform[] = [
@@ -27,6 +38,8 @@ export const PLATFORMS: Platform[] = [
 		school: School.Sword,
 		namedEntities: [],
 		provides: [TargetCategory.Damage],
+		primaryAffixOutputs: ["per_hit_escalation"],
+		baseline: { D_base: 20265, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "春黎剑阵",
@@ -34,6 +47,8 @@ export const PLATFORMS: Platform[] = [
 		school: School.Sword,
 		namedEntities: [],
 		provides: [TargetCategory.Damage, TargetCategory.Buff],
+		primaryAffixOutputs: ["summon_buff"],
+		baseline: { D_base: 22305, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "皓月剑诀",
@@ -41,6 +56,8 @@ export const PLATFORMS: Platform[] = [
 		school: School.Sword,
 		namedEntities: ["寂灭剑心"],
 		provides: [TargetCategory.Damage, TargetCategory.Buff, TargetCategory.Dot],
+		primaryAffixOutputs: ["shield_destroy_dot"],
+		baseline: { D_base: 22305, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "念剑诀",
@@ -48,6 +65,8 @@ export const PLATFORMS: Platform[] = [
 		school: School.Sword,
 		namedEntities: [],
 		provides: [TargetCategory.Damage, TargetCategory.Dot],
+		primaryAffixOutputs: ["extended_dot"],
+		baseline: { D_base: 22305, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "甲元仙符",
@@ -59,6 +78,8 @@ export const PLATFORMS: Platform[] = [
 			TargetCategory.Buff,
 			TargetCategory.Healing,
 		],
+		primaryAffixOutputs: ["self_buff_extra"],
+		baseline: { D_base: 21090, S_coeff: 70, DR_A: 0 },
 	},
 	{
 		book: "大罗幻诀",
@@ -72,6 +93,8 @@ export const PLATFORMS: Platform[] = [
 			TargetCategory.State,
 			TargetCategory.Probability,
 		],
+		primaryAffixOutputs: ["counter_debuff_upgrade", "cross_slot_debuff"],
+		baseline: { D_base: 20265, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "无相魔劫咒",
@@ -83,6 +106,8 @@ export const PLATFORMS: Platform[] = [
 			TargetCategory.Debuff,
 			TargetCategory.State,
 		],
+		primaryAffixOutputs: ["delayed_burst_increase"],
+		baseline: { D_base: 1500, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "十方真魄",
@@ -95,6 +120,21 @@ export const PLATFORMS: Platform[] = [
 			TargetCategory.Healing,
 			TargetCategory.LostHp,
 		],
+		primaryAffixOutputs: ["self_buff_extend", "periodic_cleanse"],
+		baseline: { D_base: 1500, S_coeff: 20, DR_A: -30 },
+	},
+	{
+		book: "玄煞灵影诀",
+		primaryAffix: "星猿之怒",
+		school: School.Body,
+		namedEntities: ["怒意滔天"],
+		provides: [
+			TargetCategory.Damage,
+			TargetCategory.Buff,
+			TargetCategory.LostHp,
+		],
+		primaryAffixOutputs: ["per_self_lost_hp"],
+		baseline: { D_base: 0, S_coeff: 0, DR_A: 0 },
 	},
 	{
 		book: "疾风九变",
@@ -107,6 +147,8 @@ export const PLATFORMS: Platform[] = [
 			TargetCategory.Healing,
 			TargetCategory.LostHp,
 		],
+		primaryAffixOutputs: ["lifesteal", "counter_buff"],
+		baseline: { D_base: 1500, S_coeff: 0, DR_A: 0 },
 	},
 ];
 

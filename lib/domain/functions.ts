@@ -8,11 +8,12 @@
  */
 
 import type { AffixBinding } from "./bindings.js";
+import { AFFIX_BINDINGS } from "./bindings.js";
 import { getOffenseZones, findAmplifiers } from "./amplifiers.js";
-import { filterByBinding } from "./chains.js";
+import { isComboValid } from "./binding-quality.js";
 import type { Platform } from "./platforms.js";
 import { PLATFORMS } from "./platforms.js";
-import { Zone } from "./enums.js";
+import { Zone, TargetCategory } from "./enums.js";
 import { buildFactorVector, comboDistance } from "../model/model-data.js";
 import type { AffixModel } from "../schemas/affix.model.js";
 
@@ -27,9 +28,33 @@ export interface FunctionDef {
 	coreEffects: string[];
 	/** Effect types that amplify the core (same-灵書 amplifiers) */
 	amplifierEffects: string[];
-	/** Platform book names that qualify (empty = any) */
-	qualifyingPlatforms: string[];
+	/**
+	 * Platform qualification criteria (AND logic).
+	 * - TargetCategory values: platform.provides must include this
+	 * - Empty array: all platforms qualify (unless requiresPrimaryOverlap)
+	 */
+	requiresPlatform: TargetCategory[];
+	/**
+	 * If true, platform must have primaryAffixOutputs overlapping with
+	 * this function's coreEffects to qualify.
+	 */
+	requiresPrimaryOverlap?: boolean;
+	/**
+	 * Minimum baseline factor values required for platform qualification.
+	 * E.g., { D_base: 10000 } means only platforms with baseline D_base >= 10000 qualify.
+	 */
+	requiresBaseline?: Partial<Record<"D_base" | "S_coeff" | "DR_A", number>>;
+	/**
+	 * AffixModel factor keys relevant to this function's purpose.
+	 * Used by comboDistance to score only the dimensions that matter.
+	 * If absent, all dimensions are used (legacy behavior).
+	 */
+	relevantFactors?: (keyof import("../schemas/affix.model.js").AffixModel)[];
 }
+
+// Factor dimension groups for relevantFactors
+const OFFENSE = ["D_base", "D_flat", "M_dmg", "M_skill", "M_final", "D_res", "sigma_R", "M_synchro", "D_ortho"] as const;
+const DEFENSE = ["DR_A", "S_A"] as const;
 
 export const FUNCTIONS: FunctionDef[] = [
 	{
@@ -58,14 +83,17 @@ export const FUNCTIONS: FunctionDef[] = [
 			"ignore_damage_reduction",
 			"probability_to_certain",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [],
+		requiresBaseline: { D_base: 10000 },
+		relevantFactors: [...OFFENSE],
 	},
 	{
 		id: "F_dr_remove",
 		purpose: "Remove / bypass enemy DR",
 		coreEffects: ["cross_slot_debuff", "ignore_damage_reduction"],
 		amplifierEffects: ["damage_increase", "all_state_duration"],
-		qualifyingPlatforms: [],
+		requiresPlatform: [],
+		relevantFactors: ["H_red", "M_dmg", "M_final"],
 	},
 	{
 		id: "F_buff",
@@ -79,7 +107,9 @@ export const FUNCTIONS: FunctionDef[] = [
 			"self_buff_extend",
 			"self_buff_extra",
 		],
-		qualifyingPlatforms: ["甲元仙符", "十方真魄"],
+		requiresPlatform: [],
+		requiresBaseline: { S_coeff: 1 },
+		relevantFactors: ["S_coeff", "M_dmg", "M_skill", "M_final"],
 	},
 	{
 		id: "F_hp_exploit",
@@ -94,7 +124,8 @@ export const FUNCTIONS: FunctionDef[] = [
 			"final_damage_bonus",
 			"guaranteed_resonance",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [TargetCategory.LostHp],
+		relevantFactors: [...OFFENSE],
 	},
 	{
 		id: "F_antiheal",
@@ -105,7 +136,8 @@ export const FUNCTIONS: FunctionDef[] = [
 			"debuff_stack_increase",
 			"all_state_duration",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [],
+		relevantFactors: ["H_red"],
 	},
 	{
 		id: "F_survive",
@@ -116,7 +148,8 @@ export const FUNCTIONS: FunctionDef[] = [
 			"untargetable_state",
 		],
 		amplifierEffects: [],
-		qualifyingPlatforms: ["十方真魄"],
+		requiresPlatform: [],
+		relevantFactors: [...DEFENSE],
 	},
 	{
 		id: "F_truedmg",
@@ -128,12 +161,13 @@ export const FUNCTIONS: FunctionDef[] = [
 			"debuff_stack_increase",
 			"conditional_buff",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [TargetCategory.Debuff],
+		relevantFactors: ["D_ortho", "M_dmg", "M_final"],
 	},
 	{
 		id: "F_exploit",
 		purpose: "Secondary high-damage source (%maxHP)",
-		coreEffects: ["percent_max_hp_damage", "shield_destroy_damage"],
+		coreEffects: ["percent_max_hp_damage", "shield_destroy_damage", "shield_destroy_dot"],
 		amplifierEffects: [
 			"attack_bonus",
 			"damage_increase",
@@ -141,7 +175,9 @@ export const FUNCTIONS: FunctionDef[] = [
 			"guaranteed_resonance",
 			"probability_multiplier",
 		],
-		qualifyingPlatforms: ["千锋聚灵剑", "皓月剑诀"],
+		requiresPlatform: [],
+		requiresPrimaryOverlap: true,
+		relevantFactors: ["D_ortho", ...OFFENSE],
 	},
 	{
 		id: "F_dot",
@@ -158,14 +194,17 @@ export const FUNCTIONS: FunctionDef[] = [
 			"dot_extra_per_tick",
 			"all_state_duration",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [TargetCategory.Dot],
+		relevantFactors: ["D_base", "D_flat", "M_dmg", "M_final"],
 	},
 	{
 		id: "F_counter",
 		purpose: "Reflect enemy attacks",
 		coreEffects: ["counter_buff"],
 		amplifierEffects: ["buff_strength", "buff_duration", "all_state_duration"],
-		qualifyingPlatforms: ["疾风九变"],
+		requiresPlatform: [],
+		requiresPrimaryOverlap: true,
+		relevantFactors: [...DEFENSE, "D_ortho", "S_coeff"],
 	},
 	{
 		id: "F_sustain",
@@ -175,25 +214,28 @@ export const FUNCTIONS: FunctionDef[] = [
 			"healing_increase",
 			"healing_to_damage",
 		],
-		qualifyingPlatforms: [],
+		requiresPlatform: [TargetCategory.Healing],
+		relevantFactors: ["H_A"],
 	},
 	{
 		id: "F_dispel",
 		purpose: "Strip enemy buffs",
 		coreEffects: ["periodic_dispel"],
 		amplifierEffects: ["damage_increase", "attack_bonus"],
-		qualifyingPlatforms: [],
+		requiresPlatform: [],
+		relevantFactors: [...OFFENSE],
 	},
 	{
 		id: "F_delayed",
 		purpose: "Delayed burst accumulation",
-		coreEffects: ["delayed_burst"],
+		coreEffects: ["delayed_burst", "delayed_burst_increase"],
 		amplifierEffects: [
-			"delayed_burst_increase",
 			"all_state_duration",
 			"damage_increase",
 		],
-		qualifyingPlatforms: ["无相魔劫咒"],
+		requiresPlatform: [],
+		requiresPrimaryOverlap: true,
+		relevantFactors: ["D_base", "M_dmg", "M_final"],
 	},
 ];
 
@@ -248,14 +290,10 @@ export function enumerateCombos(
 	platform: Platform,
 	strictBoth = false,
 ): Combo[] {
-	const { validAffixes } = filterByBinding(platform);
-
-	// Filter: school-category affixes must match platform school.
-	// Exclusive and universal affixes can go on any platform.
-	const pool = validAffixes.filter(
-		(a) =>
-			a.category !== "school" || a.school === platform.school,
-	);
+	// Use full affix list — isComboValid() checks per-combo binding validity
+	// (platform + both operators' provides). School affixes come from aux
+	// book's school, not platform's, so no school filter.
+	const pool = AFFIX_BINDINGS;
 
 	const combos: Combo[] = [];
 
@@ -263,6 +301,9 @@ export function enumerateCombos(
 		for (let j = i + 1; j < pool.length; j++) {
 			const op1 = pool[i];
 			const op2 = pool[j];
+
+			// Per-combo binding check
+			if (!isComboValid(op1, op2, platform)) continue;
 
 			const role1 = classifyRole(op1, fn);
 			const role2 = classifyRole(op2, fn);
@@ -301,7 +342,10 @@ export function enumerateCombos(
 			}
 
 			const factors = buildFactorVector(platform.book, op1.affix, op2.affix);
-			const distance = comboDistance(platform.book, op1.affix, op2.affix);
+			const distance = comboDistance(
+				platform.book, op1.affix, op2.affix,
+				fn.relevantFactors as string[] | undefined,
+			);
 
 			combos.push({
 				op1,
@@ -326,12 +370,84 @@ export function enumerateCombos(
 
 /**
  * Get qualifying platforms for a function.
+ *
+ * Qualification checks (AND logic):
+ * 1. requiresPlatform: platform.provides must include all listed TargetCategories
+ * 2. requiresPrimaryOverlap: platform.primaryAffixOutputs must overlap with fn.coreEffects
+ * 3. requiresBaseline: platform.baseline must meet minimum thresholds
+ *
+ * All empty = all platforms qualify.
  */
 export function getQualifyingPlatforms(fn: FunctionDef): Platform[] {
-	if (fn.qualifyingPlatforms.length > 0) {
-		return fn.qualifyingPlatforms
-			.map((name) => PLATFORMS.find((p) => p.book === name)!)
-			.filter(Boolean);
+	return PLATFORMS.filter((p) => {
+		if (fn.requiresPlatform.length > 0) {
+			if (!fn.requiresPlatform.every((cat) => p.provides.includes(cat)))
+				return false;
+		}
+		if (fn.requiresPrimaryOverlap) {
+			if (!p.primaryAffixOutputs.some((o) => fn.coreEffects.includes(o)))
+				return false;
+		}
+		if (fn.requiresBaseline) {
+			for (const [key, min] of Object.entries(fn.requiresBaseline)) {
+				if ((p.baseline[key as keyof typeof p.baseline] ?? 0) < min)
+					return false;
+			}
+		}
+		return true;
+	});
+}
+
+// ---------------------------------------------------------------------------
+// Aux affix enumeration — which affixes serve a function in aux position
+// ---------------------------------------------------------------------------
+
+export interface AuxAffix {
+	affix: string;
+	role: "core" | "amplifier";
+	/** The matching effect types from this affix */
+	matchingEffects: string[];
+}
+
+/**
+ * Find all affixes that can serve a function in aux position.
+ *
+ * An affix serves a function if its outputs overlap with the function's
+ * coreEffects (role=core) or amplifierEffects (role=amplifier).
+ *
+ * Exclusive affixes (book-locked) are excluded — they can't be placed
+ * in aux position on a different platform.
+ */
+export function getAuxAffixes(fn: FunctionDef): AuxAffix[] {
+	const result: AuxAffix[] = [];
+
+	for (const binding of AFFIX_BINDINGS) {
+		// Exclusive affixes are book-locked, not usable as aux on other platforms
+		if (binding.category === "exclusive") continue;
+
+		const coreMatches = binding.outputs.filter((o) =>
+			fn.coreEffects.includes(o),
+		);
+		if (coreMatches.length > 0) {
+			result.push({
+				affix: binding.affix,
+				role: "core",
+				matchingEffects: coreMatches,
+			});
+			continue;
+		}
+
+		const ampMatches = binding.outputs.filter((o) =>
+			fn.amplifierEffects.includes(o),
+		);
+		if (ampMatches.length > 0) {
+			result.push({
+				affix: binding.affix,
+				role: "amplifier",
+				matchingEffects: ampMatches,
+			});
+		}
 	}
-	return PLATFORMS;
+
+	return result;
 }

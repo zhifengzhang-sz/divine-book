@@ -425,6 +425,138 @@ export function evaluateBook(
 	};
 }
 
+// ---------------------------------------------------------------------------
+// Book set evaluation — Combinator 3
+// ---------------------------------------------------------------------------
+
+export interface BookSlot {
+	platform: string;
+	op1: string;
+	op2: string;
+	slot: number; // 1–6
+}
+
+export interface BookSetResult {
+	books: BookSlot[];
+	samples: Array<{ t: number; factors: Record<string, number> }>;
+	averaged: Record<string, number>;
+	total: Record<string, number>;
+	T_active: number;
+	permanent: Record<string, number>;
+	perBook: TimeSeriesResult[];
+}
+
+/**
+ * Evaluate a 6-book set by merging individual book timelines.
+ *
+ * Each book fires at (slot-1) × T_gap. Temporal events are offset
+ * by fire time. Permanent baselines are summed across all books.
+ * Summon envelopes are offset and applied additively to D_base.
+ */
+export function evaluateBookSet(
+	books: BookSlot[],
+	T_gap: number = DEFAULT_T_GAP,
+): BookSetResult {
+	const sorted = [...books].sort((a, b) => a.slot - b.slot);
+
+	const perBook: TimeSeriesResult[] = [];
+	const allEvents: TemporalEvent[] = [];
+	const allSummons: { multiplier: number; t_start: number; duration: number }[] = [];
+
+	// Combined permanent baseline across all books
+	const combinedPermanent: Record<string, number> = {};
+	for (const f of FACTOR_NAMES)
+		combinedPermanent[f] = f === "D_res" || f === "M_synchro" ? 1 : 0;
+
+	for (const book of sorted) {
+		const fireTime = (book.slot - 1) * T_gap;
+
+		// Individual book evaluation (for perBook reference)
+		const bookResult = evaluateBook(book.platform, book.op1, book.op2, T_gap);
+		perBook.push(bookResult);
+
+		// Sum permanent baselines
+		for (const f of FACTOR_NAMES) {
+			const v = bookResult.permanent[f] ?? 0;
+			if (f === "D_res") {
+				combinedPermanent.D_res *= v;
+			} else if (f === "M_synchro") {
+				combinedPermanent.M_synchro = Math.max(combinedPermanent.M_synchro, v);
+			} else {
+				combinedPermanent[f] = (combinedPermanent[f] ?? 0) + v;
+			}
+		}
+
+		// Collect temporal events, offset by fire time
+		const effects = collectEffects(book.platform, book.op1, book.op2);
+		const rawEvents = collectTemporalEvents(effects);
+		const modifiers = collectModifiers(effects);
+		const resolved = resolveModifiers(rawEvents, modifiers);
+
+		for (const event of resolved) {
+			allEvents.push({ ...event, t_start: event.t_start + fireTime });
+		}
+
+		// Collect summon with offset
+		const summon = collectSummon(effects);
+		if (summon) {
+			allSummons.push({
+				multiplier: summon.multiplier,
+				t_start: fireTime,
+				duration: summon.duration,
+			});
+		}
+	}
+
+	// T_active: end of latest event, summon, or slot window
+	const lastSlotEnd = ((sorted[sorted.length - 1]?.slot ?? 1) - 1) * T_gap + T_gap;
+	const maxEventEnd = allEvents.reduce((m, e) => Math.max(m, e.t_start + e.duration), 0);
+	const maxSummonEnd = allSummons.reduce(
+		(m, s) => Math.max(m, s.t_start + s.duration), 0,
+	);
+	const T_active = Math.max(lastSlotEnd, maxEventEnd, maxSummonEnd);
+
+	// Sample the merged timeline
+	const samples: Array<{ t: number; factors: Record<string, number> }> = [];
+
+	for (let t = 0; t < T_active; t++) {
+		const vec: Record<string, number> = { ...combinedPermanent };
+
+		// Temporal events overlay
+		for (const e of allEvents) {
+			if (t >= e.t_start && t < e.t_start + e.duration) {
+				vec[e.factor] = (vec[e.factor] ?? 0) + e.value;
+			}
+		}
+
+		// Summons: each active summon adds its clone's D_base contribution
+		// Multiple summons are additive (independent clones)
+		let summonTotal = 0;
+		for (const s of allSummons) {
+			if (t >= s.t_start && t < s.t_start + s.duration) {
+				summonTotal += s.multiplier;
+			}
+		}
+		if (summonTotal > 0) {
+			vec.D_base = round(vec.D_base * (1 + summonTotal));
+		}
+
+		samples.push({ t, factors: vec });
+	}
+
+	const { averaged, total } = aggregateTimeSeries(samples, T_gap);
+
+	return {
+		books: sorted,
+		samples,
+		averaged,
+		total,
+		T_active,
+		permanent: combinedPermanent,
+		perBook,
+	};
+}
+
 function round(v: number): number {
 	return Math.round(v * 100) / 100;
 }

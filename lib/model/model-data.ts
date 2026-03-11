@@ -123,10 +123,36 @@ export function getAffixModel(affixName: string): AffixModel | null {
 // Book model — Combinator 2
 // ---------------------------------------------------------------------------
 
+/** Collect all affix models for a platform + two operators */
+function collectAffixModels(
+	platformBook: string,
+	op1Affix: string,
+	op2Affix: string,
+): AffixModel[] {
+	const affixes: AffixModel[] = [];
+
+	const skill = getSkillModel(platformBook);
+	if (skill) affixes.push(skill);
+
+	const primary = getPrimaryAffixModel(platformBook);
+	if (primary) affixes.push(primary);
+
+	const exclusive = getExclusiveAffixModel(platformBook);
+	if (exclusive) affixes.push(exclusive);
+
+	const op1 = getAffixModel(op1Affix);
+	if (op1) affixes.push(op1);
+
+	const op2 = getAffixModel(op2Affix);
+	if (op2) affixes.push(op2);
+
+	return affixes;
+}
+
 /**
  * Build a book model for a platform with chosen operator affixes.
  *
- * @param platformBook - Main book name (determines skill + primary affix)
+ * @param platformBook - Main book name (determines skill + primary + exclusive affix)
  * @param op1Affix - First auxiliary affix name
  * @param op2Affix - Second auxiliary affix name
  * @param slot - Slot position (1–6)
@@ -137,24 +163,7 @@ export function buildBookModel(
 	op2Affix: string,
 	slot: number,
 ): BookModel {
-	const affixes: AffixModel[] = [];
-
-	// Platform skill
-	const skill = getSkillModel(platformBook);
-	if (skill) affixes.push(skill);
-
-	// Platform primary affix
-	const primary = getPrimaryAffixModel(platformBook);
-	if (primary) affixes.push(primary);
-
-	// Operator affixes
-	const op1 = getAffixModel(op1Affix);
-	if (op1) affixes.push(op1);
-
-	const op2 = getAffixModel(op2Affix);
-	if (op2) affixes.push(op2);
-
-	return combineAffixes(platformBook, slot, affixes);
+	return combineAffixes(platformBook, slot, collectAffixModels(platformBook, op1Affix, op2Affix));
 }
 
 /**
@@ -166,54 +175,53 @@ export function buildFactorVector(
 	op1Affix: string,
 	op2Affix: string,
 ): AffixModel {
-	const affixes: AffixModel[] = [];
-
-	const skill = getSkillModel(platformBook);
-	if (skill) affixes.push(skill);
-
-	const primary = getPrimaryAffixModel(platformBook);
-	if (primary) affixes.push(primary);
-
-	const op1 = getAffixModel(op1Affix);
-	if (op1) affixes.push(op1);
-
-	const op2 = getAffixModel(op2Affix);
-	if (op2) affixes.push(op2);
-
-	return combineFactors(platformBook, affixes);
+	return combineFactors(platformBook, collectAffixModels(platformBook, op1Affix, op2Affix));
 }
+
+/** All factor keys with their normalization multipliers */
+const FACTOR_ENTRIES: { key: keyof AffixModel; scale: number }[] = [
+	{ key: "D_base", scale: 1 },
+	{ key: "D_flat", scale: 1 },
+	{ key: "S_coeff", scale: 1 },
+	{ key: "M_dmg", scale: 1 },
+	{ key: "M_skill", scale: 1 },
+	{ key: "M_final", scale: 1 },
+	{ key: "D_res", scale: 100 },      // multiplier → %
+	{ key: "sigma_R", scale: 100 },
+	{ key: "M_synchro", scale: 100 },   // multiplier → %
+	{ key: "D_ortho", scale: 1 },
+	{ key: "H_A", scale: 1 },
+	{ key: "DR_A", scale: 1 },
+	{ key: "S_A", scale: 1 },
+	{ key: "H_red", scale: 1 },
+];
 
 /**
  * Compute the distance between combo vector and platform baseline.
  * All factors normalized to percentage-point units before comparison.
- * D_res and M_synchro are stored as raw multipliers (×100 to get %).
- * Returns Euclidean norm of the delta vector.
+ *
+ * @param relevantFactors - If provided, only these factor dimensions
+ *   are included in the distance calculation. Used for function-specific
+ *   scoring (e.g., F_burst only cares about offense dimensions).
  */
 export function comboDistance(
 	platformBook: string,
 	op1Affix: string,
 	op2Affix: string,
+	relevantFactors?: string[],
 ): number {
 	const base = buildFactorVector(platformBook, "", "");
 	const combo = buildFactorVector(platformBook, op1Affix, op2Affix);
 
-	// Delta in consistent percentage-point units
-	const deltas: number[] = [
-		combo.D_base - base.D_base,
-		combo.D_flat - base.D_flat,
-		combo.S_coeff - base.S_coeff,
-		combo.M_dmg - base.M_dmg,
-		combo.M_skill - base.M_skill,
-		combo.M_final - base.M_final,
-		(combo.D_res - base.D_res) * 100, // ×100 to match % units
-		(combo.sigma_R - base.sigma_R) * 100,
-		(combo.M_synchro - base.M_synchro) * 100,
-		combo.D_ortho - base.D_ortho,
-		combo.H_A - base.H_A,
-		combo.DR_A - base.DR_A,
-		combo.S_A - base.S_A,
-		combo.H_red - base.H_red,
-	];
+	const entries = relevantFactors
+		? FACTOR_ENTRIES.filter((e) => relevantFactors.includes(e.key as string))
+		: FACTOR_ENTRIES;
 
-	return Math.sqrt(deltas.reduce((s, d) => s + d * d, 0));
+	let sum = 0;
+	for (const { key, scale } of entries) {
+		const d = ((combo[key] as number) - (base[key] as number)) * scale;
+		sum += d * d;
+	}
+
+	return Math.sqrt(sum);
 }

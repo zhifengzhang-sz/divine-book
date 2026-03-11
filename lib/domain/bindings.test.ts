@@ -197,8 +197,8 @@ describe("affix provides derived correctly", () => {
 // ---------------------------------------------------------------------------
 
 describe("platform registry", () => {
-	test("has exactly 9 platforms", () => {
-		expect(PLATFORMS.length).toBe(9);
+	test("has exactly 10 platforms", () => {
+		expect(PLATFORMS.length).toBe(10);
 	});
 
 	test("all platforms have unique book names", () => {
