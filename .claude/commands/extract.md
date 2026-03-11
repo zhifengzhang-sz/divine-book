@@ -8,7 +8,7 @@
 
 | File | Role |
 |:---|:---|
-| `data/raw/*.md` | Source prose files — e.g. `about.md`, `主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md` |
+| `data/raw/*.md` | Source prose files — `主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md` (NOT `about.md` — that is a stale monolithic original) |
 | `data/keyword/keyword.map.cn.md` | Effect type vocabulary, field specs, units, data_state vocabulary |
 
 ## Outputs
@@ -40,7 +40,7 @@ For each 功法书 found across the raw files:
 
 1. **Identify school** from the section it appears in (剑修/法修/魔修/体修).
 
-2. **Extract 主技能** (if present — only 9 books have this):
+2. **Extract 主技能** (all 28 books have this in `主书.md`):
    - Copy the relevant Chinese text verbatim into a `> 原文:` blockquote.
    - Identify each effect in the description by matching keyword patterns from `keyword.map`.
    - For each effect × data_state tier mentioned, write one table row: `effect_type | fields | data_state`.
@@ -49,7 +49,7 @@ For each 功法书 found across the raw files:
    - Data_state uses `key=value` format: `enlightenment=0`, `fusion=20`, `[enlightenment=1, fusion=20]` for compound.
    - Empty data_state = default for that school.
 
-3. **Extract 主词缀** (if present — same 9 books):
+3. **Extract 主词缀** (all 28 books have this in `主书.md`):
    - Same process as 主技能.
    - Section heading: `#### 主词缀【name】`.
 

@@ -95,11 +95,11 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in [about.md](../../data/raw/about.md) to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
+> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in `data/raw/*.md` to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
 >
 > **English version of** [`keyword.map.cn.md`](./keyword.map.cn.md). Chinese patterns are preserved verbatim — they are the data being mapped.
 
-**Data source**: `data/raw/about.md` (sole source of truth)
+**Data source**: `data/raw/*.md` — split source files (主书.md, 通用词缀.md, 修为词缀.md, 专属词缀.md, 构造规则.md)
 
 **Conventions**:
 - `{x}`, `{y}`, `{z}`, `{w}` = numeric variables
@@ -259,6 +259,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | `min_lost_hp_threshold` | `(根据自身已损气血值计算伤害时)至少按已损{x}%计算` | `value`→%lost_hp |
 | `self_hp_cost` | `消耗自身{x}%当前气血值` | `value`→%current_hp |
 | `self_lost_hp_damage` | `额外对其造成自身{x}%已损失气血值的伤害` | `value`→%lost_hp, `on_last_hit`→bool (optional), `heal_equal`→bool (optional) |
+| `percent_current_hp_damage` | `额外造成目标当前气血值{x}%的伤害` | `value`→%current_hp, `per_prior_hit`→bool (optional) |
 | `self_damage_taken_increase` | `施放期间自身受到的伤害(也)提升{x}%` | `value`→%stat |
 
 > **Modifier keywords**:
@@ -271,6 +272,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
+| `self_heal` | `恢复自身{x}%最大气血值` / `持续{d}秒，期间恢复...气血` | `value`→%max_hp, `duration`→seconds (optional) |
 | `lifesteal` | `{x}%的吸血效果` / `恢复...造成伤害{x}%的气血值` | `value`→%stat |
 | `healing_to_damage` | `造成治疗效果时，会对敌方额外造成治疗量{x}%的伤害` | `value`→%stat |
 | `healing_increase` | `(所有)治疗效果提升{x}%` / `提升自身{x}%的治疗量` | `value`→%stat |
@@ -282,6 +284,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
+| `shield` | `获得自身最大气血值{x}%的护盾，持续{d}秒` | `value`→%stat, `source`→string, `duration`→seconds |
 | `shield_strength` | `护盾值提升{x}%` | `value`→%stat |
 | `on_shield_expire` | `护盾消失时，会对敌方额外造成护盾值{x}%的伤害` | `damage_percent_of_shield`→%stat |
 | `damage_to_shield` | `获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒` | `value`→%stat, `duration`→seconds |
@@ -356,6 +359,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 > - `治疗量` → `healing_received`
 > - `伤害减免` → `damage_reduction`
 > - `最终伤害减免` → `final_damage_reduction`
+> - `下一个神通冷却` → `next_skill_cooldown`
+> - `神通伤害` → `skill_damage`
+> - `攻击力` → `attack`
+> - `回响伤害` → `echo_damage`
 >
 > **`无法被驱散`** → `dispellable: false`
 >
@@ -371,6 +378,9 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 |:---|:---|:---|
 | `summon` | `持续存在{d}秒的分身，继承自身{x}%的属性...分身受到的伤害为自身的{y}%` | `inherit_stats`→%stat, `duration`→seconds, `damage_taken_multiplier`→%stat |
 | `summon_buff` | `分身受到伤害降低至自身的{x}%，造成的伤害增加{y}%` | `damage_taken_reduction_to`→%stat, `damage_increase`→%stat |
+| `buff_steal` | `窃取敌方{n}个增益状态` | `count`→count |
+| `self_cleanse` | `驱散自身{n}个减益状态` | `count`→count |
+| `self_hp_floor` | `气血值不会低于最大气血值的{x}%` | `value`→%max_hp |
 
 ### §13.2 Untargetable State
 
@@ -382,7 +392,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `periodic_dispel` | `每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害` | `interval`→seconds, `duration`→seconds, `damage_percent_of_skill`→%stat, `no_buff_double`→bool |
+| `periodic_dispel` | `每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害` | `count`→count (optional), `interval`→seconds (optional), `duration`→seconds (optional), `damage_percent_of_skill`→%stat (optional), `no_buff_double`→bool (optional) |
 | `periodic_cleanse` | `每秒有{x}%概率驱散自身所有控制状态，{d}秒内最多触发{n}次` | `chance`→probability, `interval`→seconds, `cooldown`→seconds, `max_triggers`→count |
 
 ### §13.4 Delayed Burst

@@ -1,6 +1,6 @@
 /** §5 Per-Hit Escalation — 2 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	PerHitEscalationSchema,
@@ -23,6 +23,11 @@ export const ESCALATION_DEFS: EffectTypeDef[] = [
 			{ name: "stat", unit: Unit.Str },
 			{ name: "max", unit: Unit.PctStat, optional: true },
 		],
+		exec: {
+			trigger: Trigger.PerHit,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "periodic_escalation",
@@ -38,5 +43,10 @@ export const ESCALATION_DEFS: EffectTypeDef[] = [
 			{ name: "multiplier", unit: Unit.Multiplier },
 			{ name: "max_stacks", unit: Unit.Count },
 		],
+		exec: {
+			trigger: Trigger.PerHit,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 ];

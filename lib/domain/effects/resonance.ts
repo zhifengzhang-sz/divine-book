@@ -1,6 +1,6 @@
 /** §3 Resonance System (会心) — 1 type */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import { GuaranteedResonanceSchema } from "../../schemas/effect.js";
 
@@ -19,5 +19,10 @@ export const RESONANCE_DEFS: EffectTypeDef[] = [
 			{ name: "enhanced_mult", unit: Unit.Multiplier },
 			{ name: "enhanced_chance", unit: Unit.Probability },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.sp"],
+		},
 	},
 ];

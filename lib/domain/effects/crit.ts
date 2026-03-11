@@ -1,6 +1,6 @@
 /** §3c Standard Crit (暴击) — 2 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	ConditionalCritRateSchema,
@@ -16,6 +16,12 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["若敌方[condition]...必定暴击"],
 		fields: [{ name: "condition", unit: Unit.Str }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["opponent.state"],
+			writes: ["self.crit_rate"],
+		},
 	},
 	{
 		type: "conditional_crit_rate",
@@ -28,5 +34,11 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 			{ name: "value", unit: Unit.Probability },
 			{ name: "condition", unit: Unit.Str },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["opponent.state"],
+			writes: ["self.crit_rate"],
+		},
 	},
 ];

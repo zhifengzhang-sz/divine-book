@@ -1,6 +1,6 @@
 /** §9 State Modifiers — 7 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	AllStateDurationSchema,
@@ -21,6 +21,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["增益效果强度提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "debuff_strength",
@@ -30,6 +35,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["减益效果强度提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.state"],
+		},
 	},
 	{
 		type: "buff_duration",
@@ -39,6 +49,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["增益(状态)持续时间延长{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "all_state_duration",
@@ -48,6 +63,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["所有状态(效果)持续时间延长{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state", "opponent.state"],
+		},
 	},
 	{
 		type: "buff_stack_increase",
@@ -57,6 +77,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["增益状态层数增加{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "debuff_stack_increase",
@@ -66,6 +91,11 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["减益状态层数增加{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.state"],
+		},
 	},
 	{
 		type: "debuff_stack_chance",
@@ -75,5 +105,10 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["有{x}%概率额外多附加1层该减益状态"],
 		fields: [{ name: "value", unit: Unit.Probability }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.state"],
+		},
 	},
 ];

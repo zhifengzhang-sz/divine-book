@@ -2,7 +2,7 @@
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Schema verification agent.** Validates that `normalized.data` conforms to the type system defined in `keyword.map`. Checks effect type names, field names, unit consistency, and data_state vocabulary. Does not look at `about.md` — that is the coverage agent's job.
+> **Schema verification agent.** Validates that `normalized.data` conforms to the type system defined in `keyword.map`. Checks effect type names, field names, unit consistency, and data_state vocabulary. Does not look at source files — that is the coverage agent's job.
 
 ## Inputs
 

@@ -1,9 +1,10 @@
-/** §13 Special Mechanics — 17 types */
+/** §13 Special Mechanics — 20 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	AttackReductionSchema,
+	BuffStealSchema,
 	ConditionalHealBuffSchema,
 	CritDamageReductionSchema,
 	CritRateReductionSchema,
@@ -17,6 +18,8 @@ import {
 	PeriodicDispelSchema,
 	RandomBuffSchema,
 	RandomDebuffSchema,
+	SelfCleanseSchema,
+	SelfHpFloorSchema,
 	SummonBuffSchema,
 	SummonSchema,
 	UntargetableStateSchema,
@@ -38,6 +41,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "duration", unit: Unit.Seconds },
 			{ name: "damage_taken_multiplier", unit: Unit.PctStat },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk", "self.hp", "self.def"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "summon_buff",
@@ -52,8 +61,61 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "damage_taken_reduction_to", unit: Unit.PctStat },
 			{ name: "damage_increase", unit: Unit.PctStat },
 		],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
-	// §13.2 Untargetable State
+	// §13.2 Buff Steal
+	{
+		type: "buff_steal",
+		schema: BuffStealSchema,
+		group: "special_mechanics",
+		zones: [Zone.H_red],
+		scope: Scope.Same,
+		patterns: ["窃取敌方{n}个增益状态"],
+		fields: [{ name: "count", unit: Unit.Count }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.state"],
+			writes: ["self.state", "opponent.state"],
+		},
+	},
+	// §13.3 Self Cleanse
+	{
+		type: "self_cleanse",
+		schema: SelfCleanseSchema,
+		group: "special_mechanics",
+		zones: [Zone.DR_A],
+		scope: Scope.Same,
+		patterns: ["驱散自身{n}个减益状态"],
+		fields: [{ name: "count", unit: Unit.Count }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["self.state"],
+			writes: ["self.state"],
+		},
+	},
+	// §13.4 HP Floor
+	{
+		type: "self_hp_floor",
+		schema: SelfHpFloorSchema,
+		group: "special_mechanics",
+		zones: [Zone.DR_A],
+		scope: Scope.Same,
+		patterns: ["气血值不会低于最大气血值的{x}%"],
+		fields: [{ name: "value", unit: Unit.PctMaxHp }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			reads: ["self.hp"],
+			writes: ["self.hp"],
+		},
+	},
+	// §13.5 Untargetable State
 	{
 		type: "untargetable_state",
 		schema: UntargetableStateSchema,
@@ -62,6 +124,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["在{d}秒内不可被选中"],
 		fields: [{ name: "duration", unit: Unit.Seconds }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	// §13.3 Dispel and Crowd Control
 	{
@@ -74,11 +141,18 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			"每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害",
 		],
 		fields: [
-			{ name: "interval", unit: Unit.Seconds },
-			{ name: "duration", unit: Unit.Seconds },
-			{ name: "damage_percent_of_skill", unit: Unit.PctStat },
-			{ name: "no_buff_double", unit: Unit.Bool },
+			{ name: "count", unit: Unit.Count, optional: true },
+			{ name: "interval", unit: Unit.Seconds, optional: true },
+			{ name: "duration", unit: Unit.Seconds, optional: true },
+			{ name: "damage_percent_of_skill", unit: Unit.PctStat, optional: true },
+			{ name: "no_buff_double", unit: Unit.Bool, optional: true },
 		],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.state", "self.damage"],
+			writes: ["opponent.state", "opponent.hp"],
+		},
 	},
 	{
 		type: "periodic_cleanse",
@@ -95,6 +169,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "cooldown", unit: Unit.Seconds },
 			{ name: "max_triggers", unit: Unit.Count },
 		],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Self,
+			reads: ["self.state"],
+			writes: ["self.state"],
+		},
 	},
 	// §13.4 Delayed Burst
 	{
@@ -112,6 +192,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "burst_base", unit: Unit.PctAtk },
 			{ name: "burst_accumulated_pct", unit: Unit.PctStat },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk", "self.damage"],
+			writes: ["opponent.hp", "opponent.state"],
+		},
 	},
 	{
 		type: "delayed_burst_increase",
@@ -121,6 +207,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["[name]状态结束时的伤害提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	// §13.5 Random Effects
 	{
@@ -131,6 +222,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["获得以下任意1个加成：[效果列表]"],
 		fields: [{ name: "options", unit: Unit.Str, optional: true }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.atk", "self.crit_damage", "self.damage"],
+		},
 	},
 	{
 		type: "random_debuff",
@@ -142,6 +238,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			"对敌方添加以下任意1个减益效果：[效果列表]",
 		],
 		fields: [{ name: "options", unit: Unit.Str, optional: true }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.atk", "opponent.crit_rate", "opponent.crit_damage"],
+		},
 	},
 	{
 		type: "attack_reduction",
@@ -151,6 +252,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["攻击降低{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.atk"],
+		},
 	},
 	{
 		type: "crit_rate_reduction",
@@ -160,6 +266,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["暴击率降低{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.crit_rate"],
+		},
 	},
 	{
 		type: "crit_damage_reduction",
@@ -169,6 +280,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["暴击伤害降低{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.crit_damage"],
+		},
 	},
 	// §13.6 Stack-Based Damage
 	{
@@ -185,6 +301,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "value", unit: Unit.PctStat },
 			{ name: "max", unit: Unit.PctStat },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["self.state"],
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "per_debuff_stack_damage",
@@ -201,6 +323,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "max", unit: Unit.PctStat },
 			{ name: "dot_half", unit: Unit.Bool, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["opponent.state"],
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "per_debuff_stack_true_damage",
@@ -215,6 +343,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "per_stack", unit: Unit.PctMaxHp },
 			{ name: "max", unit: Unit.PctMaxHp },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.state", "opponent.hp"],
+			writes: ["opponent.hp"],
+		},
 	},
 	// §13.7 Other Triggers
 	{
@@ -227,6 +361,12 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			"每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害",
 		],
 		fields: [{ name: "damage_percent_of_skill", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnEvent,
+			target: ExecTarget.Opponent,
+			reads: ["self.damage"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "conditional_heal_buff",
@@ -242,5 +382,11 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 			{ name: "value", unit: Unit.PctStat },
 			{ name: "duration", unit: Unit.Seconds },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["opponent.state"],
+			writes: ["self.healing"],
+		},
 	},
 ];

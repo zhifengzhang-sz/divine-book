@@ -1,6 +1,6 @@
 /** §10 Damage over Time (DoT) — 7 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	DotDamageIncreaseSchema,
@@ -31,6 +31,12 @@ export const DOT_DEFS: EffectTypeDef[] = [
 			{ name: "percent_lost_hp", unit: Unit.PctLostHp, optional: true },
 			{ name: "max_stacks", unit: Unit.Count, optional: true },
 		],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk", "opponent.hp"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "shield_destroy_dot",
@@ -46,6 +52,12 @@ export const DOT_DEFS: EffectTypeDef[] = [
 			{ name: "per_shield_damage", unit: Unit.PctAtk },
 			{ name: "no_shield_assumed", unit: Unit.Count },
 		],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk", "opponent.shield"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "dot_extra_per_tick",
@@ -57,6 +69,12 @@ export const DOT_DEFS: EffectTypeDef[] = [
 			"持续伤害触发时，额外造成目标{x}%已损失气血值的伤害",
 		],
 		fields: [{ name: "value", unit: Unit.PctLostHp }],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.hp"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "dot_damage_increase",
@@ -66,6 +84,11 @@ export const DOT_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["持续伤害上升{x}%", "持续伤害提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "dot_frequency_increase",
@@ -75,6 +98,11 @@ export const DOT_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["持续伤害效果触发间隙缩短{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "extended_dot",
@@ -89,6 +117,12 @@ export const DOT_DEFS: EffectTypeDef[] = [
 			{ name: "extra_seconds", unit: Unit.Seconds },
 			{ name: "tick_interval", unit: Unit.Seconds },
 		],
+		exec: {
+			trigger: Trigger.PerTick,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "on_dispel",
@@ -103,5 +137,11 @@ export const DOT_DEFS: EffectTypeDef[] = [
 			{ name: "damage", unit: Unit.PctAtk, optional: true },
 			{ name: "stun", unit: Unit.Seconds, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnEvent,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk"],
+			writes: ["opponent.hp", "opponent.state"],
+		},
 	},
 ];

@@ -298,9 +298,9 @@ describe("parse normalized.data.md", () => {
 		expect(count).toBe(17);
 	});
 
-	test("9 books have skill data", () => {
+	test("28 books have skill data", () => {
 		const withSkill = Object.values(data.books).filter((b) => b.skill);
-		expect(withSkill).toHaveLength(9);
+		expect(withSkill).toHaveLength(28);
 	});
 
 	test("all 28 books have exclusive_affix", () => {

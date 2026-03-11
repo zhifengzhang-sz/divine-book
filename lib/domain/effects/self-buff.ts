@@ -1,6 +1,6 @@
 /** §11 Self Buffs — 6 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	CounterBuffSchema,
@@ -30,7 +30,15 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "hp_bonus", unit: Unit.PctStat, optional: true },
 			{ name: "damage_reduction", unit: Unit.PctStat, optional: true },
 			{ name: "healing_bonus", unit: Unit.PctStat, optional: true },
+			{ name: "damage_increase", unit: Unit.PctStat, optional: true },
+			{ name: "final_damage_bonus", unit: Unit.PctStat, optional: true },
+			{ name: "skill_damage_increase", unit: Unit.PctStat, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.atk", "self.def", "self.hp", "self.healing", "self.state"],
+		},
 	},
 	{
 		type: "self_buff_extend",
@@ -43,6 +51,11 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "buff_name", unit: Unit.Str },
 			{ name: "value", unit: Unit.Seconds },
 		],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "self_buff_extra",
@@ -56,6 +69,12 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "healing_bonus", unit: Unit.PctStat, optional: true },
 			{ name: "value", unit: Unit.PctStat, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["self.state"],
+			writes: ["self.healing", "self.state"],
+		},
 	},
 	{
 		type: "counter_buff",
@@ -71,6 +90,12 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "reflect_received_damage", unit: Unit.PctStat, optional: true },
 			{ name: "reflect_percent_lost_hp", unit: Unit.PctLostHp, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnAttacked,
+			target: ExecTarget.Opponent,
+			reads: ["self.hp", "self.damage"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "next_skill_buff",
@@ -85,6 +110,11 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "stat", unit: Unit.Str },
 			{ name: "value", unit: Unit.PctStat },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "enlightenment_bonus",
@@ -97,5 +127,10 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 			{ name: "value", unit: Unit.Count },
 			{ name: "max", unit: Unit.Count },
 		],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 ];

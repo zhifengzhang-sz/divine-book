@@ -63,6 +63,52 @@ export enum TargetCategory {
 	Control = "control", // T10 控制效果
 }
 
+/** When the effect activates */
+export enum Trigger {
+	/** Fires once when skill is cast */
+	OnCast = "on_cast",
+	/** Fires per hit of the skill */
+	PerHit = "per_hit",
+	/** Fires every tick_interval seconds while active */
+	PerTick = "per_tick",
+	/** Fires when entity is attacked (reactive) */
+	OnAttacked = "on_attacked",
+	/** Always active while equipped / state exists */
+	Permanent = "permanent",
+	/** Fires when a specific event occurs (dispel, shield expire, etc.) */
+	OnEvent = "on_event",
+}
+
+/** Who the effect targets */
+export enum ExecTarget {
+	Self = "self",
+	Opponent = "opponent",
+}
+
+/** Which combat attribute is read or written */
+export enum Attr {
+	/** 气血 — hit points */
+	HP = "hp",
+	/** 攻击 — attack power */
+	ATK = "atk",
+	/** 灵力 — spiritual power (shield generation) */
+	SP = "sp",
+	/** 守御 — defense / damage reduction */
+	DEF = "def",
+	/** Damage output (multiplicative chain result) */
+	Damage = "damage",
+	/** Healing rate */
+	Healing = "healing",
+	/** Shield value */
+	Shield = "shield",
+	/** Crit rate */
+	CritRate = "crit_rate",
+	/** Crit damage multiplier */
+	CritDamage = "crit_damage",
+	/** Active buff/debuff states */
+	State = "state",
+}
+
 /** School identifiers for school-restricted affixes */
 export enum School {
 	Sword = "sword", // 剑修

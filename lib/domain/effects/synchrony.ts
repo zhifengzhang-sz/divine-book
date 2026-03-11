@@ -1,6 +1,6 @@
 /** §3b Synchrony System (心逐) — 1 type */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import { ProbabilityMultiplierSchema } from "../../schemas/effect.js";
 
@@ -18,5 +18,10 @@ export const SYNCHRONY_DEFS: EffectTypeDef[] = [
 			{ name: "prob", unit: Unit.Probability },
 			{ name: "mult", unit: Unit.Multiplier },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 ];

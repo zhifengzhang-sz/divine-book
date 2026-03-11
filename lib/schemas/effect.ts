@@ -35,6 +35,10 @@ export const DebuffTargetEnum = z.enum([
 	"healing_received",
 	"damage_reduction",
 	"final_damage_reduction",
+	"next_skill_cooldown",
+	"skill_damage",
+	"attack",
+	"echo_damage",
 ]);
 
 /** Legal values for per_hit_escalation `stat` field (keyword.map.md §5) */
@@ -101,7 +105,7 @@ export const PercentMaxHpDamageSchema = z.object({
 	type: z.literal("percent_max_hp_damage"),
 	...structuralFields,
 	value: z.number().describe("unit:%max_hp"),
-	cap_vs_monster: z.number().describe("unit:%atk"),
+	cap_vs_monster: z.number().describe("unit:%atk").optional(),
 });
 
 export const ShieldDestroyDamageSchema = z.object({
@@ -304,9 +308,23 @@ export const SelfDamageTakenIncreaseSchema = z.object({
 	value: z.number().describe("unit:%stat"),
 });
 
+export const PercentCurrentHpDamageSchema = z.object({
+	type: z.literal("percent_current_hp_damage"),
+	...structuralFields,
+	value: z.number().describe("unit:%current_hp"),
+	per_prior_hit: z.boolean().optional(),
+});
+
 // =============================================================================
 // §7. Healing and Survival
 // =============================================================================
+
+export const SelfHealSchema = z.object({
+	type: z.literal("self_heal"),
+	...structuralFields,
+	value: z.number().describe("unit:%max_hp"),
+	duration: z.number().describe("unit:seconds").optional(),
+});
 
 export const LifestealSchema = z.object({
 	type: z.literal("lifesteal"),
@@ -335,6 +353,14 @@ export const SelfDamageReductionDuringCastSchema = z.object({
 // =============================================================================
 // §8. Shield System
 // =============================================================================
+
+export const ShieldSchema = z.object({
+	type: z.literal("shield"),
+	...structuralFields,
+	value: z.number().describe("unit:%stat"),
+	source: z.string(),
+	duration: z.number().describe("unit:seconds"),
+});
 
 export const ShieldStrengthSchema = z.object({
 	type: z.literal("shield_strength"),
@@ -409,8 +435,12 @@ export const DotSchema = z.object({
 	type: z.literal("dot"),
 	...structuralFields,
 	tick_interval: z.number().describe("unit:seconds"),
-	duration: z.number().describe("unit:seconds"),
+	duration: z.union([
+		z.number().describe("unit:seconds"),
+		z.literal("permanent"),
+	]),
 	damage_per_tick: z.number().describe("unit:%atk").optional(),
+	percent_max_hp: z.number().describe("unit:%max_hp").optional(),
 	percent_current_hp: z.number().describe("unit:%current_hp").optional(),
 	percent_lost_hp: z.number().describe("unit:%lost_hp").optional(),
 	max_stacks: z.number().describe("unit:count").optional(),
@@ -463,13 +493,18 @@ export const OnDispelSchema = z.object({
 export const SelfBuffSchema = z.object({
 	type: z.literal("self_buff"),
 	...structuralFields,
-	duration: z.number().describe("unit:seconds"),
+	duration: z
+		.union([z.number().describe("unit:seconds"), z.literal("permanent")])
+		.optional(),
 	max_stacks: z.number().describe("unit:count").optional(),
 	attack_bonus: z.number().describe("unit:%stat").optional(),
 	defense_bonus: z.number().describe("unit:%stat").optional(),
 	hp_bonus: z.number().describe("unit:%stat").optional(),
 	damage_reduction: z.number().describe("unit:%stat").optional(),
 	healing_bonus: z.number().describe("unit:%stat").optional(),
+	damage_increase: z.number().describe("unit:%stat").optional(),
+	final_damage_bonus: z.number().describe("unit:%stat").optional(),
+	skill_damage_increase: z.number().describe("unit:%stat").optional(),
 });
 
 export const SelfBuffExtendSchema = z.object({
@@ -491,7 +526,10 @@ export const SelfBuffExtraSchema = z.object({
 export const CounterBuffSchema = z.object({
 	type: z.literal("counter_buff"),
 	...structuralFields,
-	duration: z.number().describe("unit:seconds"),
+	duration: z.union([
+		z.number().describe("unit:seconds"),
+		z.literal("permanent"),
+	]),
 	reflect_received_damage: z.number().describe("unit:%stat").optional(),
 	reflect_percent_lost_hp: z.number().describe("unit:%lost_hp").optional(),
 });
@@ -519,7 +557,10 @@ export const DebuffSchema = z.object({
 	...structuralFields,
 	target: DebuffTargetEnum,
 	value: z.number().describe("unit:%stat"),
-	duration: z.number().describe("unit:seconds"),
+	duration: z.union([
+		z.number().describe("unit:seconds"),
+		z.literal("permanent"),
+	]),
 	dispellable: z.boolean().optional(),
 });
 
@@ -588,7 +629,31 @@ export const SummonBuffSchema = z.object({
 	damage_increase: z.number().describe("unit:%stat"),
 });
 
-// §13.2 Untargetable State
+// §13.2 Buff Steal
+
+export const BuffStealSchema = z.object({
+	type: z.literal("buff_steal"),
+	...structuralFields,
+	count: z.number().describe("unit:count"),
+});
+
+// §13.3 Self Cleanse
+
+export const SelfCleanseSchema = z.object({
+	type: z.literal("self_cleanse"),
+	...structuralFields,
+	count: z.number().describe("unit:count"),
+});
+
+// §13.4 HP Floor
+
+export const SelfHpFloorSchema = z.object({
+	type: z.literal("self_hp_floor"),
+	...structuralFields,
+	value: z.number().describe("unit:%max_hp"),
+});
+
+// §13.5 Untargetable State
 
 export const UntargetableStateSchema = z.object({
 	type: z.literal("untargetable_state"),
@@ -601,10 +666,11 @@ export const UntargetableStateSchema = z.object({
 export const PeriodicDispelSchema = z.object({
 	type: z.literal("periodic_dispel"),
 	...structuralFields,
-	interval: z.number().describe("unit:seconds"),
-	duration: z.number().describe("unit:seconds"),
-	damage_percent_of_skill: z.number().describe("unit:%stat"),
-	no_buff_double: z.boolean(),
+	count: z.number().describe("unit:count").optional(),
+	interval: z.number().describe("unit:seconds").optional(),
+	duration: z.number().describe("unit:seconds").optional(),
+	damage_percent_of_skill: z.number().describe("unit:%stat").optional(),
+	no_buff_double: z.boolean().optional(),
 });
 
 export const PeriodicCleanseSchema = z.object({

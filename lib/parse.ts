@@ -138,10 +138,22 @@ export interface ValidationWarning {
 	issues: string[];
 }
 
+const SELF_BUFF_STAT_FIELDS = [
+	"attack_bonus",
+	"defense_bonus",
+	"hp_bonus",
+	"damage_reduction",
+	"healing_bonus",
+	"damage_increase",
+	"final_damage_bonus",
+	"skill_damage_increase",
+] as const;
+
 export function validateEffect(
 	effect: EffectRow,
 	context: string,
 ): ValidationWarning | null {
+	// Schema validation
 	const result = EffectSchema.safeParse(effect);
 	if (!result.success) {
 		return {
@@ -152,6 +164,27 @@ export function validateEffect(
 			),
 		};
 	}
+
+	// Semantic validation: self_buff must have at least one stat field.
+	// Named states without stat bonuses should use their child effects
+	// directly (self_hp_cost, self_lost_hp_damage, etc.) — not self_buff
+	// as an empty container.
+	if (effect.type === "self_buff") {
+		const hasStat = SELF_BUFF_STAT_FIELDS.some(
+			(f) => effect[f] !== undefined && effect[f] !== 0,
+		);
+		if (!hasStat) {
+			return {
+				context,
+				type: effect.type,
+				issues: [
+					`self_buff "${effect.name ?? "?"}" has no stat fields (${SELF_BUFF_STAT_FIELDS.join(", ")}). ` +
+						`Named states without stat bonuses should not use self_buff as a container.`,
+				],
+			};
+		}
+	}
+
 	return null;
 }
 

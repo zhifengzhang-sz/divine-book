@@ -1,6 +1,6 @@
 /** §2 Damage Multiplier Zones — 8 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	AttackBonusSchema,
@@ -22,6 +22,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["提升{x}%攻击力的效果"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.atk"],
+		},
 	},
 	{
 		type: "damage_increase",
@@ -35,6 +40,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 			"提升{x}%伤害",
 		],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "skill_damage_increase",
@@ -44,6 +54,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["提升{x}%神通伤害", "{x}%的神通伤害加深"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "enemy_skill_damage_reduction",
@@ -53,6 +68,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["目标对本神通提升{x}%神通伤害减免"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.def"],
+		},
 	},
 	{
 		type: "final_damage_bonus",
@@ -62,6 +82,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["最终伤害加深提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "crit_damage_bonus",
@@ -71,6 +96,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["暴击伤害提升{x}%", "致命伤害提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.crit_damage"],
+		},
 	},
 	{
 		type: "technique_damage_increase",
@@ -80,6 +110,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["{x}%的技能伤害加深"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			writes: ["self.damage"],
+		},
 		notes: "No data instances in normalized.data.md yet",
 	},
 	{
@@ -90,5 +125,11 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["(额外)造成{x}%攻击力的伤害"],
 		fields: [{ name: "value", unit: Unit.PctAtk }],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk"],
+			writes: ["opponent.hp"],
+		},
 	},
 ];

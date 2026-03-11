@@ -1,6 +1,6 @@
 /** §1 Base Damage — 3 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	BaseAttackSchema,
@@ -23,6 +23,12 @@ export const BASE_DAMAGE_DEFS: EffectTypeDef[] = [
 			{ name: "hits", unit: Unit.Count, optional: true },
 			{ name: "total", unit: Unit.PctAtk, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["self.atk"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "percent_max_hp_damage",
@@ -37,6 +43,12 @@ export const BASE_DAMAGE_DEFS: EffectTypeDef[] = [
 			{ name: "value", unit: Unit.PctMaxHp },
 			{ name: "cap_vs_monster", unit: Unit.PctAtk },
 		],
+		exec: {
+			trigger: Trigger.PerHit,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.hp"],
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "shield_destroy_damage",
@@ -53,5 +65,11 @@ export const BASE_DAMAGE_DEFS: EffectTypeDef[] = [
 			{ name: "cap_vs_monster", unit: Unit.PctAtk },
 			{ name: "no_shield_double_cap", unit: Unit.PctAtk },
 		],
+		exec: {
+			trigger: Trigger.PerHit,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.hp", "opponent.shield"],
+			writes: ["opponent.hp", "opponent.shield"],
+		},
 	},
 ];

@@ -95,11 +95,11 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in [about.md](../../data/raw/about.md) to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
+> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in `data/raw/*.md` to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
 >
 > **English version of** [`keyword.map.cn.md`](./keyword.map.cn.md). Chinese patterns are preserved verbatim — they are the data being mapped.
 
-**Data source**: `data/raw/about.md` (sole source of truth)
+**Data source**: `data/raw/*.md` (split source files — `主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md`)
 
 **Conventions**:
 - `{x}`, `{y}`, `{z}`, `{w}` = numeric variables
@@ -111,7 +111,7 @@ strong {
 - `[stat]` = attribute name
 - `[condition]` = condition expression
 - `(...)` = optional text (e.g., `共(计)` means 计 may or may not appear)
-- Backtick usage in about.md is inconsistent; matching should ignore backticks
+- Backtick usage in the source files is inconsistent; matching should ignore backticks
 - A single affix text may contain multiple effect types (compound patterns); parsing should split them into independent effects
 
 **Unit definitions** (unit identifiers used in the "Fields → Units" column):
@@ -137,7 +137,7 @@ strong {
 
 ## §0. Shared Mechanics (All Schools)
 
-The Sword / Spell / Demon / Body schools share the following keyword patterns under their respective "shared mechanics" sections in about.md:
+The Sword / Spell / Demon / Body schools share the following keyword patterns under their respective "shared mechanics" sections in the source files:
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
@@ -157,7 +157,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | `shield_destroy_damage` | `湮灭敌方{n}个护盾，并额外造成{x}%敌方最大气血值的伤害（对怪物最多造成{y}%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成{z}%攻击力的伤害）` | `shields_per_hit`→count, `percent_max_hp`→%max_hp, `cap_vs_monster`→%atk, `no_shield_double_cap`→%atk |
 
 > **Pattern notes**:
-> - `共计` and `共` (without 计) both appear in about.md; treat them as equivalent when matching.
+> - `共计` and `共` (without 计) both appear in the source files; treat them as equivalent when matching.
 > - 甲元仙符's primary skill has no hit-count modifier — it uses only `造成{x}%攻击力的灵法伤害` (single-hit variant).
 
 ---
@@ -259,6 +259,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 | `min_lost_hp_threshold` | `(根据自身已损气血值计算伤害时)至少按已损{x}%计算` | `value`→%lost_hp |
 | `self_hp_cost` | `消耗自身{x}%当前气血值` | `value`→%current_hp |
 | `self_lost_hp_damage` | `额外对其造成自身{x}%已损失气血值的伤害` | `value`→%lost_hp, `on_last_hit`→bool (optional), `heal_equal`→bool (optional) |
+| `percent_current_hp_damage` | `额外造成目标当前气血值{x}%的伤害` | `value`→%current_hp, `per_prior_hit`→bool (optional) |
 | `self_damage_taken_increase` | `施放期间自身受到的伤害(也)提升{x}%` | `value`→%stat |
 
 > **Modifier keywords**:
@@ -271,6 +272,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
+| `self_heal` | `恢复自身{x}%最大气血值` / `持续{d}秒，期间恢复...气血` | `value`→%max_hp, `duration`→seconds (optional) |
 | `lifesteal` | `{x}%的吸血效果` / `恢复...造成伤害{x}%的气血值` | `value`→%stat |
 | `healing_to_damage` | `造成治疗效果时，会对敌方额外造成治疗量{x}%的伤害` | `value`→%stat |
 | `healing_increase` | `(所有)治疗效果提升{x}%` / `提升自身{x}%的治疗量` | `value`→%stat |
@@ -282,6 +284,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
+| `shield` | `获得自身最大气血值{x}%的护盾，持续{d}秒` | `value`→%stat, `source`→string, `duration`→seconds |
 | `shield_strength` | `护盾值提升{x}%` | `value`→%stat |
 | `on_shield_expire` | `护盾消失时，会对敌方额外造成护盾值{x}%的伤害` | `damage_percent_of_shield`→%stat |
 | `damage_to_shield` | `获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒` | `value`→%stat, `duration`→seconds |
@@ -318,7 +321,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 > - `当前气血值` → `percent_current_hp`
 > - `已损失气血值` → `percent_lost_hp`
 >
-> **Inference flag**: `shield_destroy_dot` (碎魂剑意) — the formula structure, specifically how "total number of annihilated shields" accumulates across ticks and whether already-expired shields are counted, is not precisely defined in about.md.
+> **Inference flag**: `shield_destroy_dot` (碎魂剑意) — the formula structure, specifically how "total number of annihilated shields" accumulates across ticks and whether already-expired shields are counted, is not precisely defined in the source files.
 
 ---
 
@@ -356,6 +359,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 > - `治疗量` → `healing_received`
 > - `伤害减免` → `damage_reduction`
 > - `最终伤害减免` → `final_damage_reduction`
+> - `下一个神通冷却` → `next_skill_cooldown`
+> - `神通伤害` → `skill_damage`
+> - `攻击力` → `attack`
+> - `回响伤害` → `echo_damage`
 >
 > **`无法被驱散`** → `dispellable: false`
 >
@@ -371,6 +378,9 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 |:---|:---|:---|
 | `summon` | `持续存在{d}秒的分身，继承自身{x}%的属性...分身受到的伤害为自身的{y}%` | `inherit_stats`→%stat, `duration`→seconds, `damage_taken_multiplier`→%stat |
 | `summon_buff` | `分身受到伤害降低至自身的{x}%，造成的伤害增加{y}%` | `damage_taken_reduction_to`→%stat, `damage_increase`→%stat |
+| `buff_steal` | `窃取敌方{n}个增益状态` | `count`→count |
+| `self_cleanse` | `驱散自身{n}个减益状态` | `count`→count |
+| `self_hp_floor` | `气血值不会低于最大气血值的{x}%` | `value`→%max_hp |
 
 ### §13.2 Untargetable State
 
@@ -382,7 +392,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `periodic_dispel` | `每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害` | `interval`→seconds, `duration`→seconds, `damage_percent_of_skill`→%stat, `no_buff_double`→bool |
+| `periodic_dispel` | `每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害` | `count`→count (optional), `interval`→seconds (optional), `duration`→seconds (optional), `damage_percent_of_skill`→%stat (optional), `no_buff_double`→bool (optional) |
 | `periodic_cleanse` | `每秒有{x}%概率驱散自身所有控制状态，{d}秒内最多触发{n}次` | `chance`→probability, `interval`→seconds, `cooldown`→seconds, `max_triggers`→count |
 
 ### §13.4 Delayed Burst
@@ -445,7 +455,7 @@ Mapping of Chinese keywords to canonical `condition` field values:
 
 ## Data State Vocabulary
 
-When about.md explicitly annotates the cultivation stage a value belongs to, the corresponding `data_state` field is:
+When the source files explicitly annotate the cultivation stage a value belongs to, the corresponding `data_state` field is:
 
 | Chinese Annotation | data_state Value |
 |:---|:---|
@@ -456,7 +466,7 @@ When about.md explicitly annotates the cultivation stage a value belongs to, the
 | `融合{n}重` | `fusion={n}` |
 | `此功能未解锁` / `此词缀未解锁` | `locked` |
 
-> **Default values vary by school** (per about.md):
+> **Default values vary by school** (per source files):
 > - Sword / Demon: `没有标识的数据为悟境最高加成` — unlabeled values default to maximum enlightenment.
 > - Body: `没有标识的数据为没有悟境的情况` — unlabeled values default to no enlightenment.
 > - Spell: states only `数值受悟境影响`; no explicit default declared.
@@ -466,7 +476,7 @@ When about.md explicitly annotates the cultivation stage a value belongs to, the
 
 ## Unresolved Formulas
 
-The following game-mechanic-level details from about.md lack precise formulas and must be treated as assumptions during modeling:
+The following game-mechanic-level details from the source files lack precise formulas and must be treated as assumptions during modeling:
 
 1. **`神通加成` (skill bonus)** — The exact calculation of `提升{x}%神通加成` in 惊神剑光 is undefined. Mapped as the `stat: skill_bonus` field value in `per_hit_escalation`, but the formula by which `skill_bonus` converts to final damage is unknown.
 

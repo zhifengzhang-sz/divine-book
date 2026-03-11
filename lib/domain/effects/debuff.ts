@@ -1,6 +1,6 @@
 /** §12 Debuffs — 5 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	ConditionalDebuffSchema,
@@ -26,6 +26,11 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 			{ name: "duration", unit: Unit.Seconds },
 			{ name: "dispellable", unit: Unit.Bool, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.healing", "opponent.def", "opponent.atk", "opponent.state"],
+		},
 	},
 	{
 		type: "conditional_debuff",
@@ -44,6 +49,12 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 			{ name: "duration", unit: Unit.Seconds, optional: true },
 			{ name: "per_hit", unit: Unit.Bool, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			reads: ["opponent.state", "opponent.hp"],
+			writes: ["opponent.def", "opponent.state"],
+		},
 	},
 	{
 		type: "cross_slot_debuff",
@@ -60,6 +71,11 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 			{ name: "duration", unit: Unit.Seconds },
 			{ name: "trigger", unit: Unit.Str },
 		],
+		exec: {
+			trigger: Trigger.OnAttacked,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.def", "opponent.state"],
+		},
 	},
 	{
 		type: "counter_debuff",
@@ -75,6 +91,11 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 			{ name: "on_attacked_chance", unit: Unit.Probability },
 			{ name: "max_stacks", unit: Unit.Count, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnAttacked,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.state"],
+		},
 	},
 	{
 		type: "counter_debuff_upgrade",
@@ -84,5 +105,10 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 		scope: Scope.Cross,
 		patterns: ["[原效果](状态下附加异常)概率提升至{x}%"],
 		fields: [{ name: "on_attacked_chance", unit: Unit.Probability }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 ];

@@ -1,6 +1,6 @@
 /** §0 Shared Mechanics (All Schools) — 4 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	CooldownSchema,
@@ -21,6 +21,11 @@ export const SHARED_DEFS: EffectTypeDef[] = [
 			{ name: "fusion_level", unit: Unit.Count },
 			{ name: "value", unit: Unit.PctAtk },
 		],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "mastery_extra_damage",
@@ -33,6 +38,11 @@ export const SHARED_DEFS: EffectTypeDef[] = [
 			{ name: "fusion_level", unit: Unit.Count },
 			{ name: "value", unit: Unit.PctAtk },
 		],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "enlightenment_damage",
@@ -42,6 +52,11 @@ export const SHARED_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["每次融合使本神通增加{x}%攻击力的悟境伤害"],
 		fields: [{ name: "value", unit: Unit.PctAtk }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.hp"],
+		},
 	},
 	{
 		type: "cooldown",
@@ -51,5 +66,10 @@ export const SHARED_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["施法间隙：{x}秒"],
 		fields: [{ name: "value", unit: Unit.Seconds }],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: [],
+		},
 	},
 ];

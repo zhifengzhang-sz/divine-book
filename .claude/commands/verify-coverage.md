@@ -8,7 +8,7 @@
 
 | File | Role |
 |:---|:---|
-| `data/raw/*.md` | Source of truth — split prose files (`主書.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md`, `about.md`) |
+| `data/raw/*.md` | Source of truth — split prose files (`主书.md`, `通用词缀.md`, `修为词缀.md`, `专属词缀.md`, `构造规则.md`). Do NOT read `about.md` — it is a stale monolithic original. |
 | `data/normalized/normalized.data.cn.md` (or `.md`) | Extraction to validate |
 
 ## Checks
@@ -27,13 +27,12 @@ Report: list of unmatched blockquotes with their location in normalized.data.
 Count and verify all 功法书 entries:
 
 - **Expected**: 28 books total (Sword 7, Spell 7, Demon 7, Body 7)
-- **Expected detailed** (主技能 + 主词缀): 9 books
-  - Sword: 千锋聚灵剑, 春黎剑阵, 皓月剑诀, 念剑诀
-  - Spell: 甲元仙符
-  - Demon: 大罗幻诀, 无相魔劫咒
-  - Body: 十方真魄, 疾风九变
-- **Expected exclusive-only**: 19 books (remaining)
-- **PASS**: All 28 books present, 9 have full sections, all 28 have exclusive affix.
+- **Expected detailed** (主技能 + 主词缀 + 专属词缀): all 28 books
+  - Sword (7): 千锋聚灵剑, 春黎剑阵, 皓月剑诀, 念剑诀, 通天剑诀, 新-青元剑诀, 无极御剑诀
+  - Spell (7): 甲元仙符, 浩然星灵诀, 元磁神光, 周天星元, 星元化岳, 玉书天戈符, 九天真雷诀
+  - Demon (7): 大罗幻诀, 无相魔劫咒, 天魔降临咒, 天轮魔经, 天剎真魔, 解体化形, 焚圣真魔咒
+  - Body (7): 十方真魄, 疾风九变, 玄煞灵影诀, 惊蛰化龙, 煞影千幻, 九重天凤诀, 天煞破虚诀
+- **PASS**: All 28 books present, all 28 have full sections (主技能 + 主词缀 + 专属词缀).
 - **FAIL**: Missing book, missing section, or wrong count.
 
 Report: list of missing/extra books, missing sections.
@@ -98,7 +97,7 @@ Report: list of incorrectly included shared mechanics rows.
 ## Coverage Verification Report
 
 ### Summary
-- Books: N/28 present (N/9 detailed, N/19 exclusive-only)
+- Books: N/28 present (N/28 detailed with 主技能+主词缀+专属词缀)
 - 通用词缀: N/16 present
 - 修为词缀: N/17 present
 - Source blockquotes: N total, N matched, N unmatched

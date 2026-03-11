@@ -1,6 +1,6 @@
 /** §4 Conditional Triggers — 4 types */
 
-import { Scope, Unit, Zone } from "../enums.js";
+import { ExecTarget, Scope, Trigger, Unit, Zone } from "../enums.js";
 import type { EffectTypeDef } from "../types.js";
 import {
 	ConditionalBuffSchema,
@@ -26,6 +26,12 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 			{ name: "condition", unit: Unit.Str },
 			{ name: "escalated_value", unit: Unit.PctStat, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["opponent.state", "opponent.hp"],
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "conditional_buff",
@@ -42,6 +48,12 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 			{ name: "percent_max_hp_increase", unit: Unit.PctStat, optional: true },
 			{ name: "percent_lost_hp_increase", unit: Unit.PctStat, optional: true },
 		],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Self,
+			reads: ["self.state"],
+			writes: ["self.damage"],
+		},
 	},
 	{
 		type: "probability_to_certain",
@@ -51,6 +63,11 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["概率触发效果提升为必定触发"],
 		fields: [],
+		exec: {
+			trigger: Trigger.Permanent,
+			target: ExecTarget.Self,
+			writes: ["self.state"],
+		},
 	},
 	{
 		type: "ignore_damage_reduction",
@@ -60,5 +77,10 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 		scope: Scope.Same,
 		patterns: ["无视敌方所有伤害减免效果"],
 		fields: [],
+		exec: {
+			trigger: Trigger.OnCast,
+			target: ExecTarget.Opponent,
+			writes: ["opponent.def"],
+		},
 	},
 ];
