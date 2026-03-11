@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-25
-dates of modification: [2026-2-25, 2026-3-5]
+dates of modification: [2026-2-25, 2026-3-5, 2026-3-9]
 ---
 
 <style>
@@ -99,189 +99,202 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Structured data and combat analysis system for the Divine Book (灵书) mechanic** — a cultivation combat system comprising 28 skill books across four schools. Formalizes the effect type system (80+ types), parses volatile Chinese prose into machine-readable YAML, models affix interactions as a provides/requires graph, and provides programmatic combo discovery and combat modeling.
+> **Structured data, combat modeling, and book construction system for the Divine Book (灵书) mechanic** — a cultivation combat system comprising 28 skill books across four schools. Three processes: extract structured data from Chinese prose, model combat interactions and function categories, then construct optimized book sets for PvP scenarios.
 
 ---
 
-## Architecture
+## Architecture — Three Processes
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart TD
-    subgraph "Layer 0 — Structure"
+    subgraph P1["Process 1 — Data"]
         RAW["data/raw/<br/>(Chinese prose)"]
-        RAW -->|"formalize"| KM["keyword.map<br/>(effect type vocabulary)"]
-        KM -->|"encode"| REG["lib/domain/registry<br/>(80+ effect types, Zod schemas)"]
+        RAW -->|"formalize"| KM["keyword.map<br/>(80+ effect types)"]
+        KM -->|"encode"| REG["lib/domain/registry<br/>(Zod schemas)"]
+        RAW -->|"LLM extract"| ND["normalized.data.md"]
+        ND -->|"verify + parse"| EY["effects.yaml"]
     end
 
-    subgraph "Layer 1 — Data Pipeline"
-        RAW -->|"LLM extraction<br/>+ keyword.map"| ND["normalized.data.md<br/>(strict markdown tables)"]
-        ND --> V1["verify.schema"]
-        ND --> V2["verify.coverage"]
-        V1 --> HR["human review"]
-        V2 --> HR
-        HR -->|"bun run parse"| EY["effects.yaml"]
+    subgraph P2["Process 2 — Modeling"]
+        EY -->|"domain analysis"| DM["Domain Model<br/>bindings, platforms,<br/>graph, categories"]
+        REG --> DM
+        EY -->|"factor mapping"| CM["Combat Model<br/>effect → affix → book"]
+        DM --> FC["Function Categories<br/>(13 functions,<br/>platform qualification)"]
+        CM --> TS["Time-Series Model<br/>temporal vectors,<br/>summon envelopes"]
+        DM --> CS["Combo Tools<br/>rank, cluster, search"]
     end
 
-    subgraph "Layer 2 — Domain Model"
-        EY -->|"domain analysis"| DD["domain.*.md<br/>(graph, categories, paths)"]
-        REG --> DD
-        DD -->|"TypeScript encoding"| DTS["lib/domain/*.ts<br/>(bindings, platforms, chains)"]
-        DTS --> CS["combo-search CLI"]
+    subgraph P3["Process 3 — Book Construction"]
+        FC --> TH["Themes<br/>α ∈ 0,1<br/>attack ↔ defense"]
+        TH --> SA["Scenario Analysis<br/>→ decision tree<br/>→ theme selection"]
+        SA --> SL["Slot Assignment<br/>function → platform<br/>→ aux affixes"]
+        CS --> SL
+        TS --> SL
+        SL --> BK["Book Builds<br/>docs/books/pvp.*.md"]
     end
 
-    subgraph "Layer 3 — Combat Model"
-        REG --> CM["combat model<br/>(effect → factor mapping)"]
-        EY --> CM
-        CM --> SCH["lib/schemas/<br/>(effect, affix, book, bookset)"]
-    end
-
-    subgraph "Layer 4 — Book Guides"
-        CS --> BG["docs/books/<br/>(PvP, chain construction)"]
-        CM --> BG
-    end
+    P1 -->|"effects.yaml<br/>registry"| P2
+    P2 -->|"functions, combos<br/>time-series"| P3
 ```
 
-**Layer 0** formalizes the game's effect type system — the structural foundation everything else builds on. Raw Chinese prose is analyzed into a controlled vocabulary (`keyword.map`), then encoded as TypeScript definitions with Zod schemas (80+ types across 17 files).
+### Process 1 — Data
 
-**Layer 1** is the data extraction pipeline — LLM agents extract structured tables from prose, two independent verification agents validate, and a deterministic parser produces YAML.
+Extract structured data from volatile Chinese prose. Formalizes the effect type vocabulary (80+ types), extracts normalized tables via LLM agents, verifies with two independent agents, and parses into YAML.
 
-**Layer 2** models affix interactions as a provides/requires graph (61 affix bindings, 9 platforms, 6 named entities) for programmatic combo discovery.
+| Layer | What | Where |
+|:------|:-----|:------|
+| Structure | Effect type vocabulary | `data/keyword/keyword.map.cn.md`, `lib/domain/registry.ts` |
+| Extraction | LLM-extracted tables | `data/normalized/normalized.data.md` |
+| Verification | Schema + coverage checks | `/verify-schema`, `/verify-coverage` agents |
+| Output | Parsed effect data | `data/yaml/effects.yaml` |
 
-**Layer 3** maps effects to combat model parameters — a four-level compositional pipeline (effect → affix → book → book set) with quantitative factor contributions.
+**Docs:** [design.md](docs/data/design.md), [impl.parser.md](docs/data/impl.parser.md), [note.data.md](docs/data/note.data.md)
 
-**Layer 4** produces the actual deliverables — book construction guides for PvP scenarios, using combo search results and combat model analysis.
+### Process 2 — Modeling
+
+Build models on top of the extracted data. Three interconnected models:
+
+| Model | What it does | Where |
+|:------|:-------------|:------|
+| **Domain model** | Affix interactions as provides/requires graph (61 bindings, 10 platforms). Combo discovery and scoring. | `lib/domain/*.ts`, [domain.category.md](docs/data/domain.category.md), [domain.graph.md](docs/data/domain.graph.md) |
+| **Combat model** | Effect → factor mapping. Four-level pipeline: effect → affix → book → book set. | `lib/schemas/*.ts`, `lib/model/*.ts`, [combat.md](docs/model/combat.md) |
+| **Function categories** | 13 function types (F_burst, F_buff, etc.) with platform qualification, aux affix catalog, and three-tier structure. | `lib/domain/functions.ts`, [function-themes.md](docs/model/function-themes.md) |
+| **Time-series** | Temporal factor vectors, summon envelopes, buff duration analysis. | `lib/model/time-series.ts`, [impl.time-series.md](docs/model/impl.time-series.md) |
+
+**Docs:** [chain.md](docs/data/chain.md), [combat.qualitative.md](docs/model/combat.qualitative.md), [impl.binding-quality.md](docs/model/impl.binding-quality.md)
+
+### Process 3 — Book Construction
+
+Use the models to construct optimized 6-slot 灵書 sets for PvP. The process follows a defined pipeline:
+
+```
+Scenario Analysis → Theme Selection → Function → Slot → Platform → Aux → Build
+```
+
+| Step | What | Reference |
+|:-----|:-----|:---------|
+| **Themes** | Spectrum α∈[0,1] from all-attack to all-defense. 5 discrete themes. Strategic variance peaks at α≈0.5. | [function-themes.md §Themes](docs/model/function-themes.md) |
+| **Scenario → Theme** | Decision tree over observables (power gap, enemy heal/DR) produces theme α. | [function-themes.md §Decision Tree](docs/model/function-themes.md) |
+| **Slot assignment** | Per-slot function categories based on slot timing + dependencies. | [function-themes.md §Slot Assignment](docs/model/function-themes.md) |
+| **Build process** | 6-step pipeline: scenario → theme → function → platform → aux → verify. | [guide.build.md](docs/books/guide.build.md) |
+| **Working builds** | Concrete PvP builds with scenario analysis and slot-by-slot evaluation. | [pvp.md](docs/books/pvp.md), [pvp.zz.tools.md](docs/pvp.zz.tools.md) |
 
 ## Quick Start
 
 ```
 bun install
-bun run parse                    # normalized.data.md → effects.yaml
-bun run check                    # typecheck + lint
-bun run test                     # unit + integration tests
-bun run verify-domain            # domain docs vs code
-bun app/combo-search.ts --list   # list all platforms
-bun app/combo-search.ts -p 疾风九变  # combo search for a platform
+bun run parse                                          # normalized.data.md → effects.yaml
+bun run check                                          # typecheck + lint
+bun run test                                           # unit + integration tests
+bun app/combo-rank.ts --platform 春黎剑阵 --top 5       # rank combos for a platform
+bun app/function-combos.ts --catalog                   # function category catalog
+bun app/function-combos.ts --fn F_burst --top 3        # combos per function × platform
+bun app/book-vector.ts --platform 春黎剑阵 --op1 灵犀九重 --op2 心逐神随  # time-series
+bun app/build-candidates.ts --theme all_attack --top 5  # enumerate book set candidates
+bun app/build-candidates.ts --list                      # list available themes
+bun scripts/sync-style.ts                              # sync dark theme to all docs
 ```
 
-## Style block (visual docs)
+## Tools
 
-The repository uses a canonical HTML/CSS style block for Markdown rendering. The canonical block lives at `docs/style.block.md`.
-
-To apply the canonical style to all Markdown files under `data/raw/` and `docs/data/`, run:
-
-```bash
-bun scripts/sync-style.ts
-```
-
-If you prefer to apply the style manually to a single file, copy the contents of `docs/style.block.md` and paste the `<style>...</style>` block after the file's frontmatter (the YAML `---` block) or at the top of the file.
-
-You can add a short package script in `package.json` for convenience, for example:
-
-```json
-"scripts": {
-  "sync-style": "bun scripts/sync-style.ts"
-}
-```
-
+| Tool | Process | Purpose |
+|:-----|:--------|:--------|
+| `app/parse.ts` | Data | normalized.data.md → effects.yaml |
+| `app/map.ts` | Data | effects.yaml → model.yaml (factor mapping) |
+| `app/combo-search.ts` | Modeling | Platform combo search |
+| `app/combo-rank.ts` | Modeling | Rank all combos for a platform (weighted scoring) |
+| `app/combo-cluster.ts` | Modeling | K-means clustering for archetypes |
+| `app/function-combos.ts` | Modeling | Function category catalog + combos per function × platform |
+| `app/book-vector.ts` | Modeling | Time-series factor vectors per book |
+| `app/book-vector-chart.ts` | Modeling | HTML chart visualization |
+| `app/bookset-vector.ts` | Construction | Book set time-series evaluation (6-slot merge) |
+| `app/bookset-chart.ts` | Construction | Book set time-series chart visualization |
+| `app/candidates.ts` | Modeling | Affix candidate enumeration |
+| `app/build-candidates.ts` | Construction | Theme-driven 6-slot book set candidate enumeration |
+| `app/generate.ts` | Data | Registry → keyword.map generator |
 
 ## Project Structure
 
 ```
-app/
-  parse.ts                       normalized.data.md → effects.yaml
-  combo-search.ts                Platform combo search CLI
-  candidates.ts                  Affix candidate enumeration CLI
-  generate.ts                    Generator CLI
+app/                             CLI tools (see table above)
 lib/
   parse.ts                       Markdown table parser
   candidates.ts                  Affix candidate enumeration
   generators/
     keyword-map.ts               Registry → keyword.map.md generator
-  schemas/
+  schemas/                       Process 2: Combat model schemas
     effect.ts                    Zod schema — 80+ effect types
     effect.model.ts              Effect → factor contribution mapping
     affix.model.ts               Affix-level combinator
     book.model.ts                Book-level combinator
     bookset.model.ts             Book-set-level combinator
-  domain/
+  domain/                        Process 2: Domain model
     registry.ts                  Effect type registry (80+ types)
     effects/                     Effect type definitions (17 files)
     enums.ts                     TargetCategory (T1-T10), School enums
     bindings.ts                  61 affix provides/requires bindings
-    platforms.ts                 9 platform definitions
+    platforms.ts                 10 platform definitions
+    functions.ts                 13 function categories + qualification logic
     named-entities.ts            6 named entity definitions
+    amplifiers.ts                Offense zone classification
+    binding-quality.ts           BQ scoring (utilization, platform fit, zone breadth)
     chains.ts                    filterByBinding + discoverChains
     constraints.ts               Construction constraint validator
-docs/
-  data/
-    design.md                    System design — containers, components, boundaries
-    impl.parser.md               Parser implementation details
-    note.data.md                 Pipeline quick reference
-    usage.parser.md              Parser operational guide
-    usage.domain.md              Domain analysis workflow
-    domain.category.md           Affix taxonomy with provides/requires
-    domain.graph.md              Graph model, named entities, platforms
-    domain.path.md               Path catalog, platform projections
-    model.binding.md             Binding model — platform/operator/contract
-    chain.md                     Construction methodology (objectives, functions, scoring)
-    function.combos.md           Scored combo tables per function
-    references/元宝/             Chinese reference docs
-  model/
-    combat.md                    Combat model — effect → factor mapping
-    combat.qualitative.md        Qualitative combat analysis
-    impl.combat.md               Combat model implementation
-  books/
-    guide.chain.md               Chain construction guide
-    pvp.md                       PvP book set construction
-    pvp.chain.md                 PvP chain-first construction
-    pvp.graph.md                 PvP graph analysis
+  model/                         Process 2: Combat + time-series models
+    model-data.ts                Factor vector building + combo distance
+    time-series.ts               Temporal event collection + sampling
+    combinators.ts               Model combinators
 data/
-  raw/                           Source of truth (split by topic)
-    主书.md                      Main skill data (9 of 28 books)
-    通用词缀.md                  Universal affixes
-    修为词缀.md                  School affixes
-    专属词缀.md                  Exclusive affixes
-    构造规则.md                  Construction rules
+  raw/                           Source of truth (Chinese prose)
   keyword/                       Effect type vocabulary (parsing spec)
-    keyword.map.cn.md            Chinese patterns (primary)
-    keyword.map.md               English translation
-  normalized/                    Extracted data (all data_state tiers)
-    normalized.data.cn.md        Chinese headers
-    normalized.data.md           English headers
-  yaml/
-    effects.yaml                 Parsed effect data
-    groups.yaml                  Parsed group data
-.claude/commands/                LLM agent specifications
-  extract.md                     /extract — extraction agent
-  verify-schema.md               /verify-schema — schema verification
-  verify-coverage.md             /verify-coverage — coverage verification
+  normalized/                    LLM-extracted tables
+  yaml/                          Parsed output (effects.yaml, groups.yaml)
+docs/
+  data/                          Process 1 docs (data pipeline design, domain analysis)
+  model/                         Process 2 docs (combat model, function themes, time-series)
+  books/                         Process 3 docs (build guides, PvP scenarios)
+  pvp.zz.tools.md                Tool-assisted PvP build (working example)
+scripts/
+  sync-style.ts                  Sync dark theme CSS to all markdown files
 ```
 
 ## Documentation
 
+### Process 1 — Data
+
 | Document | Purpose |
-|:---|:---|
-| **Workflow** | |
-| [note.data.md](docs/data/note.data.md) | Pipeline quick reference — layers, commands, agents, workflow |
-| [usage.parser.md](docs/data/usage.parser.md) | Running the parser |
-| [usage.domain.md](docs/data/usage.domain.md) | Domain analysis workflow — raw data to combo search |
-| **Data design** | |
+|:---------|:--------|
 | [design.md](docs/data/design.md) | System design — containers, components, boundaries |
-| [impl.parser.md](docs/data/impl.parser.md) | How the parser works — flow, components, tests |
+| [note.data.md](docs/data/note.data.md) | Pipeline quick reference — layers, commands, agents |
+| [impl.parser.md](docs/data/impl.parser.md) | How the parser works |
+| [usage.parser.md](docs/data/usage.parser.md) | Running the parser |
+| [usage.domain.md](docs/data/usage.domain.md) | Domain analysis workflow |
 | [keyword.map.md](data/keyword/keyword.map.md) | Effect type vocabulary (80+ types) |
-| **Domain model** | |
+
+### Process 2 — Modeling
+
+| Document | Purpose |
+|:---------|:--------|
 | [domain.category.md](docs/data/domain.category.md) | Affix taxonomy with provides/requires bindings |
 | [domain.graph.md](docs/data/domain.graph.md) | Graph model, named entities, platform provides |
 | [domain.path.md](docs/data/domain.path.md) | Path catalog, platform projections |
-| **Construction** | |
-| [model.binding.md](docs/data/model.binding.md) | Binding model — platform, operator, contract |
 | [chain.md](docs/data/chain.md) | Construction methodology — objectives, functions, scoring |
-| [function.combos.md](docs/data/function.combos.md) | Scored combo tables per function |
-| **Combat model** | |
 | [combat.md](docs/model/combat.md) | Effect → factor mapping (four-level pipeline) |
 | [combat.qualitative.md](docs/model/combat.qualitative.md) | Qualitative combat analysis |
-| [guide.chain.md](docs/books/guide.chain.md) | Chain construction guide (PvP walkthrough) |
+| [function-themes.md](docs/model/function-themes.md) | Function categories (13 types), themes (α spectrum), decision tree |
+| [impl.binding-quality.md](docs/model/impl.binding-quality.md) | BQ scoring implementation |
+| [impl.time-series.md](docs/model/impl.time-series.md) | Time-series model implementation |
+
+### Process 3 — Book Construction
+
+| Document | Purpose |
+|:---------|:--------|
+| [guide.build.md](docs/books/guide.build.md) | Build process guide — 6-step pipeline with mermaid diagrams |
+| [guide.chain.md](docs/books/guide.chain.md) | Chain construction guide |
+| [pvp.md](docs/books/pvp.md) | PvP book set construction (3 scenarios) |
+| [pvp.candidates.md](docs/books/pvp.candidates.md) | Candidate enumeration across 5 themes (per-slot analysis + set-level) |
+| [pvp.zz.tools.md](docs/pvp.zz.tools.md) | Tool-assisted PvP build with scoring + time-series |
 
 ---
 
@@ -290,4 +303,5 @@ data/
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-02-25 | Initial project README |
-| 2.0 | 2026-03-05 | Full rewrite — all four layers, complete project structure |
+| 2.0 | 2026-03-05 | Full rewrite — four-layer architecture |
+| 3.0 | 2026-03-09 | Three-process architecture (data, modeling, book construction) |

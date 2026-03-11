@@ -14,7 +14,7 @@ async function readCanonical() {
 async function listTargets() {
   const root = process.cwd();
   const targets: string[] = [];
-  const folders = [join(root, 'data', 'raw'), join(root, 'data', 'keyword'), join(root, 'data', 'normalized'), join(root, 'docs', 'data'), join(root, 'docs')];
+  const folders = [join(root, 'data', 'raw'), join(root, 'data', 'keyword'), join(root, 'data', 'normalized'), join(root, 'docs', 'data'), join(root, 'docs'), join(root, 'docs', 'books'), join(root, 'docs', 'model')];
   for (const f of folders) {
     try {
       const names = await fs.readdir(f);

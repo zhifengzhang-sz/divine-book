@@ -34,7 +34,7 @@ interface SummonMeta {
 interface EffectModel {
 	type: string;
 	factors?: Factors;
-	temporal?: { duration: number; coverage_type: string };
+	temporal?: { duration: number | "permanent"; coverage_type: string };
 	modifier_value?: number;
 	summon?: SummonMeta;
 }
@@ -126,7 +126,7 @@ const REACTIVE_TYPES = new Set([
 function deriveTemporal(
 	effect: any,
 	def: EffectTypeDef,
-): { duration: number; coverage_type: string } | undefined {
+): { duration: number | "permanent"; coverage_type: string } | undefined {
 	if (def.scope !== "cross") return undefined;
 
 	const type = effect.type;
@@ -139,6 +139,10 @@ function deriveTemporal(
 		return { duration: 0, coverage_type: "permanent" };
 	if (REACTIVE_TYPES.has(type))
 		return { duration: effect.duration ?? 0, coverage_type: "reactive" };
+
+	// Handle "permanent" string duration
+	if (effect.duration === "permanent")
+		return { duration: "permanent", coverage_type: "permanent" };
 
 	if (effect.duration != null && typeof effect.duration === "number")
 		return { duration: effect.duration, coverage_type: "duration_based" };

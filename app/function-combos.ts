@@ -6,6 +6,7 @@
  *   bun app/function-combos.ts --fn F_burst             # one function, all qualifying platforms
  *   bun app/function-combos.ts --fn F_burst --platform 春黎剑阵  # one function, one platform
  *   bun app/function-combos.ts --fn F_burst --top 10    # top N affix blocks
+ *   bun app/function-combos.ts --catalog                 # three-tier function catalog
  *   bun app/function-combos.ts --list                   # list all functions
  */
 
@@ -14,6 +15,7 @@ import {
 	FUNCTIONS,
 	enumerateCombos,
 	getQualifyingPlatforms,
+	getAuxAffixes,
 } from "../lib/domain/functions.js";
 import { getPlatform } from "../lib/domain/platforms.js";
 import type { Combo } from "../lib/domain/functions.js";
@@ -24,6 +26,7 @@ const { values } = parseArgs({
 		platform: { type: "string", short: "p" },
 		top: { type: "string", short: "n" },
 		list: { type: "boolean", short: "l" },
+		catalog: { type: "boolean", short: "c" },
 		strict: { type: "boolean", short: "s" },
 	},
 });
@@ -32,13 +35,54 @@ if (values.list) {
 	console.log("Functions:\n");
 	for (const fn of FUNCTIONS) {
 		const platforms = getQualifyingPlatforms(fn);
-		const platStr =
-			fn.qualifyingPlatforms.length > 0
-				? fn.qualifyingPlatforms.join(", ")
-				: "all";
+		let platStr: string;
+		if (fn.requiresPlatform.length > 0) {
+			platStr = fn.requiresPlatform.join(", ");
+		} else if (fn.requiresPrimaryOverlap) {
+			platStr = platforms.map((p) => p.book).join(", ");
+		} else {
+			platStr = "all";
+		}
 		console.log(`  ${fn.id}: ${fn.purpose}`);
 		console.log(`    core: ${fn.coreEffects.join(", ")}`);
 		console.log(`    platforms: ${platStr} (${platforms.length})`);
+		console.log();
+	}
+	process.exit(0);
+}
+
+if (values.catalog) {
+	console.log("# Function Catalog — Three-Tier Structure\n");
+	for (const fn of FUNCTIONS) {
+		const platforms = getQualifyingPlatforms(fn);
+		const auxAffixes = getAuxAffixes(fn);
+		const coreAux = auxAffixes.filter((a) => a.role === "core");
+		const ampAux = auxAffixes.filter((a) => a.role === "amplifier");
+
+		console.log(`## ${fn.id}: ${fn.purpose}\n`);
+
+		// Tier 1: Native platforms
+		const platNames = platforms.map((p) => p.book);
+		if (fn.requiresPlatform.length === 0) {
+			console.log(`  Platform (native): **TODO** — no filter criteria yet (see TODOs in functions.ts)`);
+		} else {
+			console.log(`  Platform (native): ${platNames.join(", ")} (${platNames.length})`);
+		}
+
+		// Tier 2: Aux affixes
+		if (coreAux.length > 0) {
+			console.log(`  Aux affixes (core): ${coreAux.map((a) => `【${a.affix}】`).join(", ")}`);
+		} else {
+			console.log(`  Aux affixes (core): none`);
+		}
+		if (ampAux.length > 0) {
+			console.log(`  Aux affixes (amplifier): ${ampAux.map((a) => `【${a.affix}】`).join(", ")}`);
+		}
+
+		// Tier 3: Adaptable platforms
+		// Any platform can carry aux affixes (binding validity checked at combo time)
+		console.log(`  Adaptable platforms: all (${platforms.length} via requiresPlatform filter)`);
+
 		console.log();
 	}
 	process.exit(0);

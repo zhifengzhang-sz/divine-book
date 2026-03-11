@@ -15,7 +15,7 @@
  */
 
 import { parseArgs } from "node:util";
-import { filterByBinding } from "../lib/domain/chains.js";
+import { AFFIX_BINDINGS } from "../lib/domain/bindings.js";
 import { getPlatform } from "../lib/domain/platforms.js";
 import { buildBookModel, buildFactorVector } from "../lib/model/model-data.js";
 import { isComboValid } from "../lib/domain/binding-quality.js";
@@ -77,8 +77,11 @@ function rankCombos(platformName: string, slot: number, topN: number): {
 	baseline_D_skill: number;
 } {
 	const platform = getPlatform(platformName)!;
-	const { validAffixes } = filterByBinding(platform);
-	const pool = validAffixes.filter(a => a.category !== "school" || a.school === platform.school);
+	// Use full affix list — isComboValid() checks per-combo binding validity
+	// (platform + both operators' provides). Pre-filtering with filterByBinding
+	// prunes affixes whose requires can't be met by the platform alone, missing
+	// combos where the partner provides the needed category.
+	const pool = AFFIX_BINDINGS;
 
 	// Baseline: platform with no operator affixes
 	const baseBook = buildBookModel(platformName, "", "", slot);
