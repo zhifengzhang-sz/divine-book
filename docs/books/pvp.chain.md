@@ -32,6 +32,23 @@ code {
   border-radius: 3px !important;
 }
 
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
 table {
   border-collapse: collapse !important;
   width: auto !important;
@@ -212,15 +229,15 @@ The "against stronger" asymmetry: HP loss is faster. Scan for HP-loss-to-damage 
 |:------|:-----|:-------|:-------|
 | B7 #1 | `per_self_lost_hp` | +2%/1% HP lost → +100% at 50% lost | 【怒血战意】(`玄煞灵影诀` exclusive) |
 | B7 #2 | `per_self_lost_hp` (weak) | +0.5%/1% HP lost | 【战意】(universal) |
-| O14 #1–5 | `per_debuff_stack_true_damage` | 2.1%maxHP/stack, max 21% | 【紫心真诀】(`惊蛰化龙` exclusive) |
+| O14 #1–5 | `per_debuff_stack_true_damage` | 2.1%maxHP/stack, max 21% | 【索心真诀】(`惊蛰化龙` exclusive) |
 
 B7 #1 is 4× stronger than #2. O14 provides true damage (bypasses ALL defenses) — orthogonal to every other damage channel. Both are same-灵書 amplifiers.
 
-**Critical cross-chain synergy:** F2 (大罗幻诀) accumulates debuff stacks on the enemy via counter_debuff + stacking ×2. F4's O14 (紫心真诀) converts those stacks into true damage. This is a **cross-灵書 feed**: F2's debuffs persist on the enemy, then F4's 灵書 reads the stack count. The chain catalog surfaces this connection: B9 (counter_debuff) → O14 (per_debuff_stack_true_damage).
+**Critical cross-chain synergy:** F2 (大罗幻诀) accumulates debuff stacks on the enemy via counter_debuff + stacking ×2. F4's O14 (索心真诀) converts those stacks into true damage. This is a **cross-灵書 feed**: F2's debuffs persist on the enemy, then F4's 灵書 reads the stack count. The chain catalog surfaces this connection: B9 (counter_debuff) → O14 (per_debuff_stack_true_damage).
 
 **F4 main book requirement:** high base damage with %maxHP (to maximize the ×2.0 multiplier from 【怒血战意】). From O1/O2: `千锋聚灵剑` (20,265% ATK + 27%maxHP×6 = 162%maxHP, built-in per-hit escalation +42.5%).
 
-> **F4 灵書 δ:** `千锋聚灵剑`(main) + `玄煞灵影诀`(【怒血战意】) + `惊蛰化龙`(【紫心真诀】)
+> **F4 灵書 δ:** `千锋聚灵剑`(main) + `玄煞灵影诀`(【怒血战意】) + `惊蛰化龙`(【索心真诀】)
 > Chain: B7 #1 + O14. Same-灵書. At 50% HP lost: +100% all damage + 29.4%maxHP true damage.
 
 **Where are the HP enablers?** The unified enabler category (§VIII in domain.path.md) lists three enablers that feed the HP exploitation chain:
@@ -354,7 +371,7 @@ Aux candidates for 灵書 ε:
 | α | Burst | `春黎剑阵` | `解体化形`(【心逐神随】) | `新-青元剑诀`(【灵犀九重】) | X1 + O4 |
 | β | DR removal | `大罗幻诀` | `天轮魔经`(【心魔惑言】) | `皓月剑诀`(【追神真诀】) | D4 + B9 + A7 |
 | γ | Self-buff | `甲元仙符` | `浩然星灵诀`(【龙象护身】) | `念剑诀`(【仙露护元】) | S1 #7 |
-| δ | HP exploit | `千锋聚灵剑` | `玄煞灵影诀`(【怒血战意】) | `惊蛰化龙`(【紫心真诀】) | B7 + O14 |
+| δ | HP exploit | `千锋聚灵剑` | `玄煞灵影诀`(【怒血战意】) | `惊蛰化龙`(【索心真诀】) | B7 + O14 |
 | ε | Exploit | `皓月剑诀` | `春黎剑阵`(【玄心剑魄】) | `无极御剑诀`(【无极剑阵】) | O2 + O5 + A3 |
 | ζ | Survival | `十方真魄` | `通天剑诀`(【心火淬锋】) | `千锋聚灵剑`(【天哀灵涸】) | V4 + A8 + D5 |
 
@@ -382,7 +399,7 @@ Construction produces 6 灵書. Slot assignment is a temporal optimization: whic
 
 4. **β (DR removal) → Slot 4.** 命損 (8s) must immediately precede δ. Fires at $t = 18\text{s}$ → covers slot 5 with ~2s overlap.
 
-5. **δ (HP exploit) → Slot 5.** Fires at $t = 24\text{s}$. By now, ~50% own HP lost → 【怒血战意】 +100%. Under 命損 (−100% DR) + 仙佑 (+142.8% ATK). Counter debuffs from β have accumulated → 【紫心真诀】 reads stacks.
+5. **δ (HP exploit) → Slot 5.** Fires at $t = 24\text{s}$. By now, ~50% own HP lost → 【怒血战意】 +100%. Under 命損 (−100% DR) + 仙佑 (+142.8% ATK). Counter debuffs from β have accumulated → 【索心真诀】 reads stacks.
 
 6. **ζ (Survival) → Slot 6.** Endgame: CC cleanse + anti-heal. Fires at $t = 30\text{s}$.
 
@@ -394,7 +411,7 @@ Construction produces 6 灵書. Slot assignment is a temporal optimization: whic
 | 2 | ε | `皓月剑诀`(main) + `春黎剑阵`(【玄心剑魄】) + `无极御剑诀`(【无极剑阵】) | O2 + O5 + A3 |
 | 3 | γ | `甲元仙符`(main) + `浩然星灵诀`(【龙象护身】) + `念剑诀`(【仙露护元】) | S1 #7 |
 | 4 | β | `大罗幻诀`(main) + `天轮魔经`(【心魔惑言】) + `皓月剑诀`(【追神真诀】) | D4 + B9 + A7 |
-| 5 | δ | `千锋聚灵剑`(main) + `玄煞灵影诀`(【怒血战意】) + `惊蛰化龙`(【紫心真诀】) | B7 + O14 |
+| 5 | δ | `千锋聚灵剑`(main) + `玄煞灵影诀`(【怒血战意】) + `惊蛰化龙`(【索心真诀】) | B7 + O14 |
 | 6 | ζ | `十方真魄`(main) + `通天剑诀`(【心火淬锋】) + `千锋聚灵剑`(【天哀灵涸】) | V4 + A8 + D5 |
 
 **Cross-灵書 temporal map:**

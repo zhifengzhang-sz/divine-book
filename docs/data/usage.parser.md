@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-25
-dates of modification: [2026-2-25]
+dates of modification: [2026-2-25, 2026-3-9]
 ---
 
 <style>
@@ -113,14 +113,15 @@ bun install
 ## Running the Parser
 
 ```
-bun app/parse.ts <normalized-data.md> <keyword-map.md> <output-dir>
+bun app/parse.ts <normalized-data.md> <output-dir>
 ```
 
 | Argument | Description |
 |:---|:---|
 | `<normalized-data.md>` | Path to a `normalized.data.md` file (English headers) |
-| `<keyword-map.md>` | Path to `keyword.map.md` (effect type classification) |
 | `<output-dir>` | Directory for the generated YAML files |
+
+The parser does not read `keyword.map.md` at runtime. The keyword map's influence is indirect: it constrains the extraction agent's output (which becomes `normalized.data.md`) and it is transcribed into the Zod schema (`lib/schemas/effect.ts`) at design time. See [impl.parser.md](impl.parser.md) §1 for details.
 
 The default paths are available via the npm script:
 
@@ -131,7 +132,7 @@ bun run parse
 This expands to:
 
 ```
-bun app/parse.ts data/normalized/normalized.data.md data/keyword/keyword.map.md data/yaml
+bun app/parse.ts data/normalized/normalized.data.md data/yaml
 ```
 
 ## Output
@@ -185,3 +186,4 @@ Both must pass clean before any change to `app/` or `lib/` is committed.
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-02-25 | Initial parser usage guide |
+| 1.1 | 2026-03-09 | Fixed CLI signature: parser takes 2 args (no keyword-map.md). Added note on indirect keyword.map relationship. |

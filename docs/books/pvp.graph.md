@@ -32,6 +32,23 @@ code {
   border-radius: 3px !important;
 }
 
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
 table {
   border-collapse: collapse !important;
   width: auto !important;
@@ -174,7 +191,7 @@ A.damage_taken (opponent attacks)
 **Cross-path output:** 命損 removes B.damage_reduction for 8s → enables Path 5. Debuff stacks persist → feeds Path 5's per_debuff_stack_true_damage.
 **Opponent-driven input:** counter_debuff reads B's attacks — the more the opponent attacks, the more debuff stacks accumulate. Feedback loop 4.
 
-#### Path 5 — HP Exploitation Kill (Slot 5: 千锋聚灵剑 + 【怒血战意】 + 【紫心真诀】)
+#### Path 5 — HP Exploitation Kill (Slot 5: 千锋聚灵剑 + 【怒血战意】 + 【索心真诀】)
 
 ```
 B.damage → A.hp_pct_lost (opponent is stronger → fast HP loss)

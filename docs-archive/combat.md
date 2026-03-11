@@ -181,7 +181,7 @@ Deals a flat percentage of the target's maximum HP per hit, regardless of the at
 
 - 千锋聚灵剑: 27% maxHP per hit × 6 hits = 162% maxHP total (capped at 5400% ATK vs monsters)
 - 皓月剑诀: 12% maxHP per hit × 10 hits = 120% maxHP total
-- 紫心真诀: 2.1% maxHP per debuff layer — scales with debuff stacking
+- 索心真诀: 2.1% maxHP per debuff layer — scales with debuff stacking
 
 ### Lost HP scaling (dim 10)
 

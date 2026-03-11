@@ -168,7 +168,7 @@ Each function is an atomic 灵書-level purpose. The catalog maps functions to t
 | F_hp_exploit | Convert own HP loss → damage | `per_self_lost_hp` | any+【怒血战意】; F8/F9(HP cost creates resource) |
 | F_antiheal | Suppress enemy healing | `debuff`, `conditional_debuff`, `random_debuff` | any+【天哀灵涸】(−31% undispellable); any+【天倾灵枯】(−31%/−51%, 20s); F7+【无相魔威】(−40.8%) |
 | F_survive | CC cleanse + damage reduction | `periodic_cleanse`, `self_damage_reduction_during_cast`, `untargetable_state` | F8(cleanse monopoly) |
-| F_truedmg | True damage from debuff stacks | `per_debuff_stack_true_damage` | any+【紫心真诀】(`惊蛰化龙`, monopoly) |
+| F_truedmg | True damage from debuff stacks | `per_debuff_stack_true_damage` | any+【索心真诀】(`惊蛰化龙`, monopoly) |
 | F_exploit | Secondary high-damage source | `percent_max_hp_damage`, `shield_destroy_damage` | F1(27%×6=162%maxHP); F3(24%×10=240%maxHP shieldless) |
 | F_dot | Sustained DoT damage | `dot`, `extended_dot`, `shield_destroy_dot`, `on_dispel` | F4(extended 6.5s, ×28.9 peak); F6(counter DoTs); any+【玄心剑魄】(噬心 550%/tick) |
 | F_counter | Reflect enemy attacks | `counter_buff` | F9(极怒: 50% reflect + 15% lost HP, 4s) |
@@ -186,7 +186,7 @@ Each candidate solution (foundation, op1, op2) is scored on three components:
 
 **2. Cross-灵書 score (S_cross):** Value of persistent states this slot creates for OTHER slots — buff duration × strength, debuff duration × potency, shield value. Only cross-scope outputs contribute.
 
-**3. Feed dependency bonus (S_feed):** Conditional score gained when another slot provides a required input. Notation: `+X if slot_j provides Y`. Creates edges in the dependency graph. Example: 【紫心真诀】gains `+21%maxHP true damage if F6 provides debuff stacks`.
+**3. Feed dependency bonus (S_feed):** Conditional score gained when another slot provides a required input. Notation: `+X if slot_j provides Y`. Creates edges in the dependency graph. Example: 【索心真诀】gains `+21%maxHP true damage if F6 provides debuff stacks`.
 
 **4. Total slot score:**
 
@@ -713,7 +713,7 @@ All 61 secondary affixes (16 universal + 17 school + 28 exclusive), defined as o
 【天人合一】
   input:     ∅
   resource:  enlightenment — raises equipped book's enlightenment level by 1 (max 3)
-  targets:   any book with enlightenment-gated effects (【心逐神随】, 【追神真诀】, 【魔骨明心】, 【奇能诡道】, 【紫心真诀】)
+  targets:   any book with enlightenment-gated effects (【心逐神随】, 【追神真诀】, 【魔骨明心】, 【奇能诡道】, 【索心真诀】)
   bonus:     +5% damage_increase (negligible)
   scope:     same (enlightenment affects this book)
   carriers:  玉书天戈符 (exclusive)
@@ -802,7 +802,7 @@ All 61 secondary affixes (16 universal + 17 school + 28 exclusive), defined as o
 #### 5.4 Stack-Scaling Conditions
 
 ```
-【紫心真诀】
+【索心真诀】
   input:     enemy debuff stacks (conditional gate: stacks > 0; + enlightenment buff)
   transform: (1) true damage per debuff stack (2) massive buff at enlightenment
   output:    (1) 2.1% enemy maxHP true damage per stack, max 21% (10 stacks)
@@ -918,7 +918,7 @@ Nine detailed books, each as a complete foundation: main skill + primary affix �
 
 | Rank | Op1 | Op2 | S_same | S_cross | Feed Deps | Total |
 |:-----|:----|:----|:-------|:--------|:----------|:------|
-| 1 | 【怒血战意】 | 【紫心真诀】 | +100% dmg at 50% HP | 21%maxHP true dmg | +stacks if F6 provides debuffs | high |
+| 1 | 【怒血战意】 | 【索心真诀】 | +100% dmg at 50% HP | 21%maxHP true dmg | +stacks if F6 provides debuffs | high |
 | 2 | 【怒血战意】 | 【心火淬锋】 | +100% + +50% esc. | — | — | moderate |
 | 3 | 【怒血战意】 | 【意坠深渊】 | +100% + 50% dmg + floor 11% | — | — (self-sufficient) | moderate |
 
@@ -1204,7 +1204,7 @@ Nine detailed books, each as a complete foundation: main skill + primary affix �
 |:-------|:------|:------|
 | Moderate burst | same | 20,265% ATK |
 | DR removal (命損) | **cross** | −100% enemy DR, 8s window |
-| Debuff stacks | **cross** | Persist on enemy → feed 【紫心真诀】/【心魔惑言】 |
+| Debuff stacks | **cross** | Persist on enemy → feed 【索心真诀】/【心魔惑言】 |
 | Reactive damage | same | Counter_debuff DoTs |
 
 **Function Qualification:** F_dr_remove (命損 monopoly), F_dot (counter DoTs), F_truedmg (feeds debuff stacks)
@@ -1220,7 +1220,7 @@ Nine detailed books, each as a complete foundation: main skill + primary affix �
 | 5 | 【心魔惑言】 | 【咒书】 | debuff ×2 + strength +20% | 命損 −100% DR 8s; stacks | — | moderate |
 | 6 | 【奇能诡道】 | 【心魔惑言】 | +20% stack chance + debuff ×2 | 命損 −100% DR 8s; stacks | 逆转阴阳 at enlightenment | moderate |
 
-> F6 is the only source of 命損 (−100% DR, cross-灵書). S_cross dominates: every combo produces the same DR removal output. Differentiation is in S_same (debuff damage) and feed quality (debuff stacks for 【紫心真诀】elsewhere). 【心魔惑言】 appears in all top solutions because debuff_stack_increase ×2 doubles both reactive damage and stack output.
+> F6 is the only source of 命損 (−100% DR, cross-灵書). S_cross dominates: every combo produces the same DR removal output. Differentiation is in S_same (debuff damage) and feed quality (debuff stacks for 【索心真诀】elsewhere). 【心魔惑言】 appears in all top solutions because debuff_stack_increase ×2 doubles both reactive damage and stack output.
 
 ---
 
@@ -1405,7 +1405,7 @@ graph TD
     F6 -->|"命損 −100% DR"| F1
     F6 -->|"命損 −100% DR"| F3
     F6 -->|"命損 −100% DR"| F4
-    F6 -->|"debuff stacks"| DST["【紫心真诀】on any 灵書"]
+    F6 -->|"debuff stacks"| DST["【索心真诀】on any 灵書"]
     F7 -->|"+10% skill dmg taken 12s"| F1
     F7 -->|"+10% skill dmg taken 12s"| F3
     F7 -->|"+10% skill dmg taken 12s"| F4
@@ -1419,7 +1419,7 @@ graph TD
 | F5 `甲元仙符` | 【仙佑】 +142.8% ATK/DEF/HP | 48s (~8 slots) | ALL (universal buff) | ×2.428 damage multiplier (ATK zone) |
 | F5 `甲元仙符` | 天光虹露 +387.6% healing | 48s (~8 slots) | F9 (lifesteal), any with healing source | ×4.876 healing multiplier |
 | F6 `大罗幻诀` | 命損 −100% final DR | 8s (~1 slot) | ALL burst/exploit slots | ×(1/(1−DR)) — at 50% DR: ×2.0; at 70% DR: ×3.33 |
-| F6 `大罗幻诀` | Debuff stacks on enemy | 8s+ | Any 灵書 carrying 【紫心真诀】 | +2.1%maxHP/stack true dmg, max 21% (10 stacks) |
+| F6 `大罗幻诀` | Debuff stacks on enemy | 8s+ | Any 灵書 carrying 【索心真诀】 | +2.1%maxHP/stack true dmg, max 21% (10 stacks) |
 | F7 `无相魔劫咒` | +10% skill damage taken | 12s (~2 slots) | ALL damage slots | ×1.10 damage multiplier |
 | F2 `春黎剑阵` | 分身 DPS | 16s (~2.5 slots) | Not a direct feed — independent damage source | — (autonomous DPS) |
 | F8 `十方真魄` | HP loss (−10%) | permanent | Any 灵書 carrying 【怒血战意】 | +20% damage per cast (2%/1% × 10%) |
@@ -1433,7 +1433,7 @@ graph TD
 
 2. **命損 → burst.** F6's DR removal (−100%, 8s) enables a single high-damage slot to bypass all defenses. Must immediately precede the burst 灵書.
 
-3. **Debuff stacks → true damage.** F6's counter_debuffs accumulate on the enemy. A subsequent 灵書 carrying 【紫心真诀】 converts those stacks into true damage (bypasses all defenses).
+3. **Debuff stacks → true damage.** F6's counter_debuffs accumulate on the enemy. A subsequent 灵書 carrying 【索心真诀】 converts those stacks into true damage (bypasses all defenses).
 
 4. **HP loss → HP exploitation.** F8/F9's self-HP-cost creates loss that 【怒血战意】 reads on a later 灵書. The opponent's damage also contributes to this resource.
 
@@ -1456,7 +1456,7 @@ Chains with exactly **1 affix source**. The entire chain dies without this affix
 | `final_damage_bonus` | 【明王之路】(法修 school) | School forced, not book |
 | `on_shield_expire` | 【玉石俱焚】(`九重天凤诀`) | Book forced |
 | `on_buff_debuff_shield_trigger` | 【九雷真解】(`九天真雷诀`) | Book forced |
-| `per_debuff_stack_true_damage` | 【紫心真诀】(`惊蛰化龙`) | Book forced — only true damage |
+| `per_debuff_stack_true_damage` | 【索心真诀】(`惊蛰化龙`) | Book forced — only true damage |
 | `periodic_escalation` | `念剑诀` (main) | Foundation forced |
 | `untargetable_state` | `念剑诀` (main) | Foundation forced |
 | `periodic_cleanse` | `十方真魄` (primary) | Foundation forced |
@@ -1474,7 +1474,7 @@ Affixes that are the **only provider** of a critical effect type. Selecting the 
 | 【明王之路】 | `final_damage_bonus` | any 法修 book (school, not book) |
 | 【玉石俱焚】 | `on_shield_expire` | `九重天凤诀` |
 | 【九雷真解】 | `on_buff_debuff_shield_trigger` | `九天真雷诀` |
-| 【紫心真诀】 | `per_debuff_stack_true_damage` | `惊蛰化龙` |
+| 【索心真诀】 | `per_debuff_stack_true_damage` | `惊蛰化龙` |
 
 ### Competing Affixes
 

@@ -221,12 +221,12 @@ For each required function: consult §D Function Catalog for qualifying foundati
 
 | # | Foundation | Op1 | Op2 | S_same | S_cross | Notes |
 |:--|:-----------|:----|:----|:-------|:--------|:------|
-| 1 | F1 `千锋聚灵剑` | 【怒血战意】 | 【紫心真诀】 | +100% dmg at 50% HP | 21%maxHP true dmg | +stacks if F6 provides debuffs |
-| 2 | F9 `疾风九变` | 【怒血战意】 | 【紫心真诀】 | +100% dmg at 50% HP | 极怒 4s; 21%maxHP true dmg | +stacks from F6; +HP cost resource |
+| 1 | F1 `千锋聚灵剑` | 【怒血战意】 | 【索心真诀】 | +100% dmg at 50% HP | 21%maxHP true dmg | +stacks if F6 provides debuffs |
+| 2 | F9 `疾风九变` | 【怒血战意】 | 【索心真诀】 | +100% dmg at 50% HP | 极怒 4s; 21%maxHP true dmg | +stacks from F6; +HP cost resource |
 | 3 | F9 `疾风九变` | 【怒血战意】 | 【长生天则】 | +100% dmg + healing +50% | 极怒 4s; lifesteal ×4.876 under 仙佑 | sustain loop |
 | 4 | F1 `千锋聚灵剑` | 【怒血战意】 | 【心火淬锋】 | +100% + +50% esc. | — | no cross-slot feed |
 
-> Against O1 (strong opponent), HP loss accumulates naturally → 【怒血战意】(+2%/1% HP lost) is strong. 【紫心真诀】adds 21%maxHP true damage from F6's debuff stacks (cross-灵書 feed).
+> Against O1 (strong opponent), HP loss accumulates naturally → 【怒血战意】(+2%/1% HP lost) is strong. 【索心真诀】adds 21%maxHP true damage from F6's debuff stacks (cross-灵書 feed).
 
 ### F_antiheal — Suppress enemy healing
 
@@ -330,12 +330,12 @@ From §D: F9 has `self_hp_cost` (−10% current HP) — creates HP loss resource
 
 | Candidate | Op1 | Op2 | S_same | S_cross | Feed from F6 |
 |:----------|:----|:----|:-------|:--------|:-------------|
-| F9 + 【怒血战意】+ 【紫心真诀】 | HP exploit | true damage | +100% at 50% HP | 极怒 4s; 21%maxHP true dmg | stacks from 命損 triggers |
+| F9 + 【怒血战意】+ 【索心真诀】 | HP exploit | true damage | +100% at 50% HP | 极怒 4s; 21%maxHP true dmg | stacks from 命損 triggers |
 | F9 + 【怒血战意】+ 【长生天则】 | HP exploit | healing amp | +100% at 50% HP | 极怒 4s; lifesteal ×4.876 | — |
 
-> 【紫心真诀】 (21%maxHP true damage, bypasses all defenses) outperforms 【长生天则】 (+50% healing) because F9's inherent lifesteal already reaches 400% under 仙佑 天光虹露 — additional healing amp has diminishing returns. True damage is unreducible against O1's 50%+ DR.
+> 【索心真诀】 (21%maxHP true damage, bypasses all defenses) outperforms 【长生天则】 (+50% healing) because F9's inherent lifesteal already reaches 400% under 仙佑 天光虹露 — additional healing amp has diminishing returns. True damage is unreducible against O1's 50%+ DR.
 
-**Assign F_hp_exploit → F9 `疾风九变` + 【怒血战意】+ 【紫心真诀】.**
+**Assign F_hp_exploit → F9 `疾风九变` + 【怒血战意】+ 【索心真诀】.**
 
 **F6 aux selection.** Available affixes after uniqueness:
 
@@ -394,7 +394,7 @@ Combined on F2: 22,305% × 1.36 (神威冲云) × 1.50 (明王之路) × 1/(1−
 | 【心火淬锋】 | 剑修 school | F8 |
 | 【天哀灵涸】 | `千锋聚灵剑` | F8 |
 | 【怒血战意】 | `玄煞灵影诀` | F9 |
-| 【紫心真诀】 | `惊蛰化龙` | F9 |
+| 【索心真诀】 | `惊蛰化龙` | F9 |
 
 **Named books (15, all unique):** 6 foundations (甲元仙符, 春黎剑阵, 大罗幻诀, 皓月剑诀, 十方真魄, 疾风九变) + 9 exclusive carriers (浩然星灵诀, 念剑诀, 通天剑诀, 天轮魔经, 九天真雷诀, 解体化形, 千锋聚灵剑, 玄煞灵影诀, 惊蛰化龙) + 3 school-type books (剑修 ×2, 法修 ×1). ✓
 
@@ -453,7 +453,7 @@ Topological sort with duration constraints:
 | 3 | F_dr_remove | `大罗幻诀` (F6) | 【心魔惑言】 | 【九雷真解】 | debuff_stack ×2 + state_trigger 152.4%/atk → 命損 −100% DR 8s |
 | 4 | F_burst | `皓月剑诀` (F3) | 【心逐神随】 | 【灵犀九重】 | probability_multiplier ×3.40 + 会心 ×2.97 → ×10.95 on 240%maxHP |
 | 5 | F_survive + F_antiheal | `十方真魄` (F8) | 【心火淬锋】 | 【天哀灵涸】 | per_hit_escalation +50% + antiheal −31% undispellable 8s; cleanse 1/25s |
-| 6 | F_hp_exploit + F_truedmg | `疾风九变` (F9) | 【怒血战意】 | 【紫心真诀】 | per_self_lost_hp +2%/1% + true_damage 21%maxHP; 极怒 reflect; lifesteal ×4.876 |
+| 6 | F_hp_exploit + F_truedmg | `疾风九变` (F9) | 【怒血战意】 | 【索心真诀】 | per_self_lost_hp +2%/1% + true_damage 21%maxHP; 极怒 reflect; lifesteal ×4.876 |
 
 ### Cross-灵書 Temporal Map
 
@@ -472,7 +472,7 @@ Topological sort with duration constraints:
 | 天哀灵涸 −31% healing (undispellable) | 5 (F8) | ~28s | 8s | Slots 5–6 |
 | Periodic cleanse | 5 (F8) | ~28s | 1/25s | Slots 5–6 |
 | 极怒 reflect 50% + 15% lost HP | 6 (F9) | ~35s | 4s | Slot 6 |
-| 紫心真诀 21%maxHP true damage | 6 (F9) | ~35s | reads stacks | Slot 6 |
+| 索心真诀 21%maxHP true damage | 6 (F9) | ~35s | reads stacks | Slot 6 |
 | 怒血战意 HP exploit | 6 (F9) | ~35s | reads HP loss | Slot 6 |
 
 ---

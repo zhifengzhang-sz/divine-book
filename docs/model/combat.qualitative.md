@@ -380,14 +380,14 @@ Value depends on combat state:
 | Affix | Pool | Source | Mechanic | Value |
 |:------|:-----|:-------|:---------|:------|
 | **【追神真诀】** | Exclusive | 皓月剑诀 | per_enemy_lost_hp (DoT trigger) | +26.5% lost HP; E10: +50%maxHP, +300% |
-| **【紫心真诀】** | Exclusive | 惊蛰化龙 | per_debuff_stack_true_damage | 2.1%maxHP/stack (max 21% at 10) |
+| **【索心真诀】** | Exclusive | 惊蛰化龙 | per_debuff_stack_true_damage | 2.1%maxHP/stack (max 21% at 10) |
 | **【怒血战意】** | Exclusive | 玄煞灵影诀 | per_self_lost_hp | +2%/1% own HP lost |
 | **【贪狼吞星】** | School | Body | per_enemy_lost_hp | +1%/1% enemy HP lost |
 | **【意坠深渊】** | School | Body | min_lost_hp + damage | Min 11% lost HP calc, +50% |
 | **【吞海】** | Universal | Any | per_enemy_lost_hp | +0.4%/1% enemy HP lost |
 | **【战意】** | Universal | Any | per_self_lost_hp | +0.5%/1% own HP lost |
 
-**Selection:** Opponent-lost-HP affixes (追神真诀, 贪狼吞星, 吞海) scale with combat progress — strongest in exploit/cleanup. Self-lost-HP affixes (怒血战意, 战意) are risk-reward — strongest when own HP is low. 紫心真诀 requires debuff accumulation from prior slots.
+**Selection:** Opponent-lost-HP affixes (追神真诀, 贪狼吞星, 吞海) scale with combat progress — strongest in exploit/cleanup. Self-lost-HP affixes (怒血战意, 战意) are risk-reward — strongest when own HP is low. 索心真诀 requires debuff accumulation from prior slots.
 
 ### 5.6 $C_{12}$ Debuffs
 
@@ -482,7 +482,7 @@ Per-stack damage ($C_{13}$ subcategory):
 
 | Affix | Pool | Source | Value |
 |:------|:-----|:-------|:------|
-| **【紫心真诀】** | Exclusive | 惊蛰化龙 | Per debuff stack: 2.1%maxHP true damage (max 21%) |
+| **【索心真诀】** | Exclusive | 惊蛰化龙 | Per debuff stack: 2.1%maxHP true damage (max 21%) |
 | **【九雷真解】** | Exclusive | 九天真雷诀 | Per buff/debuff/shield trigger: 50.8% skill damage |
 
 ---
@@ -507,7 +507,7 @@ Given 6 empty slots, construct a book set:
 | Self-damage cost (十方真魄 HP cost) | $C_7$ lifesteal or $C_6$ min_lost_hp (意坠深渊) |
 | Duration too short (仙佑 12s) | $C_9$ buff_duration (仙露护元, 业焰) |
 | DR penalty (无极剑阵 +350%) | $C_4$ ignore_DR (命损) or $C_{12}$ (神威冲云) |
-| Requires debuff stacks (紫心真诀) | $C_{12}$ debuff-applying skill in prior slot |
+| Requires debuff stacks (索心真诀) | $C_{12}$ debuff-applying skill in prior slot |
 
 **Step 5 — Select secondary affix.** This determines the second source book. Check conflict with other slots.
 

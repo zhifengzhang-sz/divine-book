@@ -367,7 +367,7 @@ Some effect types connect two otherwise separate chains. These are the most valu
 | Opponent Attack → Self Damage | Opponent offense | Self damage output | `counter_buff` | 极怒 (疾风九变 main + 星猿复灵 primary: reflect 50% received + 15% lost HP) |
 | Opponent Attack → Debuff | Opponent offense | Opponent debuff stack | `counter_debuff` | 罗天魔咒 (大罗幻诀 main: 30% per attack → DoT stacks) |
 | Self Buff Count → Damage | Buff accumulation | Damage scaling | `per_buff_stack_damage` | 【真极穿空】(5.5%/5 stacks) |
-| Opponent Debuff Count → Damage | Debuff accumulation | Damage scaling | `per_debuff_stack_damage` | 【心魔惑言】(5.5%/5 stacks), 【紫心真诀】(2.1%/stack true) |
+| Opponent Debuff Count → Damage | Debuff accumulation | Damage scaling | `per_debuff_stack_damage` | 【心魔惑言】(5.5%/5 stacks), 【索心真诀】(2.1%/stack true) |
 | Self Buff → Opponent Debuff | Damage-increase buff application | Enemy DR reduction | `conditional_debuff` (奇能诡道) | 【奇能诡道】(逆转阴阳: -0.6× DR) |
 | HP Loss → Damage | Self HP lost | Damage scaling | `per_self_lost_hp` | 【怒血战意】(2%/%), 【战意】(0.5%/%) |
 | Self Damage Taken → HP Loss | Incoming damage amplification | HP loss resource | `self_damage_taken_increase` | 【破釜沉舟】(+50% damage taken) |

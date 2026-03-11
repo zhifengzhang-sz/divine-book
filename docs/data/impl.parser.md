@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-25
-dates of modification: [2026-2-25]
+dates of modification: [2026-2-25, 2026-3-9]
 ---
 
 <style>
@@ -118,7 +118,7 @@ flowchart LR
 
 **Output**: `data/yaml/effects.yaml` — structured YAML grouping all effects by book, section, and affix. Every effect row in the output has been validated against the Zod schema.
 
-**Invocation**: `bun lib/parse.ts` (aliased as `bun run parse`).
+**Invocation**: `bun app/parse.ts` (aliased as `bun run parse`).
 
 ### How keyword.map.md gets used
 
@@ -192,7 +192,7 @@ For each table encountered, the parser:
 books:
   <book_name>:
     school: <School>
-    skill:                    # array of EffectRow (only for 9 detailed books)
+    skill:                    # array of EffectRow
       - { type: ..., ... }
     primary_affix:            # present if the book has detailed data
       name: <affix_name>
@@ -414,7 +414,7 @@ These tests parse the real `normalized.data.md` file and verify structural prope
 | 16 universal affixes | All universal affixes are present | Detects missing affix rows or grouping errors |
 | 4 school groups | Sword, Spell, Demon, Body in order | Detects missing or renamed school headings |
 | 17 school affixes total | 4 + 4 + 4 + 5 school affixes | Detects missing school affix rows |
-| 9 books have skill data | Exactly 9 books have `skill` arrays | Detects false positives (parser extracting skill data from exclusive-only books) or false negatives |
+| 28 books have skill data | All 28 books have `skill` arrays | Detects false positives or false negatives in skill section parsing |
 | all 28 books have exclusive_affix | Every book has at least an exclusive affix | Detects books where the exclusive affix heading wasn't matched |
 | school assignment | 千锋聚灵剑→Sword, 甲元仙符→Spell, 大罗幻诀→Demon, 十方真魄→Body | Spot-check that heading parsing extracts the school correctly |
 | multi-tier data_state | 千锋聚灵剑 skill rows have `enlightenment=0`, `[enlightenment=1, fusion=20]`, `[enlightenment=10, fusion=51]` at expected indices | Verifies data_state parsing across single and array forms |
@@ -440,3 +440,4 @@ Both gates must pass clean (zero errors, zero warnings) before any change to `li
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-02-25 | Initial implementation document |
+| 1.1 | 2026-03-09 | Fixed invocation path (lib/ → app/). Updated book counts: 9 → 28 detailed books with skill data. |

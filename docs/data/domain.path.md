@@ -246,11 +246,11 @@ Nodes: `per_debuff_stack_true_damage` — needs debuff stacks on enemy
 
 | # | Book Chain | Connection |
 |:---|:---|:---|
-| 1 | `惊蛰化龙`(【紫心真诀】) + `千锋聚灵剑`(【天哀灵涸】) | True damage + undispellable anti-heal debuff |
-| 2 | `惊蛰化龙`(【紫心真诀】) + `甲元仙符`(【天倾灵枯】) | True damage + 20s anti-heal debuff |
-| 3 | `惊蛰化龙`(【紫心真诀】) + `大罗幻诀`(main: 罗天魔咒) | True damage + counter debuff stacks |
-| 4 | `惊蛰化龙`(【紫心真诀】) + `天轮魔经`(【心魔惑言】) | True damage + debuff_stack_increase +100% |
-| 5 | `惊蛰化龙`(【紫心真诀】) + `any skill book`(【咒书】) | True damage + debuff_strength amplifier |
+| 1 | `惊蛰化龙`(【索心真诀】) + `千锋聚灵剑`(【天哀灵涸】) | True damage + undispellable anti-heal debuff |
+| 2 | `惊蛰化龙`(【索心真诀】) + `甲元仙符`(【天倾灵枯】) | True damage + 20s anti-heal debuff |
+| 3 | `惊蛰化龙`(【索心真诀】) + `大罗幻诀`(main: 罗天魔咒) | True damage + counter debuff stacks |
+| 4 | `惊蛰化龙`(【索心真诀】) + `天轮魔经`(【心魔惑言】) | True damage + debuff_stack_increase +100% |
+| 5 | `惊蛰化龙`(【索心真诀】) + `any skill book`(【咒书】) | True damage + debuff_strength amplifier |
 
 ## II. Bridge Paths (resource conversion)
 
@@ -421,7 +421,7 @@ Value = main_output × 1.36 × $\frac{1}{1 - \text{DR}}$. Scales with opponent D
 | A4 | `final_damage_bonus` | Final | `any 法修 book`(【明王之路】): +50% |
 | A5 | `crit_damage_bonus` | Crit | `any 剑修 book`(【破碎无双】): +15% |
 | A6 | `conditional_damage` | Conditional | See [A6 expanded](#a6-conditional-damage) |
-| A7 | `conditional_buff` | Conditional (self-state) | `皓月剑诀`(【追神真诀】): enlightenment=10 → +50% HP dmg, +300% dmg<br>`惊蛰化龙`(【紫心真诀】): enlightenment → +50% lost_hp, +75% dmg |
+| A7 | `conditional_buff` | Conditional (self-state) | `皓月剑诀`(【追神真诀】): enlightenment=10 → +50% HP dmg, +300% dmg<br>`惊蛰化龙`(【索心真诀】): enlightenment → +50% lost_hp, +75% dmg |
 | A8 | `per_hit_escalation` | Per-hit | `any skill book`(【破竹】): +1%/hit max 10%<br>`any 剑修 book`(【心火淬锋】): +5%/hit max 50%<br>`千锋聚灵剑`(primary 惊神剑光): +42.5%/hit skill_bonus |
 | A9 | `periodic_escalation` | Per-N-hits | `念剑诀`(main: ×1.4 every 2 hits, max 10 stacks) |
 | A10 | `conditional_crit_rate` | Crit rate | `any skill book`(【怒目】): +30% crit rate when target HP < 30% |
@@ -618,7 +618,7 @@ Paths with exactly **1 affix source**. The entire chain dies without this affix.
 | A9 `periodic_escalation` | `念剑诀`(main) | This escalation type is locked to one book's main skill |
 | A10 `conditional_crit_rate` | `any skill book`(【怒目】) | Only source — but universal, so always accessible |
 | O13 State-trigger damage | `九天真雷诀`(【九雷真解】) | State-trigger damage requires this specific book |
-| O14 True damage (stacks) | `惊蛰化龙`(【紫心真诀】) | The only true-damage path in the game |
+| O14 True damage (stacks) | `惊蛰化龙`(【索心真诀】) | The only true-damage path in the game |
 | S4 Conditional heal buff | `天剎真魔`(【魔骨明心】) | Debuff-gated healing has one source |
 | V2 Untargetable | `念剑诀`(main) | Invulnerability locked to one book |
 | V4 Cleanse | `十方真魄`(primary 星猿弃天) | CC cleanse locked to one book |
@@ -634,7 +634,7 @@ Affixes that are the **only provider** of a critical graph node. If you want the
 | 【明王之路】 | `final_damage_bonus` | `any 法修 book` (school forced, not book) |
 | 【玉石俱焚】 | `on_shield_expire` | `九重天凤诀` |
 | 【九雷真解】 | `on_buff_debuff_shield_trigger` | `九天真雷诀` |
-| 【紫心真诀】 | `per_debuff_stack_true_damage` | `惊蛰化龙` |
+| 【索心真诀】 | `per_debuff_stack_true_damage` | `惊蛰化龙` |
 
 ### Rich paths
 
