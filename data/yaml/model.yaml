@@ -59,10 +59,6 @@ effects:
       - type: base_attack
         factors:
           D_base: 22305
-      - type: self_buff
-        temporal:
-          duration: 4
-          coverage_type: duration_based
       - type: shield_destroy_damage
         factors:
           D_ortho: 12
@@ -109,6 +105,19 @@ effects:
             duration: 0
             coverage_type: permanent
   通天剑诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: crit_damage_bonus
+      - type: self_damage_taken_increase
+        factors:
+          DR_A: -50
+    primary_affix:
+      焚心剑芒:
+        - type: per_enemy_lost_hp
+          factors:
+            M_dmg: 2
     exclusive_affix:
       神威冲云:
         - type: ignore_damage_reduction
@@ -116,15 +125,34 @@ effects:
           factors:
             M_dmg: 36
   新-青元剑诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: debuff
+        temporal:
+          duration: 8
+          coverage_type: duration_based
+    primary_affix:
+      追命剑阵:
+        - type: debuff
+          temporal:
+            duration: 16
+            coverage_type: duration_based
     exclusive_affix:
       天威煌煌:
         - type: next_skill_buff
           factors:
-            M_skill: 50
+            M_skill: 128
           temporal:
             duration: 0
             coverage_type: next_skill
   无极御剑诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: percent_current_hp_damage
     exclusive_affix:
       无极剑阵:
         - type: skill_damage_increase
@@ -167,14 +195,41 @@ effects:
             duration: 0
             coverage_type: permanent
   浩然星灵诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_buff
+        temporal:
+          duration: 20
+          coverage_type: duration_based
+    primary_affix:
+      天鹤祈瑞:
+        - type: conditional_damage
+          factors:
+            M_dmg: 100
     exclusive_affix:
       龙象护身:
         - type: buff_strength
-          modifier_value: 104
+          modifier_value: 300
           temporal:
             duration: 0
             coverage_type: permanent
   元磁神光:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_buff
+        temporal:
+          duration: 12
+          coverage_type: duration_based
+    primary_affix:
+      天狼战意:
+        - type: self_buff_extra
+          temporal:
+            duration: 0
+            coverage_type: permanent
     exclusive_affix:
       真极穿空:
         - type: buff_stack_increase
@@ -184,6 +239,15 @@ effects:
             coverage_type: permanent
         - type: per_buff_stack_damage
   周天星元:
+    skill:
+      - type: self_heal
+      - type: self_heal
+      - type: base_attack
+        factors:
+          D_base: 1500
+    primary_affix:
+      天书灵盾:
+        - type: shield
     exclusive_affix:
       奇能诡道:
         - type: debuff_stack_chance
@@ -198,12 +262,37 @@ effects:
             duration: 0
             coverage_type: permanent
   星元化岳:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: debuff
+        temporal:
+          duration: 8
+          coverage_type: duration_based
+    primary_affix:
+      天龙轮转:
+        - type: lifesteal
+          factors:
+            H_A: 75
     exclusive_affix:
       仙灵汲元:
         - type: lifesteal
           factors:
             H_A: 55
   玉书天戈符:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: percent_max_hp_damage
+        factors:
+          D_ortho: 21
+    primary_affix:
+      天灵怒威:
+        - type: conditional_damage
+          factors:
+            M_dmg: 3
     exclusive_affix:
       天人合一:
         - type: enlightenment_bonus
@@ -214,6 +303,14 @@ effects:
           factors:
             M_dmg: 5
   九天真雷诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_cleanse
+      - type: conditional_damage
+        factors:
+          M_dmg: 4
     exclusive_affix:
       九雷真解:
         - type: on_buff_debuff_shield_trigger
@@ -278,12 +375,50 @@ effects:
           factors:
             M_dmg: 105
   天魔降临咒:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_buff
+        factors:
+          DR_A: 5.2
+        temporal:
+          duration: permanent
+          coverage_type: permanent
+      - type: debuff
+        factors:
+          M_final: 5.25
+        temporal:
+          duration: permanent
+          coverage_type: permanent
+      - type: per_debuff_stack_damage
+    primary_affix:
+      魔念生息:
+        - type: dot
+          temporal:
+            duration: permanent
+            coverage_type: permanent
+        - type: per_debuff_stack_damage
     exclusive_affix:
       引灵摘魂:
         - type: conditional_damage
           factors:
             M_dmg: 104
   天轮魔经:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: buff_steal
+      - type: percent_max_hp_damage
+        factors:
+          D_ortho: 3
+    primary_affix:
+      魔意震慑:
+        - type: debuff
+          temporal:
+            duration: 12
+            coverage_type: duration_based
     exclusive_affix:
       心魔惑言:
         - type: debuff_stack_increase
@@ -293,6 +428,29 @@ effects:
             coverage_type: permanent
         - type: per_debuff_stack_damage
   天剎真魔:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: counter_buff
+        temporal:
+          duration: permanent
+          coverage_type: reactive
+    primary_affix:
+      魔妄吞天:
+        - type: counter_debuff
+          temporal:
+            duration: 15
+            coverage_type: reactive
+        - type: crit_rate_reduction
+        - type: crit_damage_reduction
+        - type: attack_reduction
+        - type: debuff
+          factors:
+            M_final: 23
+          temporal:
+            duration: 15
+            coverage_type: duration_based
     exclusive_affix:
       魔骨明心:
         - type: conditional_heal_buff
@@ -306,12 +464,36 @@ effects:
             duration: 1
             coverage_type: duration_based
   解体化形:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: per_debuff_stack_damage
+    primary_affix:
+      魔神降世:
+        - type: attack_bonus
+          factors:
+            S_coeff: 13
     exclusive_affix:
       心逐神随:
         - type: probability_multiplier
           factors:
             M_synchro: 3.52
   焚圣真魔咒:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: dot
+        temporal:
+          duration: 8
+          coverage_type: duration_based
+    primary_affix:
+      魔心焚尽:
+        - type: dot
+          temporal:
+            duration: 8
+            coverage_type: duration_based
     exclusive_affix:
       天魔真解:
         - type: dot_frequency_increase
@@ -380,12 +562,43 @@ effects:
             duration: 0
             coverage_type: permanent
   玄煞灵影诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 18255
+      - type: self_hp_cost
+        factors:
+          D_ortho: -4
+      - type: self_lost_hp_damage
+        factors:
+          D_ortho: 11
+    primary_affix:
+      星猿之怒:
+        - type: self_lost_hp_damage
+          factors:
+            D_ortho: 12
     exclusive_affix:
       怒血战意:
         - type: per_self_lost_hp
           factors:
             M_dmg: 2
   惊蛰化龙:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_lost_hp_damage
+        factors:
+          D_ortho: 10
+      - type: self_buff
+        temporal:
+          duration: 4
+          coverage_type: duration_based
+    primary_affix:
+      星猿幻杀:
+        - type: percent_max_hp_damage
+          factors:
+            D_ortho: 10
     exclusive_affix:
       索心真诀:
         - type: per_debuff_stack_true_damage
@@ -394,18 +607,70 @@ effects:
             M_dmg: 75
             D_ortho: 50
   煞影千幻:
+    skill:
+      - type: self_hp_cost
+        factors:
+          D_ortho: -20
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_lost_hp_damage
+        factors:
+          D_ortho: 10
+      - type: shield
+      - type: debuff
+        factors:
+          M_final: 8
+        temporal:
+          duration: 4
+          coverage_type: duration_based
+    primary_affix:
+      星猿援护:
+        - type: shield_strength
+          factors:
+            S_A: 21.5
     exclusive_affix:
       乘胜逐北:
         - type: conditional_damage
           factors:
             M_dmg: 100
   九重天凤诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_lost_hp_damage
+        factors:
+          D_ortho: 25
+      - type: self_hp_cost
+        factors:
+          D_ortho: -5
+      - type: self_buff
+        factors:
+          S_coeff: 2.5
+        temporal:
+          duration: 4
+          coverage_type: duration_based
+    primary_affix:
+      星猿永生:
+        - type: periodic_dispel
+        - type: self_hp_floor
     exclusive_affix:
       玉石俱焚:
         - type: on_shield_expire
           factors:
             D_ortho: 100
   天煞破虚诀:
+    skill:
+      - type: base_attack
+        factors:
+          D_base: 1500
+      - type: self_hp_cost
+        factors:
+          D_ortho: -20
+      - type: self_lost_hp_damage
+        factors:
+          D_ortho: 10
     exclusive_affix:
       天煞破虚:
         - type: periodic_dispel
@@ -464,7 +729,7 @@ universal_affixes:
   战意:
     - type: per_self_lost_hp
       factors:
-        M_dmg: 0.5
+        M_dmg: 2.95
   斩岳:
     - type: flat_extra_damage
       factors:
@@ -498,7 +763,7 @@ school_affixes:
     摧云折月:
       - type: attack_bonus
         factors:
-          S_coeff: 55
+          S_coeff: 300
     灵犀九重:
       - type: guaranteed_resonance
         factors:

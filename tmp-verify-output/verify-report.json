@@ -15,17 +15,20 @@
     "千锋聚灵剑",
     "周天星元",
     "大罗幻诀",
+    "天刹真魔",
     "天剎真魔",
     "天煞破虚诀",
     "天轮魔经",
     "天魔降临咒",
     "念剑诀",
     "惊蛰化龙",
+    "惊蜇化龙",
     "新-青元剑诀",
     "无极御剑诀",
     "无相魔劫咒",
     "星元化岳",
     "春黎剑阵",
+    "梵圣真魔咒",
     "浩然星灵诀",
     "焚圣真魔咒",
     "煞影千幻",
@@ -50,9 +53,13 @@
     "天煞破虚诀",
     "天轮魔经"
   ],
-  "missingBooks": [],
-  "rawTokensCount": 115,
-  "rawTokensMissingInKeywordCount": 83,
+  "missingBooks": [
+    "天刹真魔",
+    "惊蜇化龙",
+    "梵圣真魔咒"
+  ],
+  "rawTokensCount": 118,
+  "rawTokensMissingInKeywordCount": 86,
   "rawTokensMissingSample": [
     "万妖玄魂",
     "专属",
@@ -86,6 +93,7 @@
     "咒言",
     "大罗幻诀",
     "大罗真魔",
+    "天刹真魔",
     "天刹降魔",
     "天剎真魔",
     "天剎降魔",
@@ -101,18 +109,22 @@
     "怒气",
     "惊蛰化龙",
     "惊蛰疾风",
-    "新-青元剑诀",
-    "无极御剑诀",
-    "无相魔劫咒"
+    "惊蜇化龙",
+    "新-青元剑诀"
   ],
-  "normalizedEffectTypesCount": 99,
-  "effectTypesMissingInKeywordCount": 36,
+  "normalizedEffectTypesCount": 111,
+  "effectTypesMissingInKeywordCount": 41,
   "effectTypesMissingSample": [
     "1.0",
     "1.1",
     "1.3",
     "Version",
+    "buff_steal",
     "effect_type",
+    "percent_current_hp_damage",
+    "self_cleanse",
+    "self_heal",
+    "self_hp_floor",
     "【业焰】",
     "【击瑕】",
     "【吞海】",
@@ -146,13 +158,13 @@
     "【鬼印】"
   ],
   "parser": {
-    "code": 0,
-    "stdout": "Wrote /home/zzhang/dev/games/divine-book/tmp-verify-output/effects.yaml\nWrote /home/zzhang/dev/games/divine-book/tmp-verify-output/groups.yaml\nAll rows validated successfully.\n",
-    "stderr": ""
+    "code": 1,
+    "stdout": "Wrote /home/zzhang/dev/games/divine-book/tmp-verify-output/effects.yaml\nWrote /home/zzhang/dev/games/divine-book/tmp-verify-output/groups.yaml\n30 validation warning(s)\n",
+    "stderr": "WARN [通天剑诀/primary_affix] type=per_enemy_lost_hp\n  per_percent: Required\nWARN [新-青元剑诀/skill] type=debuff\n  target: Invalid enum value. Expected 'healing_received' | 'damage_reduction' | 'final_damage_reduction', received 'next_skill_cooldown'\n  duration: Required\nWARN [新-青元剑诀/primary_affix] type=debuff\n  target: Invalid enum value. Expected 'healing_received' | 'damage_reduction' | 'final_damage_reduction', received 'skill_damage'\nWARN [无极御剑诀/skill] type=percent_current_hp_damage\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [浩然星灵诀/primary_affix] type=conditional_damage\n  condition: Invalid input\nWARN [周天星元/skill] type=self_heal\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [周天星元/skill] type=flat_extra_damage\n  value: Expected number, received string\nWARN [周天星元/skill] type=summon\n  inherit_stats: Required\n  damage_taken_multiplier: Required\nWARN [周天星元/primary_affix] type=summon_buff\n  damage_taken_reduction_to: Required\n  damage_increase: Required\nWARN [星元化岳/skill] type=debuff\n  target: Required\n  value: Required\nWARN [玉书天戈符/skill] type=percent_max_hp_damage\n  cap_vs_monster: Required\nWARN [九天真雷诀/skill] type=self_cleanse\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [九天真雷诀/skill] type=conditional_damage\n  value: Required\nWARN [天魔降临咒/skill] type=debuff\n  target: Required\n  value: Required\n  duration: Expected number, received string\nWARN [天魔降临咒/primary_affix] type=dot\n  duration: Required\nWARN [天魔降临咒/primary_affix] type=debuff\n  target: Required\n  value: Required\n  duration: Required\nWARN [天轮魔经/skill] type=buff_steal\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [天轮魔经/skill] type=percent_max_hp_damage\n  cap_vs_monster: Required\nWARN [天轮魔经/primary_affix] type=debuff\n  target: Invalid enum value. Expected 'healing_received' | 'damage_reduction' | 'final_damage_reduction', received 'attack'\nWARN [天剎真魔/skill] type=counter_buff\n  duration: Expected number, received string\nWARN [天剎真魔/primary_affix] type=cross_slot_debuff\n  target: Required\n  value: Required\nWARN [解体化形/skill] type=per_debuff_stack_damage\n  max: Required\nWARN [玄煞灵影诀/skill] type=self_buff\n  duration: Expected number, received string\nWARN [惊蛰化龙/skill] type=self_hp_cost\n  value: Expected number, received string\nWARN [惊蛰化龙/primary_affix] type=debuff\n  target: Required\n  value: Required\n  duration: Required\nWARN [煞影千幻/skill] type=shield\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [煞影千幻/primary_affix] type=self_hp_cost\n  value: Required\nWARN [九重天凤诀/primary_affix] type=periodic_dispel\n  interval: Required\n  duration: Required\n  damage_percent_of_skill: Required\n  no_buff_double: Required\nWARN [九重天凤诀/primary_affix] type=self_hp_floor\n  type: Invalid discriminator value. Expected 'fusion_flat_damage' | 'mastery_extra_damage' | 'enlightenment_damage' | 'cooldown' | 'base_attack' | 'percent_max_hp_damage' | 'shield_destroy_damage' | 'attack_bonus' | 'damage_increase' | 'skill_damage_increase' | 'enemy_skill_damage_reduction' | 'final_damage_bonus' | 'crit_damage_bonus' | 'technique_damage_increase' | 'flat_extra_damage' | 'guaranteed_resonance' | 'probability_multiplier' | 'conditional_crit' | 'conditional_crit_rate' | 'conditional_damage' | 'conditional_buff' | 'probability_to_certain' | 'ignore_damage_reduction' | 'per_hit_escalation' | 'periodic_escalation' | 'per_self_lost_hp' | 'per_enemy_lost_hp' | 'min_lost_hp_threshold' | 'self_hp_cost' | 'self_lost_hp_damage' | 'self_damage_taken_increase' | 'lifesteal' | 'healing_to_damage' | 'healing_increase' | 'self_damage_reduction_during_cast' | 'shield_strength' | 'on_shield_expire' | 'damage_to_shield' | 'buff_strength' | 'debuff_strength' | 'buff_duration' | 'all_state_duration' | 'buff_stack_increase' | 'debuff_stack_increase' | 'debuff_stack_chance' | 'dot' | 'shield_destroy_dot' | 'dot_extra_per_tick' | 'dot_damage_increase' | 'dot_frequency_increase' | 'extended_dot' | 'on_dispel' | 'self_buff' | 'self_buff_extend' | 'self_buff_extra' | 'counter_buff' | 'next_skill_buff' | 'enlightenment_bonus' | 'debuff' | 'conditional_debuff' | 'cross_slot_debuff' | 'counter_debuff' | 'counter_debuff_upgrade' | 'summon' | 'summon_buff' | 'untargetable_state' | 'periodic_dispel' | 'periodic_cleanse' | 'delayed_burst' | 'delayed_burst_increase' | 'random_buff' | 'random_debuff' | 'attack_reduction' | 'crit_rate_reduction' | 'crit_damage_reduction' | 'per_buff_stack_damage' | 'per_debuff_stack_damage' | 'per_debuff_stack_true_damage' | 'on_buff_debuff_shield_trigger' | 'conditional_heal_buff'\nWARN [天煞破虚诀/skill] type=self_buff\n  duration: Required\n"
   },
   "effectsYamlSha": {
-    "current": "203589438db2c52abc854be1b106c7a706da0e5ae0a849add5fbfb36a0e964aa",
-    "tmp": "87c8f8f05d38302c5e7da64bddbe3ff783c2d3e07236d79dc8136911d7e32cac"
+    "current": "2c1e7342cb818c9cfe401eed4f2c3eb570ac0f9648bc91e99e07b6d0a07dd9ee",
+    "tmp": "13b256f0d8edc2bdcf959c858a719791f0ff9104b22c102bfd8ac773c53cf67c"
   },
   "groupsYamlSha": {
     "current": "74a036f72c38a5f52b4053fb04c29e604e88f1ede9455113139b4f577dbae6d8",

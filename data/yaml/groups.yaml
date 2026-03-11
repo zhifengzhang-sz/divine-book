@@ -1,5 +1,5 @@
 # Effect groups — derived from TypeScript registry
-# Do not edit manually. Regenerate with: bun app/generate.ts
+# Do not edit manually. Regenerate with: bun app/parse.ts
 groups:
   - id: shared_mechanics
     section: §0
@@ -67,11 +67,13 @@ groups:
       - min_lost_hp_threshold
       - self_hp_cost
       - self_lost_hp_damage
+      - percent_current_hp_damage
       - self_damage_taken_increase
   - id: healing_and_survival
     section: §7
     label: Healing and Survival
     types:
+      - self_heal
       - lifesteal
       - healing_to_damage
       - healing_increase
@@ -80,6 +82,7 @@ groups:
     section: §8
     label: Shield System
     types:
+      - shield
       - shield_strength
       - on_shield_expire
       - damage_to_shield
@@ -130,6 +133,9 @@ groups:
     types:
       - summon
       - summon_buff
+      - buff_steal
+      - self_cleanse
+      - self_hp_floor
       - untargetable_state
       - periodic_dispel
       - periodic_cleanse
