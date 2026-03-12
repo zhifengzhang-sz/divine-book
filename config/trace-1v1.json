@@ -1,0 +1,30 @@
+{
+  "t_gap": 6,
+  "progression": { "enlightenment": 10, "fusion": 51 },
+  "formulas": {
+    "dr_constant": 1e6,
+    "sp_shield_ratio": 0
+  },
+  "player": {
+    "entity": {
+      "hp": 1e8,
+      "atk": 1000,
+      "sp": 0,
+      "def": 9e5
+    },
+    "books": [
+      { "slot": 1, "platform": "千锋聚灵剑", "op1": "吞海", "op2": "通明" }
+    ]
+  },
+  "opponent": {
+    "entity": {
+      "hp": 1e8,
+      "atk": 1000,
+      "sp": 0,
+      "def": 9e5
+    },
+    "books": [
+      { "slot": 1, "platform": "甲元仙符", "op1": "天倾灵枯", "op2": "龙象护身" }
+    ]
+  }
+}

@@ -6,9 +6,9 @@
  * Each book fires at (slot-1) × T_gap, with temporal events offset accordingly.
  *
  * Usage:
- *   bun app/bookset-vector.ts --config builds/example.json
- *   bun app/bookset-vector.ts --config builds/example.json --samples
- *   bun app/bookset-vector.ts --config builds/example.json --json
+ *   bun app/bookset-vector.ts --config config/example.json
+ *   bun app/bookset-vector.ts --config config/example.json --samples
+ *   bun app/bookset-vector.ts --config config/example.json --json
  *
  * Config file format (JSON):
  *   {

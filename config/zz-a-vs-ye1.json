@@ -1,0 +1,37 @@
+{
+  "t_gap": 6,
+  "progression": { "enlightenment": 10, "fusion": 51 },
+  "formulas": {
+    "dr_constant": 7.5e7,
+    "sp_shield_ratio": 1.0
+  },
+  "player": {
+    "entity": {
+      "hp": 6.6e16,
+      "atk": 3.5184e15,
+      "sp": 3.3309e15,
+      "def": 7.078e10
+    },
+    "books": [
+      { "slot": 1, "platform": "春黎剑阵", "op1": "心逐神随", "op2": "灵犀九重" },
+      { "slot": 2, "platform": "皓月剑诀", "op1": "玄心剑魄", "op2": "无极剑阵" },
+      { "slot": 3, "platform": "甲元仙符", "op1": "奇能诡道", "op2": "龙象护身" },
+      { "slot": 4, "platform": "千锋聚灵剑", "op1": "天倾灵枯", "op2": "通明" },
+      { "slot": 5, "platform": "玄煞灵影诀", "op1": "索心真诀", "op2": "无相魔威" },
+      { "slot": 6, "platform": "念剑诀", "op1": "神威冲云", "op2": "灵威" }
+    ]
+  },
+  "opponent": {
+    "entity": {
+      "scale": 1.0
+    },
+    "books": [
+      { "slot": 1, "platform": "甲元仙符", "op1": "真极穿空", "op2": "龙象护身" },
+      { "slot": 2, "platform": "春黎剑阵", "op1": "心逐神随", "op2": "天命有归" },
+      { "slot": 3, "platform": "皓月剑诀", "op1": "玄心剑魄", "op2": "无极剑阵" },
+      { "slot": 4, "platform": "大罗幻诀", "op1": "心魔惑言", "op2": "追神真诀" },
+      { "slot": 5, "platform": "念剑诀", "op1": "索心真诀", "op2": "天魔真解" },
+      { "slot": 6, "platform": "十方真魄", "op1": "意坠深渊", "op2": "仙露护元" }
+    ]
+  }
+}

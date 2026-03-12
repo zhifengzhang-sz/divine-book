@@ -6,8 +6,8 @@
  * vary over the full 6-slot rotation timeline.
  *
  * Usage:
- *   bun app/bookset-chart.ts --config builds/test.json
- *   bun app/bookset-chart.ts --config builds/test.json -o tmp/bookset.html
+ *   bun app/bookset-chart.ts --config config/test.json
+ *   bun app/bookset-chart.ts --config config/test.json -o tmp/bookset.html
  */
 
 import { parseArgs } from "node:util";
