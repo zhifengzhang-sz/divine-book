@@ -357,6 +357,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				type: "per_hit_escalation",
 				value: tier.vars.x,
 				stat: "skill_bonus",
+				parent: "this",
 				...(ds ? { data_state: ds } : {}),
 			} as EffectRow);
 		}
@@ -371,6 +372,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				type: "summon_buff",
 				damage_taken_reduction_to: tier.vars.x,
 				damage_increase: tier.vars.y,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -393,6 +395,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				type: "extended_dot",
 				extra_seconds: tier.vars.x,
 				tick_interval: 0.5,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -404,6 +407,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 			{
 				type: "per_enemy_lost_hp",
 				per_percent: 2,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -418,6 +422,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				target: "skill_damage",
 				value: -tier.vars.x,
 				duration: 16,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -430,6 +435,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				type: "conditional_damage",
 				condition: "self_final_damage_per_10",
 				value: tier.vars.y,
+				parent: "天鹤之佑",
 			} as EffectRow,
 		];
 	},
@@ -502,6 +508,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				condition: "self_hp_above_20",
 				per_step: tier.vars.y,
 				value: tier.vars.y,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -538,6 +545,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				value: -tier.vars.x,
 				duration: 12,
 				per_stolen_buff: true,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -588,6 +596,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				value: tier.vars.x,
 				per_debuff_stack: true,
 				max_stacks: 30,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -596,6 +605,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		{
 			type: "counter_debuff_upgrade",
 			on_attacked_chance: 60,
+			parent: "罗天魔咒",
 		} as EffectRow,
 		{
 			type: "cross_slot_debuff",
@@ -604,6 +614,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 			value: -100,
 			duration: 8,
 			trigger: "on_attacked",
+			parent: "罗天魔咒",
 		} as EffectRow,
 	],
 
@@ -627,6 +638,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		{
 			type: "delayed_burst_increase",
 			value: 65,
+			parent: "无相魔劫",
 			data_state: "enlightenment=0",
 		} as EffectRow,
 	],
@@ -654,6 +666,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				type: "percent_max_hp_damage",
 				name: "镇杀",
 				value: tier.vars.x,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -673,6 +686,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				interval: 1,
 				cooldown: 25,
 				max_triggers: 1,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -681,6 +695,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		{
 			type: "lifesteal",
 			value: 82,
+			parent: "极怒",
 		} as EffectRow,
 	],
 
@@ -691,6 +706,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 			{
 				type: "shield_strength",
 				value: tier.vars.x,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
@@ -702,10 +718,12 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 			{
 				type: "periodic_dispel",
 				count: 2,
+				parent: "this",
 			} as EffectRow,
 			{
 				type: "self_hp_floor",
 				value: tier.vars.x,
+				parent: "this",
 			} as EffectRow,
 		];
 	},
