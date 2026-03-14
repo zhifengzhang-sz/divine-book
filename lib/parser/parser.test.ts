@@ -278,17 +278,27 @@ describe("春黎剑阵 (G2, summon)", () => {
 describe("大罗幻诀 (G3, counter_debuff with children)", () => {
 	const parsed = parseSingleBook(markdown, "大罗幻诀")!;
 
-	it("has base_attack + counter_debuff + 2 dots", () => {
-		expect(parsed.skill.length).toBe(4);
+	it("has 2 tiers × 4 effects = 8 skill effects", () => {
+		expect(parsed.skill.length).toBe(8);
+	});
+
+	it("tier 0 has base_attack + counter_debuff + 2 dots", () => {
 		expect(parsed.skill[0].type).toBe("base_attack");
-		expect(parsed.skill[0].total).toBe(20265);
+		expect(parsed.skill[0].total).toBe(1500);
 		expect(parsed.skill[1].type).toBe("counter_debuff");
 		expect(parsed.skill[1].name).toBe("罗天魔咒");
 		expect(parsed.skill[2].type).toBe("dot");
-		expect(parsed.skill[2].name).toBe("噬心魔咒");
+		expect(parsed.skill[2].name).toBe("噬心之咒");
 		expect(parsed.skill[2].parent).toBe("罗天魔咒");
 		expect(parsed.skill[3].type).toBe("dot");
 		expect(parsed.skill[3].name).toBe("断魂之咒");
+	});
+
+	it("tier 1 has correct values", () => {
+		expect(parsed.skill[4].type).toBe("base_attack");
+		expect(parsed.skill[4].total).toBe(20265);
+		expect(parsed.skill[6].type).toBe("dot");
+		expect(parsed.skill[6].percent_current_hp).toBe(7);
 	});
 
 	it("has counter_debuff_upgrade + cross_slot_debuff affix", () => {

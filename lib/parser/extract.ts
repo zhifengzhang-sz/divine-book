@@ -141,10 +141,12 @@ export function extractPercentHpDamage(text: string): ExtractedEffect | null {
 		return { type: "percent_max_hp_damage", fields };
 	}
 
-	// 每段伤害附加{y}%自身最大气血值的伤害
+	// 每段伤害附加{y}%自身最大气血值的伤害 (NOT preceded by 若净化)
 	const selfMaxHpMatch = text.match(
-		/附加(\w+)%自身最大气血值的伤害/,
+		/(?:每段)?(?:伤害|攻击)附加(\w+)%自身最大气血值的伤害/,
 	);
+	// Skip if this is part of a conditional_damage pattern (若净化...)
+	if (selfMaxHpMatch && /若净化.*附加/.test(text)) return null;
 	if (selfMaxHpMatch) {
 		return {
 			type: "percent_max_hp_damage",
@@ -711,7 +713,7 @@ export function extractPerDebuffStackDamage(
 	if (m) {
 		return {
 			type: "per_debuff_stack_damage",
-			fields: { per_n_stacks: 1, value: m[1], max: Number(m[2]) * Number(m[1]) },
+			fields: { per_n_stacks: 1, value: m[1], max_stacks: Number(m[2]) },
 		};
 	}
 	return null;
@@ -731,7 +733,7 @@ export function extractPerEnemyLostHp(
 	if (m) {
 		return {
 			type: "per_enemy_lost_hp",
-			fields: { per_percent: m[1] },
+			fields: { per_percent: m[1], value: m[2] },
 		};
 	}
 	return null;
@@ -926,3 +928,262 @@ export function extractSelfLostHpDamageDot(
 	}
 	return null;
 }
+
+// ─────────────────────────────────────────────────────────
+// Self buff (named state with stat bonuses)
+// ─────────────────────────────────────────────────────────
+
+export function extractSelfBuff(
+	text: string,
+): ExtractedEffect | null {
+	// Match patterns like:
+	// 获得【仙佑】状态，提升自身y%攻击力加成
+	// 为自身添加【怒灵降世】：持续期间提升自身w%的攻击力
+	// 使自身进入【破虚】状态：...
+	const m = text.match(
+		/(?:获得|添加|进入).*?【(.+?)】(?:状态)?[：:，,](.+)/,
+	);
+	if (!m) return null;
+
+	const name = m[1];
+	const desc = m[2];
+
+	// Try special pattern: "提升自身y%攻击力加成、守御加成、最大气血值"
+	const tripleMatch = desc.match(
+		/提升(?:自身)?(\w+)%(?:的)?攻击力(?:加成)?[、，,]守御(?:加成)?[、，,]最大气血值/,
+	);
+	if (tripleMatch) {
+		const fields: Record<string, string | number> = {
+			attack_bonus: tripleMatch[1],
+			defense_bonus: tripleMatch[1],
+			hp_bonus: tripleMatch[1],
+		};
+		const durMatch = desc.match(/持续(\d+(?:\.\d+)?)秒/);
+		if (durMatch) fields.duration = Number(durMatch[1]);
+		return { type: "self_buff", fields, meta: { name } };
+	}
+
+	// Try "提升自身w%的攻击力与伤害减免" pattern
+	const dualMatch = desc.match(
+		/提升(?:自身)?(\w+)%(?:的)?攻击力与(?:伤害减免|暴击率)/,
+	);
+	if (dualMatch) {
+		const fields: Record<string, string | number> = {};
+		fields.attack_bonus = dualMatch[1];
+		if (/暴击率/.test(desc)) {
+			fields.crit_rate = dualMatch[1];
+		} else {
+			fields.damage_reduction = dualMatch[1];
+		}
+		const durMatch = desc.match(/持续(\d+(?:\.\d+)?)秒/);
+		if (durMatch) fields.duration = Number(durMatch[1]);
+		return { type: "self_buff", fields, meta: { name } };
+	}
+
+	const stats = extractSelfBuffStats(desc);
+	if (Object.keys(stats).length === 0) return null;
+
+	const fields: Record<string, string | number> = { ...stats };
+	const durMatch = desc.match(/持续(\d+(?:\.\d+)?)秒/);
+	if (durMatch) fields.duration = Number(durMatch[1]);
+
+	return {
+		type: "self_buff",
+		fields,
+		meta: { name },
+	};
+}
+
+// ─────────────────────────────────────────────────────────
+// Self HP cost per hit
+// ─────────────────────────────────────────────────────────
+
+export function extractSelfHpCostPerHit(
+	text: string,
+): ExtractedEffect | null {
+	// 每段攻击会消耗自身z%当前气血值
+	const m = text.match(/每段攻击(?:会)?消耗自身(\w+)%(?:的)?当前气血值/);
+	if (m) {
+		return {
+			type: "self_hp_cost",
+			fields: { value: m[1] },
+			meta: { per_hit: true },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Self lost HP damage per hit
+// ─────────────────────────────────────────────────────────
+
+export function extractSelfLostHpDamagePerHit(
+	text: string,
+): ExtractedEffect | null {
+	// 每段攻击额外对目标造成自身y%已损失气血值的伤害
+	const m = text.match(
+		/每段攻击(?:额外)?对目标造成自身(\w+)%已损(?:失)?气血值的伤害/,
+	);
+	if (m) {
+		return {
+			type: "self_lost_hp_damage",
+			fields: { value: m[1] },
+			meta: { per_hit: true },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Next skill carry (破虚 pattern)
+// ─────────────────────────────────────────────────────────
+
+export function extractNextSkillCarry(
+	text: string,
+): ExtractedEffect | null {
+	// 接下来神通的n段攻击，每段攻击附加z%已损气血值的伤害
+	const m = text.match(
+		/接下来(?:神通的)?(\d+)段攻击[，,]每段攻击附加(?:自身)?(\w+)%已损(?:失)?气血值的伤害/,
+	);
+	if (m) {
+		return {
+			type: "self_lost_hp_damage",
+			fields: { value: m[2] },
+			meta: { per_hit: true, name: "破虚", next_skill_hits: Number(m[1]) },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// HP cost avoid chance
+// ─────────────────────────────────────────────────────────
+
+export function extractHpCostAvoidChance(
+	text: string,
+): ExtractedEffect | null {
+	// y%的概率不消耗气血值
+	const m = text.match(/(\d+)%(?:的)?概率不消耗气血值/);
+	if (m) {
+		return {
+			type: "hp_cost_avoid_chance",
+			fields: { value: Number(m[1]) },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Lifesteal
+// ─────────────────────────────────────────────────────────
+
+export function extractLifesteal(
+	text: string,
+): ExtractedEffect | null {
+	// 恢复...造成伤害x%的气血值
+	const m = text.match(/恢复.*?(?:造成(?:的)?)?(?:伤害|本次伤害)(\w+)%(?:的)?气血值/);
+	if (m) {
+		return {
+			type: "lifesteal",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Shield strength (affix pattern)
+// ─────────────────────────────────────────────────────────
+
+export function extractShieldStrength(
+	text: string,
+): ExtractedEffect | null {
+	// 获得的护盾提升至自身x%最大气血值
+	const m = text.match(/护盾提升至(?:自身)?(\w+)%最大气血值/);
+	if (m) {
+		return {
+			type: "shield_strength",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Self buff extra (affix adds stats to existing buff)
+// ─────────────────────────────────────────────────────────
+
+export function extractSelfBuffExtra(
+	text: string,
+): ExtractedEffect | null {
+	// 【X】额外提升自身x%攻击力 / 【X】状态额外使自身获得x%治疗加成
+	const m = text.match(
+		/【(.+?)】(?:状态)?(?:额外|下)?(?:使自身获得|提升(?:自身)?)/,
+	);
+	if (!m) return null;
+
+	const buffName = m[1];
+	const stats = extractSelfBuffStats(text);
+	if (Object.keys(stats).length === 0) return null;
+
+	return {
+		type: "self_buff_extra",
+		fields: stats,
+		meta: { buff_name: buffName },
+	};
+}
+
+// ─────────────────────────────────────────────────────────
+// Extractor Registry
+// ─────────────────────────────────────────────────────────
+
+export interface ExtractorDef {
+	name: string;
+	fn: (text: string) => ExtractedEffect | null;
+	/** Lower order = earlier in output */
+	order: number;
+	/** Only run for these grammar types (undefined = all) */
+	grammars?: string[];
+	/** Context: "skill" | "affix" | "both" */
+	context?: "skill" | "affix" | "both";
+}
+
+export const SKILL_EXTRACTORS: ExtractorDef[] = [
+	{ name: "self_hp_cost", fn: extractSelfHpCost, order: 0, grammars: ["G4", "G5"] },
+	{ name: "untargetable", fn: extractUntargetable, order: 1 },
+	{ name: "base_attack", fn: (text) => {
+		const r = extractBaseAttackWithVars(text);
+		if (!r) return null;
+		return {
+			type: "base_attack",
+			fields: { hits: r.hits, total: r.totalVar },
+		};
+	}, order: 10 },
+	{ name: "percent_max_hp_damage", fn: extractPercentHpDamage, order: 20 },
+	{ name: "self_lost_hp_damage", fn: extractSelfLostHpDamage, order: 20 },
+	{ name: "self_lost_hp_damage_per_hit", fn: extractSelfLostHpDamagePerHit, order: 20 },
+	{ name: "self_hp_cost_per_hit", fn: extractSelfHpCostPerHit, order: 20 },
+	{ name: "shield", fn: extractShield, order: 20 },
+	{ name: "debuff", fn: extractDebuff, order: 20 },
+	{ name: "shield_destroy_damage", fn: extractShieldDestroyDamage, order: 20 },
+	{ name: "percent_current_hp_damage", fn: extractPercentCurrentHpDamage, order: 20 },
+	{ name: "summon", fn: extractSummon, order: 20 },
+	{ name: "crit_damage_bonus", fn: extractCritDamageBonus, order: 20 },
+	{ name: "self_damage_taken_increase", fn: extractSelfDamageTakenIncrease, order: 20 },
+	{ name: "periodic_escalation", fn: extractPeriodicEscalation, order: 20 },
+	{ name: "buff_steal", fn: extractBuffSteal, order: 20 },
+	{ name: "per_debuff_stack_damage", fn: extractPerDebuffStackDamage, order: 20 },
+	{ name: "echo_damage", fn: extractEchoDamage, order: 20 },
+	{ name: "counter_debuff", fn: extractCounterDebuff, order: 20 },
+	{ name: "counter_buff", fn: extractCounterBuff, order: 20 },
+	{ name: "self_hp_cost_dot", fn: extractSelfHpCostDot, order: 20 },
+	{ name: "self_lost_hp_damage_dot", fn: extractSelfLostHpDamageDot, order: 20 },
+	{ name: "self_heal", fn: extractSelfHeal, order: 20 },
+	{ name: "self_cleanse", fn: extractSelfCleanse, order: 20 },
+	{ name: "delayed_burst", fn: extractDelayedBurst, order: 20 },
+	{ name: "conditional_damage_cleanse", fn: extractConditionalDamageFromCleanse, order: 25 },
+	{ name: "skill_cooldown_debuff", fn: extractSkillCooldownDebuff, order: 25 },
+	{ name: "self_buff", fn: extractSelfBuff, order: 25 },
+	{ name: "next_skill_carry", fn: extractNextSkillCarry, order: 25 },
+	{ name: "per_enemy_lost_hp", fn: extractPerEnemyLostHp, order: 30 },
+];

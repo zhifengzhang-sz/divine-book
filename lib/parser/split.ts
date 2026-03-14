@@ -9,39 +9,12 @@
 import type { EffectRow } from "./emit.js";
 import type { Grammar } from "./book-table.js";
 import type { SplitCell, TierLine } from "./md-table.js";
-import { expandTiers, resolveFields } from "./tiers.js";
+import { resolveFields } from "./tiers.js";
 import { buildStateRegistry, type StateRegistry } from "./states.js";
 import {
-	extractBaseAttackWithVars,
-	extractPercentHpDamage,
-	extractSelfHpCost,
-	extractSelfBuffStats,
 	extractDot,
-	extractSummon,
-	extractCritDamageBonus,
-	extractSelfDamageTakenIncrease,
-	extractPercentCurrentHpDamage,
-	extractShield,
-	extractShieldDestroyDamage,
-	extractSelfLostHpDamage,
-	extractCounterBuff,
-	extractUntargetable,
-	extractPeriodicEscalation,
-	extractPerHitEscalation,
-	extractBuffSteal,
-	extractPerDebuffStackDamage,
-	extractPerEnemyLostHp,
-	extractSelfCleanse,
-	extractSelfHeal,
-	extractDelayedBurst,
-	extractConditionalDamageFromCleanse,
-	extractSkillCooldownDebuff,
-	extractEchoDamage,
-	extractCounterDebuff,
-	extractSelfHpCostDot,
-	extractSelfLostHpDamageDot,
-	extractDebuff,
-	extractNamedState,
+	SKILL_EXTRACTORS,
+	type ExtractedEffect,
 } from "./extract.js";
 
 export interface ParsedBook {
@@ -113,35 +86,191 @@ function genericSkillParse(
 	cell: SplitCell,
 	states: StateRegistry,
 ): EffectRow[] {
-	const effects: EffectRow[] = [];
 	const text = cell.description.join("，");
 	const tiers = cell.tiers;
 
-	// G4/G5: extract leading self_hp_cost
-	if (grammar === "G4" || grammar === "G5") {
-		const hpCost = extractSelfHpCost(text);
-		if (hpCost) {
-			effects.push(
-				...expandTiers(
-					hpCost.fields,
-					"self_hp_cost",
-					tiers,
-				),
-			);
+	// Run all registered extractors against the full text
+	const extracted: { effect: ExtractedEffect; order: number }[] = [];
+	for (const def of SKILL_EXTRACTORS) {
+		// Grammar filter
+		if (def.grammars && !def.grammars.includes(grammar)) continue;
+
+		const result = def.fn(text);
+		if (result) {
+			extracted.push({ effect: result, order: def.order });
 		}
 	}
 
-	// Extract base_attack
-	const ba = extractBaseAttackWithVars(text);
-	if (ba) {
-		const baFields: Record<string, string | number> = {
-			hits: ba.hits,
-			total: ba.totalVar,
-		};
-		effects.push(...expandTiers(baFields, "base_attack", tiers));
+	// Enrich effects with named state info from the text
+	// If an effect's pattern is inside a 【name】：... definition, link it
+	enrichWithNamedStates(extracted, text, states);
+
+	// Sort by order
+	extracted.sort((a, b) => a.order - b.order);
+
+	// Parse child state definitions from description lines (【name】：...)
+	for (const line of cell.description) {
+		const childMatch = line.match(/^【(.+?)】[：:]/);
+		if (!childMatch) continue;
+		const childName = childMatch[1];
+		const childText = line.slice(childMatch[0].length);
+
+		// Extract dot from child definition
+		const dot = extractDot(childText);
+		if (dot) {
+			// Find parent state name
+			let parentName: string | undefined;
+			for (const [sName, sDef] of Object.entries(states)) {
+				if (sDef.children?.includes(childName)) {
+					parentName = sName;
+					break;
+				}
+			}
+
+			const extra: Record<string, unknown> = { name: childName };
+			if (parentName) extra.parent = parentName;
+
+			const childState = states[childName];
+			if (childState?.max_stacks) extra.max_stacks = childState.max_stacks;
+
+			extracted.push({
+				effect: { ...dot, meta: extra },
+				order: 30,
+			});
+		}
+	}
+
+	// Detect "（数据为没有悟境的情况）" annotation → data_state: "enlightenment=0"
+	const noEnlightenment = /数据为没有悟境/.test(text);
+
+	// Expand per-tier to maintain interleaved ordering
+	// (each tier gets all effects before moving to next tier)
+	if (tiers.length === 0) {
+		// No tier data — resolve with empty vars
+		const effects: EffectRow[] = [];
+		for (const { effect } of extracted) {
+			const resolved = resolveFields(effect.fields, {});
+			const extra: Record<string, unknown> = {};
+			if (effect.meta) {
+				for (const [k, v] of Object.entries(effect.meta)) {
+					extra[k] = v;
+				}
+			}
+			if (noEnlightenment) extra.data_state = "enlightenment=0";
+			effects.push({ type: effect.type, ...resolved, ...extra } as EffectRow);
+		}
+		return effects;
+	}
+
+	const effects: EffectRow[] = [];
+	for (const tier of tiers) {
+		if (tier.locked) {
+			// For locked tiers, emit a locked base_attack placeholder
+			effects.push({ type: "base_attack", data_state: "locked" } as EffectRow);
+			continue;
+		}
+
+		const ds = buildDs(tier);
+		for (const { effect } of extracted) {
+			const resolved = resolveFields(effect.fields, tier.vars);
+			const extra: Record<string, unknown> = {};
+			if (effect.meta) {
+				for (const [k, v] of Object.entries(effect.meta)) {
+					extra[k] = v;
+				}
+			}
+			if (ds !== undefined) extra.data_state = ds;
+
+			effects.push({ type: effect.type, ...resolved, ...extra } as EffectRow);
+		}
 	}
 
 	return effects;
+}
+
+/**
+ * Enrich extracted effects with named state metadata.
+ * When a debuff, self_buff, counter_buff, etc. is inside a 【name】：... pattern,
+ * add name, per_hit_stack, dispellable from the state registry.
+ */
+function enrichWithNamedStates(
+	extracted: { effect: ExtractedEffect; order: number }[],
+	text: string,
+	states: StateRegistry,
+): void {
+	// Find all named state references in the text: 【name】：...
+	const stateSegments: { name: string; start: number; end: number }[] = [];
+	const re = /【(.+?)】[：:]/g;
+	let match: RegExpExecArray | null;
+	while ((match = re.exec(text)) !== null) {
+		const name = match[1];
+		// Find the end: next 【 or end of text
+		const startAfter = match.index + match[0].length;
+		const nextBracket = text.indexOf("【", startAfter);
+		const end = nextBracket === -1 ? text.length : nextBracket;
+		stateSegments.push({ name, start: match.index, end });
+	}
+
+	if (stateSegments.length === 0) return;
+
+	// For each extracted effect, check if its type-specific pattern text
+	// falls within a named state segment
+	for (const item of extracted) {
+		const effect = item.effect;
+
+		// For various effect types, check if the pattern is inside a named state def
+		if (effect.type === "debuff" || effect.type === "counter_debuff" ||
+			effect.type === "self_hp_cost" || effect.type === "self_lost_hp_damage" ||
+			effect.type === "counter_buff") {
+			for (const seg of stateSegments) {
+				const stateDef = states[seg.name];
+				if (!stateDef) continue;
+				const segText = text.slice(seg.start, seg.end);
+
+				if (effect.type === "debuff") {
+					const val = String(effect.fields.value);
+					if (segText.includes(`${val}%`)) {
+						if (!effect.meta) effect.meta = {};
+						effect.meta.name = seg.name;
+						if (stateDef.per_hit_stack) effect.meta.per_hit_stack = true;
+						if (stateDef.dispellable === false) effect.meta.dispellable = false;
+						effect.fields.value = -Number(val) || `-${val}`;
+						break;
+					}
+				}
+
+				if (effect.type === "counter_debuff") {
+					if (segText.includes("概率对攻击方添加")) {
+						if (!effect.meta) effect.meta = {};
+						effect.meta.name = seg.name;
+						if (stateDef.duration) effect.meta.duration = stateDef.duration;
+						break;
+					}
+				}
+
+				// self_hp_cost / self_lost_hp_damage / counter_buff inside a named state
+				if (effect.type === "self_hp_cost" || effect.type === "self_lost_hp_damage" ||
+					effect.type === "counter_buff") {
+					const val = String(effect.fields.value);
+					if (segText.includes(`${val}%`)) {
+						if (!effect.meta) effect.meta = {};
+						// self_hp_cost gets name, self_lost_hp_damage gets parent
+						if (effect.type === "self_hp_cost") {
+							effect.meta.name = seg.name;
+						} else {
+							effect.meta.parent = seg.name;
+						}
+						if (stateDef.duration) effect.meta.duration = stateDef.duration;
+						if (effect.type === "counter_buff") {
+							effect.meta.name = seg.name;
+							if (stateDef.duration) effect.meta.duration = stateDef.duration;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 // ─────────────────────────────────────────────────────────
@@ -154,278 +283,10 @@ type BookParser = (
 ) => EffectRow[];
 
 const BOOK_PARSERS: Record<string, BookParser> = {
-	千锋聚灵剑: parseQianFeng,
-	春黎剑阵: parseChunLi,
-	皓月剑诀: parseHaoYue,
-	念剑诀: parseNianJian,
-	通天剑诀: parseTongTian,
-	"新-青元剑诀": parseQingYuan,
-	无极御剑诀: parseWuJi,
-	浩然星灵诀: parseHaoRan,
-	元磁神光: parseYuanCi,
-	周天星元: parseZhouTian,
-	甲元仙符: parseJiaYuan,
-	星元化岳: parseXingYuanHuaYue,
-	玉书天戈符: parseYuShu,
-	九天真雷诀: parseJiuTianLei,
 	天魔降临咒: parseTianMoJiangLin,
-	天轮魔经: parseTianLunMoJing,
-	天刹真魔: parseTianShaZhenMo,
-	解体化形: parseJieTiHuaXing,
-	大罗幻诀: parseDaLuoHuanJue,
-	梵圣真魔咒: parseFanSheng,
-	无相魔劫咒: parseWuXiangMoJie,
-	玄煞灵影诀: parseXuanSha,
-	惊蜇化龙: parseJingZheHuaLong,
-	十方真魄: parseShiFangZhenPo,
-	疾风九变: parseJiFengJiuBian,
-	煞影千幻: parseShaYingQianHuan,
-	九重天凤诀: parseJiuChongTianFeng,
-	天煞破虚诀: parseTianShaPoXu,
 };
 
-// ─── Sword ──────────────────────────────────────────────
-
-function parseQianFeng(cell: SplitCell): EffectRow[] {
-	const tiers = cell.tiers;
-	const effects: EffectRow[] = [];
-
-	for (const tier of tiers) {
-		if (tier.locked) {
-			effects.push({ type: "base_attack", data_state: "locked" } as EffectRow);
-			continue;
-		}
-		const ds = buildDs(tier);
-		effects.push({
-			type: "base_attack",
-			hits: 6,
-			total: tier.vars.x,
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow);
-		effects.push({
-			type: "percent_max_hp_damage",
-			value: tier.vars.y,
-			cap_vs_monster: tier.vars.z,
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow);
-	}
-
-	return effects;
-}
-
-function parseChunLi(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "summon",
-			inherit_stats: tier.vars.y,
-			duration: 16,
-			damage_taken_multiplier: tier.vars.z,
-		} as EffectRow,
-	];
-}
-
-function parseHaoYue(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 10, total: tier.vars.x } as EffectRow,
-		{
-			type: "shield_destroy_damage",
-			shields_per_hit: 1,
-			percent_max_hp: tier.vars.y,
-			cap_vs_monster: tier.vars.z,
-			no_shield_double_cap: tier.vars.w,
-			name: "寂灭剑心",
-			duration: 4,
-			max_stacks: 1,
-		} as EffectRow,
-	];
-}
-
-function parseNianJian(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "untargetable_state", duration: 4 } as EffectRow,
-		{ type: "base_attack", hits: 8, total: tier.vars.x } as EffectRow,
-		{
-			type: "periodic_escalation",
-			every_n_hits: 2,
-			multiplier: tier.vars.y,
-			max_stacks: 10,
-		} as EffectRow,
-	];
-}
-
-function parseTongTian(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 6, total: tier.vars.x } as EffectRow,
-		{ type: "crit_damage_bonus", value: tier.vars.y } as EffectRow,
-		{
-			type: "self_damage_taken_increase",
-			value: tier.vars.z,
-			duration: 8,
-		} as EffectRow,
-	];
-}
-
-function parseQingYuan(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 6, total: tier.vars.x } as EffectRow,
-		{
-			type: "debuff",
-			name: "神通封印",
-			target: "next_skill_cooldown",
-			value: -8,
-			duration: 8,
-		} as EffectRow,
-	];
-}
-
-function parseWuJi(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "percent_current_hp_damage",
-			value: tier.vars.y,
-			per_prior_hit: true,
-		} as EffectRow,
-	];
-}
-
-// ─── Spell ──────────────────────────────────────────────
-
-function parseHaoRan(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "self_buff",
-			name: "天鹤之佑",
-			final_damage_bonus: tier.vars.y,
-			duration: 20,
-		} as EffectRow,
-	];
-}
-
-function parseYuanCi(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "self_buff",
-			name: "天狼之啸",
-			damage_increase: tier.vars.y,
-			max_stacks: tier.vars.z,
-			duration: 12,
-			trigger: "on_attacked",
-		} as EffectRow,
-	];
-}
-
-function parseZhouTian(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "self_heal", value: tier.vars.x, duration: 4 } as EffectRow,
-		{ type: "base_attack", hits: 5, total: tier.vars.y } as EffectRow,
-		{
-			type: "self_heal",
-			name: "回生灵鹤",
-			value: tier.vars.w,
-			duration: 20,
-		} as EffectRow,
-	];
-}
-
-function parseJiaYuan(cell: SplitCell): EffectRow[] {
-	const tiers = cell.tiers;
-	const effects: EffectRow[] = [];
-	let buffEmitted = false;
-
-	for (const tier of tiers) {
-		if (tier.locked) {
-			effects.push({ type: "base_attack", data_state: "locked" } as EffectRow);
-			continue;
-		}
-		const ds = buildDs(tier);
-		effects.push({
-			type: "base_attack",
-			total: tier.vars.x,
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow);
-		// self_buff only emitted once (values don't change across tiers)
-		if (!buffEmitted && tier.vars.y !== undefined) {
-			buffEmitted = true;
-			effects.push({
-				type: "self_buff",
-				name: "仙佑",
-				attack_bonus: tier.vars.y,
-				defense_bonus: tier.vars.y,
-				hp_bonus: tier.vars.y,
-				duration: 12,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-	}
-
-	return effects;
-}
-
-function parseXingYuanHuaYue(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "debuff",
-			name: "天龙印",
-			target: "echo_damage",
-			value: tier.vars.y,
-			duration: 8,
-		} as EffectRow,
-	];
-}
-
-function parseYuShu(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 3, total: tier.vars.x } as EffectRow,
-		{
-			type: "percent_max_hp_damage",
-			value: tier.vars.y,
-			source: "self",
-		} as EffectRow,
-	];
-}
-
-function parseJiuTianLei(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{ type: "self_cleanse", count: tier.vars.y } as EffectRow,
-		{
-			type: "conditional_damage",
-			condition: "cleanse_excess",
-			value: tier.vars.z,
-		} as EffectRow,
-	];
-}
-
-// ─── Demon ──────────────────────────────────────────────
+// ─── Remaining book-specific parsers ────────────────────
 
 function parseTianMoJiangLin(cell: SplitCell): EffectRow[] {
 	const tier = cell.tiers[0];
@@ -456,283 +317,6 @@ function parseTianMoJiangLin(cell: SplitCell): EffectRow[] {
 	];
 }
 
-function parseTianLunMoJing(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 7, total: tier.vars.x } as EffectRow,
-		{ type: "buff_steal", count: tier.vars.y } as EffectRow,
-		{
-			type: "percent_max_hp_damage",
-			value: tier.vars.z,
-			per_stolen_buff: true,
-		} as EffectRow,
-	];
-}
-
-function parseTianShaZhenMo(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "counter_buff",
-			name: "不灭魔体",
-			duration: "permanent",
-			heal_on_damage_taken: tier.vars.y,
-			no_healing_bonus: true,
-		} as EffectRow,
-	];
-}
-
-function parseJieTiHuaXing(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{
-			type: "per_debuff_stack_damage",
-			per_n_stacks: 1,
-			value: tier.vars.y,
-			max: 10 * tier.vars.y,
-		} as EffectRow,
-	];
-}
-
-function parseDaLuoHuanJue(cell: SplitCell): EffectRow[] {
-	// Special: no tier vars, all hardcoded in text
-	// "造成五段共20265%攻击力的灵法伤害"
-	const effects: EffectRow[] = [
-		{ type: "base_attack", hits: 5, total: 20265 } as EffectRow,
-		{
-			type: "counter_debuff",
-			name: "罗天魔咒",
-			duration: 8,
-			on_attacked_chance: 30,
-		} as EffectRow,
-	];
-
-	// Child dots from sub-state lines
-	effects.push({
-		type: "dot",
-		name: "噬心魔咒",
-		parent: "罗天魔咒",
-		percent_current_hp: 7,
-		tick_interval: 0.5,
-		duration: 4,
-		max_stacks: 5,
-	} as EffectRow);
-	effects.push({
-		type: "dot",
-		name: "断魂之咒",
-		parent: "罗天魔咒",
-		percent_lost_hp: 7,
-		tick_interval: 0.5,
-		duration: 4,
-		max_stacks: 5,
-	} as EffectRow);
-
-	return effects;
-}
-
-function parseFanSheng(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 6, total: tier.vars.x } as EffectRow,
-		{
-			type: "dot",
-			name: "贪妄业火",
-			tick_interval: 1,
-			percent_current_hp: tier.vars.y,
-			duration: 8,
-			per_hit_stack: true,
-		} as EffectRow,
-	];
-}
-
-function parseWuXiangMoJie(cell: SplitCell): EffectRow[] {
-	// All values hardcoded in text (no tier vars with x=)
-	// But the text says "（数据为没有悟境的情况）" — enlightenment=0
-	return [
-		{
-			type: "base_attack",
-			hits: 5,
-			total: 1500,
-			data_state: "enlightenment=0",
-		} as EffectRow,
-		{
-			type: "delayed_burst",
-			name: "无相魔劫",
-			duration: 12,
-			damage_increase_during: 10,
-			burst_base: 5000,
-			burst_accumulated_pct: 10,
-			data_state: "enlightenment=0",
-		} as EffectRow,
-	];
-}
-
-// ─── Body ──────────────────────────────────────────────
-
-function parseXuanSha(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	const ds = buildDs(tier);
-	return [
-		{
-			type: "base_attack",
-			hits: 4,
-			total: tier.vars.x,
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow,
-		{
-			type: "self_hp_cost",
-			value: tier.vars.y,
-			tick_interval: 1,
-			name: "怒意滔天",
-			duration: "permanent",
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.z,
-			tick_interval: 1,
-			parent: "怒意滔天",
-			duration: "permanent",
-			...(ds ? { data_state: ds } : {}),
-		} as EffectRow,
-	];
-}
-
-function parseJingZheHuaLong(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	// G4: self_hp_cost + base_attack + effects
-	// "消耗自身x%当前气血值，对目标造成八段共x%攻击力的灵法伤害，
-	//  额外对目标造成自身y%已损失气血值的伤害，并提升自身z%神通伤害加深，持续4秒"
-	// Note: x is used for BOTH hp_cost and base_attack total (same var name)
-	return [
-		{ type: "base_attack", hits: 8, total: tier.vars.x } as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.y,
-		} as EffectRow,
-		{
-			type: "self_buff",
-			name: "星辰杀阵",
-			skill_damage_increase: tier.vars.z,
-			duration: 4,
-		} as EffectRow,
-	];
-}
-
-function parseShiFangZhenPo(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "self_hp_cost", value: tier.vars.x } as EffectRow,
-		{ type: "base_attack", hits: 10, total: tier.vars.y } as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.z,
-			on_last_hit: true,
-			heal_equal: true,
-		} as EffectRow,
-		{
-			type: "self_buff",
-			name: "怒灵降世",
-			attack_bonus: tier.vars.w,
-			damage_reduction: tier.vars.w,
-			duration: 4,
-		} as EffectRow,
-	];
-}
-
-function parseJiFengJiuBian(cell: SplitCell): EffectRow[] {
-	// All hardcoded: "消耗自身10%当前气血值，对目标造成十段共1500%攻击力的灵法伤害"
-	return [
-		{ type: "self_hp_cost", value: 10 } as EffectRow,
-		{ type: "base_attack", hits: 10, total: 1500 } as EffectRow,
-		{
-			type: "counter_buff",
-			name: "极怒",
-			duration: 4,
-			reflect_received_damage: 50,
-			reflect_percent_lost_hp: 15,
-		} as EffectRow,
-	];
-}
-
-function parseShaYingQianHuan(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "self_hp_cost", value: tier.vars.x } as EffectRow,
-		{ type: "base_attack", hits: 3, total: tier.vars.y } as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.z,
-		} as EffectRow,
-		{
-			type: "shield",
-			value: tier.vars.w,
-			source: "self_max_hp",
-			duration: 8,
-		} as EffectRow,
-		{
-			type: "debuff",
-			name: "落星",
-			target: "final_damage_reduction",
-			value: -tier.vars.u,
-			duration: 4,
-			per_hit_stack: true,
-			dispellable: false,
-		} as EffectRow,
-	];
-}
-
-function parseJiuChongTianFeng(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 8, total: tier.vars.x } as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.y,
-			per_hit: true,
-		} as EffectRow,
-		{
-			type: "self_hp_cost",
-			value: tier.vars.z,
-			per_hit: true,
-		} as EffectRow,
-		{
-			type: "self_buff",
-			name: "蛮神",
-			attack_bonus: tier.vars.w,
-			crit_rate: tier.vars.w,
-			duration: 4,
-			per_hit_stack: true,
-		} as EffectRow,
-	];
-}
-
-function parseTianShaPoXu(cell: SplitCell): EffectRow[] {
-	const tier = cell.tiers[0];
-	if (!tier) return [];
-	return [
-		{ type: "base_attack", hits: 5, total: tier.vars.x } as EffectRow,
-		{ type: "self_hp_cost", value: tier.vars.y } as EffectRow,
-		{
-			type: "self_lost_hp_damage",
-			value: tier.vars.z,
-			per_hit: true,
-			name: "破虚",
-			next_skill_hits: 8,
-		} as EffectRow,
-	];
-}
 
 // ─────────────────────────────────────────────────────────
 // Primary Affix parsing
