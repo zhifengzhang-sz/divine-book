@@ -214,9 +214,6 @@ function traceInspect(evt: any) {
 			case "STATE_APPLIED":
 				detail = `state=${event.state_id}`;
 				break;
-			case "ENTITY_DIED":
-				detail = `entity=${event.entity_id}`;
-				break;
 			case "STACK":
 				detail = "";
 				break;

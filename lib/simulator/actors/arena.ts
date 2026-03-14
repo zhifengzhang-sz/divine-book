@@ -3,13 +3,13 @@
  *
  * Single-round architecture: each round resolves both sides against
  * the same pre-round snapshot (simultaneous resolution), applies all
- * events, then ticks states via TICK_STATES, and checks termination
+ * events, ticks states via TICK_STATES, then checks termination
  * via ROUND_COMPLETE.
  *
- * Uses sendTo(self) instead of raise() or always-transitions so that
- * ENTITY_DIED events from child actors are processed first. raise()
- * prioritizes self-events; sendTo(self) goes through the same deferred
- * queue as child-actor events, preserving send order.
+ * Death detection: entity SM enters its `dead` final state when HP ≤ 0.
+ * Arena checks `anyEntityDead` guard on ROUND_COMPLETE — no ENTITY_DIED
+ * event needed. sendTo(self) for TICK_STATES and ROUND_COMPLETE ensures
+ * all entity/state events process before the guard is evaluated.
  */
 
 import {
@@ -20,7 +20,6 @@ import {
 } from "xstate";
 import type {
 	EntityDef,
-	EntityDiedEvent,
 	SlotDef,
 	StateAppliedEvent,
 	StateCreatedEvent,
@@ -77,7 +76,6 @@ export const arenaMachine = setup({
 			| { type: "START" }
 			| { type: "TICK_STATES" }
 			| { type: "ROUND_COMPLETE" }
-			| EntityDiedEvent
 			| StateCreatedEvent,
 	},
 	guards: {
@@ -274,16 +272,12 @@ export const arenaMachine = setup({
 				});
 
 				// 7. Send TICK_STATES to self — goes through deferred queue
-				//    AFTER entity HITs, so ENTITY_DIED arrives first
+				//    so entity events (HIT, HEAL, STATE_APPLIED) process first
 				const arenaRef = system.get("arena");
 				if (arenaRef) enqueue.sendTo(arenaRef, { type: "TICK_STATES" });
 			}),
 
 			on: {
-				ENTITY_DIED: {
-					target: "done",
-					actions: "setWinner",
-				},
 				STATE_CREATED: {
 					actions: enqueueActions(({ context, event, enqueue, system }) => {
 						enqueue.assign({

@@ -13,7 +13,6 @@ import { assign, enqueueActions, setup, spawnChild } from "xstate";
 import type {
 	AbsorbEvent,
 	EntityDef,
-	EntityDiedEvent,
 	FactorVector,
 	HealEvent,
 	HitEvent,
@@ -251,15 +250,6 @@ export const entityMachine = setup({
 		},
 		dead: {
 			type: "final",
-			entry: enqueueActions(({ context, enqueue, system }) => {
-				const arena = system.get("arena");
-				if (arena) {
-					enqueue.sendTo(arena, {
-						type: "ENTITY_DIED",
-						entity_id: context.id,
-					} satisfies EntityDiedEvent);
-				}
-			}),
 		},
 	},
 });

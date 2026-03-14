@@ -160,8 +160,6 @@ export type StateAppliedEvent = {
 	state_id: string;            // systemId of the state effect actor
 };
 
-/** Entity → Arena */
-export type EntityDiedEvent = { type: "ENTITY_DIED"; entity_id: string };
 
 /** Anyone → State Effect */
 export type DispelEvent = { type: "DISPEL" };
