@@ -38,7 +38,7 @@ export const HEALING_DEFS: EffectTypeDef[] = [
 		group: "healing_and_survival",
 		zones: [Zone.H_A],
 		scope: Scope.Same,
-		patterns: ["{x}%的吸血效果", "恢复...造成伤害{x}%的气血值"],
+		patterns: ["本神通造成伤害时，会使本次神通获得{x}%的吸血效果", "恢复...造成伤害{x}%的气血值"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -54,7 +54,7 @@ export const HEALING_DEFS: EffectTypeDef[] = [
 		zones: [Zone.D_ortho],
 		scope: Scope.Same,
 		patterns: [
-			"造成治疗效果时，会对敌方额外造成治疗量{x}%的伤害",
+			"当本神通造成治疗效果时，会对敌方额外造成治疗量{x}%的伤害",
 		],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
@@ -71,7 +71,7 @@ export const HEALING_DEFS: EffectTypeDef[] = [
 		zones: [Zone.H_A],
 		scope: Scope.Same,
 		patterns: [
-			"(所有)治疗效果提升{x}%",
+			"使本神通的(所有)治疗效果提升{x}%",
 			"提升自身{x}%的治疗量",
 		],
 		fields: [{ name: "value", unit: Unit.PctStat }],
@@ -87,7 +87,7 @@ export const HEALING_DEFS: EffectTypeDef[] = [
 		group: "healing_and_survival",
 		zones: [Zone.DR_A],
 		scope: Scope.Same,
-		patterns: ["(会在)施放期间提升自身{x}%的伤害减免"],
+		patterns: ["本神通施放时，(会在)施放期间提升自身{x}%的伤害减免"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,

@@ -95,11 +95,11 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in `data/raw/*.md` to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
+> **Language decoder for the Divine Book data pipeline.** This document maps Chinese keyword patterns in [about.md](../../data/raw/about.md) to canonical effect type names and field structures. It contains no numeric instances — it is purely a parsing specification that tells downstream code *how to read* the source text.
 >
 > **English version of** [`keyword.map.cn.md`](./keyword.map.cn.md). Chinese patterns are preserved verbatim — they are the data being mapped.
 
-**Data source**: `data/raw/*.md` — split source files (主书.md, 通用词缀.md, 修为词缀.md, 专属词缀.md, 构造规则.md)
+**Data source**: `data/raw/about.md` (sole source of truth)
 
 **Conventions**:
 - `{x}`, `{y}`, `{z}`, `{w}` = numeric variables
@@ -141,10 +141,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `fusion_flat_damage` | `第{n}重：本神通增加{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk |
-| `mastery_extra_damage` | `化境（融合{n}重）：本神通对目标额外造成{x}%攻击力的伤害` | `fusion_level`→count, `value`→%atk |
-| `enlightenment_damage` | `每次融合使本神通增加{x}%攻击力的悟境伤害` | `value`→%atk |
-| `cooldown` | `施法间隙：{x}秒` | `value`→seconds |
+| `fusion_flat_damage` | <span class="pat"><span class="pat-action">第{n}重：本神通增加{x}%攻击力的伤害</span></span> | `fusion_level`→count, `value`→%atk |
+| `mastery_extra_damage` | <span class="pat"><span class="pat-action">化境（融合{n}重）：本神通对目标额外造成{x}%攻击力的伤害</span></span> | `fusion_level`→count, `value`→%atk |
+| `enlightenment_damage` | <span class="pat"><span class="pat-action">每次融合</span><span class="pat-scope">使本神通</span><span class="pat-action">增加{x}%攻击力的悟境伤害</span></span> | `value`→%atk |
+| `cooldown` | <span class="pat"><span class="pat-action">施法间隙：{x}秒</span></span> | `value`→seconds |
 
 ---
 
@@ -152,9 +152,9 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `base_attack` | `{n}段共(计){x}%攻击力的灵法伤害` / `造成{x}%攻击力的灵法伤害` | `hits`→count (optional), `total`→%atk (optional) |
-| `percent_max_hp_damage` | `每段攻击造成目标{x}%最大气血值的伤害（对怪物伤害不超过自身{z}%攻击力）` | `value`→%max_hp, `cap_vs_monster`→%atk |
-| `shield_destroy_damage` | `湮灭敌方{n}个护盾，并额外造成{x}%敌方最大气血值的伤害（对怪物最多造成{y}%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成{z}%攻击力的伤害）` | `shields_per_hit`→count, `percent_max_hp`→%max_hp, `cap_vs_monster`→%atk, `no_shield_double_cap`→%atk |
+| `base_attack` | <span class="pat"><span class="pat-action">{n}段共(计){x}%攻击力的灵法伤害</span></span> / <span class="pat"><span class="pat-action">造成{x}%攻击力的灵法伤害</span></span> | `hits`→count (optional), `total`→%atk (optional) |
+| `percent_max_hp_damage` | <span class="pat"><span class="pat-action">每段攻击造成目标{x}%最大气血值的伤害（对怪物伤害不超过自身{z}%攻击力）</span></span> | `value`→%max_hp, `cap_vs_monster`→%atk |
+| `shield_destroy_damage` | <span class="pat"><span class="pat-action">湮灭敌方{n}个护盾，并额外造成{x}%敌方最大气血值的伤害（对怪物最多造成{y}%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成{z}%攻击力的伤害）</span></span> | `shields_per_hit`→count, `percent_max_hp`→%max_hp, `cap_vs_monster`→%atk, `no_shield_double_cap`→%atk |
 
 > **Pattern notes**:
 > - `共计` and `共` (without 计) both appear in about.md; treat them as equivalent when matching.
@@ -166,14 +166,14 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units | Notes |
 |:---|:---|:---|:---|
-| `attack_bonus` | `提升{x}%攻击力的效果` | `value`→%stat |  |
-| `damage_increase` | `造成的伤害提升{x}%` / `伤害提升{x}%` / `提升{x}%伤害` | `value`→%stat |  |
-| `skill_damage_increase` | `提升{x}%神通伤害` / `{x}%的神通伤害加深` | `value`→%stat |  |
-| `enemy_skill_damage_reduction` | `目标对本神通提升{x}%神通伤害减免` | `value`→%stat |  |
-| `final_damage_bonus` | `最终伤害加深提升{x}%` | `value`→%stat |  |
-| `crit_damage_bonus` | `暴击伤害提升{x}%` / `致命伤害提升{x}%` | `value`→%stat |  |
-| `technique_damage_increase` | `{x}%的技能伤害加深` | `value`→%stat | No data instances in normalized.data.md yet |
-| `flat_extra_damage` | `(额外)造成{x}%攻击力的伤害` | `value`→%atk |  |
+| `attack_bonus` | <span class="pat"><span class="pat-action">(</span><span class="pat-trigger">本神通施放时，</span><span class="pat-action">会)使本(次)神通提升{x}%攻击力的效果</span></span> | `value`→%stat |  |
+| `damage_increase` | <span class="pat"><span class="pat-action">造成的伤害提升{x}%</span></span> / <span class="pat"><span class="pat-action">伤害提升{x}%</span></span> / <span class="pat"><span class="pat-action">提升{x}%伤害</span></span> | `value`→%stat |  |
+| `skill_damage_increase` | <span class="pat"><span class="pat-trigger">本神通攻击目标时</span><span class="pat-action">提升{x}%神通伤害</span></span> / <span class="pat"><span class="pat-action">{x}%的神通伤害加深</span></span> | `value`→%stat |  |
+| `enemy_skill_damage_reduction` | <span class="pat"><span class="pat-action">目标对本神通提升{x}%神通伤害减免</span></span> | `value`→%stat |  |
+| `final_damage_bonus` | <span class="pat"><span class="pat-action">(</span><span class="pat-trigger">本神通施放时，</span><span class="pat-scope">会使本次神通</span><span class="pat-action">的)最终伤害加深提升{x}%</span></span> | `value`→%stat |  |
+| `crit_damage_bonus` | <span class="pat"><span class="pat-action">(</span><span class="pat-scope">使本神通</span><span class="pat-action">)暴击伤害提升/提高{x}%</span></span> / <span class="pat"><span class="pat-action">致命伤害提升{x}%</span></span> | `value`→%stat |  |
+| `technique_damage_increase` | <span class="pat"><span class="pat-action">{x}%的技能伤害加深</span></span> | `value`→%stat | No data instances in normalized.data.md yet |
+| `flat_extra_damage` | <span class="pat"><span class="pat-action">本神通施放/命中时，</span><span class="pat-scope">会使本次神通</span><span class="pat-action">(额外)造成{x}%攻击力的伤害</span></span> | `value`→%atk |  |
 
 > **Multiplier zone hierarchy** (inferred from 奇能诡道 descriptions):
 > - `伤害加深类` = { `神通伤害加深`, `技能伤害加深`, `最终伤害加深` }
@@ -190,7 +190,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `guaranteed_resonance` | `必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍` | `base_mult`→multiplier, `enhanced_mult`→multiplier, `enhanced_chance`→probability |
+| `guaranteed_resonance` | <span class="pat"><span class="pat-action">必定会心造成{x}倍伤害，并有{p}%概率将之提升至{y}倍</span></span> | `base_mult`→multiplier, `enhanced_mult`→multiplier, `enhanced_chance`→probability |
 
 > **Mechanic**: 会心 (resonance) is a fixed multiplier on the entire skill's damage output. It is deterministic (always applies `base_mult`), with a probability-gated enhancement to `enhanced_mult`. No interaction with 暴击率 (crit rate) or 暴击伤害 (crit damage) stats. Examples: 【灵犀九重】(×2.97), 【通明】(×1.2).
 
@@ -200,7 +200,7 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `probability_multiplier` | `{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍` | `prob`→probability, `mult`→multiplier |
+| `probability_multiplier` | <span class="pat"><span class="pat-action">{p1}%概率提升{m1}倍，{p2}%概率提升{m2}倍，{p3}%概率提升{m3}倍</span></span> | `prob`→probability, `mult`→multiplier |
 
 > **Mechanic**: 心逐 (synchrony) multiplies **ALL** skill effects (damage, healing, debuffs), not just damage. It is an outer wrapper applied after the damage chain. This is a separate multiplier zone from 会心.
 >
@@ -212,8 +212,8 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `conditional_crit` | `若敌方[condition]...必定暴击` | `condition`→string |
-| `conditional_crit_rate` | `暴击率提升{x}%` | `value`→probability, `condition`→string |
+| `conditional_crit` | <span class="pat"><span class="pat-trigger">本神通施放时，</span><span class="pat-action">若敌方[condition]...必定暴击</span></span> | `condition`→string |
+| `conditional_crit_rate` | <span class="pat"><span class="pat-trigger">本神通施放时，</span><span class="pat-action">若敌方[condition]...暴击率提升{x}%</span></span> | `value`→probability, `condition`→string |
 
 > **Mechanic**: Standard crit system — scales with 暴击率 (crit rate) and 暴击伤害 (crit damage) stats. Separate multiplier zone from 会心 (resonance). Both can coexist on the same 灵書 and multiply independently.
 >
@@ -225,10 +225,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `conditional_damage` | `若敌方[condition]，则使本次伤害提升{x}%` / `攻击带有[state]的敌方时，(会使本次)伤害提升{x}%` / `伤害提升{x}%，若[condition]，(伤害提升效果)进一步提升至{y}%` | `value`→%stat, `condition`→string, `escalated_value`→%stat (optional) |
-| `conditional_buff` | `在神通悟境(的条件下)：本神通附加[stat]的伤害提高{x}%，并(且/使)造成的伤害提升{y}%` | `condition`→string, `damage_increase`→%stat (optional), `percent_max_hp_increase`→%stat (optional), `percent_lost_hp_increase`→%stat (optional) |
-| `probability_to_certain` | `概率触发效果提升为必定触发` | *(no fields)* |
-| `ignore_damage_reduction` | `无视敌方所有伤害减免效果` | *(no fields)* |
+| `conditional_damage` | <span class="pat"><span class="pat-action">本神通施放/造成伤害时，若敌方[condition]，则使本次伤害提升{x}%</span></span> / <span class="pat"><span class="pat-action">(</span><span class="pat-scope">使本神通</span><span class="pat-action">)攻击带有[state]的敌方时，(会使本次)伤害提升{x}%</span></span> / <span class="pat"><span class="pat-action">伤害提升{x}%，若[condition]，(伤害提升效果)进一步提升至{y}%</span></span> | `value`→%stat, `condition`→string, `escalated_value`→%stat (optional) |
+| `conditional_buff` | <span class="pat"><span class="pat-action">在神通悟境(的条件下)：本神通附加[stat]的伤害提高{x}%，并(且/使)造成的伤害提升{y}%</span></span> | `condition`→string, `damage_increase`→%stat (optional), `percent_max_hp_increase`→%stat (optional), `percent_lost_hp_increase`→%stat (optional) |
+| `probability_to_certain` | <span class="pat"><span class="pat-scope">使本神通的</span><span class="pat-action">概率触发效果提升为必定触发</span></span> | *(no fields)* |
+| `ignore_damage_reduction` | <span class="pat"><span class="pat-scope">使本神通</span><span class="pat-action">无视敌方所有伤害减免效果</span></span> | *(no fields)* |
 
 > **`conditional_buff` variable stat fields** (canonical names for the stat being modified):
 > - `附加目标最大气血的伤害提高` → `percent_max_hp_increase`
@@ -241,8 +241,8 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `per_hit_escalation` | `每造成1段伤害，剩余段数[stat]提升{x}%，最多提升{m}%` / `每段攻击造成伤害后，下一段提升{x}%[stat]` | `value`→%stat, `stat`→string, `max`→%stat (optional) |
-| `periodic_escalation` | `每造成{n}次伤害时，(接下来的/剩余)伤害提升{m}倍，(单次伤害)至多被该效果重复加成{s}次` | `every_n_hits`→count, `multiplier`→multiplier, `max_stacks`→count |
+| `per_hit_escalation` | <span class="pat"><span class="pat-action">本神通施放/命中时，每造成1段伤害，剩余段数[stat]提升{x}%，最多提升{m}%</span></span> / <span class="pat"><span class="pat-action">本神通每段攻击造成伤害后，下一段提升{x}%[stat]</span></span> | `value`→%stat, `stat`→string, `max`→%stat (optional) |
+| `periodic_escalation` | <span class="pat"><span class="pat-action">每造成{n}次伤害时，(接下来的/剩余)伤害提升{m}倍，(单次伤害)至多被该效果重复加成{s}次</span></span> | `every_n_hits`→count, `multiplier`→multiplier, `max_stacks`→count |
 
 > **`stat` field values**:
 > - `damage` — per-hit damage (corresponds to 伤害提升)
@@ -254,13 +254,13 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `per_self_lost_hp` | `自身每多损失1%最大气血值，会使本次伤害提升{x}%` | `per_percent`→%stat |
-| `per_enemy_lost_hp` | `敌方每多损失1%最大(值)气血值，会使本次伤害提升{x}%` | `per_percent`→%stat |
-| `min_lost_hp_threshold` | `(根据自身已损气血值计算伤害时)至少按已损{x}%计算` | `value`→%lost_hp |
-| `self_hp_cost` | `消耗自身{x}%当前气血值` | `value`→%current_hp |
-| `self_lost_hp_damage` | `额外对其造成自身{x}%已损失气血值的伤害` | `value`→%lost_hp, `on_last_hit`→bool (optional), `heal_equal`→bool (optional) |
-| `percent_current_hp_damage` | `额外造成目标当前气血值{x}%的伤害` | `value`→%current_hp, `per_prior_hit`→bool (optional) |
-| `self_damage_taken_increase` | `施放期间自身受到的伤害(也)提升{x}%` | `value`→%stat |
+| `per_self_lost_hp` | <span class="pat"><span class="pat-action">本神通施放/造成伤害时，自身每多损失1%最大气血值，会使本次伤害提升{x}%</span></span> | `per_percent`→%stat |
+| `per_enemy_lost_hp` | <span class="pat"><span class="pat-action">敌方每多损失1%最大(值)气血值，会使本次伤害提升{x}%</span></span> | `per_percent`→%stat |
+| `min_lost_hp_threshold` | <span class="pat"><span class="pat-action">(根据自身已损气血值计算伤害时)至少按已损{x}%计算</span></span> | `value`→%lost_hp |
+| `self_hp_cost` | <span class="pat"><span class="pat-action">消耗自身{x}%当前气血值</span></span> | `value`→%current_hp |
+| `self_lost_hp_damage` | <span class="pat"><span class="pat-action">额外对其造成自身{x}%已损失气血值的伤害</span></span> | `value`→%lost_hp, `on_last_hit`→bool (optional), `heal_equal`→bool (optional) |
+| `percent_current_hp_damage` | <span class="pat"><span class="pat-action">额外造成目标当前气血值{x}%的伤害</span></span> | `value`→%current_hp, `per_prior_hit`→bool (optional) |
+| `self_damage_taken_increase` | <span class="pat"><span class="pat-action">施放期间自身受到的伤害(也)提升/提高{x}%</span></span> / <span class="pat"><span class="pat-action">释放后自身{d}秒内受到伤害提高{x}%</span></span> | `value`→%stat |
 
 > **Modifier keywords**:
 > - `等额恢复自身气血` → append `heal_equal: true`
@@ -272,11 +272,11 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `self_heal` | `恢复自身{x}%最大气血值` / `持续{d}秒，期间恢复...气血` | `value`→%max_hp, `duration`→seconds (optional) |
-| `lifesteal` | `{x}%的吸血效果` / `恢复...造成伤害{x}%的气血值` | `value`→%stat |
-| `healing_to_damage` | `造成治疗效果时，会对敌方额外造成治疗量{x}%的伤害` | `value`→%stat |
-| `healing_increase` | `(所有)治疗效果提升{x}%` / `提升自身{x}%的治疗量` | `value`→%stat |
-| `self_damage_reduction_during_cast` | `(会在)施放期间提升自身{x}%的伤害减免` | `value`→%stat |
+| `self_heal` | <span class="pat"><span class="pat-action">恢复自身{x}%最大气血值</span></span> / <span class="pat"><span class="pat-action">持续{d}秒，期间恢复...气血</span></span> | `value`→%max_hp, `duration`→seconds (optional) |
+| `lifesteal` | <span class="pat"><span class="pat-trigger">本神通造成伤害时，</span><span class="pat-scope">会使本次神通</span><span class="pat-action">获得{x}%的吸血效果</span></span> / <span class="pat"><span class="pat-action">恢复...造成伤害{x}%的气血值</span></span> | `value`→%stat |
+| `healing_to_damage` | <span class="pat"><span class="pat-trigger">当本神通造成治疗效果时，</span><span class="pat-action">会对敌方额外造成治疗量{x}%的伤害</span></span> | `value`→%stat |
+| `healing_increase` | <span class="pat"><span class="pat-scope">使本神通的</span><span class="pat-action">(所有)治疗效果提升{x}%</span></span> / <span class="pat"><span class="pat-action">提升自身{x}%的治疗量</span></span> | `value`→%stat |
+| `self_damage_reduction_during_cast` | <span class="pat"><span class="pat-trigger">本神通施放时，</span><span class="pat-action">(会在)施放期间提升自身{x}%的伤害减免</span></span> | `value`→%stat |
 
 ---
 
@@ -284,10 +284,10 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `shield` | `获得自身最大气血值{x}%的护盾，持续{d}秒` | `value`→%stat, `source`→string, `duration`→seconds |
-| `shield_strength` | `护盾值提升{x}%` | `value`→%stat |
-| `on_shield_expire` | `护盾消失时，会对敌方额外造成护盾值{x}%的伤害` | `damage_percent_of_shield`→%stat |
-| `damage_to_shield` | `获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒` | `value`→%stat, `duration`→seconds |
+| `shield` | <span class="pat"><span class="pat-action">获得自身最大气血值{x}%的护盾，持续{d}秒</span></span> | `value`→%stat, `source`→string, `duration`→seconds |
+| `shield_strength` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">护盾值提升{x}%</span></span> | `value`→%stat |
+| `on_shield_expire` | <span class="pat"><span class="pat-trigger">当本神通所添加的护盾消失时，</span><span class="pat-action">会对敌方额外造成护盾值{x}%的伤害</span></span> | `damage_percent_of_shield`→%stat |
+| `damage_to_shield` | <span class="pat"><span class="pat-action">本神通造成伤害后，(自身会)获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒</span></span> | `value`→%stat, `duration`→seconds |
 
 ---
 
@@ -295,13 +295,13 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `buff_strength` | `增益效果强度提升{x}%` | `value`→%stat |
-| `debuff_strength` | `减益效果强度提升{x}%` | `value`→%stat |
-| `buff_duration` | `增益(状态)持续时间延长{x}%` | `value`→%stat |
-| `all_state_duration` | `所有状态(效果)持续时间延长{x}%` | `value`→%stat |
-| `buff_stack_increase` | `增益状态层数增加{x}%` | `value`→%stat |
-| `debuff_stack_increase` | `减益状态层数增加{x}%` | `value`→%stat |
-| `debuff_stack_chance` | `有{x}%概率额外多附加1层该减益状态` | `value`→probability |
+| `buff_strength` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">增益效果强度提升{x}%</span></span> | `value`→%stat |
+| `debuff_strength` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">减益效果强度提升{x}%</span></span> | `value`→%stat |
+| `buff_duration` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">增益(状态)持续时间延长{x}%</span></span> | `value`→%stat |
+| `all_state_duration` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">所有状态(效果)持续时间延长{x}%</span></span> | `value`→%stat |
+| `buff_stack_increase` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">增益状态层数增加{x}%</span></span> | `value`→%stat |
+| `debuff_stack_increase` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">减益状态层数增加{x}%</span></span> | `value`→%stat |
+| `debuff_stack_chance` | <span class="pat"><span class="pat-trigger">当本神通为敌方添加减益状态时，</span><span class="pat-action">有{x}%概率额外多附加1层该减益状态</span></span> | `value`→probability |
 
 ---
 
@@ -309,13 +309,13 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `dot` | `每{t}秒(造成/受到){x}%攻击力的伤害，持续{d}秒` / `每{t}秒额外造成目标{x}%[hp_type]的伤害，持续{d}秒` | `tick_interval`→seconds, `duration`→seconds, `damage_per_tick`→%atk (optional), `percent_current_hp`→%current_hp (optional), `percent_lost_hp`→%lost_hp (optional), `max_stacks`→count (optional) |
-| `shield_destroy_dot` | `每{t}秒对目标造成湮灭护盾的总个数*{x}%攻击力的伤害（若...敌方无护盾加持，则计算湮灭{n}个护盾）` | `tick_interval`→seconds, `per_shield_damage`→%atk, `no_shield_assumed`→count |
-| `dot_extra_per_tick` | `持续伤害触发时，额外造成目标{x}%已损失气血值的伤害` | `value`→%lost_hp |
-| `dot_damage_increase` | `持续伤害上升{x}%` / `持续伤害提升{x}%` | `value`→%stat |
-| `dot_frequency_increase` | `持续伤害效果触发间隙缩短{x}%` | `value`→%stat |
-| `extended_dot` | `技能结束后...额外持续存在{x}秒，每{t}秒造成一次伤害` | `extra_seconds`→seconds, `tick_interval`→seconds |
-| `on_dispel` | `若被驱散，立即受到{x}%攻击力的伤害，并眩晕{d}秒` | `damage`→%atk (optional), `stun`→seconds (optional) |
+| `dot` | <span class="pat"><span class="pat-action">每{t}秒(造成/受到){x}%攻击力的伤害，持续{d}秒</span></span> / <span class="pat"><span class="pat-action">每{t}秒额外造成目标{x}%[hp_type]的伤害，持续{d}秒</span></span> | `tick_interval`→seconds, `duration`→seconds, `damage_per_tick`→%atk (optional), `percent_current_hp`→%current_hp (optional), `percent_lost_hp`→%lost_hp (optional), `max_stacks`→count (optional) |
+| `shield_destroy_dot` | <span class="pat"><span class="pat-action">每{t}秒对目标造成湮灭护盾的总个数*{x}%攻击力的伤害（若...敌方无护盾加持，则计算湮灭{n}个护盾）</span></span> | `tick_interval`→seconds, `per_shield_damage`→%atk, `no_shield_assumed`→count |
+| `dot_extra_per_tick` | <span class="pat"><span class="pat-trigger">(当)本神通所添加的持续伤害触发时，</span><span class="pat-action">额外造成目标{x}%已损失气血值的伤害</span></span> | `value`→%lost_hp |
+| `dot_damage_increase` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">持续伤害上升/提升{x}%</span></span> | `value`→%stat |
+| `dot_frequency_increase` | <span class="pat"><span class="pat-scope">使本神通添加的</span><span class="pat-action">持续伤害效果触发间隙缩短{x}%</span></span> | `value`→%stat |
+| `extended_dot` | <span class="pat"><span class="pat-action">技能结束后...额外持续存在{x}秒，每{t}秒造成一次伤害</span></span> | `extra_seconds`→seconds, `tick_interval`→seconds |
+| `on_dispel` | <span class="pat"><span class="pat-action">若被驱散，立即受到{x}%攻击力的伤害，并眩晕{d}秒</span></span> | `damage`→%atk (optional), `stun`→seconds (optional) |
 
 > **`[hp_type]` field values**:
 > - `当前气血值` → `percent_current_hp`
@@ -329,12 +329,12 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `self_buff` | `获得[name](状态)，提升自身{x}%的[stats]，持续{d}秒` / `[name]上限{n}层，持续{d}秒` | `duration`→seconds, `max_stacks`→count (optional), `attack_bonus`→%stat (optional), `defense_bonus`→%stat (optional), `hp_bonus`→%stat (optional), `damage_reduction`→%stat (optional), `healing_bonus`→%stat (optional) |
-| `self_buff_extend` | `延长{x}秒[name]持续时间` | `buff_name`→string, `value`→seconds |
-| `self_buff_extra` | `[name]状态额外使自身获得{x}%[stat]` | `buff_name`→string (optional), `healing_bonus`→%stat (optional), `value`→%stat (optional) |
-| `counter_buff` | `每秒对目标反射自身所受到伤害值的{x}%与自身{y}%已损失气血值的伤害，持续{d}秒` | `duration`→seconds, `reflect_received_damage`→%stat (optional), `reflect_percent_lost_hp`→%lost_hp (optional) |
-| `next_skill_buff` | `(使)下一个施放的神通(释放时)额外获得{x}%的神通伤害加深` | `stat`→string, `value`→%stat |
-| `enlightenment_bonus` | `悟境等级加{x}（最高不超过{m}级）` | `value`→count, `max`→count |
+| `self_buff` | <span class="pat"><span class="pat-action">获得[name](状态)，提升自身{x}%的[stats]，持续{d}秒</span></span> / <span class="pat"><span class="pat-action">[name]上限{n}层，持续{d}秒</span></span> | `duration`→seconds, `max_stacks`→count (optional), `attack_bonus`→%stat (optional), `defense_bonus`→%stat (optional), `hp_bonus`→%stat (optional), `damage_reduction`→%stat (optional), `healing_bonus`→%stat (optional), `damage_increase`→%stat (optional), `final_damage_bonus`→%stat (optional), `skill_damage_increase`→%stat (optional) |
+| `self_buff_extend` | <span class="pat"><span class="pat-action">延长{x}秒[name]持续时间</span></span> | `buff_name`→string, `value`→seconds |
+| `self_buff_extra` | <span class="pat"><span class="pat-action">[name]状态额外使自身获得{x}%[stat]</span></span> | `buff_name`→string (optional), `healing_bonus`→%stat (optional), `value`→%stat (optional) |
+| `counter_buff` | <span class="pat"><span class="pat-action">每秒对目标反射自身所受到伤害值的{x}%与自身{y}%已损失气血值的伤害，持续{d}秒</span></span> | `duration`→seconds, `reflect_received_damage`→%stat (optional), `reflect_percent_lost_hp`→%lost_hp (optional) |
+| `next_skill_buff` | <span class="pat"><span class="pat-trigger">本神通施放后，</span><span class="pat-action">(使)下一个施放的神通(释放时)额外获得{x}%的神通伤害加深</span></span> | `stat`→string, `value`→%stat |
+| `enlightenment_bonus` | <span class="pat"><span class="pat-action">悟境等级加{x}（最高不超过{m}级）</span></span> | `value`→count, `max`→count |
 
 > **`self_buff` attribute keywords**:
 > - `攻击力(加成)` → `attack_bonus`
@@ -349,20 +349,16 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `debuff` | `对敌方添加持续{d}秒的[name]：[stat]降低{x}%` | `target`→string, `value`→%stat, `duration`→seconds, `dispellable`→bool (optional) |
-| `conditional_debuff` | `若敌方[condition]...[stat](降低/减少/增至){x}%` / `在神通悟境的条件下：...对目标施加[name]：[stat]减少{x}(倍/%)...` | `condition`→string, `target`→string, `value`→%stat, `duration`→seconds (optional), `per_hit`→bool (optional) |
-| `cross_slot_debuff` | `受到攻击时，额外给目标附加[name]：[stat]减低{x}%，持续{d}秒` | `target`→string, `value`→%stat, `duration`→seconds, `trigger`→string |
-| `counter_debuff` | `受到伤害时，各有{x}%概率对攻击方添加{n}层[name]...最多叠加{n}层...持续{d}秒` | `duration`→seconds, `on_attacked_chance`→probability, `max_stacks`→count (optional) |
-| `counter_debuff_upgrade` | `[原效果](状态下附加异常)概率提升至{x}%` | `on_attacked_chance`→probability |
+| `debuff` | <span class="pat"><span class="pat-action">对敌方添加持续{d}秒的[name]：[stat]降低{x}%</span></span> | `target`→string, `value`→%stat, `duration`→seconds, `dispellable`→bool (optional) |
+| `conditional_debuff` | <span class="pat"><span class="pat-action">若敌方[condition]...[stat](降低/减少/增至){x}%</span></span> / <span class="pat"><span class="pat-action">在神通悟境的条件下：...对目标施加[name]：[stat]减少{x}(倍/%)...</span></span> | `condition`→string, `target`→string, `value`→%stat, `duration`→seconds (optional), `per_hit`→bool (optional) |
+| `cross_slot_debuff` | <span class="pat"><span class="pat-trigger">([state]状态下)受到攻击时，</span><span class="pat-action">(额外)给目标附加[name]：[stat]减低{x}%，持续{d}秒</span></span> | `target`→string, `value`→%stat, `duration`→seconds, `trigger`→string |
+| `counter_debuff` | <span class="pat"><span class="pat-action">受到伤害时，各有{x}%概率对攻击方添加{n}层[name]...最多叠加{n}层...持续{d}秒</span></span> | `duration`→seconds, `on_attacked_chance`→probability, `max_stacks`→count (optional) |
+| `counter_debuff_upgrade` | <span class="pat"><span class="pat-action">[原效果](状态下附加异常)概率提升至{x}%</span></span> | `on_attacked_chance`→probability |
 
 > **`target` field values** (debuff target attributes):
 > - `治疗量` → `healing_received`
 > - `伤害减免` → `damage_reduction`
 > - `最终伤害减免` → `final_damage_reduction`
-> - `下一个神通冷却` → `next_skill_cooldown`
-> - `神通伤害` → `skill_damage`
-> - `攻击力` → `attack`
-> - `回响伤害` → `echo_damage`
 >
 > **`无法被驱散`** → `dispellable: false`
 >
@@ -376,56 +372,56 @@ The Sword / Spell / Demon / Body schools share the following keyword patterns un
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `summon` | `持续存在{d}秒的分身，继承自身{x}%的属性...分身受到的伤害为自身的{y}%` | `inherit_stats`→%stat, `duration`→seconds, `damage_taken_multiplier`→%stat |
-| `summon_buff` | `分身受到伤害降低至自身的{x}%，造成的伤害增加{y}%` | `damage_taken_reduction_to`→%stat, `damage_increase`→%stat |
-| `buff_steal` | `窃取敌方{n}个增益状态` | `count`→count |
-| `self_cleanse` | `驱散自身{n}个减益状态` | `count`→count |
-| `self_hp_floor` | `气血值不会低于最大气血值的{x}%` | `value`→%max_hp |
+| `summon` | <span class="pat"><span class="pat-action">持续存在{d}秒的分身，继承自身{x}%的属性...分身受到的伤害为自身的{y}%</span></span> | `inherit_stats`→%stat, `duration`→seconds, `damage_taken_multiplier`→%stat |
+| `summon_buff` | <span class="pat"><span class="pat-action">分身受到伤害降低至自身的{x}%，造成的伤害增加{y}%</span></span> | `damage_taken_reduction_to`→%stat, `damage_increase`→%stat |
+| `buff_steal` | <span class="pat"><span class="pat-action">窃取敌方{n}个增益状态</span></span> | `count`→count |
+| `self_cleanse` | <span class="pat"><span class="pat-action">驱散自身{n}个减益状态</span></span> | `count`→count |
+| `self_hp_floor` | <span class="pat"><span class="pat-action">气血值不会低于最大气血值的{x}%</span></span> | `value`→%max_hp |
 
 ### §13.2 Untargetable State
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `untargetable_state` | `在{d}秒内不可被选中` | `duration`→seconds |
+| `untargetable_state` | <span class="pat"><span class="pat-action">在{d}秒内不可被选中</span></span> | `duration`→seconds |
 
 ### §13.3 Dispel and Crowd Control
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `periodic_dispel` | `每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害` | `count`→count (optional), `interval`→seconds (optional), `duration`→seconds (optional), `damage_percent_of_skill`→%stat (optional), `no_buff_double`→bool (optional) |
-| `periodic_cleanse` | `每秒有{x}%概率驱散自身所有控制状态，{d}秒内最多触发{n}次` | `chance`→probability, `interval`→seconds, `cooldown`→seconds, `max_triggers`→count |
+| `periodic_dispel` | <span class="pat"><span class="pat-trigger">本神通命中后</span><span class="pat-action">每秒驱散敌方{n}个增益状态，持续{d}秒...(且本技能)每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害</span></span> | `count`→count (optional), `interval`→seconds (optional), `duration`→seconds (optional), `damage_percent_of_skill`→%stat (optional), `no_buff_double`→bool (optional) |
+| `periodic_cleanse` | <span class="pat"><span class="pat-action">每秒有{x}%概率驱散自身所有控制状态，{d}秒内最多触发{n}次</span></span> | `chance`→probability, `interval`→seconds, `cooldown`→seconds, `max_triggers`→count |
 
 ### §13.4 Delayed Burst
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `delayed_burst` | `施加[name]，持续{d}秒。期间敌方受到的神通伤害增加{y}%，(并且)时间结束时，对目标造成{z}%期间提升的伤害+{w}%攻击力的伤害` | `duration`→seconds, `damage_increase_during`→%stat, `burst_base`→%atk, `burst_accumulated_pct`→%stat |
-| `delayed_burst_increase` | `[name]状态结束时的伤害提升{x}%` | `value`→%stat |
+| `delayed_burst` | <span class="pat"><span class="pat-action">施加[name]，持续{d}秒。期间敌方受到的神通伤害增加{y}%，(并且)时间结束时，对目标造成{z}%期间提升的伤害+{w}%攻击力的伤害</span></span> | `duration`→seconds, `damage_increase_during`→%stat, `burst_base`→%atk, `burst_accumulated_pct`→%stat |
+| `delayed_burst_increase` | <span class="pat"><span class="pat-action">[name]状态结束时的伤害提升{x}%</span></span> | `value`→%stat |
 
 ### §13.5 Random Effects
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `random_buff` | `获得以下任意1个加成：[效果列表]` | `options`→string (optional) |
-| `random_debuff` | `对敌方添加以下任意1个减益效果：[效果列表]` | `options`→string (optional) |
-| `attack_reduction` | `攻击降低{x}%` | `value`→%stat |
-| `crit_rate_reduction` | `暴击率降低{x}%` | `value`→%stat |
-| `crit_damage_reduction` | `暴击伤害降低{x}%` | `value`→%stat |
+| `random_buff` | <span class="pat"><span class="pat-action">获得以下任意1个加成：[效果列表]</span></span> | `options`→string (optional) |
+| `random_debuff` | <span class="pat"><span class="pat-action">对敌方添加以下任意1个减益效果：[效果列表]</span></span> | `options`→string (optional) |
+| `attack_reduction` | <span class="pat"><span class="pat-action">攻击降低{x}%</span></span> | `value`→%stat |
+| `crit_rate_reduction` | <span class="pat"><span class="pat-action">暴击率降低{x}%</span></span> | `value`→%stat |
+| `crit_damage_reduction` | <span class="pat"><span class="pat-action">暴击伤害降低{x}%</span></span> | `value`→%stat |
 
 ### §13.6 Stack-Based Damage
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `per_buff_stack_damage` | `(自身)每{n}层增益状态，提升{x}%伤害，最大提升{m}%` | `per_n_stacks`→count, `value`→%stat, `max`→%stat |
-| `per_debuff_stack_damage` | `(敌方)每(有){n}层减益状态...伤害提升{x}%，最大(提升){m}%` | `per_n_stacks`→count, `value`→%stat, `max`→%stat, `dot_half`→bool (optional) |
-| `per_debuff_stack_true_damage` | `目标每有1层减益状态...额外造成目标{x}%最大气血值的真实伤害，最多(造成){m}%最大气血值的真实伤害` | `per_stack`→%max_hp, `max`→%max_hp |
+| `per_buff_stack_damage` | <span class="pat"><span class="pat-action">(自身)每{n}层增益状态，提升{x}%伤害，最大提升{m}%</span></span> | `per_n_stacks`→count, `value`→%stat, `max`→%stat |
+| `per_debuff_stack_damage` | <span class="pat"><span class="pat-action">(敌方)每(有){n}层减益状态...伤害提升{x}%，最大(提升){m}%</span></span> | `per_n_stacks`→count, `value`→%stat, `max`→%stat, `dot_half`→bool (optional) |
+| `per_debuff_stack_true_damage` | <span class="pat"><span class="pat-action">目标每有1层减益状态...额外造成目标{x}%最大气血值的真实伤害，最多(造成){m}%最大气血值的真实伤害</span></span> | `per_stack`→%max_hp, `max`→%max_hp |
 
 ### §13.7 Other Triggers
 
 | Effect Type | Chinese Pattern | Fields → Units |
 |:---|:---|:---|
-| `on_buff_debuff_shield_trigger` | `每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害` | `damage_percent_of_skill`→%stat |
-| `conditional_heal_buff` | `(命中时，)若敌方具有减益状态，则提升自身{x}%的治疗量，持续{d}秒` | `condition`→string, `value`→%stat, `duration`→seconds |
+| `on_buff_debuff_shield_trigger` | <span class="pat"><span class="pat-action">本神通每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害</span></span> | `damage_percent_of_skill`→%stat |
+| `conditional_heal_buff` | <span class="pat"><span class="pat-trigger">本神通命中时，</span><span class="pat-action">若敌方具有减益状态，则提升自身{x}%的治疗量，持续{d}秒</span></span> | `condition`→string, `value`→%stat, `duration`→seconds |
 
 > **Random effect option keywords**:
 > - `攻击提升{x}%` → `attack_bonus`

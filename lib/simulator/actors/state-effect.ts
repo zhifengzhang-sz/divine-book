@@ -28,8 +28,12 @@ export interface StateEffectInput {
 	damage_per_tick: number;  // raw % of ATK (e.g., 550 = 5.5× ATK)
 	shield_hp: number;
 	counter_damage: number;
+	atk_modifier: number;    // fractional: 0.7 = +70% ATK
+	def_modifier: number;    // fractional: 0.7 = +70% DEF
 	target_entity: string; // who to HIT (for DoT/counter)
 	owner_entity?: string; // who owns this (for ATK lookup on DoT ticks)
+	max_stacks?: number;   // stack cap (undefined = unlimited)
+	dispellable?: boolean; // false → ignore DISPEL (default true)
 }
 
 export const stateEffectMachine = setup({
@@ -45,8 +49,12 @@ export const stateEffectMachine = setup({
 			damage_per_tick: number;
 			shield_hp: number;
 			counter_damage: number;
+			atk_modifier: number;
+			def_modifier: number;
 			target_entity: string;
 			owner_entity: string;
+			max_stacks: number;    // 0 = unlimited
+			dispellable: boolean;
 		},
 		input: {} as StateEffectInput,
 		events: {} as TickEvent | DispelEvent | StackEvent | AbsorbEvent,
@@ -65,8 +73,12 @@ export const stateEffectMachine = setup({
 		damage_per_tick: input.damage_per_tick,
 		shield_hp: input.shield_hp,
 		counter_damage: input.counter_damage,
+		atk_modifier: input.atk_modifier ?? 0,
+		def_modifier: input.def_modifier ?? 0,
 		target_entity: input.target_entity,
 		owner_entity: input.owner_entity ?? "",
+		max_stacks: input.max_stacks ?? 0,
+		dispellable: input.dispellable ?? true,
 	}),
 	states: {
 		on: {
@@ -85,7 +97,8 @@ export const stateEffectMachine = setup({
 									);
 									if (target) {
 										const ownerActor = context.owner_entity ? system.get(context.owner_entity) : null;
-										const atk = (ownerActor?.getSnapshot()?.context as any)?.atk ?? 0;
+										const ownerCtx = ownerActor?.getSnapshot()?.context as any;
+										const atk = ownerCtx?.effective_atk ?? ownerCtx?.atk ?? 0;
 										const dotDmg = (context.damage_per_tick / 100) * atk * context.stacks;
 										enqueue.sendTo(target, {
 											type: "HIT",
@@ -115,7 +128,8 @@ export const stateEffectMachine = setup({
 									);
 									if (target) {
 										const ownerActor = context.owner_entity ? system.get(context.owner_entity) : null;
-										const atk = (ownerActor?.getSnapshot()?.context as any)?.atk ?? 0;
+										const ownerCtx = ownerActor?.getSnapshot()?.context as any;
+										const atk = ownerCtx?.effective_atk ?? ownerCtx?.atk ?? 0;
 										const dotDmg = (context.damage_per_tick / 100) * atk * context.stacks;
 										enqueue.sendTo(target, {
 											type: "HIT",
@@ -132,12 +146,23 @@ export const stateEffectMachine = setup({
 						),
 					},
 				],
-				DISPEL: { target: "off" },
+				DISPEL: [
+					{
+						guard: ({ context }) => context.dispellable,
+						target: "off",
+					},
+					{
+						// dispellable: false → ignore DISPEL
+					},
+				],
 				STACK: {
-					actions: assign(({ context }) => ({
-						stacks: context.stacks + 1,
-						remaining: context.initial_duration, // refresh duration
-					})),
+					actions: assign(({ context }) => {
+						const capped = context.max_stacks > 0 && context.stacks >= context.max_stacks;
+						return {
+							stacks: capped ? context.stacks : context.stacks + 1,
+							remaining: context.initial_duration, // refresh duration
+						};
+					}),
 				},
 				ABSORB: [
 					{

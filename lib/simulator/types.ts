@@ -53,8 +53,14 @@ export interface StateDef {
 	counter_damage?: number;
 	burst_damage?: number;         // damage dealt when state expires (delayed_burst)
 	on_dispel_damage?: number;     // damage dealt when this state is dispelled
+	atk_modifier?: number;         // fractional: 0.7 = +70% ATK (additive with other atk_modifiers)
+	def_modifier?: number;         // fractional: 0.7 = +70% DEF (additive with other def_modifiers)
 	stacks?: number;               // initial stack count
 	max_stacks?: number;           // stack cap
+	trigger?: "on_cast" | "on_attacked" | "per_tick";  // when this state is created
+	chance?: number;               // probability 0–100 (roll before creating)
+	per_hit_stack?: boolean;       // send STACK per hit instead of creating once
+	dispellable?: boolean;         // false → ignore DISPEL events (default true)
 }
 
 // ---------------------------------------------------------------------------
@@ -127,9 +133,6 @@ export interface EntityDef {
 // Events — the contracts between actors
 // ---------------------------------------------------------------------------
 
-/** Arena → Slot */
-export type ActivateEvent = { type: "ACTIVATE" };
-
 /** Slot → Entity (target). Also DoT → Entity, Entity → Entity (counter). */
 export type HitEvent = {
 	type: "HIT";
@@ -156,9 +159,6 @@ export type StateAppliedEvent = {
 	type: "STATE_APPLIED";
 	state_id: string;            // systemId of the state effect actor
 };
-
-/** Slot → Arena */
-export type SlotDoneEvent = { type: "SLOT_DONE"; slot_id: string };
 
 /** Entity → Arena */
 export type EntityDiedEvent = { type: "ENTITY_DIED"; entity_id: string };

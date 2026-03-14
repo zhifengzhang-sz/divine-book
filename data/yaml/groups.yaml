@@ -1,5 +1,5 @@
 # Effect groups — derived from TypeScript registry
-# Do not edit manually. Regenerate with: bun app/parse.ts
+# Do not edit manually. Regenerate with: bun app/generate.ts
 groups:
   - id: shared_mechanics
     section: §0

@@ -37,7 +37,7 @@ export const SHIELD_DEFS: EffectTypeDef[] = [
 		group: "shield_system",
 		zones: [Zone.S_A],
 		scope: Scope.Same,
-		patterns: ["护盾值提升{x}%"],
+		patterns: ["使本神通添加的护盾值提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -51,7 +51,7 @@ export const SHIELD_DEFS: EffectTypeDef[] = [
 		group: "shield_system",
 		zones: [Zone.D_ortho],
 		scope: Scope.Same,
-		patterns: ["护盾消失时，会对敌方额外造成护盾值{x}%的伤害"],
+		patterns: ["当本神通所添加的护盾消失时，会对敌方额外造成护盾值{x}%的伤害"],
 		fields: [{ name: "damage_percent_of_shield", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnEvent,
@@ -67,7 +67,7 @@ export const SHIELD_DEFS: EffectTypeDef[] = [
 		zones: [Zone.S_A],
 		scope: Scope.Same,
 		patterns: [
-			"获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒",
+			"本神通造成伤害后，(自身会)获得1个本次神通伤害值的{x}%的护盾，护盾持续{d}秒",
 		],
 		fields: [
 			{ name: "value", unit: Unit.PctStat },

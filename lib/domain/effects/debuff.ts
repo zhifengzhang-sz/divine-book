@@ -63,7 +63,7 @@ export const DEBUFF_DEFS: EffectTypeDef[] = [
 		zones: [Zone.H_red],
 		scope: Scope.Cross,
 		patterns: [
-			"受到攻击时，额外给目标附加[name]：[stat]减低{x}%，持续{d}秒",
+			"([state]状态下)受到攻击时，(额外)给目标附加[name]：[stat]减低{x}%，持续{d}秒",
 		],
 		fields: [
 			{ name: "target", unit: Unit.Str },

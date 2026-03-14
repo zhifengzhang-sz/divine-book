@@ -26,6 +26,9 @@ import type {
 	StateTarget,
 } from "./types";
 import { ZERO_FACTORS } from "./types";
+import type { BookData } from "../parser/emit";
+import type { StateDef as ParserStateDef } from "../parser/states";
+import { parseMainSkills } from "../parser/index";
 
 // ---------------------------------------------------------------------------
 // Data loaders
@@ -37,6 +40,7 @@ const modelPath = join(ROOT, "data/yaml/model.yaml");
 
 let _effects: any = null;
 let _model: any = null;
+let _parserBooks: Record<string, BookData> | null = null;
 
 function getEffects(): any {
 	if (!_effects) {
@@ -50,6 +54,27 @@ function getModel(): any {
 		_model = parseYaml(readFileSync(modelPath, "utf-8"));
 	}
 	return _model;
+}
+
+const rawMdPath = join(ROOT, "data/raw/主书.md");
+
+/** Load parsed book data (with state registries) from raw markdown. Cached. */
+function getParserBooks(): Record<string, BookData> {
+	if (!_parserBooks) {
+		const md = readFileSync(rawMdPath, "utf-8");
+		const result = parseMainSkills(md);
+		_parserBooks = result.books;
+	}
+	return _parserBooks;
+}
+
+/**
+ * Get the state registry for a book from the grammar-based parser.
+ * Returns undefined if the book has no named states.
+ */
+export function getBookStates(bookName: string): Record<string, ParserStateDef> | undefined {
+	const books = getParserBooks();
+	return books[bookName]?.states;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +99,8 @@ export interface CombatConfig {
 	progression: Progression;
 	player: SideConfig;
 	opponent: SideConfig;
+	/** Max combat time in seconds (default: 300). */
+	max_time?: number;
 }
 
 export interface SideConfig {
@@ -649,6 +676,9 @@ function buildStateDefs(
 	const states: StateDef[] = [];
 	let stateIndex = 0;
 
+	// Load parser state registry for this book (if available)
+	const stateRegistry = getBookStates(platformBook);
+
 	// Collect meta modifiers that affect DoTs/bursts
 	let dot_damage_mod = 0;
 	let dot_frequency_mod = 0;
@@ -688,7 +718,7 @@ function buildStateDefs(
 		if (hasTemporal && coverageType !== "duration_based" && coverageType !== "reactive" && coverageType !== "next_skill") continue;
 		if (hasTemporal && coverageType === "duration_based" && duration <= 0) continue;
 
-		const target = inferTarget(e.type);
+		let target: StateTarget = inferTarget(e.type);
 		const modifiers: Partial<FactorVector> = {};
 		let dr_modifier: number | undefined;
 		let healing_modifier: number | undefined;
@@ -697,6 +727,11 @@ function buildStateDefs(
 		let burst_damage: number | undefined;
 		let on_dispel_damage: number | undefined;
 		let shield_hp: number | undefined;
+		let atk_modifier: number | undefined;
+		let def_modifier: number | undefined;
+
+		// For self_buff: skip S_coeff from model factors (attack_bonus is an entity stat, not S_coeff)
+		const skipModelSCoeff = e.type === "self_buff" || e.type === "self_buff_extra" || e.type === "counter_buff";
 
 		// Map model factors
 		if (e.factors) {
@@ -709,6 +744,8 @@ function buildStateDefs(
 							(modifiers[name as keyof FactorVector] ?? 0) + value;
 					}
 				} else if (name in FRACTIONAL_FACTORS) {
+					// Skip S_coeff for self_buff — attack_bonus is an entity stat modifier, not a factor
+					if (skipModelSCoeff && FRACTIONAL_FACTORS[name] === "S_coeff") continue;
 					const key = FRACTIONAL_FACTORS[name];
 					modifiers[key] = (modifiers[key] ?? 0) + value / 100;
 				} else if (name === DR_FACTOR) {
@@ -729,6 +766,18 @@ function buildStateDefs(
 			...findRawAffix(op1, prog),
 			...findRawAffix(op2, prog),
 		];
+
+		// self_buff stat modifiers: read directly from effects.yaml (NOT from model factors)
+		if (e.type === "self_buff" || e.type === "self_buff_extra") {
+			for (const raw of rawEffects) {
+				if (raw.type === e.type || raw.type === "self_buff" || raw.type === "self_buff_extra") {
+					if (raw.attack_bonus) atk_modifier = (atk_modifier ?? 0) + raw.attack_bonus / 100;
+					if (raw.defense_bonus) def_modifier = (def_modifier ?? 0) + raw.defense_bonus / 100;
+					// damage_increase, skill_damage_increase, final_damage_bonus stay as factor modifiers
+					// damage_reduction stays as dr_modifier (already handled via DR_A)
+				}
+			}
+		}
 
 		if (e.type === "counter_debuff" || e.type === "counter_buff") {
 			for (const raw of rawEffects) {
@@ -851,16 +900,49 @@ function buildStateDefs(
 			counter_damage == null &&
 			burst_damage == null &&
 			on_dispel_damage == null &&
-			shield_hp == null
+			shield_hp == null &&
+			atk_modifier == null &&
+			def_modifier == null
 		) {
 			continue;
+		}
+
+		// --- State registry lookup: override target/duration from parser ---
+		// Find the state name from raw effects (effects.yaml has `name` field)
+		let stateName: string | undefined;
+		let registryEntry: ParserStateDef | undefined;
+		if (stateRegistry) {
+			// Find matching raw effect with a name field for this type
+			for (const raw of rawEffects) {
+				if (raw.type === e.type && raw.name) {
+					if (stateRegistry[raw.name]) {
+						stateName = raw.name;
+						registryEntry = stateRegistry[raw.name];
+						break;
+					}
+				}
+			}
+		}
+
+		// Override target from registry (more accurate than type-name inference)
+		if (registryEntry) {
+			if (registryEntry.target === "self" || registryEntry.target === "opponent") {
+				target = registryEntry.target;
+			}
+			// "both" → keep inferred target (handled per-instance at runtime)
+		}
+
+		// Override duration from registry
+		let baseDuration = duration;
+		if (registryEntry?.duration != null) {
+			baseDuration = registryEntry.duration === "permanent" ? 999 : registryEntry.duration;
 		}
 
 		// Apply §9 modifiers: strength → factor values, duration → duration
 		const resolvedModifiers = applyStrengthModifiers(modifiers, e.type, sideModifiers);
 		const resolvedDuration = hasTemporal
-			? applyDurationModifiers(duration, e.type, sideModifiers)
-			: 999;
+			? applyDurationModifiers(baseDuration, e.type, sideModifiers)
+			: (registryEntry?.duration === "permanent" ? 999 : (baseDuration || 999));
 
 		let strengthMult = 1;
 		for (const m of sideModifiers) {
@@ -881,6 +963,14 @@ function buildStateDefs(
 			burst_damage: burst_damage != null ? burst_damage * strengthMult : undefined,
 			on_dispel_damage: on_dispel_damage != null ? on_dispel_damage * strengthMult : undefined,
 			shield_hp,
+			atk_modifier: atk_modifier != null ? atk_modifier * strengthMult : undefined,
+			def_modifier: def_modifier != null ? def_modifier * strengthMult : undefined,
+			// New fields from parser state registry
+			max_stacks: registryEntry?.max_stacks,
+			trigger: registryEntry?.trigger,
+			chance: registryEntry?.chance,
+			per_hit_stack: registryEntry?.per_hit_stack,
+			dispellable: registryEntry?.dispellable,
 		});
 	}
 
@@ -1261,6 +1351,7 @@ export function buildArenaDef(config: CombatConfig): ArenaDef {
 		slots_b: slotsB,
 		t_gap: config.t_gap,
 		sp_shield_ratio: config.formulas.sp_shield_ratio,
+		max_time: config.max_time,
 	};
 }
 

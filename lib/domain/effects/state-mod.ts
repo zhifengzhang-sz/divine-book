@@ -19,7 +19,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.M_buff],
 		scope: Scope.Cross,
-		patterns: ["增益效果强度提升{x}%"],
+		patterns: ["使本神通添加的增益效果强度提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -33,7 +33,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.H_red],
 		scope: Scope.Cross,
-		patterns: ["减益效果强度提升{x}%"],
+		patterns: ["使本神通添加的减益效果强度提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -47,7 +47,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.M_buff],
 		scope: Scope.Cross,
-		patterns: ["增益(状态)持续时间延长{x}%"],
+		patterns: ["使本神通添加的增益(状态)持续时间延长{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -61,7 +61,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.M_state],
 		scope: Scope.Cross,
-		patterns: ["所有状态(效果)持续时间延长{x}%"],
+		patterns: ["使本神通添加的所有状态(效果)持续时间延长{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -75,7 +75,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.M_buff],
 		scope: Scope.Cross,
-		patterns: ["增益状态层数增加{x}%"],
+		patterns: ["使本神通添加的增益状态层数增加{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -89,7 +89,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.H_red],
 		scope: Scope.Cross,
-		patterns: ["减益状态层数增加{x}%"],
+		patterns: ["使本神通添加的减益状态层数增加{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -103,7 +103,7 @@ export const STATE_MOD_DEFS: EffectTypeDef[] = [
 		group: "state_modifiers",
 		zones: [Zone.H_red],
 		scope: Scope.Cross,
-		patterns: ["有{x}%概率额外多附加1层该减益状态"],
+		patterns: ["当本神通为敌方添加减益状态时，有{x}%概率额外多附加1层该减益状态"],
 		fields: [{ name: "value", unit: Unit.Probability }],
 		exec: {
 			trigger: Trigger.Permanent,

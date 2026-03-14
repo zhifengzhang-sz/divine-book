@@ -102,6 +102,27 @@ blockquote {
 strong {
   color: #e5c07b !important;
 }
+
+.pat {
+  font-family: monospace !important;
+  font-size: 12px !important;
+  background-color: #3e4451 !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  white-space: nowrap !important;
+}
+
+.pat-trigger {
+  color: #e06c75 !important;
+}
+
+.pat-scope {
+  color: #61afef !important;
+}
+
+.pat-action {
+  color: #98c379 !important;
+}
 </style>`;
 
 const UNIT_TABLE = `**Unit definitions** (unit identifiers used in the "Fields → Units" column):
@@ -291,6 +312,90 @@ function formatFields(def: EffectTypeDef): string {
 		.join(", ");
 }
 
+// ---------------------------------------------------------------------------
+// Pattern colorization — trigger (red), scope (blue), action (green)
+// ---------------------------------------------------------------------------
+
+const TRIGGER_PATTERNS = [
+	// (当)本神通所添加的...触发时 (for dot_extra_per_tick) — most specific, first
+	/\(?当\)?本神通(?:所添加的)?[^触]*触发时[，,]?/g,
+	// 当本神通...时 (当X造成治疗效果时, 当X为Y添加Z时, etc.) — before bare 本神通
+	/当本神通[^时]*时[，,]?/g,
+	// 本神通施放时/命中时/造成伤害时/造成治疗效果时/攻击目标时
+	/(?:会)?本神通(?:施放|命中|造成伤害|造成治疗效果|攻击目标)时[，,]?/g,
+	// 本神通施放后/命中后
+	/本神通(?:施放|命中)后[，,]?/g,
+	// [state]状态下受到攻击时
+	/\[?[^\]]*\]?状态下[)）]?受到攻击时[，,]?/g,
+];
+
+const SCOPE_PATTERNS = [
+	// 使本神通添加的
+	/使本神通添加的/g,
+	// 使本神通(的)?
+	/使本神通的?/g,
+	// 会使本次神通
+	/会使本次神通/g,
+	// 本神通所添加的
+	/本神通所添加的/g,
+];
+
+function colorizePattern(pattern: string): string {
+	// Track which character ranges are claimed by trigger/scope
+	const ranges: Array<{ start: number; end: number; cls: string }> = [];
+
+	const markRanges = (
+		regexes: RegExp[],
+		cls: string,
+	) => {
+		for (const re of regexes) {
+			// Reset lastIndex for safety
+			const regex = new RegExp(re.source, re.flags);
+			let m: RegExpExecArray | null;
+			while ((m = regex.exec(pattern)) !== null) {
+				const start = m.index;
+				const end = start + m[0].length;
+				// Check no overlap with existing ranges
+				const overlaps = ranges.some(
+					(r) => start < r.end && end > r.start,
+				);
+				if (!overlaps) {
+					ranges.push({ start, end, cls });
+				}
+			}
+		}
+	};
+
+	// Mark triggers first (higher priority), then scope
+	markRanges(TRIGGER_PATTERNS, "pat-trigger");
+	markRanges(SCOPE_PATTERNS, "pat-scope");
+
+	// Sort ranges by start position
+	ranges.sort((a, b) => a.start - b.start);
+
+	// Build the colorized string
+	const parts: string[] = [];
+	let cursor = 0;
+
+	for (const r of ranges) {
+		// Gap before this range → action (green)
+		if (cursor < r.start) {
+			const gap = pattern.slice(cursor, r.start);
+			parts.push(`<span class="pat-action">${gap}</span>`);
+		}
+		const seg = pattern.slice(r.start, r.end);
+		parts.push(`<span class="${r.cls}">${seg}</span>`);
+		cursor = r.end;
+	}
+
+	// Remaining text → action (green)
+	if (cursor < pattern.length) {
+		parts.push(`<span class="pat-action">${pattern.slice(cursor)}</span>`);
+	}
+
+	return `<span class="pat">${parts.join("")}</span>`;
+}
+
 function generateTable(defs: EffectTypeDef[], hasNotes: boolean): string {
 	const header = hasNotes
 		? "| Effect Type | Chinese Pattern | Fields → Units | Notes |"
@@ -301,7 +406,7 @@ function generateTable(defs: EffectTypeDef[], hasNotes: boolean): string {
 
 	const rows = defs.map((d) => {
 		const type = `\`${d.type}\``;
-		const pattern = d.patterns.map((p) => `\`${p}\``).join(" / ");
+		const pattern = d.patterns.map((p) => colorizePattern(p)).join(" / ");
 		const fields = formatFields(d);
 		if (hasNotes) {
 			return `| ${type} | ${pattern} | ${fields} | ${d.notes ?? ""} |`;

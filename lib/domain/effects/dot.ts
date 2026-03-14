@@ -66,7 +66,7 @@ export const DOT_DEFS: EffectTypeDef[] = [
 		zones: [Zone.D_ortho],
 		scope: Scope.Cross,
 		patterns: [
-			"持续伤害触发时，额外造成目标{x}%已损失气血值的伤害",
+			"(当)本神通所添加的持续伤害触发时，额外造成目标{x}%已损失气血值的伤害",
 		],
 		fields: [{ name: "value", unit: Unit.PctLostHp }],
 		exec: {
@@ -82,7 +82,7 @@ export const DOT_DEFS: EffectTypeDef[] = [
 		group: "damage_over_time",
 		zones: [Zone.D_ortho],
 		scope: Scope.Cross,
-		patterns: ["持续伤害上升{x}%", "持续伤害提升{x}%"],
+		patterns: ["使本神通添加的持续伤害上升/提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -96,7 +96,7 @@ export const DOT_DEFS: EffectTypeDef[] = [
 		group: "damage_over_time",
 		zones: [Zone.D_ortho],
 		scope: Scope.Cross,
-		patterns: ["持续伤害效果触发间隙缩短{x}%"],
+		patterns: ["使本神通添加的持续伤害效果触发间隙缩短{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.Permanent,

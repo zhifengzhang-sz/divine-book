@@ -19,7 +19,7 @@ export const HP_BASED_DEFS: EffectTypeDef[] = [
 		group: "hp_based_calculations",
 		zones: [Zone.M_dmg],
 		scope: Scope.Same,
-		patterns: ["自身每多损失1%最大气血值，会使本次伤害提升{x}%"],
+		patterns: ["本神通施放/造成伤害时，自身每多损失1%最大气血值，会使本次伤害提升{x}%"],
 		fields: [{ name: "per_percent", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -118,7 +118,7 @@ export const HP_BASED_DEFS: EffectTypeDef[] = [
 		group: "hp_based_calculations",
 		zones: [Zone.DR_A],
 		scope: Scope.Same,
-		patterns: ["施放期间自身受到的伤害(也)提升{x}%"],
+		patterns: ["施放期间自身受到的伤害(也)提升/提高{x}%", "释放后自身{d}秒内受到伤害提高{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,

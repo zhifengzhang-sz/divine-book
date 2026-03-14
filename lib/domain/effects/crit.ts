@@ -14,7 +14,7 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 		group: "standard_crit",
 		zones: [Zone.M_crit],
 		scope: Scope.Same,
-		patterns: ["若敌方[condition]...必定暴击"],
+		patterns: ["本神通施放时，若敌方[condition]...必定暴击"],
 		fields: [{ name: "condition", unit: Unit.Str }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -29,7 +29,7 @@ export const CRIT_DEFS: EffectTypeDef[] = [
 		group: "standard_crit",
 		zones: [Zone.M_crit],
 		scope: Scope.Same,
-		patterns: ["暴击率提升{x}%"],
+		patterns: ["本神通施放时，若敌方[condition]...暴击率提升{x}%"],
 		fields: [
 			{ name: "value", unit: Unit.Probability },
 			{ name: "condition", unit: Unit.Str },

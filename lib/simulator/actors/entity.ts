@@ -4,19 +4,31 @@
  * Receives HIT events, applies own defenses (base DR + state effect modifiers),
  * reduces HP. Maintains a single active_states list — no buff/debuff split.
  *
- * State effects are separate actors — the entity looks them up via
- * system.get() when it needs their values.
+ * Derived stats (effective_atk, effective_dr, etc.) are cached on context
+ * and recomputed on every event via computeDerivedStats(). All consumers
+ * (slot, chart, DoT) read these cached values — no re-derivation.
  */
 
-import { assign, enqueueActions, setup } from "xstate";
+import { assign, enqueueActions, setup, spawnChild } from "xstate";
 import type {
 	AbsorbEvent,
 	EntityDef,
 	EntityDiedEvent,
+	FactorVector,
 	HealEvent,
 	HitEvent,
+	StateDef,
 	StateAppliedEvent,
+	StateCreatedEvent,
 } from "../types";
+import { computeDerivedStats, type DerivedStats } from "../derived";
+import { stateEffectMachine } from "./state-effect";
+
+/** Register a reactive state template (trigger=on_attacked) on this entity */
+export type RegisterReactiveEvent = {
+	type: "REGISTER_REACTIVE";
+	template: StateDef;
+};
 
 export const entityMachine = setup({
 	types: {
@@ -28,16 +40,24 @@ export const entityMachine = setup({
 			sp: number;              // 灵力
 			def: number;             // 守御 (raw value)
 			dr_constant: number;     // K in DR = def / (def + K)
-			active_states: string[];   // systemIds of all active state effects on this entity
+			active_states: string[];
+			reactive_templates: StateDef[];
+			reactive_counter: number;
 			damage_log: Array<{
 				damage: number;
 				effective: number;
 				dr_applied: number;
 				source: string;
 			}>;
+			// Derived stats — cached, recomputed on every event
+			effective_atk: number;
+			effective_def: number;
+			effective_dr: number;
+			heal_reduction: number;
+			buff_modifiers: Partial<FactorVector>;
 		},
 		input: {} as EntityDef,
-		events: {} as HitEvent | HealEvent | StateAppliedEvent,
+		events: {} as HitEvent | HealEvent | StateAppliedEvent | RegisterReactiveEvent,
 	},
 }).createMachine({
 	id: "entity",
@@ -50,8 +70,16 @@ export const entityMachine = setup({
 		sp: input.sp,
 		def: input.def,
 		dr_constant: input.dr_constant,
-		active_states: [],
-		damage_log: [],
+		active_states: [] as string[],
+		reactive_templates: [] as StateDef[],
+		reactive_counter: 0,
+		damage_log: [] as Array<{ damage: number; effective: number; dr_applied: number; source: string }>,
+		// Initial derived stats (no active states yet)
+		effective_atk: input.atk,
+		effective_def: input.def,
+		effective_dr: input.def / (input.def + input.dr_constant),
+		heal_reduction: 0,
+		buff_modifiers: {} as Partial<FactorVector>,
 	}),
 	states: {
 		alive: {
@@ -59,20 +87,13 @@ export const entityMachine = setup({
 				HIT: {
 					target: "receiving_hit",
 					actions: enqueueActions(({ context, event, enqueue, system }) => {
-						// 1. Compute effective DR: def/(def+K) + sum of state effect dr_modifiers
-						const base_dr = context.def / (context.def + context.dr_constant);
-						let effective_dr = base_dr;
-						for (const stateId of context.active_states) {
-							const actor = system.get(stateId);
-							if (!actor) continue;
-							const snap = actor.getSnapshot();
-							if (snap.value === "on") {
-								effective_dr += (snap.context as any).dr_modifier ?? 0;
-							}
-						}
-						effective_dr = Math.max(0, Math.min(1, effective_dr));
+						// Recompute derived stats (states may have expired since last event)
+						const derived = computeDerivedStats(
+							context.active_states, context.atk, context.def, context.dr_constant, system,
+						);
 
-						// 1b. Apply DR bypass (D_res from attacker)
+						// 1. Apply DR bypass (D_res from attacker)
+						let effective_dr = derived.effective_dr;
 						const dr_bypass = event.dr_bypass ?? 0;
 						if (dr_bypass > 0) {
 							effective_dr = effective_dr * (1 - dr_bypass);
@@ -111,6 +132,7 @@ export const entityMachine = setup({
 									source: event.source,
 								},
 							],
+							...derived,
 						});
 
 						// 4. Reactive counter: check active states for counter_damage > 0
@@ -135,30 +157,83 @@ export const entityMachine = setup({
 								}
 							}
 						}
+
+						// 5. Reactive state templates (trigger=on_attacked): spawn/stack on HIT received
+						if (event.source !== "dot" && context.reactive_templates.length > 0) {
+							let nextCounter = context.reactive_counter;
+							for (const tmpl of context.reactive_templates) {
+								if (tmpl.chance != null && tmpl.chance < 100) {
+									if (Math.random() * 100 >= tmpl.chance) continue;
+								}
+
+								const stateSystemId = `state-reactive-${tmpl.id}-${context.id}-${nextCounter++}`;
+								const target_entity =
+									tmpl.target === "self" ? context.id : event.source;
+
+								enqueue(
+									spawnChild(stateEffectMachine, {
+										input: {
+											id: tmpl.id,
+											duration: tmpl.duration,
+											modifiers: tmpl.modifiers,
+											dr_modifier: tmpl.dr_modifier ?? 0,
+											healing_modifier: tmpl.healing_modifier ?? 0,
+											damage_per_tick: tmpl.damage_per_tick ?? 0,
+											shield_hp: tmpl.shield_hp ?? 0,
+											counter_damage: tmpl.counter_damage ?? 0,
+											atk_modifier: tmpl.atk_modifier ?? 0,
+											def_modifier: tmpl.def_modifier ?? 0,
+											target_entity,
+											owner_entity: context.id,
+											max_stacks: tmpl.max_stacks,
+											dispellable: tmpl.dispellable,
+										},
+										systemId: stateSystemId,
+									}),
+								);
+
+								const arena = system.get("arena");
+								if (arena) {
+									enqueue.sendTo(arena, {
+										type: "STATE_CREATED",
+										state_id: stateSystemId,
+										target_entity,
+									} satisfies StateCreatedEvent);
+								}
+							}
+							enqueue.assign({ reactive_counter: nextCounter });
+						}
 					}),
 				},
 				HEAL: {
 					actions: enqueueActions(({ context, event, enqueue, system }) => {
 						const healEvent = event as HealEvent;
-						// Sum healing reduction from active state effects (H_red debuffs on self)
-						let heal_reduction = 0;
-						for (const stateId of context.active_states) {
-							const stActor = system.get(stateId);
-							if (!stActor) continue;
-							const snap = stActor.getSnapshot();
-							if (snap.value === "on") {
-								heal_reduction += (snap.context as any).healing_modifier ?? 0;
-							}
-						}
-						const effective_heal = Math.max(0, healEvent.amount * (1 - heal_reduction));
+						// Recompute derived stats to get current heal_reduction
+						const derived = computeDerivedStats(
+							context.active_states, context.atk, context.def, context.dr_constant, system,
+						);
+						const effective_heal = Math.max(0, healEvent.amount * (1 - derived.heal_reduction));
 						enqueue.assign({
 							hp: Math.min(context.max_hp, context.hp + effective_heal),
+							...derived,
 						});
 					}),
 				},
 				STATE_APPLIED: {
+					actions: enqueueActions(({ context, event, enqueue, system }) => {
+						const newStates = [...context.active_states, event.state_id];
+						const derived = computeDerivedStats(
+							newStates, context.atk, context.def, context.dr_constant, system,
+						);
+						enqueue.assign({
+							active_states: newStates,
+							...derived,
+						});
+					}),
+				},
+				REGISTER_REACTIVE: {
 					actions: assign(({ context, event }) => ({
-						active_states: [...context.active_states, event.state_id],
+						reactive_templates: [...context.reactive_templates, (event as RegisterReactiveEvent).template],
 					})),
 				},
 			},

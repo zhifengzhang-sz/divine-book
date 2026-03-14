@@ -15,8 +15,8 @@ export const ESCALATION_DEFS: EffectTypeDef[] = [
 		zones: [Zone.M_dmg],
 		scope: Scope.Same,
 		patterns: [
-			"每造成1段伤害，剩余段数[stat]提升{x}%，最多提升{m}%",
-			"每段攻击造成伤害后，下一段提升{x}%[stat]",
+			"本神通施放/命中时，每造成1段伤害，剩余段数[stat]提升{x}%，最多提升{m}%",
+			"本神通每段攻击造成伤害后，下一段提升{x}%[stat]",
 		],
 		fields: [
 			{ name: "value", unit: Unit.PctStat },

@@ -104,7 +104,7 @@ export const SELF_BUFF_DEFS: EffectTypeDef[] = [
 		zones: [Zone.M_skill],
 		scope: Scope.Cross,
 		patterns: [
-			"(使)下一个施放的神通(释放时)额外获得{x}%的神通伤害加深",
+			"本神通施放后，(使)下一个施放的神通(释放时)额外获得{x}%的神通伤害加深",
 		],
 		fields: [
 			{ name: "stat", unit: Unit.Str },

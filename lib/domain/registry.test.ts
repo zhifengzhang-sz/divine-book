@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { registry } from "./registry.js";
-import type { GroupsOutput } from "../parse.groups.js";
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "../..");
@@ -64,7 +64,7 @@ describe("Registry", () => {
 			"utf-8",
 		);
 		// Skip the header comment lines
-		const yamlData: GroupsOutput = parseYaml(yamlContent);
+		const yamlData = parseYaml(yamlContent) as { groups: Array<{ id: string; section: string; label: string; types: string[] }> };
 		const registryOutput = registry.groupsOutput;
 
 		expect(registryOutput.groups).toHaveLength(yamlData.groups.length);

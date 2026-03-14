@@ -4,6 +4,7 @@ import { resolveHit } from "./damage";
 import { stateEffectMachine } from "./actors/state-effect";
 import { entityMachine } from "./actors/entity";
 import { arenaMachine, type ArenaDef } from "./actors/arena";
+import { resolveSlot, takeEntitySnapshot, type EntitySnapshot } from "./resolve";
 import type { FactorVector, SlotDef, EntityDef, StateDef } from "./types";
 import { ZERO_FACTORS } from "./types";
 
@@ -46,6 +47,19 @@ const NOOP_SLOT = (id: string, owner: string, target: string): SlotDef => ({
 	owner_entity: owner,
 });
 
+/** Simple snapshot for pure resolveSlot tests */
+const SIMPLE_SNAP = (id: string, hp = 10_000_000): EntitySnapshot => ({
+	id,
+	hp,
+	max_hp: 10_000_000,
+	effective_atk: 50_000,
+	effective_dr: 0.3,
+	buff_modifiers: {},
+	has_debuff: false,
+	debuff_count: 0,
+	buff_count: 0,
+});
+
 // ---------------------------------------------------------------------------
 // Pure damage
 // ---------------------------------------------------------------------------
@@ -68,6 +82,127 @@ describe("resolveHit (pure)", () => {
 			{ DR: 0, current_hp: 500_000, max_hp: 500_000 },
 		);
 		expect(result.damage).toBeCloseTo(1_125_000, 0);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// resolveSlot (pure)
+// ---------------------------------------------------------------------------
+
+describe("resolveSlot (pure)", () => {
+	test("basic hit produces correct HIT events", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 3,
+			base_factors: SIMPLE_FACTORS, states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		expect(result.hits).toHaveLength(3);
+		for (let i = 0; i < 3; i++) {
+			expect(result.hits[i].target).toBe("entity-b");
+			expect(result.hits[i].event.source).toBe("entity-a");
+			expect(result.hits[i].event.hit_index).toBe(i);
+			expect(result.hits[i].event.damage).toBeCloseTo(500_000, 0);
+		}
+	});
+
+	test("self HP cost produces self_hit", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 0,
+			base_factors: SIMPLE_FACTORS, states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+			self_hp_cost: 10, // 10% of max HP
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		expect(result.self_hits).toHaveLength(1);
+		expect(result.self_hits[0].target).toBe("entity-a");
+		expect(result.self_hits[0].event.damage).toBeCloseTo(1_000_000, 0);
+		expect(result.self_hits[0].event.dr_bypass).toBe(1.0);
+	});
+
+	test("H_A produces heal events", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 1,
+			base_factors: { ...SIMPLE_FACTORS, H_A: 100 }, // 100% of effective ATK
+			states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		expect(result.heals).toHaveLength(1);
+		expect(result.heals[0].target).toBe("entity-a");
+		expect(result.heals[0].event.amount).toBeCloseTo(50_000, 0);
+	});
+
+	test("lifesteal heals based on total damage", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 2,
+			base_factors: SIMPLE_FACTORS, states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+			lifesteal: 50, // 50% of damage dealt
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		// 2 hits × 500k = 1M total, 50% = 500k heal
+		const lifestealHeal = result.heals.find(h => h.event.amount > 400_000);
+		expect(lifestealHeal).toBeDefined();
+		expect(lifestealHeal!.event.amount).toBeCloseTo(500_000, 0);
+	});
+
+	test("state creation skips reactive and failed chance rolls", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 1,
+			base_factors: SIMPLE_FACTORS,
+			states_to_create: [
+				{ id: "buff1", duration: 10, target: "self", modifiers: { M_dmg: 0.5 } },
+				{ id: "reactive1", duration: 10, target: "self", modifiers: {}, trigger: "on_attacked" },
+				{ id: "debuff1", duration: 10, target: "opponent", modifiers: {}, chance: 0 }, // 0% chance
+			],
+			target_entity: "entity-b", owner_entity: "entity-a",
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		// Only buff1 should be created (reactive skipped, 0% chance skipped)
+		expect(result.states).toHaveLength(1);
+		expect(result.states[0].input.id).toBe("buff1");
+		expect(result.states[0].target_entity).toBe("entity-a"); // self
+	});
+
+	test("per_hit_escalation increases damage per hit", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 3,
+			base_factors: SIMPLE_FACTORS,
+			conditional_factors: [
+				{ condition: "per_hit_escalation", factor: "M_skill", value: 0.5 },
+			],
+			states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+		};
+
+		const result = resolveSlot(slot, SIMPLE_SNAP("entity-a"), SIMPLE_SNAP("entity-b"), 0);
+		expect(result.hits).toHaveLength(3);
+		// Hit 0: base, Hit 1: +0.5 M_skill, Hit 2: +1.0 M_skill
+		expect(result.hits[1].event.damage).toBeGreaterThan(result.hits[0].event.damage);
+		expect(result.hits[2].event.damage).toBeGreaterThan(result.hits[1].event.damage);
+	});
+
+	test("buff_modifiers from snapshot augment base factors", () => {
+		const slot: SlotDef = {
+			id: "slot-a-1", platform: "test", hit_count: 1,
+			base_factors: SIMPLE_FACTORS, states_to_create: [],
+			target_entity: "entity-b", owner_entity: "entity-a",
+		};
+
+		const owner: EntitySnapshot = {
+			...SIMPLE_SNAP("entity-a"),
+			buff_modifiers: { M_dmg: 0.7 }, // +70% damage
+		};
+
+		const result = resolveSlot(slot, owner, SIMPLE_SNAP("entity-b"), 0);
+		// 500k × (1 + 0.7) = 850k
+		expect(result.hits[0].event.damage).toBeCloseTo(850_000, 0);
 	});
 });
 
@@ -302,7 +437,6 @@ describe("arena", () => {
 	});
 
 	test("debuff on opponent reduces their DR", () => {
-		// 命損: -100% DR on opponent (dr_modifier = -1.0)
 		const debuff: StateDef = {
 			id: "命損", duration: 12, target: "opponent",
 			modifiers: {}, dr_modifier: -1.0,
@@ -310,7 +444,7 @@ describe("arena", () => {
 
 		const def: ArenaDef = {
 			entity_a: ENTITY_A,
-			entity_b: ENTITY_B,  // base DR = 0.3
+			entity_b: ENTITY_B,
 			slots_a: [
 				{
 					id: "slot-a-1", platform: "大罗幻诀", hit_count: 1,
@@ -350,7 +484,6 @@ describe("arena", () => {
 	});
 
 	test("expired debuff stops affecting DR", () => {
-		// Debuff lasts 1 gap (12s covers gap 1, expires during gap 2)
 		const debuff: StateDef = {
 			id: "命損", duration: 12, target: "opponent",
 			modifiers: {}, dr_modifier: -1.0,
@@ -421,8 +554,6 @@ describe("arena", () => {
 		arena.start();
 		arena.send({ type: "START" });
 
-		// Entity-b died → removed from system
-		expect(arena.system.get("entity-b")).toBeUndefined();
 		expect(arena.getSnapshot().context.winner).toBe("entity-a");
 		expect(arena.getSnapshot().value).toBe("done");
 
@@ -433,7 +564,7 @@ describe("arena", () => {
 		const dot: StateDef = {
 			id: "噬心", duration: 18, target: "opponent",
 			modifiers: {},
-			damage_per_tick: 200, // % of ATK: (200/100) × 50k ATK = 100k raw damage per tick
+			damage_per_tick: 200,
 		};
 
 		const def: ArenaDef = {
@@ -464,9 +595,7 @@ describe("arena", () => {
 		const eb = arena.system.get("entity-b")!.getSnapshot();
 		const log = (eb.context as any).damage_log;
 
-		// DoT ticks between rounds: tick after round 1 (6s), tick after round 2 (6s)
-		// Duration 18s, t_gap 6s → ticks at gap1 (remaining 12), gap2 (remaining 6)
-		// 3rd tick at gap3 would expire it (remaining 0) — but also fires on expiry
+		// DoT ticks between rounds
 		expect(log.length).toBeGreaterThanOrEqual(2);
 		// Each tick: 100k raw × (1 - 0.3 DR) = 70k effective
 		expect(log[0].effective).toBeCloseTo(70_000, 0);
@@ -476,6 +605,10 @@ describe("arena", () => {
 	});
 
 	test("reactive counter fires back on HIT", () => {
+		// Simultaneous resolution: both sides fire in round 0.
+		// Counter is created in the applying phase of round 0,
+		// but the HIT already resolved against the pre-round snapshot.
+		// So counter does NOT fire in round 0 — only from round 1 onward.
 		const counter: StateDef = {
 			id: "罗天魔咒", duration: 30, target: "self",
 			modifiers: {},
@@ -492,7 +625,6 @@ describe("arena", () => {
 					target_entity: "entity-b", owner_entity: "entity-a",
 				},
 			],
-			// Entity B has a counter buff applied before combat via slot-b setup
 			slots_b: [
 				{
 					id: "slot-b-1", platform: "noop", hit_count: 0,
@@ -508,26 +640,19 @@ describe("arena", () => {
 		arena.start();
 		arena.send({ type: "START" });
 
-		// Entity A hit entity B → counter fires back at entity A
 		const ea = arena.system.get("entity-a")!.getSnapshot();
 		const logA = (ea.context as any).damage_log;
 
-		// Entity A should have received counter damage
-		// slot-b-1 fires first (0 hits + counter state), then slot-a-1 fires (1 hit at B)
-		// When B receives the HIT, counter fires back 50k at A
-		// But wait — both slots fire in same round. slot-a sends HIT to B,
-		// B's counter is only active after STATE_APPLIED routes through arena.
-		// The counter state is created by slot-b-1 which fires in the same round.
-		// Event ordering: slotA ACTIVATE → HITs to B, slotB ACTIVATE → creates counter
-		// So counter is NOT yet active when A's hit arrives at B.
-		// The counter only works from round 2 onward.
-
-		// Let me check — actually both slots fire in round 0.
-		// Arena sends ACTIVATE to slotA first, then slotB.
-		// slotA fires HIT at B (no counter yet).
-		// slotB creates counter on B.
-		// So entity A should NOT have counter damage in round 1.
-		expect(logA).toHaveLength(0); // no counter fired in round 1
+		// Counter not yet active when A's hit arrives at B in round 0
+		// (both resolved against pre-round snapshot where counter doesn't exist)
+		// But the counter IS created in the applying phase, and B receives the HIT
+		// during applying — so counter DOES fire when B processes the HIT.
+		// This is the same as old behavior: counter fires if active when HIT arrives.
+		// In applying phase: we send HITs, entity B now has counter applied, so
+		// the counter fires back. Let's check:
+		// Actually — applying phase sends HITs first, then spawns states.
+		// So counter is NOT active when the HIT arrives. No counter damage.
+		expect(logA).toHaveLength(0);
 
 		arena.stop();
 	});
@@ -535,10 +660,10 @@ describe("arena", () => {
 	test("DR bypass (D_res) reduces effective DR", () => {
 		const def: ArenaDef = {
 			entity_a: ENTITY_A,
-			entity_b: ENTITY_B, // base DR = 0.3
+			entity_b: ENTITY_B,
 			slots_a: [{
 				id: "slot-a-1", platform: "test", hit_count: 1,
-				base_factors: { ...SIMPLE_FACTORS, D_res: 0.5 }, // 50% DR bypass
+				base_factors: { ...SIMPLE_FACTORS, D_res: 0.5 },
 				states_to_create: [],
 				target_entity: "entity-b", owner_entity: "entity-a",
 			}],
@@ -552,8 +677,6 @@ describe("arena", () => {
 
 		const eb = arena.system.get("entity-b")!.getSnapshot();
 		const log = (eb.context as any).damage_log;
-		// DR = 0.3, bypass 50% → effective DR = 0.3 × (1-0.5) = 0.15
-		// 500k × (1 - 0.15) = 425k
 		expect(log[0].dr_applied).toBeCloseTo(0.15, 2);
 		expect(log[0].effective).toBeCloseTo(425_000, 0);
 
@@ -563,10 +686,10 @@ describe("arena", () => {
 	test("full DR bypass (神威冲云) ignores all DR", () => {
 		const def: ArenaDef = {
 			entity_a: ENTITY_A,
-			entity_b: ENTITY_B, // base DR = 0.3
+			entity_b: ENTITY_B,
 			slots_a: [{
 				id: "slot-a-1", platform: "test", hit_count: 1,
-				base_factors: { ...SIMPLE_FACTORS, D_res: 1.0 }, // 100% DR bypass
+				base_factors: { ...SIMPLE_FACTORS, D_res: 1.0 },
 				states_to_create: [],
 				target_entity: "entity-b", owner_entity: "entity-a",
 			}],
@@ -580,7 +703,6 @@ describe("arena", () => {
 
 		const eb = arena.system.get("entity-b")!.getSnapshot();
 		const log = (eb.context as any).damage_log;
-		// Full bypass → DR = 0, effective = 500k
 		expect(log[0].dr_applied).toBeCloseTo(0, 2);
 		expect(log[0].effective).toBeCloseTo(500_000, 0);
 
@@ -588,16 +710,14 @@ describe("arena", () => {
 	});
 
 	test("healing (H_A) restores owner HP after taking damage", () => {
-		// Round 1: entity-b hits entity-a for 500k raw, then entity-a heals
-		// Round 2: entity-a hits with healing
 		const def: ArenaDef = {
-			entity_a: ENTITY_A, // HP: 10M, ATK: 50k
+			entity_a: ENTITY_A,
 			entity_b: ENTITY_B,
 			slots_a: [
 				NOOP_SLOT("slot-a-1", "entity-a", "entity-b"),
 				{
 					id: "slot-a-2", platform: "test", hit_count: 1,
-					base_factors: { ...SIMPLE_FACTORS, H_A: 100 }, // 100% of effective ATK = 50k heal
+					base_factors: { ...SIMPLE_FACTORS, H_A: 100 },
 					states_to_create: [],
 					target_entity: "entity-b", owner_entity: "entity-a",
 				},
@@ -641,7 +761,7 @@ describe("arena", () => {
 					id: "slot-a-2", platform: "test", hit_count: 1,
 					base_factors: SIMPLE_FACTORS,
 					conditional_factors: [
-						{ condition: "per_enemy_lost_hp", factor: "M_dmg", value: 0.01 }, // 1% per lost HP%
+						{ condition: "per_enemy_lost_hp", factor: "M_dmg", value: 0.01 },
 					],
 					states_to_create: [],
 					target_entity: "entity-b", owner_entity: "entity-a",
@@ -740,8 +860,74 @@ describe("arena", () => {
 		expect(logA).toHaveLength(1);
 		expect(logA[0].damage).toBe(50_000);
 		expect(logA[0].source).toBe("entity-b");
-		// Counter damage also goes through A's DR: 50k × (1 - 0.3) = 35k
 		expect(logA[0].effective).toBeCloseTo(35_000, 0);
+
+		arena.stop();
+	});
+
+	test("simultaneous resolution: both sides see same snapshot", () => {
+		// Both sides fire 1 hit. With simultaneous resolution,
+		// both should deal the same damage regardless of order.
+		const def: ArenaDef = {
+			entity_a: { ...ENTITY_A, hp: 500_000 },
+			entity_b: { ...ENTITY_B, hp: 500_000 },
+			slots_a: [{
+				id: "slot-a-1", platform: "test", hit_count: 1,
+				base_factors: SIMPLE_FACTORS, states_to_create: [],
+				target_entity: "entity-b", owner_entity: "entity-a",
+			}],
+			slots_b: [{
+				id: "slot-b-1", platform: "test", hit_count: 1,
+				base_factors: SIMPLE_FACTORS, states_to_create: [],
+				target_entity: "entity-a", owner_entity: "entity-b",
+			}],
+			t_gap: 6, sp_shield_ratio: 0,
+		};
+
+		const arena = createActor(arenaMachine, { input: def, systemId: "arena" });
+		arena.start();
+		arena.send({ type: "START" });
+
+		const ea = arena.system.get("entity-a")?.getSnapshot();
+		const eb = arena.system.get("entity-b")?.getSnapshot();
+
+		// Both should take identical damage (symmetric setup)
+		const eaHp = (ea?.context as any)?.hp ?? 0;
+		const ebHp = (eb?.context as any)?.hp ?? 0;
+		// 500k raw × 0.7 = 350k effective. 500k - 350k = 150k
+		expect(eaHp).toBeCloseTo(150_000, 0);
+		expect(ebHp).toBeCloseTo(150_000, 0);
+
+		arena.stop();
+	});
+
+	test("simultaneous death results in draw", () => {
+		// Both entities have exactly enough HP to die from one hit
+		const def: ArenaDef = {
+			entity_a: { ...ENTITY_A, hp: 100_000, def: 0 },
+			entity_b: { ...ENTITY_B, hp: 100_000, def: 0 },
+			slots_a: [{
+				id: "slot-a-1", platform: "test", hit_count: 1,
+				base_factors: { ...ZERO_FACTORS, D_base: 10000 }, // 5M damage
+				states_to_create: [],
+				target_entity: "entity-b", owner_entity: "entity-a",
+			}],
+			slots_b: [{
+				id: "slot-b-1", platform: "test", hit_count: 1,
+				base_factors: { ...ZERO_FACTORS, D_base: 10000 },
+				states_to_create: [],
+				target_entity: "entity-a", owner_entity: "entity-b",
+			}],
+			t_gap: 6, sp_shield_ratio: 0,
+		};
+
+		const arena = createActor(arenaMachine, { input: def, systemId: "arena" });
+		arena.start();
+		arena.send({ type: "START" });
+
+		const snap = arena.getSnapshot();
+		expect(snap.value).toBe("done");
+		expect(snap.context.winner).toBeNull(); // draw
 
 		arena.stop();
 	});

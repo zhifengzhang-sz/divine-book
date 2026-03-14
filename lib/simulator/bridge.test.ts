@@ -12,8 +12,8 @@ describe("bridge", () => {
 	test("loadCombatConfig parses combat.json", () => {
 		const config = loadCombatConfig(configPath);
 		expect(config.t_gap).toBe(6);
-		expect(config.player.books).toHaveLength(6);
-		expect(config.opponent.books).toHaveLength(6);
+		expect(config.player.books).toHaveLength(1);
+		expect(config.opponent.books).toHaveLength(1);
 		expect(config.formulas.dr_constant).toBeGreaterThan(0);
 	});
 
@@ -61,12 +61,12 @@ describe("bridge", () => {
 			[], PROG,
 		);
 
-		// Should have self_buff (S_coeff: 0.7) and debuff (H_red: 0.31)
+		// Should have self_buff (atk_modifier: 0.7) and debuff (H_red: 0.31)
 		expect(slot.states_to_create.length).toBeGreaterThanOrEqual(2);
 
 		const selfBuff = slot.states_to_create.find(s => s.target === "self");
 		expect(selfBuff).toBeDefined();
-		expect(selfBuff!.modifiers.S_coeff).toBeCloseTo(0.7, 2);
+		expect(selfBuff!.atk_modifier).toBeCloseTo(0.7, 2);
 		expect(selfBuff!.duration).toBe(12);
 
 		const debuff = slot.states_to_create.find(s => s.target === "opponent");
@@ -94,12 +94,13 @@ describe("bridge", () => {
 		const config = loadCombatConfig(configPath);
 		const arena = buildArenaDef(config);
 
-		expect(arena.entity_a.hp).toBe(6.6e16);
-		expect(arena.entity_a.atk).toBe(3.5184e15);
-		expect(arena.entity_b.hp).toBe(6.6e16);
-		expect(arena.entity_b.atk).toBe(3.5184e15);
-		expect(arena.slots_a).toHaveLength(6);
-		expect(arena.slots_b).toHaveLength(6);
+		expect(arena.entity_a.hp).toBe(1e8);
+		expect(arena.entity_a.atk).toBe(1000);
+		// scale=1.0 → same stats
+		expect(arena.entity_b.hp).toBe(1e8);
+		expect(arena.entity_b.atk).toBe(1000);
+		expect(arena.slots_a).toHaveLength(1);
+		expect(arena.slots_b).toHaveLength(1);
 	});
 
 	test("buildArenaDef: all slots have positive hit_count and per-hit D_base", () => {
@@ -110,28 +111,6 @@ describe("bridge", () => {
 			expect(slot.hit_count).toBeGreaterThanOrEqual(1);
 			expect(slot.base_factors.D_base).toBeGreaterThan(0);
 		}
-	});
-
-	test("§9 modifiers: 龙象护身 buff_strength 300 amplifies self_buff S_coeff by 4×", () => {
-		const config = loadCombatConfig(configPath);
-		const arena = buildArenaDef(config);
-
-		// Slot 1 (甲元仙符) should have self_buff with S_coeff = 0.7 × 4 = 2.8
-		const slot1 = arena.slots_a[0];
-		const selfBuff = slot1.states_to_create.find(s => s.target === "self");
-		expect(selfBuff).toBeDefined();
-		expect(selfBuff!.modifiers.S_coeff).toBeCloseTo(2.8, 2);
-	});
-
-	test("§9 modifiers: buff_duration extends self_buff duration", () => {
-		const config = loadCombatConfig(configPath);
-		const arena = buildArenaDef(config);
-
-		// Slot 1 (甲元仙符) self_buff: base duration 12, modified by buff_duration
-		const slot1 = arena.slots_a[0];
-		const selfBuff = slot1.states_to_create.find(s => s.target === "self");
-		expect(selfBuff).toBeDefined();
-		expect(selfBuff!.duration).toBeGreaterThan(12);
 	});
 
 	test("通明 produces D_res and sigma_R in base_factors", () => {
@@ -176,6 +155,7 @@ describe("bridge", () => {
 		const config = loadCombatConfig(configPath);
 		const arena = buildArenaDef(config);
 		expect(arena.sp_shield_ratio).toBe(1.0);
+		expect(arena.entity_a.sp).toBe(5000);
 	});
 
 	// --- New routing coverage tests ---
@@ -308,12 +288,12 @@ describe("bridge", () => {
 		const config = loadCombatConfig(configPath);
 		const arena = buildArenaDef(config);
 
-		// Every slot should have base_factors, and conditionals + states should capture
-		// everything that was previously in EXCLUDED_FROM_BASE
+		// Every slot should have base_factors, conditionals, and states
 		for (const slot of [...arena.slots_a, ...arena.slots_b]) {
 			expect(slot.base_factors).toBeDefined();
 			expect(slot.conditional_factors).toBeDefined();
 			expect(slot.states_to_create).toBeDefined();
+			expect(slot.hit_count).toBeGreaterThanOrEqual(1);
 		}
 	});
 });

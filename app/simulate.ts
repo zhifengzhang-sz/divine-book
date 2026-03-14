@@ -1,30 +1,65 @@
 #!/usr/bin/env bun
 /**
- * CLI: Run combat simulation from a config file.
+ * CLI: Run combat simulation from a config file or main book duel.
  *
  * Usage:
- *   bun app/simulate.ts --config config/combat.json
- *   bun app/simulate.ts --config config/trace-1v1.json --trace
+ *   bun app/simulate.ts --config config/combat.json [--trace]
+ *   bun app/simulate.ts --book1 千锋聚灵剑 --book2 甲元仙符 [--trace]
  */
 
 import { parseArgs } from "node:util";
 import { createActor } from "xstate";
-import { buildArenaDef, loadCombatConfig, MAX_PROGRESSION } from "../lib/simulator/bridge";
+import {
+	buildArenaDef,
+	loadCombatConfig,
+	MAX_PROGRESSION,
+	type CombatConfig,
+	type Progression,
+} from "../lib/simulator/bridge";
 import { arenaMachine } from "../lib/simulator/actors/arena";
 
 const { values } = parseArgs({
 	options: {
 		config: { type: "string", short: "c" },
+		book1: { type: "string" },
+		book2: { type: "string" },
 		trace: { type: "boolean", short: "t", default: false },
 	},
 });
 
-if (!values.config) {
-	console.error("Usage: bun app/simulate.ts --config config/combat.json [--trace]");
+// ---------------------------------------------------------------------------
+// Main book 1v1 duel mode
+// ---------------------------------------------------------------------------
+
+function buildDuelConfig(book1: string, book2: string, prog: Progression): CombatConfig {
+	return {
+		t_gap: 25,
+		max_time: 300,
+		progression: prog,
+		formulas: { dr_constant: 1e6, sp_shield_ratio: 0 },
+		player: {
+			entity: { hp: 1e8, atk: 1000, sp: 0, def: 9e5 },
+			books: [{ slot: 1, platform: book1, op1: "", op2: "" }],
+		},
+		opponent: {
+			entity: { hp: 1e8, atk: 1000, sp: 0, def: 9e5 },
+			books: [{ slot: 1, platform: book2, op1: "", op2: "" }],
+		},
+	};
+}
+
+if (!values.config && !values.book1) {
+	console.error(
+		"Usage:\n" +
+		"  bun app/simulate.ts --config config/combat.json [--trace]\n" +
+		"  bun app/simulate.ts --book1 千锋聚灵剑 --book2 甲元仙符 [--trace]",
+	);
 	process.exit(1);
 }
 
-const config = loadCombatConfig(values.config);
+const config = values.book1 && values.book2
+	? buildDuelConfig(values.book1, values.book2, MAX_PROGRESSION)
+	: loadCombatConfig(values.config!);
 const arenaDef = buildArenaDef(config);
 const TRACE = values.trace;
 
@@ -71,6 +106,8 @@ for (const side of [
 				.map(([k, v]) => `${k}=${(v as number).toFixed(3)}`)
 				.join(",");
 			if (modStr) parts.push(`mods:{${modStr}}`);
+			if (s.atk_modifier) parts.push(`atk+${(s.atk_modifier * 100).toFixed(0)}%`);
+			if (s.def_modifier) parts.push(`def+${(s.def_modifier * 100).toFixed(0)}%`);
 			if (s.dr_modifier) parts.push(`dr_mod=${s.dr_modifier.toFixed(3)}`);
 			if (s.healing_modifier) parts.push(`h_mod=${s.healing_modifier.toFixed(3)}`);
 			if (s.damage_per_tick) parts.push(`dpt=${s.damage_per_tick}`);
@@ -78,6 +115,11 @@ for (const side of [
 			if (s.burst_damage) parts.push(`burst=${s.burst_damage}`);
 			if (s.on_dispel_damage) parts.push(`on_dispel=${s.on_dispel_damage}`);
 			if (s.shield_hp) parts.push(`shield=${s.shield_hp}`);
+			if (s.max_stacks) parts.push(`max_stacks=${s.max_stacks}`);
+			if (s.trigger) parts.push(`trigger=${s.trigger}`);
+			if (s.chance != null) parts.push(`chance=${s.chance}%`);
+			if (s.per_hit_stack) parts.push(`per_hit_stack`);
+			if (s.dispellable === false) parts.push(`!dispellable`);
 			return parts.join(" ");
 		}).join("\n    ");
 		const conds = (slot.conditional_factors ?? []).map(cf => {
@@ -163,23 +205,14 @@ function traceInspect(evt: any) {
 			case "HEAL":
 				detail = `amount=${fmtNum(event.amount)} src=${event.source}`;
 				break;
-			case "ACTIVATE":
-				detail = "";
-				break;
 			case "START":
 				detail = "";
 				break;
 			case "TICK":
 				detail = `dt=${event.dt}`;
 				break;
-			case "STATE_CREATED":
-				detail = `state=${event.state_id} target=${event.target_entity}`;
-				break;
 			case "STATE_APPLIED":
 				detail = `state=${event.state_id}`;
-				break;
-			case "SLOT_DONE":
-				detail = `slot=${event.slot_id}`;
 				break;
 			case "ENTITY_DIED":
 				detail = `entity=${event.entity_id}`;

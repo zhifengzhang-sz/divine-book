@@ -20,7 +20,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		group: "damage_multiplier_zones",
 		zones: [Zone.S_coeff],
 		scope: Scope.Same,
-		patterns: ["提升{x}%攻击力的效果"],
+		patterns: ["(本神通施放时，会)使本(次)神通提升{x}%攻击力的效果"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -52,7 +52,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		group: "damage_multiplier_zones",
 		zones: [Zone.M_skill],
 		scope: Scope.Same,
-		patterns: ["提升{x}%神通伤害", "{x}%的神通伤害加深"],
+		patterns: ["本神通攻击目标时提升{x}%神通伤害", "{x}%的神通伤害加深"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -80,7 +80,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		group: "damage_multiplier_zones",
 		zones: [Zone.M_final],
 		scope: Scope.Same,
-		patterns: ["最终伤害加深提升{x}%"],
+		patterns: ["(本神通施放时，会使本次神通的)最终伤害加深提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -94,7 +94,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		group: "damage_multiplier_zones",
 		zones: [Zone.M_crit],
 		scope: Scope.Same,
-		patterns: ["暴击伤害提升{x}%", "致命伤害提升{x}%"],
+		patterns: ["(使本神通)暴击伤害提升/提高{x}%", "致命伤害提升{x}%"],
 		fields: [{ name: "value", unit: Unit.PctStat }],
 		exec: {
 			trigger: Trigger.OnCast,
@@ -123,7 +123,7 @@ export const MULTIPLIER_DEFS: EffectTypeDef[] = [
 		group: "damage_multiplier_zones",
 		zones: [Zone.D_flat],
 		scope: Scope.Same,
-		patterns: ["(额外)造成{x}%攻击力的伤害"],
+		patterns: ["本神通施放/命中时，会使本次神通(额外)造成{x}%攻击力的伤害"],
 		fields: [{ name: "value", unit: Unit.PctAtk }],
 		exec: {
 			trigger: Trigger.OnCast,

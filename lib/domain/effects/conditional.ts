@@ -17,8 +17,8 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 		zones: [Zone.M_dmg],
 		scope: Scope.Same,
 		patterns: [
-			"若敌方[condition]，则使本次伤害提升{x}%",
-			"攻击带有[state]的敌方时，(会使本次)伤害提升{x}%",
+			"本神通施放/造成伤害时，若敌方[condition]，则使本次伤害提升{x}%",
+			"(使本神通)攻击带有[state]的敌方时，(会使本次)伤害提升{x}%",
 			"伤害提升{x}%，若[condition]，(伤害提升效果)进一步提升至{y}%",
 		],
 		fields: [
@@ -61,7 +61,7 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 		group: "conditional_triggers",
 		zones: [Zone.M_synchro],
 		scope: Scope.Same,
-		patterns: ["概率触发效果提升为必定触发"],
+		patterns: ["使本神通的概率触发效果提升为必定触发"],
 		fields: [],
 		exec: {
 			trigger: Trigger.Permanent,
@@ -75,7 +75,7 @@ export const CONDITIONAL_DEFS: EffectTypeDef[] = [
 		group: "conditional_triggers",
 		zones: [Zone.M_final],
 		scope: Scope.Same,
-		patterns: ["无视敌方所有伤害减免效果"],
+		patterns: ["使本神通无视敌方所有伤害减免效果"],
 		fields: [],
 		exec: {
 			trigger: Trigger.OnCast,

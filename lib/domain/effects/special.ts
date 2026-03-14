@@ -138,7 +138,7 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		zones: [Zone.D_ortho],
 		scope: Scope.Same,
 		patterns: [
-			"每秒驱散敌方{n}个增益状态，持续{d}秒...每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害",
+			"本神通命中后每秒驱散敌方{n}个增益状态，持续{d}秒...(且本技能)每驱散一个状态(对敌方)造成本神通{x}%的灵法伤害，若无驱散状态(，则)造成双倍伤害",
 		],
 		fields: [
 			{ name: "count", unit: Unit.Count, optional: true },
@@ -358,7 +358,7 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		zones: [Zone.D_ortho],
 		scope: Scope.Same,
 		patterns: [
-			"每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害",
+			"本神通每次施加增益/减益状态或添加护盾时，(引动真雷轰击敌方，)造成一次本神通{x}%的灵法伤害",
 		],
 		fields: [{ name: "damage_percent_of_skill", unit: Unit.PctStat }],
 		exec: {
@@ -375,7 +375,7 @@ export const SPECIAL_DEFS: EffectTypeDef[] = [
 		zones: [Zone.H_A],
 		scope: Scope.Cross,
 		patterns: [
-			"(命中时，)若敌方具有减益状态，则提升自身{x}%的治疗量，持续{d}秒",
+			"本神通命中时，若敌方具有减益状态，则提升自身{x}%的治疗量，持续{d}秒",
 		],
 		fields: [
 			{ name: "condition", unit: Unit.Str },
