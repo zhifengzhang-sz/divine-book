@@ -23,7 +23,7 @@ const { values } = parseArgs({
 	strict: true,
 });
 
-const books = loadBooks("data/raw/主书.md");
+const books = loadBooks("data/yaml/books.yaml");
 
 if (values.list) {
 	console.log("Available books:");

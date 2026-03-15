@@ -5,22 +5,20 @@
  */
 
 import { readFileSync } from "node:fs";
-import { parseMainSkills } from "../parser/index.js";
+import YAML from "yaml";
 import type { BookData } from "../parser/emit.js";
 import type { CombatConfig, CombatResult } from "./types.js";
 import { DEFAULT_COMBAT_CONFIG } from "./types.js";
 import { runCombat } from "./arena.js";
 
 /**
- * Load all books from the raw markdown.
+ * Load all books from persisted YAML (data/yaml/books.yaml).
+ * Regenerate with: bun app/parse-main-skills.ts -o data/yaml/books.yaml
  */
-export function loadBooks(markdownPath: string): Record<string, BookData> {
-	const md = readFileSync(markdownPath, "utf-8");
-	const result = parseMainSkills(md);
-	if (result.errors.length > 0) {
-		console.warn("Parse errors:", result.errors);
-	}
-	return result.books;
+export function loadBooks(yamlPath: string): Record<string, BookData> {
+	const raw = readFileSync(yamlPath, "utf-8");
+	const parsed = YAML.parse(raw);
+	return (parsed.books ?? parsed) as Record<string, BookData>;
 }
 
 /**
