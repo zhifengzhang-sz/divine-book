@@ -22,6 +22,7 @@ export interface ParsedBook {
 	states?: StateRegistry;
 	skill: EffectRow[];
 	primaryAffix?: { name: string; effects: EffectRow[] };
+	exclusiveAffix?: { name: string; effects: EffectRow[] };
 }
 
 /**

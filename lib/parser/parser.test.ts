@@ -1,13 +1,18 @@
 import { describe, it, expect } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { readMainSkillTables, splitCell } from "./md-table.js";
 import { BOOK_TABLE } from "./book-table.js";
 import { buildStateRegistry } from "./states.js";
 import { parseMainSkills, parseSingleBook } from "./index.js";
+import { readExclusiveAffixTable } from "./exclusive.js";
 
 const RAW_PATH = resolve("data/raw/主书.md");
+const EXCLUSIVE_PATH = resolve("data/raw/专属词缀.md");
 const markdown = readFileSync(RAW_PATH, "utf-8");
+const exclusiveMarkdown = existsSync(EXCLUSIVE_PATH)
+	? readFileSync(EXCLUSIVE_PATH, "utf-8")
+	: undefined;
 
 // ─── Layer 1: MD Table Reader ───────────────────────────
 
@@ -522,5 +527,99 @@ describe("玄煞灵影诀 (G3, self_hp_cost as DoT)", () => {
 		);
 		expect(dmg).toBeDefined();
 		expect(dmg!.parent).toBe("怒意滔天");
+	});
+});
+
+// ─── Exclusive Affixes ──────────────────────────────────
+
+describe("readExclusiveAffixTable", () => {
+	if (!exclusiveMarkdown) return;
+	const entries = readExclusiveAffixTable(exclusiveMarkdown);
+
+	it("reads 28 exclusive affix entries", () => {
+		expect(entries.length).toBe(28);
+	});
+
+	it("normalizes name variants", () => {
+		const names = entries.map((e) => e.bookName);
+		expect(names).toContain("天刹真魔");
+		expect(names).toContain("梵圣真魔咒");
+		expect(names).toContain("惊蜇化龙");
+		expect(names).not.toContain("天剎真魔");
+		expect(names).not.toContain("焚圣真魔咒");
+		expect(names).not.toContain("惊蛰化龙");
+	});
+});
+
+describe("parseMainSkills with exclusive affixes", () => {
+	if (!exclusiveMarkdown) return;
+	const result = parseMainSkills(markdown, exclusiveMarkdown);
+
+	it("all 28 books have exclusive_affix", () => {
+		const booksWithExclusive = Object.values(result.books).filter(
+			(b) => b.exclusive_affix,
+		);
+		expect(booksWithExclusive.length).toBe(28);
+	});
+
+	it("通天剑诀 exclusive: ignore_damage_reduction + damage_increase", () => {
+		const book = result.books["通天剑诀"];
+		expect(book.exclusive_affix).toBeDefined();
+		expect(book.exclusive_affix!.name).toBe("神威冲云");
+		const effects = book.exclusive_affix!.effects;
+		expect(effects.some((e) => e.type === "ignore_damage_reduction")).toBe(true);
+		expect(effects.some((e) => e.type === "damage_increase")).toBe(true);
+	});
+
+	it("春黎剑阵 exclusive: dot with on_dispel child", () => {
+		const book = result.books["春黎剑阵"];
+		expect(book.exclusive_affix!.name).toBe("玄心剑魄");
+		const effects = book.exclusive_affix!.effects;
+		const dot = effects.find((e) => e.type === "dot");
+		expect(dot).toBeDefined();
+		expect(dot!.name).toBe("噬心");
+		const dispel = effects.find((e) => e.type === "on_dispel");
+		expect(dispel).toBeDefined();
+		expect(dispel!.parent).toBe("噬心");
+	});
+
+	it("新-青元剑诀 exclusive: multi-tier next_skill_buff", () => {
+		const book = result.books["新-青元剑诀"];
+		expect(book.exclusive_affix!.name).toBe("天威煌煌");
+		const effects = book.exclusive_affix!.effects;
+		const buffs = effects.filter((e) => e.type === "next_skill_buff");
+		expect(buffs.length).toBe(3);
+		expect(buffs[0].value).toBe(88);
+		expect(buffs[2].value).toBe(128);
+	});
+
+	it("无相魔劫咒 exclusive: debuff + conditional_damage with parent", () => {
+		const book = result.books["无相魔劫咒"];
+		expect(book.exclusive_affix!.name).toBe("无相魔威");
+		const effects = book.exclusive_affix!.effects;
+		const debuff = effects.find((e) => e.type === "debuff");
+		expect(debuff).toBeDefined();
+		expect(debuff!.name).toBe("魔劫");
+		const cond = effects.find((e) => e.type === "conditional_damage");
+		expect(cond).toBeDefined();
+		expect(cond!.parent).toBe("魔劫");
+	});
+
+	it("解体化形 exclusive: probability_multiplier with tiers", () => {
+		const book = result.books["解体化形"];
+		expect(book.exclusive_affix!.name).toBe("心逐神随");
+		const effects = book.exclusive_affix!.effects;
+		const mults = effects.filter((e) => e.type === "probability_multiplier");
+		expect(mults.length).toBe(2); // two tiers
+	});
+
+	it("天煞破虚诀 exclusive: periodic_dispel with damage", () => {
+		const book = result.books["天煞破虚诀"];
+		expect(book.exclusive_affix!.name).toBe("天煞破虚");
+		const effects = book.exclusive_affix!.effects;
+		const dispel = effects.find((e) => e.type === "periodic_dispel");
+		expect(dispel).toBeDefined();
+		expect(dispel!.damage_percent_of_skill).toBe(25.5);
+		expect(dispel!.no_buff_double).toBe(true);
 	});
 });

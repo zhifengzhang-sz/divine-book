@@ -4,13 +4,15 @@
  * Wires all parser layers together:
  * 1. Read 主书.md → MD Table Reader → per-book raw cells
  * 2. For each book: Split Engine (using grammar from lookup table) → effects
- * 3. Emit YAML output
+ * 3. (Optional) Read 专属词缀.md → exclusive affix parser → merge into books
+ * 4. Emit YAML output
  */
 
 import { readMainSkillTables, splitCell } from "./md-table.js";
 import { BOOK_TABLE } from "./book-table.js";
 import { parseBook, type ParsedBook } from "./split.js";
 import { emitBooks, formatYaml } from "./emit.js";
+import { readExclusiveAffixTable, parseExclusiveAffix } from "./exclusive.js";
 import type { BookData } from "./emit.js";
 
 export interface ParseResult {
@@ -22,8 +24,12 @@ export interface ParseResult {
 
 /**
  * Parse all main skills from raw markdown.
+ * Optionally merge exclusive affixes from a second markdown source.
  */
-export function parseMainSkills(markdown: string): ParseResult {
+export function parseMainSkills(
+	markdown: string,
+	exclusiveMarkdown?: string,
+): ParseResult {
 	const entries = readMainSkillTables(markdown);
 	const warnings: string[] = [];
 	const errors: string[] = [];
@@ -73,6 +79,32 @@ export function parseMainSkills(markdown: string): ParseResult {
 		}
 	}
 
+	// Merge exclusive affixes if provided
+	if (exclusiveMarkdown) {
+		const exclusiveEntries = readExclusiveAffixTable(exclusiveMarkdown);
+		for (const entry of exclusiveEntries) {
+			const parsed = parsedBooks.get(entry.bookName);
+			if (!parsed) {
+				warnings.push(`Exclusive affix for unknown book: ${entry.bookName}`);
+				continue;
+			}
+
+			try {
+				const states = parsed.states ?? {};
+				const exclusive = parseExclusiveAffix(entry, states);
+				parsed.exclusiveAffix = exclusive;
+				// Update states if new ones were added
+				if (Object.keys(states).length > 0) {
+					parsed.states = states;
+				}
+			} catch (err) {
+				errors.push(
+					`${entry.bookName} exclusive: ${err instanceof Error ? err.message : String(err)}`,
+				);
+			}
+		}
+	}
+
 	const books = emitBooks(parsedBooks);
 	return { books, warnings, errors };
 }
@@ -80,12 +112,15 @@ export function parseMainSkills(markdown: string): ParseResult {
 /**
  * Parse and format as YAML string.
  */
-export function parseMainSkillsToYaml(markdown: string): {
+export function parseMainSkillsToYaml(
+	markdown: string,
+	exclusiveMarkdown?: string,
+): {
 	yaml: string;
 	warnings: string[];
 	errors: string[];
 } {
-	const result = parseMainSkills(markdown);
+	const result = parseMainSkills(markdown, exclusiveMarkdown);
 	const yaml = formatYaml(result.books);
 	return { yaml, warnings: result.warnings, errors: result.errors };
 }
@@ -96,6 +131,7 @@ export function parseMainSkillsToYaml(markdown: string): {
 export function parseSingleBook(
 	markdown: string,
 	bookName: string,
+	exclusiveMarkdown?: string,
 ): ParsedBook | null {
 	const entries = readMainSkillTables(markdown);
 	const entry = entries.find((e) => e.name === bookName);
@@ -107,11 +143,26 @@ export function parseSingleBook(
 	const skillCell = splitCell(entry.skillText);
 	const affixCell = splitCell(entry.affixText);
 
-	return parseBook(
+	const parsed = parseBook(
 		entry.name,
 		entry.school,
 		meta.grammar,
 		skillCell,
 		affixCell,
 	);
+
+	// Merge exclusive affix if provided
+	if (exclusiveMarkdown) {
+		const exclusiveEntries = readExclusiveAffixTable(exclusiveMarkdown);
+		const exclusiveEntry = exclusiveEntries.find((e) => e.bookName === bookName);
+		if (exclusiveEntry) {
+			const states = parsed.states ?? {};
+			parsed.exclusiveAffix = parseExclusiveAffix(exclusiveEntry, states);
+			if (Object.keys(states).length > 0) {
+				parsed.states = states;
+			}
+		}
+	}
+
+	return parsed;
 }

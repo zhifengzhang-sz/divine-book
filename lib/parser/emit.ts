@@ -53,6 +53,13 @@ export function emitBooks(
 			};
 		}
 
+		if (parsed.exclusiveAffix) {
+			book.exclusive_affix = {
+				name: parsed.exclusiveAffix.name,
+				effects: cleanEffects(parsed.exclusiveAffix.effects),
+			};
+		}
+
 		books[name] = book;
 	}
 
