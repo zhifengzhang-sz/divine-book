@@ -104,7 +104,7 @@ graph LR
     G["Tier Resolver\ntiers.ts"] --> C
     C -- "ParsedBook" --> H["Emitter\nemit.ts"]
     H -- "BookData" --> I["Orchestrator\nindex.ts"]
-    I --> J["Simulator Bridge\nbridge.ts"]
+    I --> J["Simulator\nsimulate.ts"]
 ```
 
 ---
@@ -339,28 +339,25 @@ classDiagram
 
 ---
 
-## 8. Downstream — Simulator Bridge
+## 8. Downstream — Combat Simulator
 
-The bridge (`lib/simulator/bridge.ts`) consumes parser output directly:
+The simulator (`lib/simulator/`) consumes parser output directly — no intermediate bridge layer.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 graph TD
-    P["parseMainSkills()\nlib/parser/index.ts"] -- "BookData" --> B["bridge.ts"]
-    E["effects.yaml\n(static artifact)"] -- "hit_count, raw effects" --> B
-    M["model.yaml\n(factor vectors)"] -- "D_base, M_dmg, ..." --> B
-    B -- "ArenaDef" --> S["Simulator\narena.ts"]
+    P["parseMainSkills()\nlib/parser/index.ts"] -- "Record‹string, BookData›" --> S["simulateBook()\nlib/simulator/simulate.ts"]
+    S -- "Intent[]" --> A["runCombat()\nlib/simulator/arena.ts"]
 
-    subgraph "Parser imports"
+    subgraph "Parser types consumed"
         BD["BookData\nemit.ts"]
-        SD["StateDef\nstates.ts"]
+        ER["EffectRow\nemit.ts"]
     end
 
-    BD --> B
-    SD --> B
+    BD --> S
+    ER --> S
 ```
 
-The bridge imports:
-- `BookData` from `lib/parser/emit`
-- `StateDef` (as `ParserStateDef`) from `lib/parser/states`
-- `parseMainSkills` from `lib/parser/index`
+The simulator imports:
+- `BookData`, `EffectRow` from `lib/parser/emit`
+- `parseMainSkills` from `lib/parser/index` (via `loadBooks()` in `lib/simulator/index.ts`)
