@@ -1063,11 +1063,11 @@ export function extractHpCostAvoidChance(
 	text: string,
 ): ExtractedEffect | null {
 	// y%的概率不消耗气血值
-	const m = text.match(/(\d+)%(?:的)?概率不消耗气血值/);
+	const m = text.match(/(\w+)%(?:的)?概率不消耗气血值/);
 	if (m) {
 		return {
 			type: "hp_cost_avoid_chance",
-			fields: { value: Number(m[1]) },
+			fields: { value: m[1] },
 		};
 	}
 	return null;
@@ -1086,6 +1086,14 @@ export function extractLifesteal(
 		return {
 			type: "lifesteal",
 			fields: { value: m[1] },
+		};
+	}
+	// 获得x%的吸血效果
+	const m2 = text.match(/获得(\w+)%(?:的)?吸血效果/);
+	if (m2) {
+		return {
+			type: "lifesteal",
+			fields: { value: m2[1] },
 		};
 	}
 	return null;
@@ -1131,6 +1139,487 @@ export function extractSelfBuffExtra(
 		fields: stats,
 		meta: { buff_name: buffName },
 	};
+}
+
+// ─────────────────────────────────────────────────────────
+// Affix-specific extractors
+// ─────────────────────────────────────────────────────────
+
+/** 无视敌方所有伤害减免效果 */
+export function extractIgnoreDamageReduction(
+	text: string,
+): ExtractedEffect | null {
+	if (/无视敌方所有伤害减免效果/.test(text)) {
+		return { type: "ignore_damage_reduction", fields: {} };
+	}
+	return null;
+}
+
+/** 提升x%伤害 / 伤害提升x% / 神通伤害提升x% (standalone damage increase) */
+export function extractDamageIncrease(
+	text: string,
+): ExtractedEffect | null {
+	// Exclude conditional damage patterns (handled by extractConditionalDamageAffix)
+	if (/控制状态/.test(text) || /减益.*?状态.*?伤害提升/.test(text)) return null;
+	// Exclude per-stack patterns (handled by extractPerBuffStackDamage / extractPerDebuffStackDamageAffix)
+	if (/每\d+层/.test(text)) return null;
+	// Exclude enlightenment bonus patterns (handled by extractEnlightenmentBonus)
+	if (/悟境等级加/.test(text)) return null;
+	// NOT "持续伤害" / "已损" / "气血" / "伤害加深"
+	if (/持续伤害/.test(text) || /已损/.test(text) || /气血/.test(text)) return null;
+	// Try "伤害提升x%" pattern (including "神通伤害提升x%")
+	const m1 = text.match(
+		/(?:神通)?(?:造成的)?伤害提升(\w+)%/,
+	);
+	if (m1 && !/伤害加深/.test(text)) {
+		return { type: "damage_increase", fields: { value: m1[1] } };
+	}
+	// Try "提升x%伤害" pattern
+	const m2 = text.match(
+		/(?:并)?(?:使.*?)?提升(\w+)%(?:的)?伤害/,
+	);
+	if (m2 && !/伤害加深/.test(text)) {
+		return { type: "damage_increase", fields: { value: m2[1] } };
+	}
+	return null;
+}
+
+/** 处于控制状态时伤害提升x% / 带有减益状态时伤害提升x% */
+export function extractConditionalDamageAffix(
+	text: string,
+): ExtractedEffect | null {
+	// target_controlled: 处于控制状态
+	const controlledMatch = text.match(
+		/(?:敌方)?处于.*?控制状态.*?伤害提升(\w+)%/,
+	);
+	if (controlledMatch) {
+		return {
+			type: "conditional_damage",
+			fields: { value: controlledMatch[1] },
+			meta: { condition: "target_controlled" },
+		};
+	}
+
+	// target_has_debuff: 带有减益状态
+	const debuffMatch = text.match(
+		/(?:攻击)?带有.*?减益.*?状态.*?伤害提升(\w+)%/,
+	);
+	if (debuffMatch) {
+		return {
+			type: "conditional_damage",
+			fields: { value: debuffMatch[1] },
+			meta: { condition: "target_has_debuff" },
+		};
+	}
+
+	return null;
+}
+
+/** 每多损失1%最大气血值，伤害提升x% */
+export function extractPerSelfLostHp(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/每多损失1%最大气血值.*?伤害提升(\w+)%/);
+	if (m) {
+		return {
+			type: "per_self_lost_hp",
+			fields: { per_percent: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 每有1层减益状态，额外造成x%最大气血值真实伤害，最多y% */
+export function extractPerDebuffStackTrueDamage(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每有1层.*?减益.*?状态.*?造成(?:目标)?(\w+)%最大气血值.*?真实伤害.*?最多(?:造成)?(\w+)%/,
+	);
+	if (m) {
+		return {
+			type: "per_debuff_stack_true_damage",
+			fields: { per_stack: m[1], max: m[2] },
+		};
+	}
+	return null;
+}
+
+/** 持续伤害上升x% */
+export function extractDotDamageIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/持续伤害(?:上升|提升)(\w+)%/);
+	if (m) {
+		return {
+			type: "dot_damage_increase",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 持续伤害触发间隙缩短x% */
+export function extractDotFrequencyIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/持续伤害.*?触发间隙缩短(\w+)%/);
+	if (m) {
+		return {
+			type: "dot_frequency_increase",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 持续伤害触发时额外造成x%已损失气血 */
+export function extractDotExtraPerTick(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/持续伤害触发时.*?额外造成(?:目标)?(\w+)%已损(?:失)?气血/);
+	if (m) {
+		return {
+			type: "dot_extra_per_tick",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 增益状态持续时间延长x% */
+export function extractBuffDuration(
+	text: string,
+): ExtractedEffect | null {
+	// Must NOT match "所有状态" (that's extractAllStateDuration)
+	if (/所有状态/.test(text)) return null;
+	const m = text.match(/增益.*?(?:状态)?持续时间延长(\w+)%/);
+	if (m) {
+		return {
+			type: "buff_duration",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 所有状态持续时间延长x% */
+export function extractAllStateDuration(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/所有状态.*?持续时间延长(\w+)%/);
+	if (m) {
+		return {
+			type: "all_state_duration",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 增益效果强度提升x% */
+export function extractBuffStrength(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/增益.*?效果强度提升(\w+)%/);
+	if (m) {
+		return {
+			type: "buff_strength",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 增益状态层数增加x% */
+export function extractBuffStackIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/增益.*?状态层数增加(\w+)%/);
+	if (m) {
+		return {
+			type: "buff_stack_increase",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 减益状态层数增加x% */
+export function extractDebuffStackIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/减益.*?状态层数增加(\w+)%/);
+	if (m) {
+		return {
+			type: "debuff_stack_increase",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 下一个施放的神通额外获得x%神通伤害加深 */
+export function extractNextSkillBuff(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/下一个施放的神通额外获得(\w+)%.*?神通伤害加深/);
+	if (m) {
+		return {
+			type: "next_skill_buff",
+			fields: { value: m[1] },
+			meta: { stat: "skill_damage_increase" },
+		};
+	}
+	return null;
+}
+
+/** 提升x%神通伤害 */
+export function extractSkillDamageIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/提升(\w+)%.*?神通伤害/);
+	if (!m) return null;
+	// Don't match "神通伤害加深" or "神通伤害减免" immediately after match
+	const after = text.slice(text.indexOf("神通伤害") + 4);
+	if (/^加深/.test(after) || /^减免/.test(after)) return null;
+	return {
+		type: "skill_damage_increase",
+		fields: { value: m[1] },
+	};
+}
+
+/** 目标对本神通提升y%神通伤害减免 */
+export function extractEnemySkillDamageReduction(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/目标对本神通提升(\w+)%.*?神通伤害减免/);
+	if (m) {
+		return {
+			type: "enemy_skill_damage_reduction",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 施放期间自身受到的伤害提升y% */
+export function extractSelfDamageTakenDuringCast(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/施放期间自身受到的伤害.*?提升(\w+)%/);
+	if (m) {
+		return {
+			type: "self_damage_taken_increase",
+			fields: { value: m[1] },
+			meta: { duration: "during_cast" },
+		};
+	}
+	return null;
+}
+
+/** 护盾消失时对敌方造成护盾值x%的伤害 */
+export function extractOnShieldExpire(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/护盾.*?消失时.*?造成护盾值(\w+)%的伤害/);
+	if (m) {
+		return {
+			type: "on_shield_expire",
+			fields: { damage_percent_of_shield: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 每次施加增益/减益/护盾时，造成x%灵法伤害 */
+export function extractOnBuffDebuffShieldTrigger(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/每次施加.*?(?:增益|减益).*?(?:护盾).*?造成.*?(\w+)%.*?灵法伤害/);
+	if (m) {
+		return {
+			type: "on_buff_debuff_shield_trigger",
+			fields: { damage_percent: m[1] },
+		};
+	}
+	return null;
+}
+
+/** x%概率提升4倍，y%概率提升3倍，z%概率提升2倍 */
+export function extractProbabilityMultiplier(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/(\w+)%概率提升4倍.*?(\w+)%概率提升3倍.*?(\w+)%概率提升2倍/,
+	);
+	if (m) {
+		return {
+			type: "probability_multiplier",
+			fields: { chance_4x: m[1], chance_3x: m[2], chance_2x: m[3] },
+		};
+	}
+	return null;
+}
+
+/** 悟境等级加1 */
+export function extractEnlightenmentBonus(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/悟境等级加(\d+)/);
+	if (!m) return null;
+	// Also extract associated damage_increase if present
+	const dmgMatch = text.match(/伤害提升(\w+)%/);
+	const fields: Record<string, string | number> = { value: Number(m[1]) };
+	if (dmgMatch) fields.damage_increase = dmgMatch[1];
+	return {
+		type: "enlightenment_bonus",
+		fields,
+	};
+}
+
+/** 有x%概率额外多附加1层 */
+export function extractDebuffStackChance(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/有(\w+)%概率额外多附加1层/);
+	if (m) {
+		return {
+			type: "debuff_stack_chance",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 治疗量降低x% (with named state) */
+export function extractHealReductionDebuff(
+	text: string,
+): ExtractedEffect | null {
+	// 治疗量降低x%，且无法被驱散
+	const m = text.match(/治疗量降低(\w+)%/);
+	if (!m) return null;
+
+	// "降低" is always negative — negate the value
+	const rawVal = m[1];
+	const negatedVal: string | number = /^\d/.test(rawVal) ? -Number(rawVal) : `-${rawVal}`;
+
+	const fields: Record<string, string | number> = {
+		target: "healing_received",
+		value: negatedVal,
+	};
+
+	// Check for duration
+	const durMatch = text.match(/持续(\d+)秒/);
+	if (durMatch) fields.duration = Number(durMatch[1]);
+
+	// Check for dispellable
+	const meta: Record<string, unknown> = {};
+	if (/无法被驱散|不可驱散/.test(text)) meta.dispellable = false;
+
+	// Named state
+	const nameMatch = text.match(/【(.+?)】/);
+	if (nameMatch) meta.name = nameMatch[1];
+
+	// Conditional value (气血低于30%时降低y%)
+	const condMatch = text.match(/气血(?:值)?低于(\d+)%.*?(?:降低.*?治疗量)?增至(\w+)%/);
+	if (condMatch) {
+		const condRaw = condMatch[2];
+		fields.conditional_value = /^\d/.test(condRaw) ? -Number(condRaw) : `-${condRaw}`;
+		meta.condition = `target_hp_below_${condMatch[1]}`;
+	}
+
+	return {
+		type: "debuff",
+		fields,
+		meta: Object.keys(meta).length > 0 ? meta : undefined,
+	};
+}
+
+/** 每秒受到x%攻击力的伤害 (ATK-based DoT) */
+export function extractAtkDot(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/每秒受到(\w+)%攻击力的伤害/);
+	if (m) {
+		return {
+			type: "dot",
+			fields: { tick_interval: 1, damage_per_tick: m[1] },
+		};
+	}
+	return null;
+}
+
+/** 若被驱散，立即受到y%攻击力的伤害 */
+export function extractOnDispel(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/若被驱散.*?受到(\w+)%攻击力的伤害/);
+	if (!m) return null;
+	const fields: Record<string, string | number> = { damage: m[1] };
+	const stunMatch = text.match(/眩晕(\w+)秒/);
+	if (stunMatch) fields.stun = stunMatch[1];
+	return {
+		type: "on_dispel",
+		fields,
+	};
+}
+
+/** 每秒驱散1个增益...造成x%灵法伤害 */
+export function extractPeriodicDispelWithDamage(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每秒.*?驱散.*?(\d+)个.*?增益.*?持续(\d+)秒.*?造成.*?(\w+)%.*?灵法伤害/,
+	);
+	if (m) {
+		const fields: Record<string, string | number> = {
+			interval: 1,
+			duration: Number(m[2]),
+			damage_percent_of_skill: m[3],
+		};
+		if (/无.*?状态.*?双倍|若无驱散.*?双倍/.test(text)) {
+			return {
+				type: "periodic_dispel",
+				fields,
+				meta: { no_buff_double: true },
+			};
+		}
+		return { type: "periodic_dispel", fields };
+	}
+	return null;
+}
+
+/** 每5层增益状态提升y%伤害 */
+export function extractPerBuffStackDamage(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每(\d+)层增益状态.*?提升(\w+)%伤害.*?最大.*?(\w+)%/,
+	);
+	if (m) {
+		return {
+			type: "per_buff_stack_damage",
+			fields: { per_n_stacks: Number(m[1]), value: m[2], max: m[3] },
+		};
+	}
+	return null;
+}
+
+/** 每5层减益状态提升y%伤害 */
+export function extractPerDebuffStackDamageAffix(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每(?:有)?(\d+)层减益状态.*?伤害提升(\w+)%.*?最大.*?(\w+)%/,
+	);
+	if (m) {
+		return {
+			type: "per_debuff_stack_damage",
+			fields: { per_n_stacks: Number(m[1]), value: m[2], max: m[3] },
+		};
+	}
+	return null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1186,4 +1675,58 @@ export const SKILL_EXTRACTORS: ExtractorDef[] = [
 	{ name: "self_buff", fn: extractSelfBuff, order: 25 },
 	{ name: "next_skill_carry", fn: extractNextSkillCarry, order: 25 },
 	{ name: "per_enemy_lost_hp", fn: extractPerEnemyLostHp, order: 30 },
+];
+
+/**
+ * Extractors for affix text (primary + exclusive).
+ * Order matters: more specific patterns before general ones.
+ */
+export const AFFIX_EXTRACTORS: ExtractorDef[] = [
+	// Damage modifiers
+	{ name: "ignore_damage_reduction", fn: extractIgnoreDamageReduction, order: 5 },
+	{ name: "per_self_lost_hp", fn: extractPerSelfLostHp, order: 10 },
+	{ name: "per_debuff_stack_true_damage", fn: extractPerDebuffStackTrueDamage, order: 10 },
+	{ name: "dot_extra_per_tick", fn: extractDotExtraPerTick, order: 10 },
+	{ name: "dot_damage_increase", fn: extractDotDamageIncrease, order: 10 },
+	{ name: "dot_frequency_increase", fn: extractDotFrequencyIncrease, order: 10 },
+	{ name: "conditional_damage_affix", fn: extractConditionalDamageAffix, order: 10 },
+	{ name: "damage_increase", fn: extractDamageIncrease, order: 10 },
+	{ name: "self_damage_taken_during_cast", fn: extractSelfDamageTakenDuringCast, order: 15 },
+
+	// State modifiers
+	{ name: "all_state_duration", fn: extractAllStateDuration, order: 10 },
+	{ name: "buff_duration", fn: extractBuffDuration, order: 10 },
+	{ name: "buff_strength", fn: extractBuffStrength, order: 10 },
+	{ name: "buff_stack_increase", fn: extractBuffStackIncrease, order: 10 },
+	{ name: "debuff_stack_increase", fn: extractDebuffStackIncrease, order: 10 },
+
+	// Skill modifiers
+	{ name: "next_skill_buff", fn: extractNextSkillBuff, order: 10 },
+	{ name: "skill_damage_increase", fn: extractSkillDamageIncrease, order: 15 },
+	{ name: "enemy_skill_damage_reduction", fn: extractEnemySkillDamageReduction, order: 15 },
+
+	// Triggers
+	{ name: "on_shield_expire", fn: extractOnShieldExpire, order: 10 },
+	{ name: "on_buff_debuff_shield_trigger", fn: extractOnBuffDebuffShieldTrigger, order: 10 },
+	{ name: "probability_multiplier", fn: extractProbabilityMultiplier, order: 10 },
+	{ name: "enlightenment_bonus", fn: extractEnlightenmentBonus, order: 10 },
+
+	// Debuff applications
+	{ name: "debuff_stack_chance", fn: extractDebuffStackChance, order: 10 },
+	{ name: "heal_reduction_debuff", fn: extractHealReductionDebuff, order: 15 },
+	{ name: "atk_dot", fn: extractAtkDot, order: 15 },
+	{ name: "on_dispel", fn: extractOnDispel, order: 20 },
+	{ name: "periodic_dispel_with_damage", fn: extractPeriodicDispelWithDamage, order: 10 },
+
+	// Per-stack scaling
+	{ name: "per_buff_stack_damage", fn: extractPerBuffStackDamage, order: 20 },
+	{ name: "per_debuff_stack_damage_affix", fn: extractPerDebuffStackDamageAffix, order: 20 },
+
+	// Existing extractors reused for affixes
+	{ name: "per_hit_escalation", fn: extractPerHitEscalation, order: 10 },
+	{ name: "lifesteal", fn: extractLifesteal, order: 10 },
+	{ name: "shield_strength", fn: extractShieldStrength, order: 10 },
+	{ name: "self_buff_extra", fn: extractSelfBuffExtra, order: 15 },
+	{ name: "per_enemy_lost_hp", fn: extractPerEnemyLostHp, order: 10 },
+	{ name: "hp_cost_avoid_chance", fn: extractHpCostAvoidChance, order: 20 },
 ];

@@ -14,6 +14,7 @@ import { buildStateRegistry, type StateRegistry } from "./states.js";
 import {
 	extractDot,
 	SKILL_EXTRACTORS,
+	AFFIX_EXTRACTORS,
 	type ExtractedEffect,
 } from "./extract.js";
 
@@ -275,6 +276,100 @@ function enrichWithNamedStates(
 }
 
 // ─────────────────────────────────────────────────────────
+// Generic Affix Parsing
+// ─────────────────────────────────────────────────────────
+
+/**
+ * Generic affix parser — runs AFFIX_EXTRACTORS against the text.
+ * Used for both primary and exclusive affixes as a fallback
+ * when no book-specific parser exists.
+ *
+ * Options:
+ * - lastTierOnly: For single-tier affixes, use the last tier's values
+ *   without data_state. Multi-tier affixes still emit per-tier data_state.
+ */
+export function genericAffixParse(
+	cell: SplitCell,
+	states: StateRegistry,
+	options?: { lastTierOnly?: boolean; defaultParent?: string },
+): EffectRow[] {
+	let text = cell.description.join("，");
+	const tiers = cell.tiers;
+
+	// Strip leading 【affixName】： prefix so extractors see clean text
+	text = text.replace(/^【.+?】[：:]/, "");
+
+	// Run all registered affix extractors
+	const extracted: { effect: ExtractedEffect; order: number }[] = [];
+	for (const def of AFFIX_EXTRACTORS) {
+		const result = def.fn(text);
+		if (result) {
+			extracted.push({ effect: result, order: def.order });
+		}
+	}
+
+	if (extracted.length === 0) return [];
+
+	// Sort by order
+	extracted.sort((a, b) => a.order - b.order);
+
+	// Effect types that use buff_name instead of parent
+	const NO_PARENT_TYPES = new Set(["self_buff_extra"]);
+
+	// Helper: resolve one set of effects from a tier
+	const resolveEffects = (
+		vars: Record<string, number>,
+		ds?: undefined | string | string[],
+	): EffectRow[] => {
+		const effects: EffectRow[] = [];
+		for (const { effect } of extracted) {
+			const resolved = resolveFields(effect.fields, vars);
+			const extra: Record<string, unknown> = {};
+			if (effect.meta) {
+				for (const [k, v] of Object.entries(effect.meta)) {
+					extra[k] = v;
+				}
+			}
+			// Apply defaultParent unless effect already has parent or is a NO_PARENT type
+			if (options?.defaultParent && !extra.parent && !NO_PARENT_TYPES.has(effect.type)) {
+				extra.parent = options.defaultParent;
+			}
+			if (ds !== undefined) extra.data_state = ds;
+			effects.push({ type: effect.type, ...resolved, ...extra } as EffectRow);
+		}
+		return effects;
+	};
+
+	// No tier data — resolve with empty vars
+	if (tiers.length === 0) {
+		return resolveEffects({});
+	}
+
+	// lastTierOnly mode: use last tier's values, no data_state (single-tier)
+	if (options?.lastTierOnly && tiers.length === 1) {
+		const tier = tiers[tiers.length - 1];
+		return resolveEffects(tier.vars);
+	}
+
+	// Multi-tier: expand per-tier with data_state
+	const effects: EffectRow[] = [];
+	for (const tier of tiers) {
+		if (tier.locked) {
+			effects.push({
+				type: extracted[0].effect.type,
+				data_state: "locked",
+			} as EffectRow);
+			continue;
+		}
+
+		const ds = buildDs(tier);
+		effects.push(...resolveEffects(tier.vars, ds));
+	}
+
+	return effects;
+}
+
+// ─────────────────────────────────────────────────────────
 // Book-specific parsers
 // ─────────────────────────────────────────────────────────
 
@@ -329,13 +424,12 @@ function parsePrimaryAffix(
 	states: StateRegistry,
 ): { name: string; effects: EffectRow[] } | undefined {
 	const text = cell.description.join(" ");
-	const tiers = cell.tiers;
 
 	// Extract affix name from 【name】
 	const nameMatch = text.match(/【(.+?)】/);
 	const affixName = nameMatch ? nameMatch[1] : "";
 
-	// Book-specific affix parsers
+	// Book-specific affix parsers (for complex compound patterns)
 	const specific = AFFIX_PARSERS[bookName];
 	if (specific) {
 		const effects = specific(cell);
@@ -344,26 +438,19 @@ function parsePrimaryAffix(
 		}
 	}
 
+	// Generic affix parse as fallback
+	const effects = genericAffixParse(cell, states, { defaultParent: "this" });
+	if (effects.length > 0) {
+		return { name: affixName, effects };
+	}
+
 	return affixName ? { name: affixName, effects: [] } : undefined;
 }
 
 type AffixParser = (cell: SplitCell) => EffectRow[];
 
 const AFFIX_PARSERS: Record<string, AffixParser> = {
-	千锋聚灵剑: (cell) => {
-		const effects: EffectRow[] = [];
-		for (const tier of cell.tiers) {
-			const ds = buildDs(tier);
-			effects.push({
-				type: "per_hit_escalation",
-				value: tier.vars.x,
-				stat: "skill_bonus",
-				parent: "this",
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
+	// 千锋聚灵剑: handled by generic pipeline (extractPerHitEscalation + defaultParent)
 
 	春黎剑阵: (cell) => {
 		const tier = cell.tiers[0];
@@ -441,17 +528,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	元磁神光: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "self_buff_extra",
-				buff_name: "天狼之啸",
-				attack_bonus: tier.vars.x,
-			} as EffectRow,
-		];
-	},
+	// 元磁神光: handled by generic pipeline (extractSelfBuffExtra)
 
 	周天星元: (cell) => {
 		const tier = cell.tiers[0];
@@ -467,26 +544,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	甲元仙符: (cell) => {
-		const effects: EffectRow[] = [];
-		for (const tier of cell.tiers) {
-			if (tier.locked) {
-				effects.push({
-					type: "self_buff_extra",
-					data_state: "locked",
-				} as EffectRow);
-				continue;
-			}
-			const ds = buildDs(tier);
-			effects.push({
-				type: "self_buff_extra",
-				buff_name: "仙佑",
-				healing_bonus: tier.vars.x,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
+	// 甲元仙符: handled by generic pipeline (extractSelfBuffExtra, multi-tier with locked)
 
 	星元化岳: (cell) => {
 		const tier = cell.tiers[0];
@@ -700,17 +758,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		} as EffectRow,
 	],
 
-	煞影千幻: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "shield_strength",
-				value: tier.vars.x,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
+	// 煞影千幻: handled by generic pipeline (extractShieldStrength + extractHpCostAvoidChance)
 
 	九重天凤诀: (cell) => {
 		const tier = cell.tiers[0];

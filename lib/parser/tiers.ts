@@ -68,6 +68,9 @@ export function resolveFields(
 			out[key] = val;
 		} else if (typeof val === "string" && vars[val] !== undefined) {
 			out[key] = vars[val];
+		} else if (typeof val === "string" && val.startsWith("-") && vars[val.slice(1)] !== undefined) {
+			// Negated variable reference: "-x" → -vars.x
+			out[key] = -vars[val.slice(1)];
 		} else if (typeof val === "string") {
 			const n = Number(val);
 			if (!Number.isNaN(n) && val !== "") {

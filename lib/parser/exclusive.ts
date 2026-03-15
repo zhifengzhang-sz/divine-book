@@ -13,6 +13,7 @@
 import type { EffectRow } from "./emit.js";
 import { splitCell, type SplitCell } from "./md-table.js";
 import { buildStateRegistry, type StateRegistry } from "./states.js";
+import { genericAffixParse } from "./split.js";
 
 export interface ExclusiveAffixEntry {
 	bookName: string;
@@ -97,11 +98,6 @@ export function parseExclusiveAffix(
 	entry: ExclusiveAffixEntry,
 	stateRegistry: StateRegistry,
 ): { name: string; effects: EffectRow[] } {
-	const parser = EXCLUSIVE_PARSERS[entry.bookName];
-	if (!parser) {
-		return { name: entry.affixName, effects: [] };
-	}
-
 	// Build state registry from exclusive affix description and merge
 	const affixStates = buildStateRegistry(entry.cell.description);
 	for (const [name, def] of Object.entries(affixStates)) {
@@ -110,7 +106,17 @@ export function parseExclusiveAffix(
 		}
 	}
 
-	const effects = parser(entry.cell);
+	// Book-specific parser takes priority
+	const parser = EXCLUSIVE_PARSERS[entry.bookName];
+	if (parser) {
+		const effects = parser(entry.cell);
+		return { name: entry.affixName, effects };
+	}
+
+	// Generic affix parse as fallback
+	// For exclusive affixes with a single tier, use last-tier-only mode
+	// (use variable values without data_state — matches legacy behavior)
+	const effects = genericAffixParse(entry.cell, stateRegistry, { lastTierOnly: true });
 	return { name: entry.affixName, effects };
 }
 
@@ -142,24 +148,12 @@ type ExclusiveParser = (cell: SplitCell) => EffectRow[];
 // - Tier variables are resolved from cell.tiers
 
 const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
-	// ── Sword ───────────────────────────────────────────────
+	// ── Compound parsers that can't be genericized ──────────
 
-	千锋聚灵剑: (cell) => {
-		// 治疗量降低x%，且无法被驱散
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "debuff",
-			name: "灵涸",
-			target: "healing_received",
-			value: -tier.vars.x,
-			duration: 8,
-			dispellable: false,
-		} as EffectRow];
-	},
+	// 千锋聚灵剑: handled by generic pipeline (extractHealReductionDebuff, negated value)
 
 	春黎剑阵: (cell) => {
-		// 【噬心】: 每秒x%攻击力伤害, 驱散时y%攻击力伤害+z秒眩晕
+		// 【噬心】: dot + on_dispel compound (multi-tier)
 		const tiers = cell.tiers;
 		const effects: EffectRow[] = [];
 		for (const tier of tiers) {
@@ -184,7 +178,7 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 	},
 
 	皓月剑诀: (cell) => {
-		// 1. 持续伤害额外造成x%已损失气血 2. 悟境条件下: 气血伤害提高y%, 伤害提升z%
+		// dot_extra_per_tick + conditional_buff compound
 		const tier = cell.tiers[cell.tiers.length - 1];
 		if (!tier) return [];
 		return [
@@ -201,92 +195,8 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		];
 	},
 
-	念剑诀: (cell) => {
-		// 增益状态持续时间延长x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "buff_duration",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	通天剑诀: (cell) => {
-		// 无视敌方所有伤害减免, 提升x%伤害
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{ type: "ignore_damage_reduction" } as EffectRow,
-			{
-				type: "damage_increase",
-				value: tier.vars.x,
-			} as EffectRow,
-		];
-	},
-
-	"新-青元剑诀": (cell) => {
-		// 下一个神通额外获得x%神通伤害加深 (multiple tiers)
-		const effects: EffectRow[] = [];
-		for (const tier of cell.tiers) {
-			const ds = buildDs(tier);
-			effects.push({
-				type: "next_skill_buff",
-				stat: "skill_damage_increase",
-				value: tier.vars.x,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
-
-	无极御剑诀: (cell) => {
-		// 提升x%神通伤害, 目标对本神通提升y%神通伤害减免
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "skill_damage_increase",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "enemy_skill_damage_reduction",
-				value: tier.vars.y,
-			} as EffectRow,
-		];
-	},
-
-	// ── Spell ───────────────────────────────────────────────
-
-	浩然星灵诀: (cell) => {
-		// 增益效果强度提升x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "buff_strength",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	元磁神光: (cell) => {
-		// 增益层数增加x%, 每5层增益提升y%伤害, 最大z%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "buff_stack_increase",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "per_buff_stack_damage",
-				per_n_stacks: 5,
-				value: tier.vars.y,
-				max: tier.vars.z,
-			} as EffectRow,
-		];
-	},
-
 	周天星元: (cell) => {
-		// 1. 减益概率额外多1层 2. 伤害加深类增益时附加【逆转阴阳】
+		// debuff_stack_chance + conditional_debuff (multi-tier)
 		const tiers = cell.tiers;
 		const effects: EffectRow[] = [];
 		for (const tier of tiers) {
@@ -306,85 +216,10 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		return effects;
 	},
 
-	甲元仙符: (cell) => {
-		// 【灵枯】: 治疗量降低x%, 气血低于30%时降低y%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "debuff",
-			name: "灵枯",
-			target: "healing_received",
-			value: -tier.vars.x,
-			duration: 20,
-			conditional_value: -tier.vars.y,
-			condition: "target_hp_below_30",
-		} as EffectRow];
-	},
+	// 甲元仙符: handled by generic pipeline (extractHealReductionDebuff with conditional)
 
-	星元化岳: (cell) => {
-		// 造成伤害时获得x%吸血
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "lifesteal",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	玉书天戈符: (cell) => {
-		// 悟境+1 (phantom), 伤害提升x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "enlightenment_bonus",
-			value: 1,
-			damage_increase: tier.vars.x,
-		} as EffectRow];
-	},
-
-	九天真雷诀: (cell) => {
-		// 每次施加增益/减益/护盾时, 引动真雷造成x%灵法伤害
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "on_buff_debuff_shield_trigger",
-			damage_percent: tier.vars.x,
-		} as EffectRow];
-	},
-
-	// ── Demon ───────────────────────────────────────────────
-
-	天魔降临咒: (cell) => {
-		// 攻击带有减益状态的敌方时伤害提升x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "conditional_damage",
-			condition: "target_has_debuff",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	天轮魔经: (cell) => {
-		// 减益层数增加x%, 每5层减益提升y%伤害, 最大z%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "debuff_stack_increase",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "per_debuff_stack_damage",
-				per_n_stacks: 5,
-				value: tier.vars.y,
-				max: tier.vars.z,
-			} as EffectRow,
-		];
-	},
-
-	天剎真魔: (cell) => {
-		// 1. 敌方有减益时提升x%治疗量 2. 悟境条件下: 降低y%最终伤害减免
+	天刹真魔: (cell) => {
+		// conditional_heal_buff + conditional_debuff compound
 		const tier = cell.tiers[cell.tiers.length - 1];
 		if (!tier) return [];
 		return [
@@ -405,54 +240,8 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		];
 	},
 
-	解体化形: (cell) => {
-		// 所有效果x%概率4倍, y%概率3倍, z%概率2倍 (multiple tiers)
-		const effects: EffectRow[] = [];
-		for (const tier of cell.tiers) {
-			const ds = buildDs(tier);
-			effects.push({
-				type: "probability_multiplier",
-				chance_4x: tier.vars.x,
-				chance_3x: tier.vars.y,
-				chance_2x: tier.vars.z,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
-
-	大罗幻诀: (cell) => {
-		// 持续伤害上升x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "dot_damage_increase",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	梵圣真魔咒: (cell) => {
-		// 持续伤害触发间隙缩短x% (note: source has 焚圣 but book-table uses 梵圣)
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "dot_frequency_increase",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	焚圣真魔咒: (cell) => {
-		// Same book, alternate name
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "dot_frequency_increase",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
 	无相魔劫咒: (cell) => {
-		// 【魔劫】: 降低x%治疗量, 伤害提升y%, 无治疗状态提升至z%
+		// debuff + conditional_damage with parent linking
 		const tier = cell.tiers[cell.tiers.length - 1];
 		if (!tier) return [];
 		return [
@@ -473,21 +262,8 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		];
 	},
 
-	// ── Body ────────────────────────────────────────────────
-
-	玄煞灵影诀: (cell) => {
-		// 每损失1%气血提升x%伤害
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "per_self_lost_hp",
-			per_percent: tier.vars.x,
-		} as EffectRow];
-	},
-
-	惊蛰化龙: (cell) => {
-		// 1. 每层减益造成x%最大气血真实伤害, 最多y%
-		// 2. 悟境条件下: 已损气血伤害提高z%, 伤害提升w%
+	惊蜇化龙: (cell) => {
+		// per_debuff_stack_true_damage + conditional_buff compound
 		const tier = cell.tiers[cell.tiers.length - 1];
 		if (!tier) return [];
 		return [
@@ -505,64 +281,9 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		];
 	},
 
-	十方真魄: (cell) => {
-		// 伤害提升x%, 受到伤害提升y%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "damage_increase",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "self_damage_taken_increase",
-				value: tier.vars.y,
-				duration: "during_cast",
-			} as EffectRow,
-		];
-	},
-
-	疾风九变: (cell) => {
-		// 所有状态持续时间延长x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "all_state_duration",
-			value: tier.vars.x,
-		} as EffectRow];
-	},
-
-	煞影千幻: (cell) => {
-		// 敌方处于控制状态时伤害提升x%
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "conditional_damage",
-			value: tier.vars.x,
-			condition: "target_controlled",
-		} as EffectRow];
-	},
-
-	九重天凤诀: (cell) => {
-		// 护盾消失时对敌方造成护盾值x%的伤害
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "on_shield_expire",
-			damage_percent_of_shield: tier.vars.x,
-		} as EffectRow];
-	},
-
-	天煞破虚诀: (cell) => {
-		// 命中后每秒驱散1个增益, 持续10秒, 每驱散造成x%灵法伤害, 无状态双倍
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [{
-			type: "periodic_dispel",
-			interval: 1,
-			duration: 10,
-			damage_percent_of_skill: tier.vars.x,
-			no_buff_double: true,
-		} as EffectRow];
-	},
+	// Generic pipeline handles the rest:
+	// 念剑诀, 通天剑诀, 新-青元剑诀, 无極御剑诀,
+	// 浩然星灵诀, 元磁神光, 星元化岳, 玉書天戈符, 九天真雷诀,
+	// 天魔降临咒, 天轮魔经, 解体化形, 大罗幻诀, 梵圣/焚圣真魔咒,
+	// 玄煞灵影诀, 十方真魄, 疾風九变, 煞影千幻, 九重天凤诀, 天煞破虚诀
 };

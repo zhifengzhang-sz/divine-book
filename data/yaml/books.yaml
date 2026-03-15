@@ -70,11 +70,11 @@ books:
       name: 天哀灵涸
       effects:
         - type: debuff
-          name: 灵涸
           target: healing_received
           value: -80
           duration: 8
           dispellable: false
+          name: 灵涸
   春黎剑阵:
     school: Sword
     states:
@@ -243,16 +243,16 @@ books:
       name: 天威煌煌
       effects:
         - type: next_skill_buff
-          stat: skill_damage_increase
           value: 88
+          stat: skill_damage_increase
           data_state: fusion=20
         - type: next_skill_buff
-          stat: skill_damage_increase
           value: 108
+          stat: skill_damage_increase
           data_state: fusion=30
         - type: next_skill_buff
-          stat: skill_damage_increase
           value: 128
+          stat: skill_damage_increase
           data_state: fusion=40
   无极御剑诀:
     school: Sword
@@ -315,8 +315,8 @@ books:
       name: 天狼战意
       effects:
         - type: self_buff_extra
-          buff_name: 天狼之啸
           attack_bonus: 7
+          buff_name: 天狼之啸
     exclusive_affix:
       name: 真极穿空
       effects:
@@ -437,20 +437,20 @@ books:
         - type: self_buff_extra
           data_state: locked
         - type: self_buff_extra
-          buff_name: 仙佑
           healing_bonus: 70
+          buff_name: 仙佑
           data_state:
             - enlightenment=1
             - fusion=51
         - type: self_buff_extra
-          buff_name: 仙佑
           healing_bonus: 170
+          buff_name: 仙佑
           data_state:
             - enlightenment=7
             - fusion=51
         - type: self_buff_extra
-          buff_name: 仙佑
           healing_bonus: 190
+          buff_name: 仙佑
           data_state:
             - enlightenment=8
             - fusion=51
@@ -458,11 +458,11 @@ books:
       name: 天倾灵枯
       effects:
         - type: debuff
-          name: 灵枯
           target: healing_received
           value: -31
           duration: 20
           conditional_value: -51
+          name: 灵枯
           condition: target_hp_below_30
   星元化岳:
     school: Spell
@@ -567,8 +567,8 @@ books:
       name: 引灵摘魂
       effects:
         - type: conditional_damage
-          condition: target_has_debuff
           value: 104
+          condition: target_has_debuff
   天轮魔经:
     school: Demon
     skill:
@@ -637,6 +637,17 @@ books:
           parent: 天人五衰
     exclusive_affix:
       name: 魔骨明心
+      effects:
+        - type: conditional_heal_buff
+          condition: target_has_debuff
+          value: 90
+          duration: 8
+        - type: conditional_debuff
+          condition: enlightenment
+          name: 魔骨明心
+          target: final_damage_reduction
+          value: -20
+          duration: 1
   解体化形:
     school: Demon
     skill:
@@ -910,6 +921,14 @@ books:
           parent: this
     exclusive_affix:
       name: 索心真诀
+      effects:
+        - type: per_debuff_stack_true_damage
+          per_stack: 2.1
+          max: 21
+        - type: conditional_buff
+          condition: enlightenment_max
+          percent_lost_hp_increase: 50
+          damage_increase: 75
   十方真魄:
     school: Body
     states:
@@ -994,7 +1013,7 @@ books:
         source: self_max_hp
       - type: debuff
         target: final_damage_reduction
-        value: -u
+        value: -8
         duration: 4
         name: 落星
         per_hit_stack: true
@@ -1004,6 +1023,9 @@ books:
       effects:
         - type: shield_strength
           value: 21.5
+          parent: this
+        - type: hp_cost_avoid_chance
+          value: 30
           parent: this
     exclusive_affix:
       name: 乘胜逐北
