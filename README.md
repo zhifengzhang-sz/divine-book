@@ -1,6 +1,6 @@
 ---
 initial date: 2026-2-25
-dates of modification: [2026-2-25, 2026-3-5, 2026-3-9]
+dates of modification: [2026-2-25, 2026-3-5, 2026-3-9, 2026-3-14]
 ---
 
 <style>
@@ -99,27 +99,24 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> **Structured data, combat modeling, and book construction system for the Divine Book (灵书) mechanic** — a cultivation combat system comprising 28 skill books across four schools. Three processes: extract structured data from Chinese prose, model combat interactions and function categories, then construct optimized book sets for PvP scenarios.
+> **Structured data, combat modeling, and simulation for the Divine Book (灵书) mechanic** — a cultivation combat system comprising 28 skill books across four schools. Four processes: parse structured data from Chinese prose, model combat interactions and function categories, construct optimized book sets, and simulate combat outcomes.
 
 ---
 
-## Architecture — Three Processes
+## Architecture — Four Processes
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart TD
-    subgraph P1["Process 1 — Data"]
-        RAW["data/raw/<br/>(Chinese prose)"]
-        RAW -->|"formalize"| KM["keyword.map<br/>(80+ effect types)"]
-        KM -->|"encode"| REG["lib/domain/registry<br/>(Zod schemas)"]
-        RAW -->|"LLM extract"| ND["normalized.data.md"]
-        ND -->|"verify + parse"| EY["effects.yaml"]
+    subgraph P1["Process 1 — Parser"]
+        RAW["data/raw/主书.md<br/>(Chinese prose)"]
+        RAW -->|"grammar-based<br/>regex extraction"| PARSER["lib/parser/<br/>(28 books, 5 grammars,<br/>31 extractors)"]
+        PARSER -->|"books.yaml"| BY["data/yaml/books.yaml<br/>(structured output)"]
     end
 
     subgraph P2["Process 2 — Modeling"]
-        EY -->|"domain analysis"| DM["Domain Model<br/>bindings, platforms,<br/>graph, categories"]
-        REG --> DM
-        EY -->|"factor mapping"| CM["Combat Model<br/>effect → affix → book"]
+        BY -->|"domain analysis"| DM["Domain Model<br/>bindings, platforms,<br/>graph, categories"]
+        BY -->|"factor mapping"| CM["Combat Model<br/>effect → affix → book"]
         DM --> FC["Function Categories<br/>(13 functions,<br/>platform qualification)"]
         CM --> TS["Time-Series Model<br/>temporal vectors,<br/>summon envelopes"]
         DM --> CS["Combo Tools<br/>rank, cluster, search"]
@@ -134,39 +131,47 @@ flowchart TD
         SL --> BK["Book Builds<br/>docs/books/pvp.*.md"]
     end
 
-    P1 -->|"effects.yaml<br/>registry"| P2
+    subgraph P4["Process 4 — Simulator"]
+        BY -->|"BookData"| SIM["lib/simulator/<br/>simulateBook() → Intent[]<br/>Entity class<br/>runCombat()"]
+        SIM --> RES["CombatResult<br/>winner, HP trace,<br/>round-by-round log"]
+    end
+
+    P1 -->|"books.yaml"| P2
     P2 -->|"functions, combos<br/>time-series"| P3
+    P1 -->|"books.yaml"| P4
 ```
 
-### Process 1 — Data
+### Process 1 — Parser
 
-Extract structured data from volatile Chinese prose. Formalizes the effect type vocabulary (80+ types), extracts normalized tables via LLM agents, verifies with two independent agents, and parses into YAML.
+Grammar-based parser that reads Chinese prose directly from `data/raw/主书.md`. No LLM, no intermediate normalized format. Deterministic extraction using 31 regex patterns across 5 grammar types.
 
 | Layer | What | Where |
 |:------|:-----|:------|
-| Structure | Effect type vocabulary | `data/keyword/keyword.map.cn.md`, `lib/domain/registry.ts` |
-| Extraction | LLM-extracted tables | `data/normalized/normalized.data.md` |
-| Verification | Schema + coverage checks | `/verify-schema`, `/verify-coverage` agents |
-| Output | Parsed effect data | `data/yaml/effects.yaml` |
+| MD Table Reader | Raw markdown → per-book cells | `lib/parser/md-table.ts` |
+| Book Lookup | 28 books → grammar classification (G2–G6) | `lib/parser/book-table.ts` |
+| Split Engine | Grammar-driven per-book parsing | `lib/parser/split.ts` |
+| Regex Extractors | 31 pattern-matching functions for Chinese prose | `lib/parser/extract.ts` |
+| State Extractor | 【name】patterns → state registry | `lib/parser/states.ts` |
+| Tier Resolver | Enlightenment/fusion tier variable substitution | `lib/parser/tiers.ts` |
+| Emitter | ParsedBook → BookData → YAML | `lib/parser/emit.ts` |
+| Output | 28 books, ~125 effects | `data/yaml/books.yaml` |
 
-**Docs:** [design.md](docs/data/design.md), [impl.parser.md](docs/data/impl.parser.md), [note.data.md](docs/data/note.data.md)
+**Docs:** [diagram.main.md](docs/parser/diagram.main.md), [note.update.md](docs/parser/note.update.md)
 
 ### Process 2 — Modeling
 
-Build models on top of the extracted data. Three interconnected models:
+Build models on top of the parsed data. Three interconnected models:
 
 | Model | What it does | Where |
 |:------|:-------------|:------|
-| **Domain model** | Affix interactions as provides/requires graph (61 bindings, 10 platforms). Combo discovery and scoring. | `lib/domain/*.ts`, [domain.category.md](docs/data/domain.category.md), [domain.graph.md](docs/data/domain.graph.md) |
+| **Domain model** | Affix interactions as provides/requires graph (61 bindings, 10 platforms). Combo discovery and scoring. | `lib/domain/*.ts`, [domain.category.md](docs/data/domain.category.md) |
 | **Combat model** | Effect → factor mapping. Four-level pipeline: effect → affix → book → book set. | `lib/schemas/*.ts`, `lib/model/*.ts`, [combat.md](docs/model/combat.md) |
-| **Function categories** | 13 function types (F_burst, F_buff, etc.) with platform qualification, aux affix catalog, and three-tier structure. | `lib/domain/functions.ts`, [function-themes.md](docs/model/function-themes.md) |
+| **Function categories** | 13 function types (F_burst, F_buff, etc.) with platform qualification, aux affix catalog. | `lib/domain/functions.ts`, [function-themes.md](docs/model/function-themes.md) |
 | **Time-series** | Temporal factor vectors, summon envelopes, buff duration analysis. | `lib/model/time-series.ts`, [impl.time-series.md](docs/model/impl.time-series.md) |
-
-**Docs:** [chain.md](docs/data/chain.md), [combat.qualitative.md](docs/model/combat.qualitative.md), [impl.binding-quality.md](docs/model/impl.binding-quality.md)
 
 ### Process 3 — Book Construction
 
-Use the models to construct optimized 6-slot 灵書 sets for PvP. The process follows a defined pipeline:
+Use the models to construct optimized 6-slot book sets for PvP:
 
 ```
 Scenario Analysis → Theme Selection → Function → Slot → Platform → Aux → Build
@@ -174,34 +179,58 @@ Scenario Analysis → Theme Selection → Function → Slot → Platform → Aux
 
 | Step | What | Reference |
 |:-----|:-----|:---------|
-| **Themes** | Spectrum α∈[0,1] from all-attack to all-defense. 5 discrete themes. Strategic variance peaks at α≈0.5. | [function-themes.md §Themes](docs/model/function-themes.md) |
-| **Scenario → Theme** | Decision tree over observables (power gap, enemy heal/DR) produces theme α. | [function-themes.md §Decision Tree](docs/model/function-themes.md) |
-| **Slot assignment** | Per-slot function categories based on slot timing + dependencies. | [function-themes.md §Slot Assignment](docs/model/function-themes.md) |
+| **Themes** | Spectrum α∈[0,1] from all-attack to all-defense. 5 discrete themes. | [function-themes.md](docs/model/function-themes.md) |
+| **Scenario → Theme** | Decision tree over observables (power gap, enemy heal/DR). | [function-themes.md](docs/model/function-themes.md) |
+| **Slot assignment** | Per-slot function categories based on slot timing + dependencies. | [function-themes.md](docs/model/function-themes.md) |
 | **Build process** | 6-step pipeline: scenario → theme → function → platform → aux → verify. | [guide.build.md](docs/books/guide.build.md) |
-| **Working builds** | Concrete PvP builds with scenario analysis and slot-by-slot evaluation. | [pvp.md](docs/books/pvp.md), [pvp.zz.tools.md](docs/pvp.zz.tools.md) |
+| **Candidate enumeration** | Two-layer architecture: per-slot LOCKED/FLEXIBLE detection + set-level Cartesian product. | [pvp.candidates.md](docs/books/pvp.candidates.md) |
+
+### Process 4 — Combat Simulator
+
+Entity-sovereign combat simulator. Main book vs main book (platform + primary affix).
+
+| Component | What | Where |
+|:----------|:-----|:------|
+| **Types** | 21 intent types, operators, snapshots | `lib/simulator/types.ts` |
+| **Combinator** | 3-pass pipeline: producers → modifiers → parent assembly | `lib/simulator/simulate.ts` |
+| **Entity** | Sovereign HP/ATK/DEF/SP, derived stats, damage cascade, counter triggers | `lib/simulator/entity.ts` |
+| **Arena** | Round orchestrator: snapshot → resolve → dispatch → tick | `lib/simulator/arena.ts` |
+
+**Docs:** [contract.main.md](docs/simulator/contract.main.md), [impl.main.md](docs/simulator/impl.main.md), [model.actors.md](docs/simulator/model.actors.md), [config.md](docs/simulator/config.md)
 
 ## Quick Start
 
-```
+```bash
 bun install
-bun run parse                                          # normalized.data.md → effects.yaml
-bun run check                                          # typecheck + lint
-bun run test                                           # unit + integration tests
-bun app/combo-rank.ts --platform 春黎剑阵 --top 5       # rank combos for a platform
+bun run test                                           # 229 tests
+
+# Parser
+bun app/parse-main-skills.ts                           # parse all books → stdout
+bun app/parse-main-skills.ts -o data/yaml/books.yaml   # regenerate books.yaml
+bun app/parse-main-skills.ts --book 通天剑诀            # debug single book
+
+# Simulator
+bun app/simulate.ts --list                             # list all 28 books
+bun app/simulate.ts --book-a 通天剑诀 --book-b 新-青元剑诀 --hp 5000000
+bun app/simulate.ts --book-a 煞影千幻 --book-b 疾风九变 --hp 5000000 --verbose
+
+# Modeling
 bun app/function-combos.ts --catalog                   # function category catalog
 bun app/function-combos.ts --fn F_burst --top 3        # combos per function × platform
 bun app/book-vector.ts --platform 春黎剑阵 --op1 灵犀九重 --op2 心逐神随  # time-series
 bun app/build-candidates.ts --theme all_attack --top 5  # enumerate book set candidates
-bun app/build-candidates.ts --list                      # list available themes
-bun scripts/sync-style.ts                              # sync dark theme to all docs
+
+# Checks
+bun run check                                          # typecheck + lint
 ```
 
 ## Tools
 
 | Tool | Process | Purpose |
 |:-----|:--------|:--------|
-| `app/parse.ts` | Data | normalized.data.md → effects.yaml |
-| `app/map.ts` | Data | effects.yaml → model.yaml (factor mapping) |
+| `app/parse-main-skills.ts` | Parser | `data/raw/主书.md` → `data/yaml/books.yaml` |
+| `app/simulate.ts` | Simulator | Combat simulation: main book vs main book |
+| `app/map.ts` | Modeling | books.yaml → model.yaml (factor mapping) |
 | `app/combo-search.ts` | Modeling | Platform combo search |
 | `app/combo-rank.ts` | Modeling | Rank all combos for a platform (weighted scoring) |
 | `app/combo-cluster.ts` | Modeling | K-means clustering for archetypes |
@@ -210,7 +239,6 @@ bun scripts/sync-style.ts                              # sync dark theme to all 
 | `app/book-vector-chart.ts` | Modeling | HTML chart visualization |
 | `app/bookset-vector.ts` | Construction | Book set time-series evaluation (6-slot merge) |
 | `app/bookset-chart.ts` | Construction | Book set time-series chart visualization |
-| `app/candidates.ts` | Modeling | Affix candidate enumeration |
 | `app/build-candidates.ts` | Construction | Theme-driven 6-slot book set candidate enumeration |
 | `app/generate.ts` | Data | Registry → keyword.map generator |
 
@@ -219,58 +247,57 @@ bun scripts/sync-style.ts                              # sync dark theme to all 
 ```
 app/                             CLI tools (see table above)
 lib/
-  parse.ts                       Markdown table parser
-  candidates.ts                  Affix candidate enumeration
-  generators/
-    keyword-map.ts               Registry → keyword.map.md generator
-  schemas/                       Process 2: Combat model schemas
-    effect.ts                    Zod schema — 80+ effect types
-    effect.model.ts              Effect → factor contribution mapping
-    affix.model.ts               Affix-level combinator
-    book.model.ts                Book-level combinator
-    bookset.model.ts             Book-set-level combinator
+  parser/                        Process 1: Grammar-based parser
+    md-table.ts                  Layer 1: markdown table reader
+    book-table.ts                Static lookup: 28 books → grammar
+    split.ts                     Layer 2: per-book grammar parsers
+    states.ts                    Layer 3: named state extraction
+    extract.ts                   Layer 4: 31 regex pattern extractors
+    tiers.ts                     Tier resolution + variable substitution
+    emit.ts                      Emitter: ParsedBook → BookData → YAML
+    index.ts                     Orchestrator: parseMainSkills(), parseSingleBook()
+    parser.test.ts               59 tests
+  simulator/                     Process 4: Combat simulator
+    types.ts                     Intent types, OwnerStats, EntitySnapshot, CombatConfig
+    simulate.ts                  simulateBook() combinator, resolveSlot()
+    entity.ts                    Entity class (sovereign HP/ATK/DEF/SP)
+    arena.ts                     runCombat() round orchestrator
+    index.ts                     Public API: loadBooks(), simulate()
+    simulator.test.ts            26 tests
   domain/                        Process 2: Domain model
     registry.ts                  Effect type registry (80+ types)
     effects/                     Effect type definitions (17 files)
-    enums.ts                     TargetCategory (T1-T10), School enums
+    enums.ts                     TargetCategory, School enums
     bindings.ts                  61 affix provides/requires bindings
     platforms.ts                 10 platform definitions
     functions.ts                 13 function categories + qualification logic
-    named-entities.ts            6 named entity definitions
-    amplifiers.ts                Offense zone classification
-    binding-quality.ts           BQ scoring (utilization, platform fit, zone breadth)
-    chains.ts                    filterByBinding + discoverChains
-    constraints.ts               Construction constraint validator
+    build-candidates.ts          Two-layer candidate enumeration
+  schemas/                       Process 2: Combat model schemas
+    effect.ts                    Zod schema — 80+ effect types
+    effect.model.ts              Effect → factor contribution mapping
   model/                         Process 2: Combat + time-series models
     model-data.ts                Factor vector building + combo distance
     time-series.ts               Temporal event collection + sampling
-    combinators.ts               Model combinators
 data/
   raw/                           Source of truth (Chinese prose)
   keyword/                       Effect type vocabulary (parsing spec)
-  normalized/                    LLM-extracted tables
-  yaml/                          Parsed output (effects.yaml, groups.yaml)
+  yaml/                          Parsed output (books.yaml, groups.yaml, model.yaml)
 docs/
-  data/                          Process 1 docs (data pipeline design, domain analysis)
+  parser/                        Process 1 docs (parser architecture, diagrams)
+  data/                          Process 1+2 docs (domain analysis)
   model/                         Process 2 docs (combat model, function themes, time-series)
   books/                         Process 3 docs (build guides, PvP scenarios)
-  pvp.zz.tools.md                Tool-assisted PvP build (working example)
-scripts/
-  sync-style.ts                  Sync dark theme CSS to all markdown files
+  simulator/                     Process 4 docs (contracts, implementation, config)
 ```
 
 ## Documentation
 
-### Process 1 — Data
+### Process 1 — Parser
 
 | Document | Purpose |
 |:---------|:--------|
-| [design.md](docs/data/design.md) | System design — containers, components, boundaries |
-| [note.data.md](docs/data/note.data.md) | Pipeline quick reference — layers, commands, agents |
-| [impl.parser.md](docs/data/impl.parser.md) | How the parser works |
-| [usage.parser.md](docs/data/usage.parser.md) | Running the parser |
-| [usage.domain.md](docs/data/usage.domain.md) | Domain analysis workflow |
-| [keyword.map.md](data/keyword/keyword.map.md) | Effect type vocabulary (80+ types) |
+| [diagram.main.md](docs/parser/diagram.main.md) | Parser pipeline class diagrams |
+| [note.update.md](docs/parser/note.update.md) | Parser current state — scope, files, grammars |
 
 ### Process 2 — Modeling
 
@@ -282,7 +309,7 @@ scripts/
 | [chain.md](docs/data/chain.md) | Construction methodology — objectives, functions, scoring |
 | [combat.md](docs/model/combat.md) | Effect → factor mapping (four-level pipeline) |
 | [combat.qualitative.md](docs/model/combat.qualitative.md) | Qualitative combat analysis |
-| [function-themes.md](docs/model/function-themes.md) | Function categories (13 types), themes (α spectrum), decision tree |
+| [function-themes.md](docs/model/function-themes.md) | Function categories, themes, decision tree |
 | [impl.binding-quality.md](docs/model/impl.binding-quality.md) | BQ scoring implementation |
 | [impl.time-series.md](docs/model/impl.time-series.md) | Time-series model implementation |
 
@@ -290,11 +317,19 @@ scripts/
 
 | Document | Purpose |
 |:---------|:--------|
-| [guide.build.md](docs/books/guide.build.md) | Build process guide — 6-step pipeline with mermaid diagrams |
+| [guide.build.md](docs/books/guide.build.md) | Build process guide — 6-step pipeline |
 | [guide.chain.md](docs/books/guide.chain.md) | Chain construction guide |
 | [pvp.md](docs/books/pvp.md) | PvP book set construction (3 scenarios) |
-| [pvp.candidates.md](docs/books/pvp.candidates.md) | Candidate enumeration across 5 themes (per-slot analysis + set-level) |
-| [pvp.zz.tools.md](docs/pvp.zz.tools.md) | Tool-assisted PvP build with scoring + time-series |
+| [pvp.candidates.md](docs/books/pvp.candidates.md) | Candidate enumeration across 5 themes |
+
+### Process 4 — Combat Simulator
+
+| Document | Purpose |
+|:---------|:--------|
+| [contract.main.md](docs/simulator/contract.main.md) | Intent type contracts — 21 intent types, producer/modifier tables |
+| [impl.main.md](docs/simulator/impl.main.md) | Combinator algorithm, worked examples, design decisions |
+| [model.actors.md](docs/simulator/model.actors.md) | Entity class, Arena function, damage cascade, round lifecycle |
+| [config.md](docs/simulator/config.md) | CLI usage, CombatConfig, output format |
 
 ---
 
@@ -305,3 +340,4 @@ scripts/
 | 1.0 | 2026-02-25 | Initial project README |
 | 2.0 | 2026-03-05 | Full rewrite — four-layer architecture |
 | 3.0 | 2026-03-09 | Three-process architecture (data, modeling, book construction) |
+| 4.0 | 2026-03-14 | Four-process architecture: grammar-based parser replaces LLM pipeline, combat simulator added, stale artifacts removed |
