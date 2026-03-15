@@ -89,65 +89,112 @@ strong {
 }
 </style>
 
-# Effect Simulations & Combinators
+# Combat Simulator — Implementation
+
+**Status:** Implemented — `lib/simulator/simulate.ts`
+**Updated:** 2026-03-14
 
 ## Overview
 
-Three layers:
+Two layers:
 
-1. **Contracts** (in `contract.main.md`) — intent schemas that cross the entity boundary
-2. **Simulations** — per-effect-type functions that produce intents conforming to the contracts
-3. **Combinators** — compose simulations into a book actor
+1. **Contracts** (`contract.main.md`) — intent types that define entity communication
+2. **Combinator** (`simulate.ts`) — pure functions that transform parser output into intents
 
-Every simulation is a pure function:
+Code: `lib/simulator/simulate.ts`
 
-```typescript
-type Simulate = (config: EffectRow, owner: OwnerStats) => Intent[]
-```
+## Tier Selection
 
-Effects come in two kinds:
-
-- **Producers** — emit one or more intents
-- **Modifiers** — transform a producer's output (no intent of their own)
-
-## Owner Stats
-
-What the entity SM provides to the book when it activates:
+Parser output contains multiple tiers per effect (gated by `data_state: enlightenment=N`). The simulator picks the highest available tier via `selectTier()`.
 
 ```typescript
-interface OwnerStats {
-  id: string;
-  atk: number;          // base ATK
-  effective_atk: number; // ATK × (1 + buff multipliers)
-  hp: number;           // current HP
-  max_hp: number;
-  def: number;
-  sp: number;
-}
+function selectTier(effects: EffectRow[]): EffectRow[]
 ```
 
-The book never reads opponent state. Anything that depends on opponent state is emitted as an **operator** — a formula the receiver evaluates.
+Rules:
+- Effects without `data_state` are always included (ungated)
+- Effects with `data_state: "locked"` are skipped
+- Among effects with the same `type::name` key, the **last** entry wins (highest tier)
+- Groups are keyed by `type + name` to handle separate tiers for named effects
+
+## The Combinator: `simulateBook()`
+
+Three-pass pipeline: **producers → modifiers → parent assembly**.
+
+```typescript
+function simulateBook(effects: EffectRow[], owner: OwnerStats): Intent[]
+```
+
+### Pre-processing
+
+Before the passes, effects are separated:
+- **Direct effects**: no `parent` field (or `parent: "this"`)
+- **Parent-scoped effects**: `parent: "state_name"` — held back for Pass 3
+
+### Pass 1 — Producers
+
+Each producer effect type maps to a `produceIntent()` call that emits one or more intents.
+
+```
+for each direct effect where isProducer(type):
+  intents.push(...produceIntent(effect, owner))
+```
+
+26 producer types are recognized (see `PRODUCERS` set in source).
+
+### Pass 2 — Modifiers
+
+Modifiers transform existing producer intents. They match by intent type.
+
+```
+for each direct effect where isModifier(type):
+  applyModifier(effect, intents, owner)
+```
+
+22 modifier types are recognized (see `MODIFIERS` set in source).
+
+### Pass 3 — Parent Assembly
+
+Parent-scoped effects are produced as child intents, then nested under their parent's COUNTER_STATE:
+
+```
+for each [parentName, children] in parentChildren:
+  childIntents ← produce each child effect
+  find COUNTER_STATE intent with id == parentName
+  append childIntents to on_hit.apply_to_attacker
+```
+
+This is how 大罗幻诀's DoTs (噬心魔咒, 断魂之咒) get nested under the 罗天魔咒 counter.
+
+## Slot Resolution: `resolveSlot()`
+
+```typescript
+function resolveSlot(book: BookData, owner: EntitySnapshot): SlotResult
+```
+
+1. Collects all effects: `book.skill + book.primary_affix.effects + book.exclusive_affix.effects`
+2. Calls `simulateBook(allEffects, owner)`
+3. Classifies each intent as `self` or `opponent` via `isSelfIntent()`
+4. Returns `{ self_intents, opponent_intents }`
+
+Self-intent types: `HP_COST`, `SELF_BUFF`, `SHIELD`, `HEAL`, `COUNTER_STATE`, `CLEANSE`, `SUMMON`, `UNTARGETABLE`, `LIFESTEAL`, `SELF_DAMAGE_INCREASE`, `CRIT_BONUS`, `HP_FLOOR`, `SELF_BUFF_EXTEND`
+
+Everything else is an opponent intent.
 
 ---
 
-## Producers
+## Producer Details
 
 ### `base_attack`
 
-Core damage effect. Present in all 28 books.
-
 ```
 Config:  { type: "base_attack", hits: 6, total: 20265 }
-Owner:   { effective_atk: 1000 }
+Owner:   { effective_atk: 50000 }
 
-amount_per_hit = (total / 100) × effective_atk / hits
-               = (20265 / 100) × 1000 / 6
-               = 33,775
+amount_per_hit = (20265 / 100) × 50000 / 6 = 1,688,750
 
-→ ATK_DAMAGE { amount_per_hit: 33775, hits: 6, dr_bypass: 0, source: owner.id }
+→ ATK_DAMAGE { amount_per_hit: 1688750, hits: 6, dr_bypass: 0, crit_bonus: 0, operators: [] }
 ```
-
-Emits per-hit amounts (not a lump sum) because the receiver needs per-hit granularity for shield absorption, counter triggers, and per-hit debuff stacking.
 
 ### `self_hp_cost`
 
@@ -155,13 +202,10 @@ Emits per-hit amounts (not a lump sum) because the receiver needs per-hit granul
 Config:  { type: "self_hp_cost", value: 20 }
 Owner:   { hp: 800000 }
 
-amount = (value / 100) × hp
-       = 160000
-
 → HP_COST { amount: 160000 }
 ```
 
-Based on **current** HP, not max. Self-effect — entity SM deducts before the book's other effects resolve.
+Based on **current** HP. Also supports `per_hit`, `tick_interval`, `duration` variants.
 
 ### `self_buff`
 
@@ -171,229 +215,68 @@ Config:  { type: "self_buff", name: "仙佑", attack_bonus: 70, defense_bonus: 7
 → SELF_BUFF { id: "仙佑", atk_percent: 70, def_percent: 70, hp_percent: 70, duration: 12 }
 ```
 
-Entity SM creates a temporary state. While active: `effective_atk = atk × (1 + 0.70)`.
-
 ### `shield`
 
 ```
-Config:  { type: "shield", value: 12, source: "self_max_hp", duration: 8 }
+Config:  { type: "shield", value: 12, duration: 8 }
 Owner:   { max_hp: 1000000 }
-
-amount = (value / 100) × max_hp
-       = 120000
 
 → SHIELD { amount: 120000, duration: 8 }
-```
-
-### `self_heal`
-
-```
-Config:  { type: "self_heal", value: 20, source: "self_max_hp" }
-Owner:   { max_hp: 1000000 }
-
-amount = (value / 100) × max_hp
-       = 200000
-
-→ HEAL { amount: 200000 }
 ```
 
 ### `debuff`
 
 ```
-Config:  { type: "debuff", name: "落星", target: "final_damage_reduction", value: -8,
-           duration: 4, per_hit_stack: true, dispellable: false }
+Config:  { type: "debuff", name: "落星", target: "final_damage_reduction", value: -8, duration: 4, per_hit_stack: true, dispellable: false }
 
-→ APPLY_DEBUFF { id: "落星", stat: "final_damage_reduction", value: -8,
-                  duration: 4, per_hit_stack: true, dispellable: false }
+→ APPLY_DEBUFF { id: "落星", stat: "final_damage_reduction", value: -8, duration: 4, per_hit_stack: true, dispellable: false }
 ```
-
-Config maps directly to the contract. The receiver creates the state on itself.
 
 ### `dot`
 
 ```
-Config:  { type: "dot", name: "贪妄业火", percent_current_hp: 3,
-           tick_interval: 1, duration: 8, per_hit_stack: true }
+Config:  { type: "dot", name: "贪妄业火", percent_current_hp: 3, tick_interval: 1, duration: 8 }
 
-→ APPLY_DOT { id: "贪妄业火", percent: 3, basis: "current",
-               tick_interval: 1, duration: 8, per_hit_stack: true }
+→ APPLY_DOT { id: "贪妄业火", percent: 3, basis: "current", tick_interval: 1, duration: 8 }
 ```
 
-Receiver creates the DoT. Each tick: `damage = 3% × receiver.current_hp`. The attacker is not involved after sending.
-
-### `percent_max_hp_damage`
-
-Operator — the receiver evaluates against its own HP.
-
-```
-Config:  { type: "percent_max_hp_damage", value: 27 }
-
-→ HP_DAMAGE { percent: 27, basis: "max", source: owner.id }
-```
-
-Receiver computes: `27% × own max_hp`, then applies own DR.
-
-### `percent_current_hp_damage`
-
-```
-Config:  { type: "percent_current_hp_damage", value: 1.5, per_prior_hit: true }
-
-→ HP_DAMAGE { percent: 1.5, basis: "current", per_prior_hit: true, source: owner.id }
-```
-
-`per_prior_hit`: damage scales by how many prior hits the target received this combat. Receiver evaluates.
+DoT basis is inferred from which `percent_*` field is present:
+- `percent_current_hp` → basis: "current"
+- `percent_lost_hp` → basis: "lost"
+- `percent_max_hp` → basis: "max"
 
 ### `counter_buff`
 
-Registers a reactive trigger on self. Does not emit a cross-entity intent immediately.
-
 ```
-Config:  { type: "counter_buff", name: "极怒", duration: 4,
-           reflect_received_damage: 50, reflect_percent_lost_hp: 15 }
+Config:  { type: "counter_buff", name: "极怒", duration: 4, reflect_received_damage: 50, reflect_percent_lost_hp: 15 }
 
-→ COUNTER_STATE { id: "极怒", duration: 4,
-    on_hit: {
-      reflect_received_damage: 50,   // 50% of damage received → COUNTER_DAMAGE to attacker
-      reflect_percent_lost_hp: 15,   // 15% of own lost HP → COUNTER_DAMAGE to attacker
-    }
-  }
-```
-
-When the entity is later hit, it evaluates the counter against its own state:
-
-```
-received 100000 damage, own lost_hp = 300000
-
-counter_damage = (50/100) × 100000 + (15/100) × 300000
-               = 50000 + 45000 = 95000
-
-→ sends COUNTER_DAMAGE { amount: 95000 } to attacker
+→ COUNTER_STATE { id: "极怒", duration: 4, on_hit: { reflect_received_damage: 50, reflect_percent_lost_hp: 15 } }
 ```
 
 ### `counter_debuff`
 
-Registers a reactive that applies debuffs on the attacker when hit.
-
 ```
 Config:  { type: "counter_debuff", name: "罗天魔咒", duration: 8, on_attacked_chance: 30 }
 
-→ COUNTER_STATE { id: "罗天魔咒", duration: 8,
-    on_hit: {
-      chance: 30,
-      apply_to_attacker: [
-        APPLY_DOT { id: "噬心魔咒", percent: 7, basis: "current", ... },
-        APPLY_DOT { id: "断魂之咒", percent: 7, basis: "lost", ... },
-      ]
-    }
-  }
+→ COUNTER_STATE { id: "罗天魔咒", duration: 8, on_hit: { chance: 30, apply_to_attacker: [] } }
 ```
 
-The child effects (噬心之咒, 断魂之咒) are separate effects in the parsed data linked via `parent`. The combinator collects them under the parent counter.
-
-### `buff_steal`
-
-```
-Config:  { type: "buff_steal", count: 2 }
-
-→ BUFF_STEAL { count: 2, source: owner.id }
-```
-
-Receiver removes up to 2 dispellable buffs from itself and sends them back as `RECEIVE_STOLEN_BUFF` events.
+Children are populated in Pass 3 (parent assembly).
 
 ### `delayed_burst`
 
 ```
-Config:  { type: "delayed_burst", name: "无相魔劫", duration: 12,
-           damage_increase_during: 10, burst_base: 5000, burst_accumulated_pct: 10 }
-Owner:   { effective_atk: 1000 }
+Config:  { type: "delayed_burst", name: "无相魔劫", duration: 12, burst_base: 5000, burst_accumulated_pct: 10 }
+Owner:   { effective_atk: 50000 }
 
-burst_base_amount = (5000 / 100) × effective_atk = 50000
+burst_base_amount = (5000 / 100) × 50000 = 2,500,000
 
-→ DELAYED_BURST { id: "无相魔劫", duration: 12,
-                   damage_increase_during: 10,
-                   burst_base_amount: 50000,
-                   burst_accumulated_pct: 10 }
+→ DELAYED_BURST { id: "无相魔劫", duration: 12, burst_base_amount: 2500000, ... }
 ```
-
-Receiver creates the state. During the 12s, incoming damage is increased by 10%. On expiry, receiver takes: `burst_base_amount + 10% of the bonus damage accumulated during the state`.
-
-### `periodic_dispel`
-
-```
-Config:  { type: "periodic_dispel", count: 2 }
-
-→ DISPEL { count: 2 }
-```
-
-### `shield_destroy_damage`
-
-```
-Config:  { type: "shield_destroy_damage", shields_per_hit: 1, percent_max_hp: 12,
-           no_shield_double_cap: 4800, name: "寂灭剑心", duration: 4 }
-
-→ SHIELD_DESTROY { count: 1, bonus_hp_damage: 12,
-                    no_shield_double: true, duration: 4, source: owner.id }
-```
-
-### `self_cleanse`
-
-```
-Config:  { type: "self_cleanse", count: 2 }
-
-→ CLEANSE { count: 2 }
-```
-
-Self-effect. Entity SM removes up to 2 debuffs from itself.
-
-### `summon`
-
-```
-Config:  { type: "summon", inherit_percent: 54, duration: 16 }
-
-→ SUMMON { inherit_percent: 54, duration: 16 }
-```
-
-Self-effect. Entity SM creates a clone actor that copies `54%` of owner stats.
-
-### `untargetable_state`
-
-```
-Config:  { type: "untargetable_state", duration: 4 }
-
-→ UNTARGETABLE { duration: 4 }
-```
-
-Self-effect. Entity SM drops incoming intents for 4 seconds.
-
-### `lifesteal`
-
-```
-Config:  { type: "lifesteal", value: 82 }
-
-→ LIFESTEAL { percent: 82 }
-```
-
-Self-effect. After ATK_DAMAGE is computed, entity SM heals `82%` of the raw damage dealt.
 
 ---
 
-## Modifiers
-
-Modifiers don't emit intents. They transform a producer's output. Each modifier specifies which producer it targets.
-
-### `per_hit_escalation` → modifies `ATK_DAMAGE`
-
-```
-Config:  { type: "per_hit_escalation", value: 42.5, stat: "skill_bonus" }
-
-Transform(ATK_DAMAGE):
-  hit 0: amount × 1.0
-  hit 1: amount × (1 + 0.425)
-  hit 2: amount × (1 + 0.850)
-  hit N: amount × (1 + N × 0.425)
-```
-
-Changes uniform per-hit damage into escalating per-hit damage.
+## Modifier Details
 
 ### `self_lost_hp_damage` → modifies `ATK_DAMAGE`
 
@@ -401,207 +284,65 @@ Changes uniform per-hit damage into escalating per-hit damage.
 Config:  { type: "self_lost_hp_damage", value: 10 }
 Owner:   { hp: 700000, max_hp: 1000000 }
 
-Transform(ATK_DAMAGE):
-  extra = (value / 100) × (max_hp - hp)
-        = (10 / 100) × 300000 = 30000
-  ATK_DAMAGE.amount_per_hit += extra / hits
+extra = (10 / 100) × (1000000 - 700000) = 30000
+ATK_DAMAGE.amount_per_hit += 30000 / hits
 ```
 
-Adds flat damage from own lost HP. Self-resolved — book knows owner stats.
+Self-resolved — reads owner's own HP. Skipped if `parent` field is set (parent-scoped).
 
-### `shield_strength` → modifies `SHIELD`
+### `shield_strength` → replaces `SHIELD`
 
 ```
 Config:  { type: "shield_strength", value: 21.5 }
-Owner:   { max_hp: 1000000 }
-
-Transform(SHIELD):
-  SHIELD.amount = (21.5 / 100) × max_hp = 215000
+SHIELD.amount = (21.5 / 100) × max_hp
 ```
 
-Replaces shield amount. The raw text "提升至" means "raised to", not "add".
-
-### `self_buff_extra` → modifies `SELF_BUFF`
+### `ignore_damage_reduction` → `ATK_DAMAGE`
 
 ```
-Config:  { type: "self_buff_extra", buff_name: "仙佑", healing_bonus: 190 }
-
-Transform(SELF_BUFF where id == "仙佑"):
-  SELF_BUFF.healing_percent = 190
+ATK_DAMAGE.dr_bypass = 1   (bypass 100% of target's DR)
 ```
 
-Adds a field to an existing self-buff.
-
-### `self_buff_extend` → modifies `SELF_BUFF`
+### `damage_increase` / `skill_damage_increase` → `ATK_DAMAGE`
 
 ```
-Config:  { type: "self_buff_extend", value: 3.5 }
-
-Transform(SELF_BUFF):
-  SELF_BUFF.duration += 3.5
+ATK_DAMAGE.amount_per_hit *= (1 + value / 100)
 ```
 
-### `counter_debuff_upgrade` → modifies `COUNTER_STATE`
+### `per_enemy_lost_hp` → operator on `ATK_DAMAGE`
 
 ```
-Config:  { type: "counter_debuff_upgrade", on_attacked_chance: 60 }
-
-Transform(COUNTER_STATE):
-  COUNTER_STATE.on_hit.chance = 60   (was 30)
+Attaches: { kind: "per_enemy_lost_hp", per_percent: 2 }
+Receiver evaluates: damage × (1 + target_lost_hp% × 2 / 100)
 ```
 
-### `delayed_burst_increase` → modifies `DELAYED_BURST`
+### `counter_debuff_upgrade` → `COUNTER_STATE`
 
 ```
-Config:  { type: "delayed_burst_increase", value: 65 }
-
-Transform(DELAYED_BURST):
-  DELAYED_BURST.burst_base_amount *= (1 + 0.65)
+COUNTER_STATE.on_hit.chance = 60   (upgraded from 30)
 ```
 
-### `conditional_damage` → modifies `ATK_DAMAGE`
+### `delayed_burst_increase` → `DELAYED_BURST`
 
 ```
-Config:  { type: "conditional_damage", value: 50, condition: "target_hp_below_30" }
-
-Transform(ATK_DAMAGE):
-  Wraps in an operator: { condition: "target_hp_below_30", bonus_percent: 50 }
-  Receiver evaluates: if own hp < 30% max_hp → ATK_DAMAGE.amount × 1.5
+DELAYED_BURST.burst_base_amount *= (1 + 0.65)
 ```
-
-### `per_enemy_lost_hp` → modifies `ATK_DAMAGE`
-
-```
-Config:  { type: "per_enemy_lost_hp", per_percent: 0.4 }
-
-Transform(ATK_DAMAGE):
-  Attaches operator: { per_enemy_lost_hp: 0.4 }
-  Receiver evaluates: bonus = lost_hp% × 0.4% → ATK_DAMAGE.amount × (1 + bonus/100)
-```
-
-### `per_debuff_stack_damage` → modifies `ATK_DAMAGE`
-
-```
-Config:  { type: "per_debuff_stack_damage", value: 50, max_stacks: 10 }
-
-Transform(ATK_DAMAGE):
-  Attaches operator: { per_debuff_stack: 50, max_stacks: 10 }
-  Receiver evaluates: bonus = min(debuff_count, 10) × 50% → ATK_DAMAGE.amount × (1 + bonus/100)
-```
-
-### `periodic_escalation` → modifies `ATK_DAMAGE`
-
-```
-Config:  { type: "periodic_escalation", value: 1.4, every_n_hits: 2, max: 10 }
-
-Transform(ATK_DAMAGE):
-  Every 2 hits, remaining damage is multiplied by 1.4×. Compounds up to 10 times.
-```
-
-### `crit_damage_bonus` → modifies `ATK_DAMAGE`
-
-```
-Config:  { type: "crit_damage_bonus", value: 100 }
-
-Transform(ATK_DAMAGE):
-  ATK_DAMAGE.crit_bonus += 100
-```
-
-Self-resolved. Applied before emission.
-
-### `self_damage_taken_increase` → self modifier
-
-```
-Config:  { type: "self_damage_taken_increase", value: 50, duration: 8 }
-
-→ SELF_DAMAGE_INCREASE { percent: 50, duration: 8 }
-```
-
-Self-effect. Entity SM increases its own incoming damage for 8s. This is a producer that emits a self-intent, despite being a "modifier" in game terms.
 
 ---
 
-## Combinator
-
-The book simulation runs two passes over its effect list:
-
-```
-function simulate_book(effects: EffectRow[], owner: OwnerStats): Intent[] {
-  // Pass 1: run producers
-  const intents: Intent[] = []
-  for (const e of effects) {
-    if (isProducer(e.type)) {
-      intents.push(...simulate(e, owner))
-    }
-  }
-
-  // Pass 2: apply modifiers
-  for (const e of effects) {
-    if (isModifier(e.type)) {
-      applyModifier(e, intents, owner)
-    }
-  }
-
-  return intents
-}
-```
-
-### Modifier targeting
-
-Each modifier knows which producer it transforms:
-
-| Modifier | Targets | Match by |
-|---|---|---|
-| `per_hit_escalation` | `ATK_DAMAGE` | type |
-| `self_lost_hp_damage` | `ATK_DAMAGE` | type |
-| `conditional_damage` | `ATK_DAMAGE` | type |
-| `per_enemy_lost_hp` | `ATK_DAMAGE` | type |
-| `per_debuff_stack_damage` | `ATK_DAMAGE` | type |
-| `periodic_escalation` | `ATK_DAMAGE` | type |
-| `crit_damage_bonus` | `ATK_DAMAGE` | type |
-| `shield_strength` | `SHIELD` | type |
-| `self_buff_extra` | `SELF_BUFF` | type + `buff_name` matches `id` |
-| `self_buff_extend` | `SELF_BUFF` | type |
-| `counter_debuff_upgrade` | `COUNTER_STATE` | type |
-| `delayed_burst_increase` | `DELAYED_BURST` | type |
-
-### Parent-child assembly
-
-Some effects have `parent` fields linking them to a counter state. The combinator groups children under their parent:
-
-```yaml
-# Parsed effects (大罗幻诀):
-- type: counter_debuff        # producer → COUNTER_STATE
-  name: 罗天魔咒
-- type: dot                    # producer → APPLY_DOT
-  name: 噬心魔咒
-  parent: 罗天魔咒             # ← linked to counter
-- type: dot
-  name: 断魂之咒
-  parent: 罗天魔咒             # ← linked to counter
-```
-
-The combinator collects children by `parent` and nests them under the counter's `on_hit.apply_to_attacker` list. These DoTs are not sent immediately — they are sent reactively when the counter triggers.
-
-### Worked example: 煞影千幻
+## Worked Example: 煞影千幻
 
 Parser output:
 
 ```yaml
 skill:
-  - type: self_hp_cost          # producer
-    value: 20
-  - type: base_attack           # producer
-    hits: 3, total: 1500
-  - type: self_lost_hp_damage   # modifier → ATK_DAMAGE
-    value: 10
-  - type: shield                # producer
-    value: 12, duration: 8
-  - type: debuff                # producer
-    name: 落星, value: -8, duration: 4
+  - type: self_hp_cost, value: 20
+  - type: base_attack, hits: 3, total: 1500
+  - type: self_lost_hp_damage, value: 10
+  - type: shield, value: 12, duration: 8
+  - type: debuff, name: 落星, target: final_damage_reduction, value: -8
 primary_affix:
-  - type: shield_strength       # modifier → SHIELD
-    value: 21.5
+  - type: shield_strength, value: 21.5
 ```
 
 Owner: `{ effective_atk: 50000, hp: 800000, max_hp: 1000000 }`
@@ -612,165 +353,93 @@ Owner: `{ effective_atk: 50000, hp: 800000, max_hp: 1000000 }`
 self_hp_cost  → HP_COST { amount: 160000 }
 base_attack   → ATK_DAMAGE { amount_per_hit: 250000, hits: 3 }
 shield        → SHIELD { amount: 120000, duration: 8 }
-debuff        → APPLY_DEBUFF { id: "落星", stat: "final_damage_reduction",
-                                value: -8, duration: 4, per_hit_stack: true }
+debuff        → APPLY_DEBUFF { id: "落星", stat: "final_damage_reduction", value: -8 }
 ```
 
 **Pass 2** (modifiers):
 
 ```
-self_lost_hp_damage modifies ATK_DAMAGE:
-  extra = 10% × (1000000 - 800000) = 20000
-  ATK_DAMAGE.amount_per_hit += 20000 / 3 = 6667
-  → ATK_DAMAGE { amount_per_hit: 256667, hits: 3 }
+self_lost_hp_damage:
+  extra = 10% × 200000 = 20000, per hit = 6667
+  ATK_DAMAGE.amount_per_hit = 256667
 
-shield_strength modifies SHIELD:
-  → SHIELD { amount: 215000, duration: 8 }
+shield_strength:
+  SHIELD.amount = 21.5% × 1000000 = 215000
 ```
 
-**Final intents**:
+**Pass 3** — no parent-scoped effects
+
+**Final**: `resolveSlot()` classifies:
 
 ```
-Self:
-  HP_COST { amount: 160000 }
-  SHIELD { amount: 215000, duration: 8 }
-
-Opponent:
-  ATK_DAMAGE { amount_per_hit: 256667, hits: 3, dr_bypass: 0 }
-  APPLY_DEBUFF { id: "落星", stat: "final_damage_reduction",
-                  value: -8, duration: 4, per_hit_stack: true, dispellable: false }
+Self:     HP_COST { 160000 }, SHIELD { 215000, 8s }
+Opponent: ATK_DAMAGE { 256667/hit, 3 hits }, APPLY_DEBUFF { 落星 }
 ```
 
-Entity SM routes: apply self-intents to own state, send opponent-intents to event bus.
-
-### Worked example: 大罗幻诀
-
-Parser output:
+## Worked Example: 大罗幻诀
 
 ```yaml
 skill:
-  - type: base_attack
-    hits: 5, total: 20265
-  - type: counter_debuff
-    name: 罗天魔咒, duration: 8, on_attacked_chance: 30
-  - type: dot
-    name: 噬心魔咒, parent: 罗天魔咒
-    percent_current_hp: 7, tick_interval: 0.5, duration: 4, max_stacks: 5
-  - type: dot
-    name: 断魂之咒, parent: 罗天魔咒
-    percent_lost_hp: 7, tick_interval: 0.5, duration: 4, max_stacks: 5
+  - type: base_attack, hits: 5, total: 20265
+  - type: counter_debuff, name: 罗天魔咒, duration: 8, on_attacked_chance: 30
+  - type: dot, name: 噬心魔咒, parent: 罗天魔咒, percent_current_hp: 7, ...
+  - type: dot, name: 断魂之咒, parent: 罗天魔咒, percent_lost_hp: 7, ...
 primary_affix:
-  - type: counter_debuff_upgrade
-    on_attacked_chance: 60
-  - type: cross_slot_debuff
-    name: 命損, target: final_damage_reduction, value: -100, duration: 8, trigger: on_attacked
+  - type: counter_debuff_upgrade, on_attacked_chance: 60
 ```
 
-Owner: `{ effective_atk: 50000 }`
+**Pre-processing**: the two DoTs have `parent: "罗天魔咒"` → separated into `parentChildren`.
 
-**Pass 1** (producers):
-
+**Pass 1** (direct producers):
 ```
-base_attack      → ATK_DAMAGE { amount_per_hit: 202650, hits: 5 }
-counter_debuff   → COUNTER_STATE { id: "罗天魔咒", duration: 8,
-                     on_hit: { chance: 30, apply_to_attacker: [] } }
-dot (噬心魔咒)   → parent=罗天魔咒 → nested under COUNTER_STATE.on_hit
-dot (断魂之咒)   → parent=罗天魔咒 → nested under COUNTER_STATE.on_hit
-cross_slot_debuff → COUNTER_STATE.on_hit gains 命損 debuff
+base_attack    → ATK_DAMAGE { amount_per_hit: 2026500, hits: 5 }
+counter_debuff → COUNTER_STATE { id: "罗天魔咒", on_hit: { chance: 30, apply_to_attacker: [] } }
 ```
 
 **Pass 2** (modifiers):
-
 ```
-counter_debuff_upgrade modifies COUNTER_STATE:
-  on_hit.chance = 60
+counter_debuff_upgrade → COUNTER_STATE.on_hit.chance = 60
 ```
 
-**Final intents**:
-
+**Pass 3** (parent assembly):
 ```
-Self:
-  COUNTER_STATE { id: "罗天魔咒", duration: 8,
-    on_hit: {
-      chance: 60,
-      apply_to_attacker: [
-        APPLY_DOT { id: "噬心魔咒", percent: 7, basis: "current",
-                     tick_interval: 0.5, duration: 4, max_stacks: 5 },
-        APPLY_DOT { id: "断魂之咒", percent: 7, basis: "lost",
-                     tick_interval: 0.5, duration: 4, max_stacks: 5 },
-        APPLY_DEBUFF { id: "命損", stat: "final_damage_reduction",
-                        value: -100, duration: 8 },
-      ]
-    }
-  }
+parent "罗天魔咒" children:
+  dot 噬心魔咒 → APPLY_DOT { percent: 7, basis: "current" }
+  dot 断魂之咒 → APPLY_DOT { percent: 7, basis: "lost" }
 
-Opponent:
-  ATK_DAMAGE { amount_per_hit: 202650, hits: 5 }
+COUNTER_STATE.on_hit.apply_to_attacker = [APPLY_DOT × 2]
 ```
 
-The counter state is a self-effect. When the entity later receives a HIT, it rolls 60% chance, and if successful sends the three APPLY_DOT/APPLY_DEBUFF intents to the attacker via the event bus.
+**Final**:
+```
+Self:     COUNTER_STATE { id: "罗天魔咒", chance: 60, apply_to_attacker: [2 DoTs] }
+Opponent: ATK_DAMAGE { 2026500/hit, 5 hits }
+```
 
 ---
 
-## Open Questions
+## Design Decisions (Resolved)
 
-These must be resolved before implementation.
+### 1. Operator approach for opponent-dependent conditionals
 
-### 1. Operator vs snapshot for opponent-dependent conditionals
+**Decision: Operators.** The book attaches operator formulas to ATK_DAMAGE intents. The receiver evaluates them against its own state at hit time.
 
-Three modifiers need opponent state to compute the damage bonus:
+**Rationale**: Entity sovereignty is preserved — the book never reads opponent state. Operators are simple discriminated union variants evaluated in the entity's per-hit loop.
 
-| Modifier | Reads | Books |
-|---|---|---|
-| `per_enemy_lost_hp` | opponent lost HP % | 通天剑诀 |
-| `per_debuff_stack_damage` | opponent debuff count | 天魔降临咒, 解体化形 |
-| `conditional_damage` | opponent HP below threshold | 玉书天戈符, 九天真雷诀 |
+**Lifesteal interaction**: Lifesteal is computed in the arena after all damage is dealt. The arena measures the actual HP delta (not pre-DR damage), so it accounts for shields, DR, and operator bonuses.
 
-**Option A — Operator**: the book attaches a formula to the ATK_DAMAGE intent. The receiver evaluates the formula against its own state and scales the damage. Clean separation, but the receiver does more work and the sender doesn't know the final damage (matters for lifesteal).
+### 2. Self-effect ordering
 
-**Option B — Snapshot**: the arena provides an opponent snapshot at round start (simultaneous resolution). The book pre-computes the bonus. Simpler computation, but the book now has a dependency on opponent state.
+**Decision: Fixed order.** The arena orders self-intents: `HP_COST` first (increases lost HP for `self_lost_hp_damage`), then buffs/shields, then `HEAL` last.
 
-**Interaction with lifesteal**: 疾风九变 has `lifesteal: 82`. If the damage amount isn't known until the receiver evaluates operators, the sender can't compute the lifesteal heal. Options:
-- Lifesteal is also an operator: "heal attacker by 82% of effective damage dealt". Receiver sends a HEAL_BACK event after applying damage.
-- Accept that lifesteal is approximate: compute it on pre-operator damage.
+### 3. Architecture
 
-### 2. Self-effect ordering within a book activation
+**Decision: Pure classes, not XState.** The Entity is a plain class, the arena is a `runCombat()` function. States are `ActiveState[]` objects on the entity. This is simpler to test, debug, and reason about. XState can be added later if needed for multi-book rotation or async scenarios.
 
-Some effects depend on the result of others within the same activation:
+### 4. Intent ordering within a round
 
-- `self_hp_cost` reduces own HP → `self_lost_hp_damage` reads own lost HP for bonus damage
-- `base_attack` produces damage → `lifesteal` heals based on that damage
-- `self_hp_cost` reduces HP → `shield` amount might depend on current vs max HP
+**Decision: Simultaneous resolution.** Both books are resolved against frozen snapshots. Self-intents first, then opponent intents, then counter intents, then lifesteal, then state ticking.
 
-The two-pass combinator (producers then modifiers) doesn't enforce ordering among producers. Should the combinator define a fixed execution order?
+### 5. DoT ticking
 
-Proposed order:
-1. `HP_COST` (self-damage first — increases lost HP for subsequent calculations)
-2. `ATK_DAMAGE` + modifiers (damage computation, including `self_lost_hp_damage`)
-3. `HP_DAMAGE` (opponent-HP-based damage)
-4. `APPLY_DEBUFF`, `APPLY_DOT`, `DELAYED_BURST` (state intents)
-5. `SHIELD`, `SELF_BUFF`, `COUNTER_STATE` (self-state)
-6. `HEAL`, `LIFESTEAL` (healing last — depends on damage dealt)
-7. `DISPEL`, `BUFF_STEAL`, `CLEANSE` (state removal)
-
-### 3. Relationship to existing simulator code
-
-The current `lib/simulator/` has arena, entity, state-effect machines (119 passing tests). The new design changes the architecture fundamentally — entity becomes the primary actor, books become child actors, arena becomes a clock.
-
-Options:
-- **Rebuild**: start fresh in a new directory, keep old code until new one is proven
-- **Refactor**: incrementally reshape existing code to match new design
-- **Parallel**: build the effect simulations and combinator as pure functions first (testable without actors), then wire into actors later
-
-### 4. ~~How does the receiver apply multiple intents from one activation?~~ RESOLVED
-
-**Assumption**: all intents from one activation are simultaneous. When debuff and damage arrive together, the debuff is active and the damage is calculated against the debuffed state.
-
-### 5. DoT ticking — who manages the clock?
-
-When an APPLY_DOT is received, the receiver creates a state on itself. That state needs to tick (deal damage every N seconds). Who sends the tick?
-
-- **Entity SM self-ticks**: the entity manages all its own state durations and ticks DoTs against itself. Clean sovereignty — no external actor manages the entity's states.
-- **Arena sends TICK**: the arena (clock) sends periodic TICK events, entities tick their states in response.
-
-Self-ticking is cleaner for sovereignty but means the entity needs its own timer. Arena-ticking is simpler but reintroduces external control over entity state.
+**Decision: Arena-driven.** The arena calls `entity.tickStates(dt)` at the end of each round. The entity ticks all its own states, computing DoT damage against its own HP. Entity sovereignty is preserved — the entity damages itself.

@@ -89,147 +89,186 @@ strong {
 }
 </style>
 
-# Combat Simulator: Configuration
+# Combat Simulator — Configuration & Usage
 
-**Date:** 2026-03-11
+**Status:** Implemented — `app/simulate.ts`
+**Updated:** 2026-03-14
 
 ---
 
-## Config File Format
+## CLI Usage
 
-Config files live in `config/` and use JSON. A combat config specifies both sides
-(player and opponent) with their entity attributes and divine book sets.
+```bash
+# List available books
+bun app/simulate.ts --list
 
-```json
-{
-  "t_gap": 6,
-  "formulas": { "dr_constant": 7.5e7, "sp_shield_ratio": 1.0 },
-  "player": {
-    "entity": { "hp": 6.6e16, "atk": 3.5184e15, "sp": 3.3309e15, "def": 7.078e10 },
-    "books": [
-      { "slot": 1, "platform": "甲元仙符", "op1": "真极穿空", "op2": "龙象护身" }
-    ]
-  },
-  "opponent": {
-    "entity": { "scale": 1.0 },
-    "books": [ ... ]
-  }
+# Run a combat
+bun app/simulate.ts --book-a 通天剑诀 --book-b 新-青元剑诀
+
+# With custom stats
+bun app/simulate.ts --book-a 通天剑诀 --book-b 新-青元剑诀 --hp 5000000 --atk 50000
+
+# Verbose output (every round with events)
+bun app/simulate.ts --book-a 煞影千幻 --book-b 疾风九变 --hp 5000000 --verbose
+
+# Custom round limit
+bun app/simulate.ts --book-a 大罗幻诀 --book-b 天魔降临咒 --rounds 50
+```
+
+### CLI Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--book-a` | string | required | Name of book A (as in effects.yaml) |
+| `--book-b` | string | required | Name of book B |
+| `--hp` | number | 1,000,000 | Starting HP for both entities |
+| `--atk` | number | 50,000 | Base ATK for both entities |
+| `--def` | number | 10,000 | Base DEF for both entities |
+| `--rounds` | number | 100 | Maximum rounds before timeout |
+| `--verbose` | flag | false | Show every round with event details |
+| `--list` | flag | false | List all available books and exit |
+
+---
+
+## Programmatic Usage
+
+```typescript
+import { loadBooks, simulate } from "../lib/simulator/index.js";
+
+const books = loadBooks("data/raw/主书.md");
+
+const result = simulate(books, "通天剑诀", "新-青元剑诀", {
+  hp: 5_000_000,
+  atk: 50_000,
+});
+
+console.log(result.winner);    // "通天剑诀"
+console.log(result.rounds);    // 2
+console.log(result.a_final_hp); // 2375000
+```
+
+---
+
+## CombatConfig
+
+```typescript
+interface CombatConfig {
+  hp: number;            // starting HP for both entities
+  atk: number;           // base ATK for both entities
+  def: number;           // base DEF for both entities
+  sp: number;            // base SP (灵力) — not yet used for shields
+  max_rounds: number;    // timeout
+  round_duration: number; // seconds per round (for future use)
+  tick_interval: number;  // seconds per state tick (0.5 default)
 }
+```
+
+### Defaults
+
+```typescript
+const DEFAULT_COMBAT_CONFIG = {
+  hp: 1_000_000,
+  atk: 50_000,
+  def: 10_000,
+  sp: 5_000,
+  max_rounds: 100,
+  round_duration: 1,
+  tick_interval: 0.5,
+};
 ```
 
 ---
 
 ## Entity Attributes
 
-The game defines 4 fundamental combat attributes (data/属性/战斗属性.md):
+The game defines 4 fundamental combat attributes:
 
 | Field | Chinese | Description |
 |:------|:--------|:------------|
 | `hp`  | 气血 | Health pool. Entity dies when HP reaches 0. |
 | `atk` | 攻击 | Base attack. Skill damage scales as `(D_base / 100) × atk`. |
-| `sp`  | 灵力 | Spirit power. Consumed on damage taken to generate shields. |
-| `def` | 守御 | Defense. Converted to damage reduction (DR) via formula. |
+| `sp`  | 灵力 | Spirit power. Not yet used (future: SP → shield at combat start). |
+| `def` | 守御 | Defense. Not yet converted to DR formula (future: `DR = def / (def + K)`). |
 
-### Opponent entity: absolute or scaled
+### Current Simplifications
 
-The opponent entity can be specified two ways:
+- **Both entities share the same stats.** There is no `player` / `opponent` split or `scale` factor yet.
+- **DEF is not converted to DR.** The entity's `effective_dr` comes entirely from buff/debuff states, not from the `def` attribute.
+- **SP does not create initial shields.** The `sp` attribute is stored but unused.
+- **Only main book (platform + primary affix + exclusive affix) is simulated.** No multi-book rotation, no aux affixes.
 
-**Absolute** — provide all 4 values directly:
-```json
-"entity": { "hp": 6.6e16, "atk": 3.5184e15, "sp": 3.3309e15, "def": 7.078e10 }
+### Future: Asymmetric Stats
+
+When asymmetric stats are needed, the config can be extended to:
+
+```typescript
+{
+  entity_a: { hp: 6.6e16, atk: 3.5e15, sp: 3.3e15, def: 7e10 },
+  entity_b: { scale: 1.0 },  // or explicit values
+  formulas: { dr_constant: 7.5e7, sp_shield_ratio: 1.0 },
+}
 ```
-
-**Scaled** — multiply all player values by a factor:
-```json
-"entity": { "scale": 1.0 }
-```
-
-`scale: 1.0` = mirror match. `scale: 0.8` = opponent has 80% of player stats.
-
-Individual attributes can also be overridden alongside scale:
-```json
-"entity": { "scale": 1.2, "hp": 8.0e16 }
-```
-This scales atk/sp/def by 1.2× but uses the explicit HP value.
 
 ---
 
-## Derived Formulas
+## Output Format
 
-The game does not publish its internal formulas. The simulator uses parametric
-approximations that can be calibrated when real data is available.
+### Summary mode (default)
 
-### 守御 → Damage Reduction (DR)
-
-```
-DR = def / (def + K)
-```
-
-- `K` is the `dr_constant` in the config (`formulas.dr_constant`)
-- Default: `K = 7.5e7` (yields ~99.9% DR for 守御 = 707.8亿)
-- Range: DR is always in `[0, 1]`
-
-**Calibration:** If you observe your in-game DR% with known 守御, solve for K:
-```
-K = def × (1 - DR) / DR
-```
-
-Example: if 守御 = 7.078e10 gives DR = 25%, then K = 7.078e10 × 0.75 / 0.25 = 2.1234e11.
-
-State effects that modify DR (e.g., 命損 -100% DR) are additive deltas on the
-computed DR value, clamped to `[0, 1]`.
-
-### 灵力 → Shield
+Shows every 10th round + last 5 rounds:
 
 ```
-shield_pool = sp × R
+⚔  通天剑诀  vs  新-青元剑诀
+   HP: 5,000,000  ATK: 50,000  DEF: 10,000
+─────────────────────────────────────────────
+ Round          A HP          B HP       A dmg       B dmg
+     1     3,875,000     3,071,098   1,928,903   1,125,000
+     2     2,375,000             0   3,071,098   1,500,000
+
+─────────────────────────────────────────────
+Result: 通天剑诀 wins
+Rounds: 2
+通天剑诀 final HP: 2,375,000
+新-青元剑诀 final HP: 0
 ```
 
-- `R` is the `sp_shield_ratio` in the config (`formulas.sp_shield_ratio`)
-- Default: `R = 1.0` (1 point of 灵力 = 1 HP of shield)
-- Shield is consumed before DR is applied (damage hits shield first, remainder goes through DR)
-- Shield regenerates per activation from remaining 灵力 pool (灵力 is finite per combat)
+### Verbose mode (`--verbose`)
 
-**Implemented:** Shield from 灵力 is spawned as a built-in state effect at combat
-start. Each entity receives a shield with HP = `sp × sp_shield_ratio`. The shield
-is consumed before DR is applied — damage hits shield first, then DR reduces the
-remainder.
+Shows every round with event details:
+
+```
+Round 1:
+  通天剑诀 HP: 3,875,000 (dealt 1,928,903)
+  新-青元剑诀 HP: 3,071,098 (dealt 1,125,000)
+    通天剑诀 self-damage increase +50% for 8s
+    新-青元剑诀 takes 1928903 ATK damage (6 hits)
+    通天剑诀 takes 1125000 ATK damage (6 hits)
+    通天剑诀 debuffed: 神通封印 (next_skill_cooldown 8)
+    通天剑诀 debuffed: 追命剑阵 (skill_damage -30)
+```
 
 ---
 
-## Divine Book Spec
+## Scope: Main Book vs Main Book
 
-Each book entry follows the game's divine book construction:
+The current simulator handles **single main book vs single main book**:
 
-```
-`A`(主) + `B`(专属/【affix1】) + `C`(专属/【affix2】)
-```
+- Each entity has one book (platform + primary affix + exclusive affix)
+- The same book activates every round
+- No multi-book rotation, no aux affix contributions
 
-- **A** = main position skill book → determines the platform (skill, hit_count)
-- **B** = aux-1 skill book → contributes one affix (exclusive or school/universal)
-- **C** = aux-2 skill book → contributes one affix
+### Future: Full 6-Book Set
 
-In the config, we use the resolved affix names directly:
+To support full book sets, the config would extend to:
 
 ```json
-{ "slot": 1, "platform": "甲元仙符", "op1": "真极穿空", "op2": "龙象护身" }
+{
+  "books_a": [
+    { "slot": 1, "platform": "甲元仙符", "op1": "真极穿空", "op2": "龙象护身" },
+    { "slot": 2, "platform": "煞影千幻", "op1": "星猿援护", "op2": "心逐神随" }
+  ],
+  "books_b": [...]
+}
 ```
 
-- `platform`: the main skill book name (determines skill mechanics)
-- `op1`, `op2`: the affix names (not the source book names)
-
-Affix data is looked up from `data/yaml/effects.yaml` by name. The source book
-is not needed at runtime — affix values at max fusion are already in the YAML.
-
-### Fewer than 6 books
-
-A book set can have 1–6 entries. The simulator adapts: `max_rounds = max(player_slots, opponent_slots)`. Rounds where one side has no slot are no-ops for that side.
-
----
-
-## t_gap
-
-Time in seconds between slot activations. Default: `6`.
-
-This drives the arena clock: after each round's slots fire, all active state effects
-receive a `TICK { dt: t_gap }` event to decrement their remaining duration.
+The arena would cycle through slots per round, and aux affixes would contribute universal/school modifiers.

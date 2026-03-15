@@ -89,393 +89,325 @@ strong {
 }
 </style>
 
-# Divine Book Actor Contracts
+# Divine Book — Intent Contracts
+
+**Status:** Implemented — `lib/simulator/types.ts`
+**Updated:** 2026-03-14
 
 ## Design Principle
 
-Each entity state machine is sovereign over its own attributes (HP, ATK, DEF, SP). No external actor mutates these directly. Cross-entity communication happens through **intents** — the sender declares what it wants to do, the receiver evaluates and applies it to its own state.
+Each entity is sovereign over its own attributes (HP, ATK, DEF, SP). No external code mutates these directly. Cross-entity communication happens through **intents** — the sender declares what it wants to do, the receiver evaluates and applies it to its own state.
 
 ## Architecture
 
 ```
-Entity SM (player)                          Entity SM (opponent)
-  ├── Book 1 (actor)                          ├── Book 1 (actor)
-  ├── Book 2 (actor)                          ├── Book 2 (actor)
-  ├── ...                                     ├── ...
-  └── Book 6 (actor)                          └── Book 6 (actor)
+Arena (runCombat)
+  ├── Entity A (class)
+  │     └── states: ActiveState[]   (buffs, debuffs, dots, shields, counters)
+  └── Entity B (class)
+        └── states: ActiveState[]
 
-  Entity SM manages tick, rotation.           Same.
-  Book actor handles its own lifecycle.       Same.
-
-           ←———— Event Bus (intents) ————→
+  Round loop:
+    1. Snapshot A, B
+    2. resolveSlot(bookA, snapA) → { self_intents, opponent_intents }
+    3. resolveSlot(bookB, snapB) → { self_intents, opponent_intents }
+    4. Apply self-intents → Apply opponent-intents → Counter intents → Lifesteal → Tick states
 ```
 
-The entity SM coordinates its books (tick, activation order). When a book activates, it produces effects. Self-targeting effects are applied internally. Opponent-targeting effects are sent as intents to the event bus. The receiving entity evaluates each intent against its own state and applies the mutation.
+No XState actors. No event bus. Pure classes with method calls. The arena is a `runCombat()` function that loops rounds. Entities own all their state as `ActiveState[]` objects.
 
-## Book Actor
+## Book → Intent Mapping
 
-A book is an actor inside the entity SM. It holds the main skill + primary affix data.
+The combinator (`simulateBook()`) transforms parser `EffectRow[]` into `Intent[]`. Each parsed effect type maps to exactly one intent type. Effects are classified as **producers** (emit intents) or **modifiers** (transform producer intents).
 
-**Input**: owner stats (ATK, HP, max_HP, DEF, SP — provided by entity SM)
+### Producers
 
-**Output**: a list of effects, each tagged as `self` or `opponent`
-
-The book does not know about the opponent. It does not read opponent state. It does not send events directly — it returns effects to the entity SM, which routes them.
-
-For conditionals that reference opponent state (e.g., "per % of enemy lost HP"), the book emits an **operator** — a formula the receiving side evaluates. The book never reads opponent attributes.
-
-### Contract composition
-
-A book's contract is the union of its effects' contracts. Each parsed effect type maps to exactly one contract. There is one generic book actor — it iterates its effect list and emits the corresponding contracts.
-
-| Parsed effect type | Contract emitted | Target |
+| Parsed effect type | Intent emitted | Target |
 |---|---|---|
 | `base_attack` | `ATK_DAMAGE` | opponent |
 | `percent_max_hp_damage` | `HP_DAMAGE { basis: "max" }` | opponent |
 | `percent_current_hp_damage` | `HP_DAMAGE { basis: "current" }` | opponent |
 | `debuff` | `APPLY_DEBUFF` | opponent |
-| `dot` | `APPLY_DOT` | opponent |
-| `delayed_burst` | `DELAYED_BURST` | opponent |
-| `counter_debuff` | `COUNTER_DEBUFF` (reactive) | opponent (on hit) |
-| `buff_steal` | `BUFF_STEAL` | opponent |
-| `periodic_dispel` | `DISPEL` | opponent |
-| `shield_destroy_damage` | `SHIELD_DESTROY` | opponent |
-| `cross_slot_debuff` | `APPLY_DEBUFF` (reactive) | opponent (on hit) |
 | `attack_reduction` | `APPLY_DEBUFF { stat: "atk" }` | opponent |
 | `crit_rate_reduction` | `APPLY_DEBUFF { stat: "crit_rate" }` | opponent |
 | `crit_damage_reduction` | `APPLY_DEBUFF { stat: "crit_damage" }` | opponent |
-| `extended_dot` | `APPLY_DOT` | opponent |
+| `dot` / `extended_dot` | `APPLY_DOT` | opponent |
+| `counter_debuff` | `COUNTER_STATE` (reactive) | self |
+| `counter_buff` | `COUNTER_STATE` (reactive) | self |
+| `cross_slot_debuff` | `APPLY_DEBUFF` | opponent |
+| `delayed_burst` | `DELAYED_BURST` | opponent |
+| `buff_steal` | `BUFF_STEAL` | opponent |
+| `periodic_dispel` | `DISPEL` | opponent |
+| `shield_destroy_damage` | `SHIELD_DESTROY` | opponent |
 | `self_buff` | `SELF_BUFF` | self |
-| `self_buff_extra` | `SELF_BUFF` (modifier) | self |
-| `self_buff_extend` | `SELF_BUFF_EXTEND` | self |
 | `self_hp_cost` | `HP_COST` | self |
 | `self_heal` | `HEAL` | self |
 | `shield` | `SHIELD` | self |
-| `shield_strength` | `SHIELD` (modifier) | self |
-| `self_cleanse` | `CLEANSE` | self |
-| `counter_buff` | `COUNTER_STATE` | self |
+| `self_cleanse` / `periodic_cleanse` | `CLEANSE` | self |
 | `summon` | `SUMMON` | self |
 | `untargetable_state` | `UNTARGETABLE` | self |
 | `lifesteal` | `LIFESTEAL` | self |
 | `self_damage_taken_increase` | `SELF_DAMAGE_INCREASE` | self |
 | `self_hp_floor` | `HP_FLOOR` | self |
-| `crit_damage_bonus` | `CRIT_BONUS` | self |
-| `per_hit_escalation` | modifies `ATK_DAMAGE` amount | — |
-| `per_enemy_lost_hp` | `HP_DAMAGE { basis: "lost" }` or operator | opponent |
-| `per_debuff_stack_damage` | operator on `ATK_DAMAGE` | opponent |
-| `conditional_damage` | operator on `ATK_DAMAGE` | opponent |
-| `self_lost_hp_damage` | modifies `ATK_DAMAGE` amount | — |
-| `periodic_escalation` | modifies `ATK_DAMAGE` per tick | — |
-| `counter_debuff_upgrade` | modifies `COUNTER_DEBUFF` chance | — |
-| `delayed_burst_increase` | modifies `DELAYED_BURST` amount | — |
 
-### Example: 煞影千幻
+### Modifiers
 
-Parser produces:
+| Parsed effect type | Targets | Transform |
+|---|---|---|
+| `crit_damage_bonus` | `ATK_DAMAGE` | `crit_bonus += value` |
+| `per_enemy_lost_hp` | `ATK_DAMAGE` | attach operator `{ kind: "per_enemy_lost_hp" }` |
+| `per_self_lost_hp` | `ATK_DAMAGE` | attach operator `{ kind: "per_self_lost_hp" }` |
+| `per_debuff_stack_damage` | `ATK_DAMAGE` | attach operator `{ kind: "per_debuff_stack" }` |
+| `conditional_damage` | `ATK_DAMAGE` | attach operator `{ kind: "conditional" }` |
+| `self_lost_hp_damage` | `ATK_DAMAGE` | `amount_per_hit += (value% × lost_hp) / hits` |
+| `ignore_damage_reduction` | `ATK_DAMAGE` | `dr_bypass = 1` |
+| `damage_increase` / `skill_damage_increase` | `ATK_DAMAGE` | `amount_per_hit *= (1 + value/100)` |
+| `final_damage_bonus` | `ATK_DAMAGE` | `amount_per_hit *= (1 + value/100)` |
+| `flat_extra_damage` | `ATK_DAMAGE` | `amount_per_hit += (value/100 × effective_atk) / hits` |
+| `attack_bonus` | `ATK_DAMAGE` | `amount_per_hit *= (1 + value/100)` |
+| `shield_strength` | `SHIELD` | replaces `amount = (value/100) × max_hp` |
+| `self_buff_extra` | `SELF_BUFF` (by `buff_name`) | adds fields to matching buff |
+| `self_buff_extend` | `SELF_BUFF` | `duration += value` |
+| `counter_debuff_upgrade` | `COUNTER_STATE` | `on_hit.chance = value` |
+| `delayed_burst_increase` | `DELAYED_BURST` | `burst_base_amount *= (1 + value/100)` |
 
-```yaml
-skill:
-  - type: self_hp_cost          # → HP_COST (self)
-    value: 20
-  - type: base_attack           # → ATK_DAMAGE (opponent)
-    hits: 3
-    total: 1500
-  - type: self_lost_hp_damage   # → modifies ATK_DAMAGE amount
-    value: 10
-  - type: shield                # → SHIELD (self)
-    value: 12
-    duration: 8
-  - type: debuff                # → APPLY_DEBUFF (opponent)
-    name: 落星
-    value: -8
-    duration: 4
-primary_affix:
-  - type: shield_strength       # → modifies SHIELD amount
-    value: 21.5
-```
+### Deferred modifiers (no-op in current implementation)
 
-Book contract = `HP_COST` + `ATK_DAMAGE` + `SHIELD` + `APPLY_DEBUFF`
-
-No per-book implementation needed. The generic book actor walks the effect list, maps each to its contract, and emits them.
+| Modifier | Reason |
+|---|---|
+| `periodic_escalation` | Per-hit escalation within a round — needs hit-level simulation |
+| `summon_buff` | Summon clone not yet simulated |
+| `dot_extra_per_tick` | DoT damage modification — deferred to phase 2 |
+| `dot_damage_increase` | DoT damage modification — deferred to phase 2 |
 
 ---
 
-## Intents: Entity → Opponent Entity (via event bus)
+## Intent Type Definitions
 
-These are the contracts for cross-entity communication. The sender declares intent; the receiver evaluates against its own state and applies the result.
+All types defined in `lib/simulator/types.ts`.
 
-### 1. ATK_DAMAGE
+### 1. ATK_DAMAGE — Opponent Intent
 
 Direct damage computed from attacker's ATK and skill factors.
 
 ```typescript
 {
   type: "ATK_DAMAGE",
-  amount: number,       // already computed: skill% × effective_atk
-  dr_bypass: number,    // fraction of target's DR to ignore (0.0–1.0)
-  hits: number,         // number of hits (for per-hit effects on receiver)
-  source: string,       // attacker entity id (for counter targeting)
+  amount_per_hit: number,  // (total/100) × effective_atk / hits
+  hits: number,            // per-hit granularity for shields, counters, stacking
+  source: string,          // attacker entity id
+  dr_bypass: number,       // 0.0–1.0 fraction of DR to ignore
+  crit_bonus: number,      // % crit damage bonus (e.g., 100 = +100%)
+  operators: Operator[],   // formulas the receiver evaluates
 }
 ```
 
-The attacker fully resolves ATK, skill multipliers, crit, buffs, and sends the final number. The receiver applies its own DR, shields, and counters.
+**Receiver cascade** (Entity `receiveAtkDamage`):
+1. For each hit: evaluate operators → apply crit bonus → apply self_damage_increase → DR bypass → shield absorption → HP floor → deduct HP
+2. Per-hit debuff stacking
+3. Trigger counter states
 
 **Used by**: all 28 books (from `base_attack`)
 
-### 2. HP_DAMAGE
+### 2. HP_DAMAGE — Opponent Intent
 
-Damage based on the **target's own HP**. Sent as an operator — the target evaluates.
+Damage based on the **target's own HP**. The target evaluates.
 
 ```typescript
 {
   type: "HP_DAMAGE",
-  percent: number,      // e.g., 27 = 27% of basis
+  percent: number,                       // e.g., 27 = 27%
   basis: "max" | "current" | "lost",
   source: string,
+  per_prior_hit?: boolean,               // scales by prior hits (not yet impl)
 }
 ```
 
-The receiver computes: `percent% × own [max_hp | current_hp | lost_hp]` and applies damage to itself (after its own DR).
+**Receiver**: computes `percent% × own [max_hp | current_hp | lost_hp]`, applies own DR, absorbs shield, deducts HP.
 
 **Used by**: 千锋聚灵剑 (`max`, 27%), 无极御剑诀 (`current`, 1.5%), 天魔降临咒 (`max`, 1.6%), 天轮魔经 (`max`, 3%), 玉书天戈符 (`max`, 21%), 惊蜇化龙 (`max`, 10%)
 
-### 3. APPLY_DEBUFF
+### 3. APPLY_DEBUFF — Opponent Intent
 
 Apply a named state on the target that modifies its stats.
 
 ```typescript
 {
   type: "APPLY_DEBUFF",
-  id: string,           // state name (e.g., "落星", "追命剑阵")
-  stat: string,         // which stat/derived to modify
-  value: number,        // modifier value (negative = reduction)
+  id: string,                          // state name
+  stat: string,                        // which derived stat to modify
+  value: number,                       // modifier value (negative = reduction)
   duration: number | "permanent",
-  stacks?: number,      // initial stacks
+  stacks?: number,
   max_stacks?: number,
   per_hit_stack?: boolean,
   dispellable?: boolean,
 }
 ```
 
-The receiver creates a temporary modifier on itself. The receiver owns the state lifecycle (ticking, expiry, dispel).
+**Receiver**: creates `ActiveState { kind: "debuff" }` on itself. If already exists, refreshes duration.
 
-**Used by**: 新-青元剑诀 (神通封印, 追命剑阵), 煞影千幻 (落星), 星元化岳 (天龙印), 天魔降临咒 (结魂锁链), 天轮魔经 (惧意), 天刹真魔 (天人五衰), 大罗幻诀 (命損)
+**Used by**: 新-青元剑诀 (神通封印, 追命剑阵), 煞影千幻 (落星), 天魔降临咒 (结魂锁链), 天轮魔经 (惧意), 大罗幻诀 (命損)
 
-### 4. APPLY_DOT
+### 4. APPLY_DOT — Opponent Intent
 
-Apply a periodic damage state on the target. The target ticks and damages itself.
+Apply a periodic damage state on the target.
 
 ```typescript
 {
   type: "APPLY_DOT",
-  id: string,           // state name (e.g., "贪妄业火")
-  percent: number,      // damage per tick as % of basis
+  id: string,
+  percent: number,                     // damage per tick as % of HP basis
   basis: "max" | "current" | "lost",
-  tick_interval: number, // seconds between ticks
-  duration: number | "permanent",
+  tick_interval: number,
+  duration: number,
   stacks?: number,
   max_stacks?: number,
   per_hit_stack?: boolean,
+  damage_per_tick?: number,            // alternative: flat ATK-based damage
 }
 ```
 
-The receiver creates the DoT state on itself. Each tick, the receiver computes `percent% × own [basis]` and reduces its own HP. The attacker is not involved after sending.
+**Receiver**: creates `ActiveState { kind: "dot" }`. Each tick in `tickStates()`: computes `percent% × own [basis]_hp × stacks` and self-damages.
 
-**Used by**: 天魔降临咒 (1.6% max/s), 大罗幻诀 (噬心魔咒 7% current, 断魂之咒 7% lost), 梵圣真魔咒 (贪妄业火 3% current, 瞋痴业火 8% lost)
+**Used by**: 天魔降临咒 (1.6% max/s), 大罗幻诀 (噬心魔咒 7% current, 断魂之咒 7% lost), 梵圣真魔咒 (贪妄业火 3% current)
 
-### 5. DELAYED_BURST
-
-Apply a state that accumulates damage and detonates on expiry.
+### 5. DELAYED_BURST — Opponent Intent
 
 ```typescript
 {
   type: "DELAYED_BURST",
-  id: string,           // "无相魔劫"
+  id: string,
   duration: number,
-  damage_increase_during: number, // % increase to incoming damage while active
-  burst_base: number,            // base ATK% on detonation
-  burst_accumulated_pct: number, // % of accumulated bonus damage added to burst
-  source_atk: number,           // attacker's effective_atk (for burst calculation)
+  damage_increase_during: number,      // % increase to incoming damage (not yet impl)
+  burst_base_amount: number,           // pre-computed: (burst_base/100) × effective_atk
+  burst_accumulated_pct: number,       // % of accumulated bonus (not yet impl)
 }
 ```
 
-The receiver tracks accumulated damage during the state, then applies burst on expiry.
+**Receiver**: creates `ActiveState { kind: "delayed_burst" }`. On expiry in `tickStates()`, detonates for `burst_base_amount`.
 
 **Used by**: 无相魔劫咒
 
-### 6. DISPEL
-
-Remove buff states from the target.
+### 6. DISPEL — Opponent Intent
 
 ```typescript
-{
-  type: "DISPEL",
-  count: number,        // how many buffs to remove
-}
+{ type: "DISPEL", count: number }
 ```
 
-The receiver removes up to `count` dispellable buffs from itself.
+Receiver removes up to `count` buff-kind states from itself.
 
-**Used by**: 九重天凤诀 (periodic_dispel, 2)
-
-### 7. BUFF_STEAL
-
-Take buff states from the target. The stolen buffs are returned to the sender.
+### 7. BUFF_STEAL — Opponent Intent
 
 ```typescript
-{
-  type: "BUFF_STEAL",
-  count: number,
-  source: string,       // who to send the stolen buffs to
-}
+{ type: "BUFF_STEAL", count: number, source: string }
 ```
 
-The receiver removes up to `count` buffs from itself and sends them back to `source` as `RECEIVE_STOLEN_BUFF` events.
+Receiver removes up to `count` buffs. Stolen buffs are currently destroyed (not transferred back — deferred).
 
-**Used by**: 天轮魔经 (steal 2)
-
-### 8. SHIELD_DESTROY
-
-Destroy a shield on the target, with bonus effects.
+### 8. SHIELD_DESTROY — Opponent Intent
 
 ```typescript
 {
   type: "SHIELD_DESTROY",
-  count: number,         // shields to destroy per hit
-  bonus_hp_damage: number, // % max HP damage per destroyed shield
-  no_shield_double: boolean, // double damage if target has no shield
+  count: number,
+  bonus_hp_damage: number,             // % max HP per destroyed shield
+  no_shield_double: boolean,           // double damage if no shield
   source: string,
 }
 ```
 
-The receiver evaluates: if it has shields, remove them and take bonus damage. If no shields and `no_shield_double`, take double bonus damage.
-
-**Used by**: 皓月剑诀 (寂灭剑心)
+Receiver: destroys shields, takes `bonus_hp_damage% × max_hp`. If no shield and `no_shield_double`, damage is doubled.
 
 ---
 
-## Intents: Entity → Attacker Entity (reactive)
+## Self-Intents (internal, never cross entity boundary)
 
-These fire when the entity receives damage. The receiver sends intents back to the attacker.
-
-### 9. COUNTER_DAMAGE
-
-Reflect damage back to the attacker.
-
-```typescript
-{
-  type: "COUNTER_DAMAGE",
-  amount: number,       // computed from receiver's state
-  source: string,       // receiver's entity id
-}
-```
-
-The original attacker receives this and applies it to itself (with its own DR).
-
-**Used by**: 疾风九变 (极怒: reflect 50% received + 15% own lost HP)
-
-### 10. COUNTER_DEBUFF
-
-Apply a debuff on the attacker as a reaction to being hit.
-
-```typescript
-{
-  type: "COUNTER_DEBUFF",
-  id: string,
-  effects: ApplyDebuff | ApplyDot,  // what to apply on the attacker
-  chance: number,       // probability (0–100)
-}
-```
-
-The receiver rolls chance. If successful, sends the debuff intent to the attacker. The attacker receives it as an APPLY_DEBUFF or APPLY_DOT and applies to itself.
-
-**Used by**: 大罗幻诀 (罗天魔咒: 60% chance → 噬心之咒 + 断魂之咒 DoTs on attacker), 天刹真魔 (不灭魔体: 100% → 天人五衰 debuff on attacker)
-
-### 11. COUNTER_HEAL
-
-Heal self when hit (not sent to attacker — stays internal, listed for completeness).
-
-```typescript
-{
-  type: "COUNTER_HEAL",
-  percent_of_damage: number,
-  ignore_healing_bonus: boolean,
-}
-```
-
-**Used by**: 天刹真魔 (不灭魔体: heal 8% of damage taken)
-
----
-
-## Self-Effects (internal to entity SM, never cross boundary)
-
-These are produced by the book but applied by the entity SM to itself. They do not go on the event bus.
-
-| Effect | What it does | Example |
+| Intent | What it does | Stored as |
 |---|---|---|
-| `HP_COST` | reduce own current HP by % | 煞影千幻 (20%), 十方真魄 (10%) |
-| `SELF_BUFF` | temporarily modify own ATK/DEF/HP | 甲元仙符 (仙佑: +70% ATK/DEF/HP) |
-| `SHIELD` | add HP buffer with duration | 煞影千幻 (21.5% max HP, 8s) |
-| `HEAL` | restore own HP | 周天星元 (20% max HP) |
-| `CLEANSE` | remove own debuffs | 九天真雷诀 (2), 十方真魄 (periodic) |
-| `COUNTER_STATE` | register reactive trigger | 大罗幻诀 (罗天魔咒), 疾风九变 (极怒) |
-| `SUMMON` | create clone actor | 春黎剑阵 (54% stats, 16s) |
-| `UNTARGETABLE` | ignore incoming intents | 念剑诀 (4s) |
-| `SELF_BUFF_EXTEND` | extend existing buff duration | 十方真魄 (怒灵降世 +3.5s) |
-| `CRIT_BONUS` | modify own crit damage | 通天剑诀 (+100%) |
-| `LIFESTEAL` | heal based on own damage dealt | 疾风九变, 星元化岳 |
-| `HP_FLOOR` | HP cannot drop below % | 九重天凤诀 (10%) |
-| `SELF_DAMAGE_INCREASE` | increase own incoming damage | 通天剑诀 (+50%, 8s) |
+| `HP_COST` | reduce own HP by computed amount | immediate mutation (no state) |
+| `SELF_BUFF` | modify ATK/DEF/HP via `ActiveState { kind: "buff" }` | `states[]` |
+| `SHIELD` | absorb damage before DR | `ActiveState { kind: "shield" }` |
+| `HEAL` | restore HP (capped at max_hp) | immediate mutation |
+| `COUNTER_STATE` | register reactive trigger | `ActiveState { kind: "counter" }` |
+| `CLEANSE` | remove own debuffs/DoTs | filter `states[]` |
+| `SUMMON` | create clone (deferred — not yet simulated) | — |
+| `UNTARGETABLE` | drop incoming intents | `ActiveState { kind: "buff", id: "untargetable" }` |
+| `LIFESTEAL` | heal after damage dealt | `ActiveState { kind: "buff" }`, applied by arena |
+| `SELF_DAMAGE_INCREASE` | amplify own incoming damage | `ActiveState { kind: "damage_increase" }` |
+| `HP_FLOOR` | HP cannot drop below % | `ActiveState { kind: "hp_floor" }` |
+| `SELF_BUFF_EXTEND` | add duration to all buffs | modifies existing `states[]` |
+| `CRIT_BONUS` | handled in combinator (modifies `ATK_DAMAGE.crit_bonus`) | no state |
 
 ---
 
-## Conditionals (modify outgoing intents before sending)
+## Operators (receiver-evaluated formulas)
 
-These are evaluated by the book before producing the damage number. Some need opponent state.
+Operators are attached to `ATK_DAMAGE.operators[]`. The receiver evaluates them against its own state during the per-hit damage loop.
 
-| Conditional | What it reads | Resolution |
-|---|---|---|
-| `per_hit_escalation` | hit index (self) | Self-resolved: book knows its own hit sequence |
-| `self_lost_hp_damage` | own lost HP (self) | Self-resolved: entity SM provides own stats |
-| `per_enemy_lost_hp` | opponent lost HP % | **Operator**: emit `HP_DAMAGE { basis: "lost" }` instead of pre-computing |
-| `per_debuff_stack` | opponent debuff count | **Operator**: emit intent with `per_debuff_stack` modifier, receiver evaluates |
-| `conditional_damage` | opponent HP below threshold | **Operator**: emit intent with `condition: { hp_below: 30 }`, receiver evaluates |
-| `crit_damage_bonus` | self state | Self-resolved |
+```typescript
+type Operator =
+  | { kind: "per_enemy_lost_hp", per_percent: number }
+  | { kind: "per_self_lost_hp", per_percent: number }
+  | { kind: "per_debuff_stack", value: number, max_stacks: number }
+  | { kind: "conditional", condition: string, bonus_percent: number }
+```
 
-> **Open question**: for `per_enemy_lost_hp` and `per_debuff_stack`, the operator approach means the receiver evaluates the condition and scales the damage. This is clean (no cross-reads) but means the receiver does more work. Alternative: the entity SM provides an opponent snapshot at round start (simultaneous resolution), and the book pre-computes. Decision deferred — both approaches produce the same result for PvP.
+| Operator | Evaluation |
+|---|---|
+| `per_enemy_lost_hp` | `damage × (1 + receiver_lost_hp% × per_percent / 100)` |
+| `per_self_lost_hp` | `damage × (1 + attacker_lost_hp% × per_percent / 100)` — uses attacker snapshot |
+| `per_debuff_stack` | `damage × (1 + min(debuff_count, max_stacks) × value / 100)` |
+| `conditional` | if `evaluateCondition(condition)` → `damage × (1 + bonus_percent / 100)` |
 
----
-
-## Event Bus Routing
-
-For PvP (1v1), routing is trivial — opponent intents go to the one opponent. For gvg, the entity SM selects a target before sending.
-
-The arena actor is just a clock:
-- sends `TICK { dt }` to all entity SMs
-- receives `ENTITY_DIED { id }` from entities
-- determines match outcome
+Supported conditions: `target_hp_below_30`, `target_hp_above_20`, `target_controlled`, `target_has_no_healing`
 
 ---
 
-## Summary: what crosses the boundary
+## Counter States (reactive intents)
+
+Counters fire when the entity receives ATK_DAMAGE. Two flavors:
+
+**Damage reflection** (counter_buff → COUNTER_STATE):
+```typescript
+on_hit: {
+  reflect_received_damage: 50,   // 50% of damage received → ATK_DAMAGE back
+  reflect_percent_lost_hp: 15,   // 15% of own lost HP → ATK_DAMAGE back
+}
+```
+
+**Debuff application** (counter_debuff → COUNTER_STATE):
+```typescript
+on_hit: {
+  chance: 60,                    // probability %
+  apply_to_attacker: [           // nested intents from parent assembly
+    APPLY_DOT { id: "噬心魔咒", percent: 7, basis: "current", ... },
+    APPLY_DOT { id: "断魂之咒", percent: 7, basis: "lost", ... },
+  ]
+}
+```
+
+Counter intents are dispatched in the arena's Phase 3, after all damage intents.
+
+---
+
+## Round Flow
 
 ```
 Entity A                                    Entity B
-  Book activates
-  → computes ATK_DAMAGE (self-resolved)
-  → emits HP_DAMAGE operator
-  → emits APPLY_DEBUFF intent
-  → emits APPLY_DOT intent
+  resolveSlot(bookA, snapA)                   resolveSlot(bookB, snapB)
+  → self_intents, opponent_intents            → self_intents, opponent_intents
 
-  Entity A sends to bus ──────────────→ Entity B receives
-                                          → evaluates ATK_DAMAGE (own DR, shields)
-                                          → evaluates HP_DAMAGE (own HP state)
-                                          → creates debuff state on self
-                                          → creates DoT state on self
-                                          → if counter active: sends COUNTER back
+  Phase 1: apply self-intents (ordered: HP_COST → buffs → HEAL)
+  Phase 2: A.opponent_intents → B.receiveIntent()
+           B.opponent_intents → A.receiveIntent()
+           → each may return counter intents
+  Phase 3: counter intents dispatched to opposite entity
+  Phase 4: lifesteal healing (based on HP delta this round)
+  Phase 5: tickStates(dt) on both entities
+           → DoT damage, state expiry, delayed burst detonation
 
-  Entity A receives ←──────────────── COUNTER_DAMAGE / COUNTER_DEBUFF
-    → applies to self
+  Check: if either entity dead → end. Else next round.
 ```
 
-Each entity only mutates its own state. Intents declare what the sender wants to happen. The receiver decides what actually happens.
+Each entity only mutates its own state. Intents declare what the sender wants. The receiver decides what actually happens.
