@@ -29,39 +29,36 @@ function initSnapshot(config: {
 
 /**
  * Replays the event stream at configurable speed.
- * Returns the current state of both players and the visible event log.
+ * Uses refs for mutable state to avoid stale-closure issues.
  */
 export function useReplay(data: SimulationData, speed: number) {
-	const [time, setTime] = useState(0);
-	const [playing, setPlaying] = useState(false);
-	const [eventIndex, setEventIndex] = useState(0);
-	const [visibleEvents, setVisibleEvents] = useState<SimEvent[]>([]);
-	const [playerA, setPlayerA] = useState<PlayerSnapshot>(() =>
-		initSnapshot(data.config.playerA),
-	);
-	const [playerB, setPlayerB] = useState<PlayerSnapshot>(() =>
-		initSnapshot(data.config.playerB),
-	);
+	const [, forceUpdate] = useState(0);
+	const stateRef = useRef({
+		time: 0,
+		playing: false,
+		eventIndex: 0,
+		visibleEvents: [] as SimEvent[],
+		playerA: initSnapshot(data.config.playerA),
+		playerB: initSnapshot(data.config.playerB),
+	});
 
 	const rafRef = useRef<number>(0);
 	const lastFrameRef = useRef<number>(0);
-	const simTimeRef = useRef(0);
 
-	// Process events up to current simulation time
+	const rerender = () => forceUpdate((c) => c + 1);
+
+	// Process events up to target simulation time
 	const processTo = useCallback(
 		(targetTime: number) => {
-			let idx = eventIndex;
-			const a = { ...playerA, states: [...playerA.states] };
-			const b = { ...playerB, states: [...playerB.states] };
+			const s = stateRef.current;
+			let idx = s.eventIndex;
+			const a = { ...s.playerA, states: [...s.playerA.states] };
+			const b = { ...s.playerB, states: [...s.playerB.states] };
 			const newVisible: SimEvent[] = [];
 
-			while (
-				idx < data.events.length &&
-				(data.events[idx].t ?? 0) <= targetTime
-			) {
+			while (idx < data.events.length && (data.events[idx].t ?? 0) <= targetTime) {
 				const ev = data.events[idx];
 				newVisible.push(ev);
-
 				const p = ev.player === "A" ? a : b;
 				switch (ev.type) {
 					case "HP_CHANGE":
@@ -94,10 +91,8 @@ export function useReplay(data: SimulationData, speed: number) {
 					case "STATE_EXPIRE":
 					case "STATE_REMOVE": {
 						const name = ev.name as string;
-						const stateIdx = p.states.findIndex(
-							(s) => s.name === name,
-						);
-						if (stateIdx !== -1) p.states.splice(stateIdx, 1);
+						const si = p.states.findIndex((st) => st.name === name);
+						if (si !== -1) p.states.splice(si, 1);
 						break;
 					}
 					case "DEATH":
@@ -108,31 +103,34 @@ export function useReplay(data: SimulationData, speed: number) {
 				idx++;
 			}
 
-			if (idx > eventIndex) {
-				setEventIndex(idx);
-				setPlayerA({ ...a });
-				setPlayerB({ ...b });
-				setVisibleEvents((prev) => [...prev, ...newVisible]);
+			if (idx > s.eventIndex) {
+				s.eventIndex = idx;
+				s.playerA = a;
+				s.playerB = b;
+				s.visibleEvents = [...s.visibleEvents, ...newVisible];
+				s.time = targetTime;
+				rerender();
 			}
 		},
-		[data.events, eventIndex, playerA, playerB],
+		[data.events],
 	);
 
 	// Animation loop
 	useEffect(() => {
-		if (!playing) return;
+		const s = stateRef.current;
+		if (!s.playing) return;
 
 		lastFrameRef.current = performance.now();
 
 		const tick = (now: number) => {
 			const dt = (now - lastFrameRef.current) * speed;
 			lastFrameRef.current = now;
-			simTimeRef.current += dt;
-			setTime(simTimeRef.current);
-			processTo(simTimeRef.current);
+			s.time += dt;
+			processTo(s.time);
 
-			if (eventIndex >= data.events.length) {
-				setPlaying(false);
+			if (s.eventIndex >= data.events.length) {
+				s.playing = false;
+				rerender();
 				return;
 			}
 			rafRef.current = requestAnimationFrame(tick);
@@ -140,34 +138,32 @@ export function useReplay(data: SimulationData, speed: number) {
 
 		rafRef.current = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafRef.current);
-	}, [playing, speed, processTo, eventIndex, data.events.length]);
+	}, [stateRef.current.playing, speed, processTo, data.events.length]);
 
-	const play = () => setPlaying(true);
-	const pause = () => setPlaying(false);
-	const reset = () => {
-		setPlaying(false);
-		setTime(0);
-		setEventIndex(0);
-		setVisibleEvents([]);
-		simTimeRef.current = 0;
-		setPlayerA(initSnapshot(data.config.playerA));
-		setPlayerB(initSnapshot(data.config.playerB));
-	};
-	const skipToEnd = () => {
-		processTo(Number.POSITIVE_INFINITY);
-		setPlaying(false);
-	};
+	const s = stateRef.current;
 
 	return {
-		time,
-		playing,
-		playerA,
-		playerB,
-		visibleEvents,
-		play,
-		pause,
-		reset,
-		skipToEnd,
-		finished: eventIndex >= data.events.length,
+		time: s.time,
+		playing: s.playing,
+		playerA: s.playerA,
+		playerB: s.playerB,
+		visibleEvents: s.visibleEvents,
+		play: () => { s.playing = true; rerender(); },
+		pause: () => { s.playing = false; rerender(); },
+		reset: () => {
+			s.playing = false;
+			s.time = 0;
+			s.eventIndex = 0;
+			s.visibleEvents = [];
+			s.playerA = initSnapshot(data.config.playerA);
+			s.playerB = initSnapshot(data.config.playerB);
+			rerender();
+		},
+		skipToEnd: () => {
+			processTo(Number.POSITIVE_INFINITY);
+			s.playing = false;
+			rerender();
+		},
+		finished: s.eventIndex >= data.events.length,
 	};
 }
