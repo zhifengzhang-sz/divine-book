@@ -19,6 +19,12 @@ export type SimEvent = {
 	[key: string]: unknown;
 };
 
+export interface ActiveState {
+	name: string;
+	kind: "buff" | "debuff" | "named";
+	source: string;
+}
+
 export interface PlayerSnapshot {
 	hp: number;
 	maxHp: number;
@@ -26,4 +32,5 @@ export interface PlayerSnapshot {
 	maxSp: number;
 	shield: number;
 	alive: boolean;
+	states: ActiveState[];
 }

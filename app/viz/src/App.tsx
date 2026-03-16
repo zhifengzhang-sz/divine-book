@@ -7,7 +7,7 @@ import {
 	buildTimeSeriesUpTo,
 } from "./buildTimeSeries.ts";
 import { Chart } from "./Chart.tsx";
-import type { SimulationData } from "./types.ts";
+import type { PlayerSnapshot, SimulationData } from "./types.ts";
 import { useReplay } from "./useReplay.ts";
 
 const data = sampleData as SimulationData;
@@ -65,6 +65,12 @@ function Bar({
 	);
 }
 
+const KIND_COLORS = {
+	buff: "#98c379",
+	debuff: "#e06c75",
+	named: "#61afef",
+} as const;
+
 function PlayerPanel({
 	label,
 	book,
@@ -72,7 +78,7 @@ function PlayerPanel({
 }: {
 	label: string;
 	book: string;
-	snapshot: { hp: number; maxHp: number; sp: number; maxSp: number; shield: number; alive: boolean };
+	snapshot: PlayerSnapshot;
 }) {
 	return (
 		<div
@@ -92,6 +98,27 @@ function PlayerPanel({
 			<Bar value={snapshot.hp} max={snapshot.maxHp} color="#98c379" label="HP (气血)" />
 			<Bar value={snapshot.sp} max={snapshot.maxSp} color="#61afef" label="SP (灵力)" />
 			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color="#c678dd" label="Shield (护盾)" />
+			{/* Active effects */}
+			{snapshot.states.length > 0 && (
+				<div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+					{snapshot.states.map((s, i) => (
+						<span
+							key={`${s.name}-${i}`}
+							style={{
+								display: "inline-block",
+								padding: "1px 8px",
+								borderRadius: 10,
+								fontSize: 11,
+								background: `${KIND_COLORS[s.kind]}22`,
+								color: KIND_COLORS[s.kind],
+								border: `1px solid ${KIND_COLORS[s.kind]}66`,
+							}}
+						>
+							{s.kind === "buff" ? "+" : s.kind === "debuff" ? "−" : "◆"} {s.name}
+						</span>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }

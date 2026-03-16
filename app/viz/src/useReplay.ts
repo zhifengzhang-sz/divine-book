@@ -1,5 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PlayerSnapshot, SimEvent, SimulationData } from "./types.ts";
+import type {
+	ActiveState,
+	PlayerSnapshot,
+	SimEvent,
+	SimulationData,
+} from "./types.ts";
+
+function initSnapshot(config: {
+	hp: number;
+	sp: number;
+}): PlayerSnapshot {
+	return {
+		hp: config.hp,
+		maxHp: config.hp,
+		sp: config.sp,
+		maxSp: config.sp,
+		shield: 0,
+		alive: true,
+		states: [],
+	};
+}
 
 /**
  * Replays the event stream at configurable speed.
@@ -10,22 +30,12 @@ export function useReplay(data: SimulationData, speed: number) {
 	const [playing, setPlaying] = useState(false);
 	const [eventIndex, setEventIndex] = useState(0);
 	const [visibleEvents, setVisibleEvents] = useState<SimEvent[]>([]);
-	const [playerA, setPlayerA] = useState<PlayerSnapshot>(() => ({
-		hp: data.config.playerA.hp,
-		maxHp: data.config.playerA.hp,
-		sp: data.config.playerA.sp,
-		maxSp: data.config.playerA.sp,
-		shield: 0,
-		alive: true,
-	}));
-	const [playerB, setPlayerB] = useState<PlayerSnapshot>(() => ({
-		hp: data.config.playerB.hp,
-		maxHp: data.config.playerB.hp,
-		sp: data.config.playerB.sp,
-		maxSp: data.config.playerB.sp,
-		shield: 0,
-		alive: true,
-	}));
+	const [playerA, setPlayerA] = useState<PlayerSnapshot>(() =>
+		initSnapshot(data.config.playerA),
+	);
+	const [playerB, setPlayerB] = useState<PlayerSnapshot>(() =>
+		initSnapshot(data.config.playerB),
+	);
 
 	const rafRef = useRef<number>(0);
 	const lastFrameRef = useRef<number>(0);
@@ -35,11 +45,14 @@ export function useReplay(data: SimulationData, speed: number) {
 	const processTo = useCallback(
 		(targetTime: number) => {
 			let idx = eventIndex;
-			const a = { ...playerA };
-			const b = { ...playerB };
+			const a = { ...playerA, states: [...playerA.states] };
+			const b = { ...playerB, states: [...playerB.states] };
 			const newVisible: SimEvent[] = [];
 
-			while (idx < data.events.length && (data.events[idx].t ?? 0) <= targetTime) {
+			while (
+				idx < data.events.length &&
+				(data.events[idx].t ?? 0) <= targetTime
+			) {
 				const ev = data.events[idx];
 				newVisible.push(ev);
 
@@ -54,6 +67,26 @@ export function useReplay(data: SimulationData, speed: number) {
 					case "SHIELD_CHANGE":
 						p.shield = ev.next as number;
 						break;
+					case "STATE_APPLY": {
+						const state = ev.state as Record<string, unknown>;
+						if (state) {
+							p.states.push({
+								name: state.name as string,
+								kind: state.kind as ActiveState["kind"],
+								source: (state.source as string) ?? "",
+							});
+						}
+						break;
+					}
+					case "STATE_EXPIRE":
+					case "STATE_REMOVE": {
+						const name = ev.name as string;
+						const stateIdx = p.states.findIndex(
+							(s) => s.name === name,
+						);
+						if (stateIdx !== -1) p.states.splice(stateIdx, 1);
+						break;
+					}
 					case "DEATH":
 						p.alive = false;
 						p.hp = 0;
@@ -85,7 +118,6 @@ export function useReplay(data: SimulationData, speed: number) {
 			setTime(simTimeRef.current);
 			processTo(simTimeRef.current);
 
-			// Stop if all events consumed
 			if (eventIndex >= data.events.length) {
 				setPlaying(false);
 				return;
@@ -105,22 +137,8 @@ export function useReplay(data: SimulationData, speed: number) {
 		setEventIndex(0);
 		setVisibleEvents([]);
 		simTimeRef.current = 0;
-		setPlayerA({
-			hp: data.config.playerA.hp,
-			maxHp: data.config.playerA.hp,
-			sp: data.config.playerA.sp,
-			maxSp: data.config.playerA.sp,
-			shield: 0,
-			alive: true,
-		});
-		setPlayerB({
-			hp: data.config.playerB.hp,
-			maxHp: data.config.playerB.hp,
-			sp: data.config.playerB.sp,
-			maxSp: data.config.playerB.sp,
-			shield: 0,
-			alive: true,
-		});
+		setPlayerA(initSnapshot(data.config.playerA));
+		setPlayerB(initSnapshot(data.config.playerB));
 	};
 	const skipToEnd = () => {
 		processTo(Number.POSITIVE_INFINITY);
