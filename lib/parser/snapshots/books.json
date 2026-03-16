@@ -1,0 +1,1845 @@
+{
+  "千锋聚灵剑": {
+    "school": "Sword",
+    "states": {
+      "灵涸": {
+        "target": "opponent",
+        "duration": 8,
+        "dispellable": false
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 11,
+        "cap_vs_monster": 2200,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 11265,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 15,
+        "cap_vs_monster": 3000,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 14865,
+        "data_state": [
+          "enlightenment=3",
+          "fusion=32"
+        ]
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 19,
+        "cap_vs_monster": 3800,
+        "data_state": [
+          "enlightenment=3",
+          "fusion=32"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 20265,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 27,
+        "cap_vs_monster": 5400,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=51"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "惊神剑光",
+      "effects": [
+        {
+          "type": "per_hit_escalation",
+          "value": 25,
+          "stat": "skill_bonus",
+          "parent": "this",
+          "data_state": "enlightenment=3"
+        },
+        {
+          "type": "per_hit_escalation",
+          "value": 42.5,
+          "stat": "skill_bonus",
+          "parent": "this",
+          "data_state": "enlightenment=10"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "天哀灵涸",
+      "effects": [
+        {
+          "type": "debuff",
+          "target": "healing_received",
+          "value": -80,
+          "duration": 8,
+          "dispellable": false,
+          "name": "灵涸"
+        }
+      ]
+    }
+  },
+  "春黎剑阵": {
+    "school": "Sword",
+    "states": {
+      "噬心": {
+        "target": "opponent",
+        "duration": 0
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 22305,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=83"
+        ]
+      },
+      {
+        "type": "summon",
+        "duration": 16,
+        "inherit_stats": 54,
+        "damage_taken_multiplier": 400,
+        "trigger": "on_cast",
+        "data_state": [
+          "enlightenment=10",
+          "fusion=83"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "幻象剑灵",
+      "effects": [
+        {
+          "type": "summon_buff",
+          "damage_taken_reduction_to": 120,
+          "damage_increase": 200,
+          "parent": "this",
+          "data_state": "fusion=50"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "玄心剑魄",
+      "effects": [
+        {
+          "type": "dot",
+          "name": "噬心",
+          "duration": 8,
+          "tick_interval": 1,
+          "damage_per_tick": 550,
+          "data_state": "fusion=50"
+        },
+        {
+          "type": "on_dispel",
+          "damage": 3300,
+          "stun": 2,
+          "parent": "噬心",
+          "data_state": "fusion=50"
+        },
+        {
+          "type": "dot",
+          "name": "噬心",
+          "duration": 18,
+          "tick_interval": 1,
+          "damage_per_tick": 3000
+        },
+        {
+          "type": "on_dispel",
+          "damage": 18000,
+          "stun": 3,
+          "parent": "噬心"
+        }
+      ]
+    }
+  },
+  "皓月剑诀": {
+    "school": "Sword",
+    "states": {
+      "寂灭剑心": {
+        "target": "self",
+        "duration": 4,
+        "max_stacks": 1
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 10,
+        "total": 22305,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=57"
+        ]
+      },
+      {
+        "type": "shield_destroy_damage",
+        "shields_per_hit": 1,
+        "percent_max_hp": 12,
+        "cap_vs_monster": 2400,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=57"
+        ]
+      },
+      {
+        "type": "no_shield_double_damage",
+        "no_shield_double": 1,
+        "cap_vs_monster": 4800,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=57"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "碎魂剑意",
+      "effects": [
+        {
+          "type": "shield_destroy_dot",
+          "tick_interval": 0.5,
+          "per_shield_damage": 600,
+          "no_shield_assumed": 2,
+          "parent": "寂灭剑心"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "追神真诀",
+      "effects": [
+        {
+          "type": "dot_extra_per_tick",
+          "value": 26.5
+        },
+        {
+          "type": "conditional_buff",
+          "condition": "enlightenment_10",
+          "percent_max_hp_increase": 50,
+          "damage_increase": 300
+        }
+      ]
+    }
+  },
+  "念剑诀": {
+    "school": "Sword",
+    "skill": [
+      {
+        "type": "untargetable_state",
+        "duration": 4,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 8,
+        "total": 22305,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "periodic_escalation",
+        "every_n_hits": 2,
+        "multiplier": 1.4,
+        "max_stacks": 10,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "雷阵剑影",
+      "effects": [
+        {
+          "type": "extended_dot",
+          "extra_seconds": 6.5,
+          "tick_interval": 0.5,
+          "parent": "this",
+          "data_state": "fusion=50"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "仙露护元",
+      "effects": [
+        {
+          "type": "buff_duration",
+          "value": 300
+        }
+      ]
+    }
+  },
+  "通天剑诀": {
+    "school": "Sword",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 1500
+      },
+      {
+        "type": "crit_damage_bonus",
+        "value": 100
+      },
+      {
+        "type": "self_damage_taken_increase",
+        "value": 50,
+        "duration": 8
+      }
+    ],
+    "primary_affix": {
+      "name": "焚心剑芒",
+      "effects": [
+        {
+          "type": "per_enemy_lost_hp",
+          "per_percent": 5,
+          "value": 10,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "神威冲云",
+      "effects": [
+        {
+          "type": "ignore_damage_reduction"
+        },
+        {
+          "type": "damage_increase",
+          "value": 36
+        }
+      ]
+    }
+  },
+  "新-青元剑诀": {
+    "school": "Sword",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 1500
+      },
+      {
+        "type": "debuff",
+        "target": "next_skill_cooldown",
+        "value": 8,
+        "duration": 8,
+        "name": "神通封印",
+        "sequenced": true
+      }
+    ],
+    "primary_affix": {
+      "name": "追命剑阵",
+      "effects": [
+        {
+          "type": "debuff",
+          "target": "skill_damage",
+          "value": -30,
+          "duration": 16,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "天威煌煌",
+      "effects": [
+        {
+          "type": "next_skill_buff",
+          "value": 88,
+          "stat": "skill_damage_increase",
+          "data_state": "fusion=20"
+        },
+        {
+          "type": "next_skill_buff",
+          "value": 108,
+          "stat": "skill_damage_increase",
+          "data_state": "fusion=30"
+        },
+        {
+          "type": "next_skill_buff",
+          "value": 128,
+          "stat": "skill_damage_increase",
+          "data_state": "fusion=40"
+        }
+      ]
+    }
+  },
+  "无极御剑诀": {
+    "school": "Sword",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "percent_current_hp_damage",
+        "value": 1.5,
+        "per_prior_hit": true,
+        "accumulation": "cross_skill"
+      }
+    ],
+    "exclusive_affix": {
+      "name": "无极剑阵",
+      "effects": [
+        {
+          "type": "skill_damage_increase",
+          "value": 555
+        },
+        {
+          "type": "enemy_skill_damage_reduction",
+          "value": 350
+        }
+      ]
+    }
+  },
+  "浩然星灵诀": {
+    "school": "Spell",
+    "states": {
+      "天鹤之佑": {
+        "target": "self",
+        "duration": 20
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "self_buff",
+        "final_damage_bonus": 10,
+        "duration": 20,
+        "name": "天鹤之佑"
+      }
+    ],
+    "primary_affix": {
+      "name": "天鹤祈瑞",
+      "effects": [
+        {
+          "type": "conditional_damage",
+          "condition": "self_final_damage_per_10",
+          "value": 100,
+          "parent": "天鹤之佑"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "龙象护身",
+      "effects": [
+        {
+          "type": "buff_strength",
+          "value": 300
+        }
+      ]
+    }
+  },
+  "元磁神光": {
+    "school": "Spell",
+    "states": {
+      "天狼之啸": {
+        "target": "self",
+        "duration": 12,
+        "trigger": "on_attacked",
+        "max_stacks": 3
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "self_buff",
+        "skill_damage_increase": 8,
+        "duration": 12,
+        "name": "天狼之啸"
+      }
+    ],
+    "primary_affix": {
+      "name": "天狼战意",
+      "effects": [
+        {
+          "type": "self_buff_extra",
+          "attack_bonus": 7,
+          "buff_name": "天狼之啸"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "真极穿空",
+      "effects": [
+        {
+          "type": "buff_stack_increase",
+          "value": 100
+        },
+        {
+          "type": "per_buff_stack_damage",
+          "per_n_stacks": 5,
+          "value": 5.5,
+          "max": 27.5
+        }
+      ]
+    }
+  },
+  "周天星元": {
+    "school": "Spell",
+    "states": {
+      "灵鹤": {
+        "target": "self",
+        "duration": 20
+      },
+      "逆转阴阳": {
+        "target": "opponent",
+        "duration": 0
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "self_heal",
+        "value": 20,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "self_heal",
+        "per_tick": 3.5,
+        "total": 70,
+        "tick_interval": 1,
+        "name": "灵鹤",
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "heal_echo_damage",
+        "ratio": 1,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 19065,
+        "data_state": [
+          "enlightenment=3",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "self_heal",
+        "value": 20,
+        "data_state": [
+          "enlightenment=3",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "self_heal",
+        "per_tick": 12.5,
+        "total": 250,
+        "tick_interval": 1,
+        "name": "灵鹤",
+        "data_state": [
+          "enlightenment=3",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "heal_echo_damage",
+        "ratio": 1,
+        "data_state": [
+          "enlightenment=3",
+          "fusion=50"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "天书灵盾",
+      "effects": [
+        {
+          "type": "shield",
+          "value": 3.5,
+          "duration": 16,
+          "source": "self_max_hp",
+          "trigger": "per_tick",
+          "parent": "灵鹤",
+          "data_state": "fusion=20"
+        },
+        {
+          "type": "shield",
+          "value": 4.4,
+          "duration": 16,
+          "source": "self_max_hp",
+          "trigger": "per_tick",
+          "parent": "灵鹤",
+          "data_state": "fusion=50"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "奇能诡道",
+      "effects": [
+        {
+          "type": "debuff_stack_chance",
+          "value": 20,
+          "data_state": [
+            "enlightenment=1",
+            "fusion=20"
+          ]
+        },
+        {
+          "type": "conditional_debuff",
+          "name": "逆转阴阳",
+          "multiplier": 0.6,
+          "data_state": [
+            "enlightenment=1",
+            "fusion=20"
+          ]
+        },
+        {
+          "type": "debuff_stack_chance",
+          "value": 93.5,
+          "data_state": [
+            "enlightenment=2",
+            "fusion=50"
+          ]
+        },
+        {
+          "type": "conditional_debuff",
+          "name": "逆转阴阳",
+          "multiplier": 0.7,
+          "data_state": [
+            "enlightenment=2",
+            "fusion=50"
+          ]
+        }
+      ]
+    }
+  },
+  "甲元仙符": {
+    "school": "Spell",
+    "states": {
+      "仙佑": {
+        "target": "self",
+        "duration": 12
+      },
+      "灵枯": {
+        "target": "opponent",
+        "duration": 20
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "data_state": "locked"
+      },
+      {
+        "type": "base_attack",
+        "hits": 1,
+        "total": 1500,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "self_buff",
+        "attack_bonus": 70,
+        "defense_bonus": 70,
+        "hp_bonus": 70,
+        "duration": 12,
+        "name": "仙佑",
+        "data_state": [
+          "enlightenment=1",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 1,
+        "total": 20310,
+        "data_state": [
+          "enlightenment=7",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "self_buff",
+        "attack_bonus": 70,
+        "defense_bonus": 70,
+        "hp_bonus": 70,
+        "duration": 12,
+        "name": "仙佑",
+        "data_state": [
+          "enlightenment=7",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 1,
+        "total": 21090,
+        "data_state": [
+          "enlightenment=8",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "self_buff",
+        "attack_bonus": 70,
+        "defense_bonus": 70,
+        "hp_bonus": 70,
+        "duration": 12,
+        "name": "仙佑",
+        "data_state": [
+          "enlightenment=8",
+          "fusion=51"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "天光虹露",
+      "effects": [
+        {
+          "type": "self_buff_extra",
+          "data_state": "locked"
+        },
+        {
+          "type": "self_buff_extra",
+          "healing_bonus": 70,
+          "buff_name": "仙佑",
+          "data_state": [
+            "enlightenment=1",
+            "fusion=51"
+          ]
+        },
+        {
+          "type": "self_buff_extra",
+          "healing_bonus": 170,
+          "buff_name": "仙佑",
+          "data_state": [
+            "enlightenment=7",
+            "fusion=51"
+          ]
+        },
+        {
+          "type": "self_buff_extra",
+          "healing_bonus": 190,
+          "buff_name": "仙佑",
+          "data_state": [
+            "enlightenment=8",
+            "fusion=51"
+          ]
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "天倾灵枯",
+      "effects": [
+        {
+          "type": "debuff",
+          "target": "healing_received",
+          "value": -31,
+          "duration": 20,
+          "conditional_value": -51,
+          "name": "灵枯",
+          "condition": "target_hp_below_30"
+        }
+      ]
+    }
+  },
+  "星元化岳": {
+    "school": "Spell",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "debuff",
+        "target": "echo_damage",
+        "value": 25,
+        "duration": 8,
+        "ignore_damage_bonus": true
+      }
+    ],
+    "primary_affix": {
+      "name": "天龙轮转",
+      "effects": [
+        {
+          "type": "lifesteal",
+          "value": 75,
+          "parent": "天龙印"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "仙灵汲元",
+      "effects": [
+        {
+          "type": "lifesteal",
+          "value": 55
+        }
+      ]
+    }
+  },
+  "玉书天戈符": {
+    "school": "Spell",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 3,
+        "total": 1500
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 21,
+        "source": "self"
+      }
+    ],
+    "primary_affix": {
+      "name": "天灵怒威",
+      "effects": [
+        {
+          "type": "conditional_damage",
+          "condition": "self_hp_above_20",
+          "per_step": 3,
+          "value": 3,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "天人合一",
+      "effects": [
+        {
+          "type": "enlightenment_bonus",
+          "value": 1,
+          "damage_increase": 5
+        }
+      ]
+    }
+  },
+  "九天真雷诀": {
+    "school": "Spell",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "self_cleanse",
+        "count": 2
+      },
+      {
+        "type": "conditional_damage",
+        "value": 4,
+        "condition": "cleanse_excess",
+        "max_triggers": 3
+      }
+    ],
+    "exclusive_affix": {
+      "name": "九雷真解",
+      "effects": [
+        {
+          "type": "on_buff_debuff_shield_trigger",
+          "damage_percent": 50.8
+        }
+      ]
+    }
+  },
+  "天魔降临咒": {
+    "school": "Demon",
+    "states": {
+      "结魂锁链": {
+        "target": "opponent",
+        "duration": "permanent",
+        "max_stacks": 1
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "self_buff",
+        "name": "结魂锁链",
+        "damage_reduction": 5.2,
+        "duration": "permanent",
+        "max_stacks": 1
+      },
+      {
+        "type": "debuff",
+        "name": "结魂锁链",
+        "target": "damage_reduction",
+        "value": -5.25,
+        "duration": "permanent"
+      },
+      {
+        "type": "per_debuff_stack_damage",
+        "per_n_stacks": 1,
+        "value": 0.5,
+        "max": 2,
+        "parent": "结魂锁链"
+      }
+    ],
+    "primary_affix": {
+      "name": "魔念生息",
+      "effects": [
+        {
+          "type": "dot",
+          "tick_interval": 1,
+          "percent_max_hp": 1.6,
+          "duration": "permanent",
+          "parent": "结魂锁链"
+        },
+        {
+          "type": "per_debuff_stack_damage",
+          "per_n_stacks": 1,
+          "value": 0.5,
+          "max": 4,
+          "parent": "结魂锁链"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "引灵摘魂",
+      "effects": [
+        {
+          "type": "conditional_damage",
+          "value": 104,
+          "condition": "target_has_debuff"
+        }
+      ]
+    }
+  },
+  "天轮魔经": {
+    "school": "Demon",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 7,
+        "total": 1500
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 3
+      },
+      {
+        "type": "buff_steal",
+        "count": 2
+      }
+    ],
+    "primary_affix": {
+      "name": "魔意震慑",
+      "effects": [
+        {
+          "type": "debuff",
+          "target": "attack",
+          "value": -14,
+          "duration": 12,
+          "name": "惧意",
+          "per_stolen_buff": true,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "心魔惑言",
+      "effects": [
+        {
+          "type": "debuff_stack_increase",
+          "value": 100
+        },
+        {
+          "type": "per_debuff_stack_damage",
+          "per_n_stacks": 5,
+          "value": 5.5,
+          "max": 27.5
+        }
+      ]
+    }
+  },
+  "天刹真魔": {
+    "school": "Demon",
+    "states": {
+      "不灭魔体": {
+        "target": "self",
+        "duration": "permanent",
+        "trigger": "on_attacked"
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "counter_buff",
+        "heal_on_damage_taken": 8,
+        "no_healing_bonus": true,
+        "name": "不灭魔体"
+      }
+    ],
+    "primary_affix": {
+      "name": "魔妄吞天",
+      "effects": [
+        {
+          "type": "counter_debuff",
+          "name": "天人五衰",
+          "duration": 15,
+          "on_attacked_chance": 100,
+          "parent": "不灭魔体"
+        },
+        {
+          "type": "lethal_rate_reduction",
+          "value": -50,
+          "parent": "天人五衰",
+          "cycle_interval": 3,
+          "rotating": true
+        },
+        {
+          "type": "crit_damage_reduction",
+          "value": -50,
+          "parent": "天人五衰",
+          "cycle_interval": 3,
+          "rotating": true
+        },
+        {
+          "type": "crit_rate_reduction",
+          "value": -50,
+          "parent": "天人五衰",
+          "cycle_interval": 3,
+          "rotating": true
+        },
+        {
+          "type": "attack_reduction",
+          "value": -23,
+          "parent": "天人五衰",
+          "cycle_interval": 3,
+          "rotating": true
+        },
+        {
+          "type": "debuff",
+          "name": "天人五衰",
+          "target": "final_damage_reduction",
+          "value": -23,
+          "duration": 15,
+          "parent": "天人五衰",
+          "cycle_interval": 3,
+          "rotating": true
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "魔骨明心",
+      "effects": [
+        {
+          "type": "conditional_heal_buff",
+          "condition": "target_has_debuff",
+          "value": 90,
+          "duration": 8
+        },
+        {
+          "type": "conditional_debuff",
+          "condition": "enlightenment",
+          "name": "魔骨明心",
+          "target": "final_damage_reduction",
+          "value": -20,
+          "duration": 1
+        }
+      ]
+    }
+  },
+  "解体化形": {
+    "school": "Demon",
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "per_debuff_stack_damage",
+        "per_n_stacks": 1,
+        "value": 50,
+        "max_stacks": 10
+      }
+    ],
+    "primary_affix": {
+      "name": "魔神降世",
+      "effects": [
+        {
+          "type": "attack_bonus",
+          "value": 13,
+          "max_stacks": 30,
+          "per_debuff_stack": true,
+          "timing": "pre_cast",
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "心逐神随",
+      "effects": [
+        {
+          "type": "probability_multiplier",
+          "chance_4x": 11,
+          "chance_3x": 31,
+          "chance_2x": 51,
+          "data_state": [
+            "enlightenment=0",
+            "fusion=50"
+          ]
+        },
+        {
+          "type": "probability_multiplier",
+          "chance_4x": 60,
+          "chance_3x": 80,
+          "chance_2x": 100,
+          "data_state": [
+            "enlightenment=2",
+            "fusion=63"
+          ]
+        }
+      ]
+    }
+  },
+  "大罗幻诀": {
+    "school": "Demon",
+    "states": {
+      "罗天魔咒": {
+        "target": "self",
+        "duration": 8,
+        "max_stacks": 5,
+        "trigger": "on_attacked",
+        "chance": 30,
+        "children": [
+          "噬心之咒",
+          "断魂之咒"
+        ]
+      },
+      "噬心之咒": {
+        "target": "opponent",
+        "duration": 4,
+        "max_stacks": 5,
+        "trigger": "on_attacked",
+        "children": [
+          "断魂之咒"
+        ]
+      },
+      "断魂之咒": {
+        "target": "opponent",
+        "duration": 4,
+        "max_stacks": 5,
+        "trigger": "on_attacked",
+        "children": [
+          "噬心之咒"
+        ]
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500,
+        "data_state": [
+          "enlightenment=0",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "counter_debuff",
+        "on_attacked_chance": 30,
+        "name": "罗天魔咒",
+        "duration": 8,
+        "data_state": [
+          "enlightenment=0",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "dot",
+        "tick_interval": 0.5,
+        "percent_current_hp": 7,
+        "duration": 4,
+        "name": "噬心之咒",
+        "parent": "罗天魔咒",
+        "max_stacks": 5,
+        "data_state": [
+          "enlightenment=0",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "dot",
+        "tick_interval": 0.5,
+        "percent_lost_hp": 7,
+        "duration": 4,
+        "name": "断魂之咒",
+        "parent": "罗天魔咒",
+        "max_stacks": 5,
+        "data_state": [
+          "enlightenment=0",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 20265,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "counter_debuff",
+        "on_attacked_chance": 30,
+        "name": "罗天魔咒",
+        "duration": 8,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "dot",
+        "tick_interval": 0.5,
+        "percent_current_hp": 7,
+        "duration": 4,
+        "name": "噬心之咒",
+        "parent": "罗天魔咒",
+        "max_stacks": 5,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      },
+      {
+        "type": "dot",
+        "tick_interval": 0.5,
+        "percent_lost_hp": 7,
+        "duration": 4,
+        "name": "断魂之咒",
+        "parent": "罗天魔咒",
+        "max_stacks": 5,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=50"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "魔魂咒界",
+      "effects": [
+        {
+          "type": "counter_debuff_upgrade",
+          "on_attacked_chance": 60,
+          "parent": "罗天魔咒",
+          "data_state": [
+            "enlightenment=0",
+            "fusion=20"
+          ]
+        },
+        {
+          "type": "cross_slot_debuff",
+          "target": "final_damage_reduction",
+          "value": -46,
+          "duration": 8,
+          "name": "命损",
+          "trigger": "on_attacked",
+          "parent": "罗天魔咒",
+          "data_state": [
+            "enlightenment=0",
+            "fusion=20"
+          ]
+        },
+        {
+          "type": "counter_debuff_upgrade",
+          "on_attacked_chance": 60,
+          "parent": "罗天魔咒",
+          "data_state": [
+            "enlightenment=10",
+            "fusion=52"
+          ]
+        },
+        {
+          "type": "cross_slot_debuff",
+          "target": "final_damage_reduction",
+          "value": -100,
+          "duration": 8,
+          "name": "命损",
+          "trigger": "on_attacked",
+          "parent": "罗天魔咒",
+          "data_state": [
+            "enlightenment=10",
+            "fusion=52"
+          ]
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "古魔之魂",
+      "effects": [
+        {
+          "type": "dot_damage_increase",
+          "value": 104
+        }
+      ]
+    }
+  },
+  "梵圣真魔咒": {
+    "school": "Demon",
+    "states": {
+      "贪妄业火": {
+        "target": "opponent",
+        "duration": 8,
+        "per_hit_stack": true
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 6,
+        "total": 1500
+      },
+      {
+        "type": "dot",
+        "tick_interval": 1,
+        "percent_current_hp": 3,
+        "duration": 8,
+        "name": "贪妄业火"
+      }
+    ],
+    "primary_affix": {
+      "name": "魔心焚尽",
+      "effects": [
+        {
+          "type": "dot",
+          "tick_interval": 1,
+          "percent_lost_hp": 8,
+          "duration": 8,
+          "name": "瞋痴业火",
+          "parent": "贪妄业火",
+          "per_n_stacks": 2
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "天魔真解",
+      "effects": [
+        {
+          "type": "dot_frequency_increase",
+          "value": 50.5
+        }
+      ]
+    }
+  },
+  "无相魔劫咒": {
+    "school": "Demon",
+    "states": {
+      "无相魔劫": {
+        "target": "opponent",
+        "duration": 12
+      },
+      "魔劫": {
+        "target": "opponent",
+        "duration": 8
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "delayed_burst",
+        "duration": 12,
+        "damage_increase_during": 10,
+        "burst_accumulated_pct": 10,
+        "burst_base": 5000,
+        "name": "无相魔劫",
+        "data_state": "enlightenment=0"
+      }
+    ],
+    "primary_affix": {
+      "name": "灭劫魔威",
+      "effects": [
+        {
+          "type": "delayed_burst_increase",
+          "value": 65,
+          "parent": "无相魔劫",
+          "data_state": "enlightenment=0"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "无相魔威",
+      "effects": [
+        {
+          "type": "debuff",
+          "name": "魔劫",
+          "target": "healing_received",
+          "value": -40.8,
+          "duration": 8
+        },
+        {
+          "type": "conditional_damage",
+          "value": 105,
+          "condition": "target_has_no_healing",
+          "escalated_value": 205,
+          "parent": "魔劫"
+        }
+      ]
+    }
+  },
+  "玄煞灵影诀": {
+    "school": "Body",
+    "states": {
+      "怒意滔天": {
+        "target": "self",
+        "duration": "permanent",
+        "max_stacks": 1
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 4,
+        "total": 18255,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "self_hp_cost",
+        "value": 4,
+        "tick_interval": 1,
+        "name": "怒意滔天",
+        "duration": "permanent",
+        "data_state": [
+          "enlightenment=1",
+          "fusion=51"
+        ]
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 11,
+        "tick_interval": 1,
+        "includes_hp_spent": true,
+        "parent": "怒意滔天",
+        "duration": "permanent",
+        "data_state": [
+          "enlightenment=1",
+          "fusion=51"
+        ]
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿之怒",
+      "effects": [
+        {
+          "type": "self_lost_hp_damage",
+          "value": 12,
+          "every_n_hits": 4,
+          "parent": "怒意滔天",
+          "includes_hp_spent": true,
+          "data_state": [
+            "enlightenment=1",
+            "fusion=51"
+          ]
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "怒血战意",
+      "effects": [
+        {
+          "type": "per_self_lost_hp",
+          "per_percent": 2
+        }
+      ]
+    }
+  },
+  "惊蜇化龙": {
+    "school": "Body",
+    "skill": [
+      {
+        "type": "self_hp_cost",
+        "value": "x"
+      },
+      {
+        "type": "base_attack",
+        "hits": 8,
+        "total": 1500
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 10
+      },
+      {
+        "type": "self_buff",
+        "skill_damage_increase": 20,
+        "duration": 4
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿幻杀",
+      "effects": [
+        {
+          "type": "percent_max_hp_damage",
+          "value": 10,
+          "name": "镇杀",
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "索心真诀",
+      "effects": [
+        {
+          "type": "per_debuff_stack_true_damage",
+          "per_stack": 2.1,
+          "max": 21
+        },
+        {
+          "type": "conditional_buff",
+          "condition": "enlightenment_max",
+          "percent_lost_hp_increase": 50,
+          "damage_increase": 75
+        }
+      ]
+    }
+  },
+  "十方真魄": {
+    "school": "Body",
+    "states": {
+      "怒灵降世": {
+        "target": "self",
+        "duration": 4
+      }
+    },
+    "skill": [
+      {
+        "type": "self_hp_cost",
+        "value": 10
+      },
+      {
+        "type": "base_attack",
+        "hits": 10,
+        "total": 1500
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 16,
+        "self_heal": true
+      },
+      {
+        "type": "self_buff",
+        "attack_bonus": 20,
+        "damage_reduction": 20,
+        "duration": 4,
+        "name": "怒灵降世"
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿弃天",
+      "effects": [
+        {
+          "type": "self_buff_extend",
+          "value": 3.5,
+          "buff_name": "怒灵降世"
+        },
+        {
+          "type": "periodic_cleanse",
+          "chance": 30,
+          "interval": 1,
+          "cooldown": 25,
+          "max_triggers": 1,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "破釜沉舟",
+      "effects": [
+        {
+          "type": "damage_increase",
+          "value": 380
+        },
+        {
+          "type": "self_damage_taken_increase",
+          "value": 50,
+          "duration": "during_cast"
+        }
+      ]
+    }
+  },
+  "疾风九变": {
+    "school": "Body",
+    "states": {
+      "极怒": {
+        "target": "self",
+        "duration": 4
+      }
+    },
+    "skill": [
+      {
+        "type": "self_hp_cost",
+        "value": 10
+      },
+      {
+        "type": "base_attack",
+        "hits": 10,
+        "total": 1500
+      },
+      {
+        "type": "counter_buff",
+        "reflect_received_damage": 50,
+        "reflect_percent_lost_hp": 15,
+        "duration": 4,
+        "name": "极怒"
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿复灵",
+      "effects": [
+        {
+          "type": "lifesteal",
+          "value": 82,
+          "parent": "极怒"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "真言不灭",
+      "effects": [
+        {
+          "type": "all_state_duration",
+          "value": 55
+        }
+      ]
+    }
+  },
+  "煞影千幻": {
+    "school": "Body",
+    "states": {
+      "落星": {
+        "target": "opponent",
+        "duration": 4,
+        "dispellable": false,
+        "per_hit_stack": true
+      }
+    },
+    "skill": [
+      {
+        "type": "self_hp_cost",
+        "value": 20
+      },
+      {
+        "type": "base_attack",
+        "hits": 3,
+        "total": 1500
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 10
+      },
+      {
+        "type": "shield",
+        "value": 12,
+        "duration": 8,
+        "source": "self_max_hp"
+      },
+      {
+        "type": "debuff",
+        "target": "final_damage_reduction",
+        "value": -8,
+        "duration": 4,
+        "name": "落星",
+        "per_hit_stack": true,
+        "dispellable": false
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿援护",
+      "effects": [
+        {
+          "type": "shield_strength",
+          "value": 21.5,
+          "parent": "this"
+        },
+        {
+          "type": "hp_cost_avoid_chance",
+          "value": 30,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "乘胜逐北",
+      "effects": [
+        {
+          "type": "conditional_damage",
+          "value": 100,
+          "condition": "target_controlled"
+        }
+      ]
+    }
+  },
+  "九重天凤诀": {
+    "school": "Body",
+    "states": {
+      "蛮神": {
+        "target": "self",
+        "duration": 4,
+        "per_hit_stack": true
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 8,
+        "total": 1500
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 25,
+        "per_hit": true
+      },
+      {
+        "type": "self_hp_cost",
+        "value": 5,
+        "per_hit": true
+      },
+      {
+        "type": "self_buff",
+        "attack_bonus": 2.5,
+        "crit_rate": 2.5,
+        "duration": 4,
+        "name": "蛮神"
+      }
+    ],
+    "primary_affix": {
+      "name": "星猿永生",
+      "effects": [
+        {
+          "type": "periodic_dispel",
+          "count": 2,
+          "parent": "this"
+        },
+        {
+          "type": "self_hp_floor",
+          "value": 10,
+          "parent": "this"
+        }
+      ]
+    },
+    "exclusive_affix": {
+      "name": "玉石俱焚",
+      "effects": [
+        {
+          "type": "on_shield_expire",
+          "damage_percent_of_shield": 100
+        }
+      ]
+    }
+  },
+  "天煞破虚诀": {
+    "school": "Body",
+    "states": {
+      "破虚": {
+        "target": "self",
+        "duration": 0
+      }
+    },
+    "skill": [
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500
+      },
+      {
+        "type": "self_lost_hp_damage",
+        "value": 10,
+        "per_hit": true,
+        "name": "破虚",
+        "next_skill_hits": 8
+      }
+    ],
+    "exclusive_affix": {
+      "name": "天煞破虚",
+      "effects": [
+        {
+          "type": "periodic_dispel",
+          "interval": 1,
+          "duration": 10,
+          "damage_percent_of_skill": 25.5,
+          "no_buff_double": true
+        }
+      ]
+    }
+  }
+}
