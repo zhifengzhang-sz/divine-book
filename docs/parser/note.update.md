@@ -95,15 +95,13 @@ strong {
 
 The grammar-based parser (`lib/parser/`) is the **sole parser** in the project. It reads `data/raw/主書.md` directly and produces structured `BookData` output — deterministic, no LLM, no intermediate normalized format.
 
-The old parser (`lib/parse.ts`) and its normalized data pipeline (`data/normalized/`) have been removed. The `effects.yaml` file remains as a static data artifact but is no longer regenerated.
+The old parser (`lib/parse.ts`) and its normalized data pipeline (`data/normalized/`) have been removed.
 
 ## Scope
 
 - **In scope**: main skills + primary affixes + exclusive affixes from `data/raw/主書.md`
   - 28 books, each with `school`, `skill` effects, `primary_affix`, `exclusive_affix`, and `states` registry
-- **Not yet implemented**: universal affixes (`通用詞綴.md`), school affixes (`修為詞綴.md`)
-
-The simulator consumes **main book = platform + primary affix + exclusive affix**.
+- Universal affixes and school affixes are implemented in `lib/parser/common-affixes.ts`
 
 ## Pipeline
 
@@ -118,7 +116,7 @@ ParsedBook  (school, states, skill[], primaryAffix)
     ↓  emitBooks()
 BookData  (school, states, skill[], primary_affix)
     ↓
-Simulator bridge / effects.yaml / JSON
+data/yaml/books.yaml
 ```
 
 ## Type Ownership
@@ -127,10 +125,10 @@ Types live in the files that define them:
 
 | Type | Defined in | Purpose |
 |---|---|---|
-| `EffectRow` | `emit.ts` | `{ type: string; [k]: unknown }` — single parsed effect |
-| `BookData` | `emit.ts` | Emitter output — per-book structured data |
-| `AffixSection` | `emit.ts` | `{ name, effects[] }` — affix name + its effects |
-| `StateDef` | `states.ts` | Named state lifecycle metadata |
+| `EffectRow` | `lib/data/types.ts` (re-exported by `emit.ts`) | `{ type: string; [k]: unknown }` — single parsed effect |
+| `BookData` | `lib/data/types.ts` (re-exported by `emit.ts`) | Emitter output — per-book structured data |
+| `AffixSection` | `lib/data/types.ts` (re-exported by `emit.ts`) | `{ name, effects[] }` — affix name + its effects |
+| `StateDef` | `lib/data/types.ts` (re-exported by `states.ts`) | Named state lifecycle metadata |
 | `StateRegistry` | `states.ts` | `Record<string, StateDef>` |
 | `ParsedBook` | `split.ts` | Internal parse result before emission |
 | `ExtractedEffect` | `extract.ts` | Single regex extractor output |
@@ -140,6 +138,9 @@ Types live in the files that define them:
 | `TierSpec` | `tiers.ts` | Tier variable bindings |
 | `Grammar`, `BookMeta` | `book-table.ts` | Static per-book grammar classification |
 | `ParseResult` | `index.ts` | Orchestrator output: books + warnings + errors |
+| `CommonAffixResult` | `common-affixes.ts` | Universal/school affix parse output |
+| `ExclusiveAffixEntry` | `exclusive.ts` | Per-book exclusive affix entry |
+| `VerifyReport`, `VerifyIssue` | `verify.ts` | Verification agent output types |
 
 ## State Registry
 
@@ -188,16 +189,22 @@ Effect rows describe pure mechanical behavior ("what happens"). The state regist
 |---|---|---|
 | `lib/parser/md-table.ts` | 154 | Layer 1: markdown table reader (`readMainSkillTables`, `splitCell`) |
 | `lib/parser/book-table.ts` | 55 | Static lookup: 28 books → grammar type (G2–G6) |
-| `lib/parser/split.ts` | 1147 | Layer 2: per-book grammar parsers, produces `ParsedBook` |
-| `lib/parser/states.ts` | 249 | Layer 3: named state extraction → `StateRegistry`, `StateDef` |
-| `lib/parser/extract.ts` | 928 | Layer 4: 31 regex pattern extractors for Chinese prose |
-| `lib/parser/tiers.ts` | 121 | Tier resolution + variable substitution |
-| `lib/parser/emit.ts` | 199 | Emitter: `ParsedBook` → `BookData`, shared output types |
-| `lib/parser/index.ts` | 117 | Orchestrator: `parseMainSkills()`, `parseSingleBook()` |
-| `lib/parser/parser.test.ts` | 516 | 57 tests, 313 assertions |
+| `lib/parser/split.ts` | 573 | Layer 2: per-book grammar parsers, produces `ParsedBook` |
+| `lib/parser/states.ts` | 220 | Layer 3: named state extraction → `StateRegistry`, `StateDef` |
+| `lib/parser/extract.ts` | 2527 | Layer 4: 99 regex pattern extractors (30 skill + 69 affix) for Chinese prose |
+| `lib/parser/tiers.ts` | 126 | Tier resolution + variable substitution |
+| `lib/parser/emit.ts` | 188 | Emitter: `ParsedBook` → `BookData`, re-exports shared types |
+| `lib/parser/exclusive.ts` | 270 | Exclusive affix parser (`parseExclusiveAffix`, `readExclusiveAffixTable`) |
+| `lib/parser/common-affixes.ts` | 205 | Universal + school affix parser (`parseCommonAffixes`) |
+| `lib/parser/verify.ts` | 534 | Verification agent: coverage, double-match, YAML staleness checks |
+| `lib/parser/index.ts` | 166 | Orchestrator: `parseMainSkills()`, `parseSingleBook()` |
+| `lib/data/types.ts` | 37 | Shared data contract: `EffectRow`, `BookData`, `AffixSection`, `StateDef` |
+| `lib/parser/parser.test.ts` | 771 | 87 tests, 440 assertions |
 | `app/parse-main-skills.ts` | — | CLI: `--book`, `--verify`, `--output` |
+| `app/parse-affixes.ts` | 83 | CLI: parse universal/school/exclusive affixes → YAML |
+| `app/verify-parser.ts` | 157 | CLI: run verification agent |
 
-Total: ~3,486 lines of parser code.
+Total: ~6,066 lines of parser code.
 
 ## Grammars
 
@@ -205,37 +212,10 @@ Each book maps to one of 5 grammar types in `BOOK_TABLE`:
 
 | Grammar | Pattern | Example Books |
 |---|---|---|
-| G2 | `base_attack` + effects | 春黎剑阵, 大罗幻诀 |
-| G3 | `base_attack` + named state | 甲元仙符, 千锋聚灵剑 |
-| G4 | `hp_cost` + `base_attack` + effects | 十方真魄, 煞影千幻 |
-| G5 | `hp_cost` + `base_attack` + named state | 玄煞灵影诀 |
-| G6 | `base_attack` + cleanse + carry | 疾风九变 |
+| G2 | `base_attack` + effects | 千锋聚灵剑, 春黎剑阵, 念剑诀, 通天剑诀, 新-青元剑诀, 无极御剑诀, 星元化岳, 玉书天戈符, 天轮魔经, 解体化形 |
+| G3 | `base_attack` + named state | 皓月剑诀, 浩然星灵诀, 元磁神光, 周天星元, 甲元仙符, 天魔降临咒, 天刹真魔, 大罗幻诀, 梵圣真魔咒, 无相魔劫咒, 玄煞灵影诀, 九重天凤诀, 天煞破虚诀 |
+| G4 | `hp_cost` + `base_attack` + effects | 惊蜇化龙 |
+| G5 | `hp_cost` + `base_attack` + named state | 十方真魄, 疾风九变, 煞影千幻 |
+| G6 | `base_attack` + cleanse + carry | 九天真雷诀 |
 
-## Downstream: Combat Simulator
-
-The simulator (`lib/simulator/`) reads parser output directly — no intermediate bridge:
-
-1. `loadBooks("data/raw/主書.md")` calls `parseMainSkills()` → `Record<string, BookData>`
-2. `simulateBook(effects, owner)` transforms `EffectRow[]` → `Intent[]` via 3-pass combinator
-3. `resolveSlot(book, snapshot)` collects `skill + primary_affix + exclusive_affix` effects, classifies intents as self/opponent
-4. `runCombat()` orchestrates rounds: snapshot → resolve → apply → tick
-
-Simulator imports:
-- `BookData`, `EffectRow` from `lib/parser/emit`
-- `parseMainSkills` from `lib/parser/index`
-
-## What was removed (2026-03-13)
-
-The old parser pipeline and all its artifacts:
-
-| Removed | Was |
-|---|---|
-| `lib/parse.ts` | Old parser: normalized.data.md → effects.yaml |
-| `lib/parse.test.ts` | Old parser tests |
-| `lib/parse.groups.ts` | Deprecated groups parser |
-| `app/parse.ts` | Old parser CLI |
-| `data/normalized/` | Hand-curated normalized tables (old pipeline input) |
-| `tmp-verify-output/` | Old pipeline verification output |
-| `scripts/verify-pipeline.ts` | Old pipeline verification script |
-
-The `data/yaml/effects.yaml` file remains as a static artifact — it contains all book data including exclusive/universal/school affixes. The simulator reads directly from the parser, not from this file. It is no longer regenerated by any parser.
+Previous parser and simulator code were removed during the 2026-03-16 cleanup.

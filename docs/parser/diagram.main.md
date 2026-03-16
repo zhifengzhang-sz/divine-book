@@ -104,7 +104,6 @@ graph LR
     G["Tier Resolver\ntiers.ts"] --> C
     C -- "ParsedBook" --> H["Emitter\nemit.ts"]
     H -- "BookData" --> I["Orchestrator\nindex.ts"]
-    I --> J["Simulator\nsimulate.ts"]
 ```
 
 ---
@@ -205,7 +204,7 @@ classDiagram
 
 ## 5. Regex Extractors — `extract.ts`
 
-31 pattern-matching functions. Each takes Chinese text, returns a typed effect or null.
+99 pattern-matching functions (30 skill + 69 affix). Each takes Chinese text, returns a typed effect or null.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
@@ -238,7 +237,7 @@ classDiagram
         +extractShield(text)$ ExtractedEffect
         +extractDebuff(text)$ ExtractedEffect
         +extractNamedState(text)$ NamedStateInfo
-        ... 22 more
+        ... 90 more
     }
 
     Extractors ..> ExtractedEffect : produces
@@ -276,7 +275,7 @@ classDiagram
 
 ## 7. Split Engine + Emitter — `split.ts` / `emit.ts`
 
-Per-book parsers produce `ParsedBook`, emitter converts to `BookData` for downstream consumption. Output types (`EffectRow`, `BookData`, `AffixSection`) are defined in `emit.ts`. State types (`StateDef`, `StateRegistry`) are defined in `states.ts`.
+Per-book parsers produce `ParsedBook`, emitter converts to `BookData` for downstream consumption. Output types (`EffectRow`, `BookData`, `AffixSection`, `StateDef`) are defined in `lib/data/types.ts` and re-exported by `emit.ts` and `states.ts`.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
@@ -290,13 +289,13 @@ classDiagram
     }
 
     class EffectRow {
-        <<emit.ts>>
+        <<lib/data/types.ts>>
         +type: string
         +[k]: unknown
     }
 
     class BookData {
-        <<emit.ts>>
+        <<lib/data/types.ts>>
         +school: string
         +states?: Record~string, StateDef~
         +skill?: EffectRow[]
@@ -305,7 +304,7 @@ classDiagram
     }
 
     class StateDef {
-        <<states.ts>>
+        <<lib/data/types.ts>>
         +target: self | opponent | both
         +duration: number | permanent
         +max_stacks?: number
@@ -317,7 +316,7 @@ classDiagram
     }
 
     class AffixSection {
-        <<emit.ts>>
+        <<lib/data/types.ts>>
         +name: string
         +effects: EffectRow[]
     }
@@ -337,27 +336,3 @@ classDiagram
     ParseResult *-- BookData : books
 ```
 
----
-
-## 8. Downstream — Combat Simulator
-
-The simulator (`lib/simulator/`) consumes parser output directly — no intermediate bridge layer.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-graph TD
-    P["parseMainSkills()\nlib/parser/index.ts"] -- "Record‹string, BookData›" --> S["simulateBook()\nlib/simulator/simulate.ts"]
-    S -- "Intent[]" --> A["runCombat()\nlib/simulator/arena.ts"]
-
-    subgraph "Parser types consumed"
-        BD["BookData\nemit.ts"]
-        ER["EffectRow\nemit.ts"]
-    end
-
-    BD --> S
-    ER --> S
-```
-
-The simulator imports:
-- `BookData`, `EffectRow` from `lib/parser/emit`
-- `parseMainSkills` from `lib/parser/index` (via `loadBooks()` in `lib/simulator/index.ts`)

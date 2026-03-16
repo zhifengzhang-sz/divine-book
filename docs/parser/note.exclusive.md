@@ -221,44 +221,18 @@ exclusive_affix:
 | 无相魔劫咒 | debuff + conditional_damage with parent linking |
 | 惊蜇化龙 | per_debuff_stack_true_damage + conditional_buff compound |
 
-### Primary affixes — 17 overrides remain
+### Primary affixes — 5 overrides remain
 
-#### `parent: "<named_state>"` — scoped to a specific named state
+All 5 require `parent` scoping to a named state that cannot be inferred from the affix text alone.
 
 | Book | Parent | Why |
 |------|--------|-----|
-| 皓月剑诀 | `寂灭剑心` | shield_destroy_dot formula unique to this book |
 | 浩然星灵诀 | `天鹤之佑` | conditional_damage scoped to named state |
 | 周天星元 | `回生灵鹤` | shield scoped to named state |
 | 星元化岳 | `天龙印` | lifesteal scoped to named state |
-| 天魔降临咒 | `结魂锁链` | dot + per_debuff_stack compound |
-| 天刹真魔 | `不灭魔体` / `天人五衰` | multi-child counter_debuff |
-| 大罗幻诀 | `罗天魔咒` | counter_debuff_upgrade + cross_slot_debuff |
-| 梵圣真魔咒 | `贪妄业火` | per_n_stacks dot |
-| 无相魔劫咒 | `无相魔劫` | delayed_burst_increase |
-| 玄煞灵影诀 | `怒意滔天` | self_lost_hp_damage with every_n_hits |
-| 疾风九变 | `极怒` | lifesteal scoped to named state |
+| 玉书天戈符 | `self_hp_above_20` | conditional_damage with `per_step` — unique formula |
+| 天刹真魔 | `不灭魔体` / `天人五衰` | 5-effect compound: counter_debuff + 3 stat reductions + debuff |
 
-#### `parent: "this"` — unique effect types or hardcoded values
+### Primary affixes — ~20 handled by generic pipeline
 
-| Book | Why override |
-|------|-------------|
-| 春黎剑阵 | `summon_buff` — no extractor for this type |
-| 念剑诀 | `extended_dot` — no extractor for this type |
-| 通天剑诀 | `per_enemy_lost_hp` with hardcoded `per_percent: 2` (not from vars) |
-| 新-青元剑诀 | `debuff` with negated value + hardcoded `duration: 16` |
-| 天轮魔経 | `debuff` with `per_stolen_buff` flag — unique semantic |
-| 解体化形 | `attack_bonus` with `per_debuff_stack` — unique semantic |
-| 玉書天戈符 | `conditional_damage` with `per_step` — unique formula |
-| 十方真魄 | `self_buff_extend` + `periodic_cleanse` compound |
-| 惊蜇化龙 | `percent_max_hp_damage` with named state `镇杀` |
-| 九重天凤诀 | `periodic_dispel` + `self_hp_floor` compound |
-
-### Primary affixes — 4 handled by generic pipeline
-
-| Book | Extractor(s) |
-|------|-------------|
-| 千锋聚灵剑 | `extractPerHitEscalation` + `defaultParent: "this"` |
-| 元磁神光 | `extractSelfBuffExtra` |
-| 甲元仙符 | `extractSelfBuffExtra` (multi-tier with locked) |
-| 煞影千幻 | `extractShieldStrength` + `extractHpCostAvoidChance` |
+The remaining primary affixes (including 千锋聚灵剑, 春黎剑阵, 皓月剑诀, 念剑诀, 通天剑诀, 新-青元剑诀, 元磁神光, 甲元仙符, 天魔降临咒, 天轮魔经, 解体化形, 大罗幻诀, 梵圣真魔咒, 无相魔劫咒, 玄煞灵影诀, 惊蜇化龙, 十方真魄, 疾风九变, 煞影千幻, 九重天凤诀) are handled by generic `AFFIX_EXTRACTORS` via `genericAffixParse()` with `defaultParent: "this"`. 16 of these were migrated from hand-written `AFFIX_PARSERS` overrides.

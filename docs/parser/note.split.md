@@ -126,7 +126,7 @@ flowchart TD
 
       D --> O[Extract affix name\nfrom「name」]
       O --> P{AFFIX_PARSERS\nhas entry?}
-      P -->|Yes: compound patterns| Q[Book-specific\naffix parser]
+      P -->|"Yes: 5 books (浩然星灵诀,\n周天星元, 星元化岳,\n玉书天戈符, 天刹真魔)"| Q[Book-specific\naffix parser]
       Q --> R[EffectRows with\nparent or buff_name]
       P -->|No| S[genericAffixParse\nwith defaultParent: this]
       S --> S1[Run AFFIX_EXTRACTORS\nagainst stripped text]
@@ -141,5 +141,7 @@ flowchart TD
 ```
 
 >Note: 天魔降临咒 is the only book still using a hand-written skill parser. Its skill has a unique dual-target pattern (结魂锁链 acts as both self_buff and debuff simultaneously) that the extractors don't handle.
+
+>Note: 16 of 21 primary affix overrides were migrated to generic extractors in AFFIX_EXTRACTORS. Only 5 books (浩然星灵诀, 周天星元, 星元化岳, 玉书天戈符, 天刹真魔) retain hand-written AFFIX_PARSERS entries — each requires parent scoping to a named state that cannot be inferred from the affix text alone.
 
 >See [note.exclusive.md](note.exclusive.md) for the full generic affix pipeline walkthrough and override inventory.
