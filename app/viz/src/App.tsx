@@ -202,11 +202,13 @@ function SimView({ data }: { data: SimulationData }) {
 export function App() {
 	const [simData, setSimData] = useState<SimulationData | null>(null);
 	const [simError, setSimError] = useState("");
+	const [runCount, setRunCount] = useState(0);
 
 	const handleRun = (config: SimConfig) => {
 		setSimError("");
 		try {
 			const data = runSimulation(config);
+			setRunCount((c) => c + 1);
 			setSimData(data);
 		} catch (e) {
 			setSimError((e as Error).message);
@@ -219,7 +221,7 @@ export function App() {
 			<h1 style={{ color: "#e5c07b", margin: "0 0 16px", fontSize: 20 }}>Divine Book Combat Simulator</h1>
 			<ConfigPanel onRun={handleRun} />
 			{simError && <div style={{ color: "#e06c75", fontSize: 12, padding: 8, background: "#2c313a", borderRadius: 4, marginBottom: 16 }}>{simError}</div>}
-			{simData && <SimView key={simData.config.seed + simData.config.playerA.book + simData.config.playerB.book} data={simData} />}
+			{simData && <SimView key={runCount} data={simData} />}
 		</div>
 	);
 }
