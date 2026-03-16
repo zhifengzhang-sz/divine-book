@@ -18,10 +18,8 @@ export function buildHitEvents(
 	let spDamage = 0;
 	const zones = { S_coeff: 0, M_dmg: 0, M_skill: 0, M_final: 0, M_synchro: 1 };
 
-	// Collect escalation and per-hit effect functions (last one wins per category)
-	let escalationFn:
-		| ((k: number) => { M_skill?: number; M_dmg?: number })
-		| undefined;
+	// Collect all escalation and per-hit effect functions (they stack)
+	const escalationFns: ((k: number) => { M_skill?: number; M_dmg?: number })[] = [];
 	let perHitEffectsFn: ((k: number) => IntentEvent[]) | undefined;
 
 	for (const r of results) {
@@ -38,7 +36,7 @@ export function buildHitEvents(
 				zones.M_synchro *= r.zones.M_synchro;
 			}
 		}
-		if (r.perHitEscalation) escalationFn = r.perHitEscalation;
+		if (r.perHitEscalation) escalationFns.push(r.perHitEscalation);
 		if (r.perHitEffects) perHitEffectsFn = r.perHitEffects;
 	}
 
@@ -50,11 +48,18 @@ export function buildHitEvents(
 	const events: HitEvent[] = [];
 
 	for (let k = 0; k < hits; k++) {
-		const esc = escalationFn?.(k) ?? {};
+		// Accumulate escalation from all sources (they stack additively per zone)
+		let escMdmg = 0;
+		let escMskill = 0;
+		for (const fn of escalationFns) {
+			const esc = fn(k);
+			escMdmg += esc.M_dmg ?? 0;
+			escMskill += esc.M_skill ?? 0;
+		}
 		// combat.md §2.1: (D_base × S_coeff + D_flat) × zones
 		let damage = (perHitPercent / 100) * atk * (1 + zones.S_coeff) + perHitFlat;
-		damage *= 1 + zones.M_dmg + (esc.M_dmg ?? 0);
-		damage *= 1 + zones.M_skill + (esc.M_skill ?? 0);
+		damage *= 1 + zones.M_dmg + escMdmg;
+		damage *= 1 + zones.M_skill + escMskill;
 		damage *= 1 + zones.M_final;
 		damage *= zones.M_synchro;
 

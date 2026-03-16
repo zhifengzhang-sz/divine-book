@@ -34,29 +34,31 @@ export function processBook(
 	ctx: HandlerContext,
 	progression: { enlightenment: number; fusion: number },
 ): BookResult {
-	// Gather all effects: skill + primary affix + exclusive affix + aux affixes
-	const allEffects: EffectRow[] = [];
-	if (bookData.skill) allEffects.push(...bookData.skill);
-	if (bookData.primary_affix)
-		allEffects.push(...bookData.primary_affix.effects);
-	if (bookData.exclusive_affix)
-		allEffects.push(...bookData.exclusive_affix.effects);
-	allEffects.push(...affixEffects);
+	// Gather effects per-source, apply tier selection within each source,
+	// then merge. Tier dedup is only meaningful within a single source —
+	// effects of the same type from different sources must NOT be deduped.
+	const sources: EffectRow[][] = [];
+	if (bookData.skill) sources.push(bookData.skill);
+	if (bookData.primary_affix) sources.push(bookData.primary_affix.effects);
+	if (bookData.exclusive_affix) sources.push(bookData.exclusive_affix.effects);
+	if (affixEffects.length > 0) sources.push(affixEffects);
+
+	const allTiered: EffectRow[] = [];
+	for (const source of sources) {
+		allTiered.push(...selectTiers(source, progression));
+	}
 
 	// Separate direct vs reactive by parent field
-	const directRaw: EffectRow[] = [];
+	const directTiered: EffectRow[] = [];
 	const reactiveRaw: EffectRow[] = [];
-	for (const effect of allEffects) {
+	for (const effect of allTiered) {
 		const parent = effect.parent as string | undefined;
 		if (!parent || parent === "this") {
-			directRaw.push(effect);
+			directTiered.push(effect);
 		} else {
 			reactiveRaw.push(effect);
 		}
 	}
-
-	// Select tiers for direct effects
-	const directTiered = selectTiers(directRaw, progression);
 
 	// Run direct effects through handlers — throws MissingHandlerError if unhandled
 	const handlerResults: HandlerResult[] = [];
@@ -90,8 +92,8 @@ export function processBook(
 	}
 
 	// Build listener registrations for reactive effects (parent != "this")
-	const reactiveTiered = selectTiers(reactiveRaw, progression);
-	for (const effect of reactiveTiered) {
+	// Already tier-selected per-source above
+	for (const effect of reactiveRaw) {
 		const reg = buildListenerRegistration(effect, ctx.book);
 		if (reg) listeners.push(reg);
 	}
