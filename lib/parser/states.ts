@@ -5,16 +5,9 @@
  * and builds a state registry per book.
  */
 
-export interface StateDef {
-	target: "self" | "opponent" | "both";
-	duration: number | "permanent";
-	max_stacks?: number;
-	trigger?: "on_cast" | "on_attacked" | "per_tick";
-	chance?: number;
-	dispellable?: boolean;
-	children?: string[];
-	per_hit_stack?: boolean;
-}
+export type { StateDef } from "../data/types.js";
+
+import type { StateDef } from "../data/types.js";
 
 export type StateRegistry = Record<string, StateDef>;
 
@@ -23,11 +16,8 @@ export type StateRegistry = Record<string, StateDef>;
  * This scans all description text for 【name】 patterns and extracts
  * state properties.
  */
-export function buildStateRegistry(
-	descriptionLines: string[],
-): StateRegistry {
+export function buildStateRegistry(descriptionLines: string[]): StateRegistry {
 	const registry: StateRegistry = {};
-	const fullText = descriptionLines.join("\n");
 
 	// First pass: find all named states
 	for (const line of descriptionLines) {
@@ -45,9 +35,7 @@ export function buildStateRegistry(
 			const createPattern = new RegExp(
 				`(?:添加|获得|施加|进入).*?【${escapeRegex(name)}】`,
 			);
-			const isCreated = descriptionLines.some((l) =>
-				createPattern.test(l),
-			);
+			const isCreated = descriptionLines.some((l) => createPattern.test(l));
 
 			if (hasDef || isCreated) {
 				registry[name] = extractStateDef(name, descriptionLines);
@@ -70,10 +58,7 @@ function escapeRegex(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function extractStateDef(
-	name: string,
-	lines: string[],
-): StateDef {
+function extractStateDef(name: string, lines: string[]): StateDef {
 	// Find the line that defines this state
 	// Handles both 【name】：and 【name】状态：patterns
 	const defLine = lines.find((l) =>
@@ -90,11 +75,7 @@ function extractStateDef(
 		if (idx === -1) continue;
 		const before = line.slice(0, idx);
 
-		if (
-			/对其施加|对敌方施加|对攻击方添加|为目标添加|对目标添加/.test(
-				before,
-			)
-		) {
+		if (/对其施加|对敌方施加|对攻击方添加|为目标添加|对目标添加/.test(before)) {
 			target = "opponent";
 			break;
 		}
@@ -163,10 +144,7 @@ function extractStateDef(
 	}
 	// Check context: "自身每次受到神通攻击时获得"
 	for (const line of lines) {
-		if (
-			line.includes(name) &&
-			/受到(?:伤害|攻击|神通攻击)时/.test(line)
-		) {
+		if (line.includes(name) && /受到(?:伤害|攻击|神通攻击)时/.test(line)) {
 			trigger = "on_attacked";
 		}
 	}
@@ -190,10 +168,7 @@ function extractStateDef(
 	// Per-hit stacking
 	let per_hit_stack: boolean | undefined;
 	for (const line of lines) {
-		if (
-			line.includes(name) &&
-			/每段攻击.*?添加.*?层/.test(line)
-		) {
+		if (line.includes(name) && /每段攻击.*?添加.*?层/.test(line)) {
 			per_hit_stack = true;
 		}
 	}
@@ -208,24 +183,17 @@ function extractStateDef(
 	return result;
 }
 
-function findChildren(
-	parentName: string,
-	lines: string[],
-): string[] {
+function findChildren(parentName: string, lines: string[]): string[] {
 	const children: string[] = [];
 
 	for (const line of lines) {
 		if (!line.includes(parentName)) continue;
 
 		// Pattern: 添加1层【X】与【Y】
-		const multiMatch = line.match(
-			/添加.*?层【(.+?)】与【(.+?)】/,
-		);
+		const multiMatch = line.match(/添加.*?层【(.+?)】与【(.+?)】/);
 		if (multiMatch) {
-			if (multiMatch[1] !== parentName)
-				children.push(multiMatch[1]);
-			if (multiMatch[2] !== parentName)
-				children.push(multiMatch[2]);
+			if (multiMatch[1] !== parentName) children.push(multiMatch[1]);
+			if (multiMatch[2] !== parentName) children.push(multiMatch[2]);
 		}
 	}
 
@@ -233,7 +201,10 @@ function findChildren(
 	// These are lines like "【噬心魔咒】：..." that appear after the parent definition
 	let afterParent = false;
 	for (const line of lines) {
-		if (line.includes(`【${parentName}】：`) || line.includes(`【${parentName}】,`)) {
+		if (
+			line.includes(`【${parentName}】：`) ||
+			line.includes(`【${parentName}】,`)
+		) {
 			afterParent = true;
 			continue;
 		}

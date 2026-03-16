@@ -8,7 +8,7 @@
  *   bun app/parse-main-skills.ts -o data/yaml/books.yaml  # write to file
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {

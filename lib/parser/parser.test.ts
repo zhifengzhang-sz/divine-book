@@ -1,11 +1,11 @@
-import { describe, it, expect } from "bun:test";
-import { readFileSync, existsSync } from "node:fs";
+import { describe, expect, it } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { readMainSkillTables, splitCell } from "./md-table.js";
 import { BOOK_TABLE } from "./book-table.js";
-import { buildStateRegistry } from "./states.js";
-import { parseMainSkills, parseSingleBook } from "./index.js";
 import { readExclusiveAffixTable } from "./exclusive.js";
+import { parseMainSkills, parseSingleBook } from "./index.js";
+import { readMainSkillTables, splitCell } from "./md-table.js";
+import { buildStateRegistry } from "./states.js";
 
 const RAW_PATH = resolve("data/raw/主书.md");
 const EXCLUSIVE_PATH = resolve("data/raw/专属词缀.md");
@@ -45,18 +45,18 @@ describe("readMainSkillTables", () => {
 	it("preserves raw skill text", () => {
 		const qianfeng = entries.find((e) => e.name === "千锋聚灵剑");
 		expect(qianfeng).toBeDefined();
-		expect(qianfeng!.skillText).toContain("六段共计");
-		expect(qianfeng!.skillText).toContain("<br>");
+		expect(qianfeng?.skillText).toContain("六段共计");
+		expect(qianfeng?.skillText).toContain("<br>");
 	});
 
 	it("preserves raw affix text", () => {
 		const qianfeng = entries.find((e) => e.name === "千锋聚灵剑");
-		expect(qianfeng!.affixText).toContain("惊神剑光");
+		expect(qianfeng?.affixText).toContain("惊神剑光");
 	});
 
 	it("handles empty affix cells", () => {
 		const wuji = entries.find((e) => e.name === "无极御剑诀");
-		expect(wuji!.affixText).toBe("");
+		expect(wuji?.affixText).toBe("");
 	});
 });
 
@@ -72,9 +72,7 @@ describe("splitCell", () => {
 	});
 
 	it("parses tier variables", () => {
-		const result = splitCell(
-			"text<br>悟0境：x=1500, y=11, z=2200",
-		);
+		const result = splitCell("text<br>悟0境：x=1500, y=11, z=2200");
 		expect(result.tiers[0].vars).toEqual({
 			x: 1500,
 			y: 11,
@@ -84,9 +82,7 @@ describe("splitCell", () => {
 	});
 
 	it("parses fusion tiers", () => {
-		const result = splitCell(
-			"text<br>悟1境，融合20重：x=11265, y=15",
-		);
+		const result = splitCell("text<br>悟1境，融合20重：x=11265, y=15");
 		expect(result.tiers[0].enlightenment).toBe(1);
 		expect(result.tiers[0].fusion).toBe(20);
 	});
@@ -132,7 +128,7 @@ describe("BOOK_TABLE", () => {
 		for (const entry of entries) {
 			const meta = BOOK_TABLE[entry.name];
 			expect(meta).toBeDefined();
-			expect(meta!.school).toBe(entry.school);
+			expect(meta?.school).toBe(entry.school);
 		}
 	});
 });
@@ -210,21 +206,21 @@ describe("parseMainSkills", () => {
 	});
 
 	it("every book has a school", () => {
-		for (const [name, book] of Object.entries(result.books)) {
+		for (const [_name, book] of Object.entries(result.books)) {
 			expect(book.school).toBeTruthy();
 		}
 	});
 
 	it("every book has skill effects", () => {
-		for (const [name, book] of Object.entries(result.books)) {
+		for (const [_name, book] of Object.entries(result.books)) {
 			expect(book.skill).toBeDefined();
-			expect(book.skill!.length).toBeGreaterThan(0);
+			expect(book.skill?.length).toBeGreaterThan(0);
 		}
 	});
 
 	it("every book has base_attack in skills", () => {
-		for (const [name, book] of Object.entries(result.books)) {
-			const hasBA = book.skill!.some((e) => e.type === "base_attack");
+		for (const [_name, book] of Object.entries(result.books)) {
+			const hasBA = book.skill?.some((e) => e.type === "base_attack");
 			expect(hasBA).toBe(true);
 		}
 	});
@@ -255,12 +251,10 @@ describe("千锋聚灵剑 (G2, multi-tier)", () => {
 
 	it("has primary affix 惊神剑光", () => {
 		expect(parsed.primaryAffix).toBeDefined();
-		expect(parsed.primaryAffix!.name).toBe("惊神剑光");
-		expect(parsed.primaryAffix!.effects.length).toBe(2);
-		expect(parsed.primaryAffix!.effects[0].type).toBe(
-			"per_hit_escalation",
-		);
-		expect(parsed.primaryAffix!.effects[0].value).toBe(25);
+		expect(parsed.primaryAffix?.name).toBe("惊神剑光");
+		expect(parsed.primaryAffix?.effects.length).toBe(2);
+		expect(parsed.primaryAffix?.effects[0].type).toBe("per_hit_escalation");
+		expect(parsed.primaryAffix?.effects[0].value).toBe(25);
 	});
 });
 
@@ -276,7 +270,7 @@ describe("春黎剑阵 (G2, summon)", () => {
 	});
 
 	it("has summon_buff affix", () => {
-		expect(parsed.primaryAffix!.effects[0].type).toBe("summon_buff");
+		expect(parsed.primaryAffix?.effects[0].type).toBe("summon_buff");
 	});
 });
 
@@ -307,13 +301,9 @@ describe("大罗幻诀 (G3, counter_debuff with children)", () => {
 	});
 
 	it("has counter_debuff_upgrade + cross_slot_debuff affix", () => {
-		expect(parsed.primaryAffix!.name).toBe("魔魂咒界");
-		expect(parsed.primaryAffix!.effects[0].type).toBe(
-			"counter_debuff_upgrade",
-		);
-		expect(parsed.primaryAffix!.effects[1].type).toBe(
-			"cross_slot_debuff",
-		);
+		expect(parsed.primaryAffix?.name).toBe("魔魂咒界");
+		expect(parsed.primaryAffix?.effects[0].type).toBe("counter_debuff_upgrade");
+		expect(parsed.primaryAffix?.effects[1].type).toBe("cross_slot_debuff");
 	});
 });
 
@@ -347,18 +337,14 @@ describe("十方真魄 (G5, self_hp_cost + counter_buff)", () => {
 			(e) => e.type === "self_buff" && e.name === "怒灵降世",
 		);
 		expect(buff).toBeDefined();
-		expect(buff!.attack_bonus).toBe(20);
-		expect(buff!.damage_reduction).toBe(20);
-		expect(buff!.duration).toBe(4);
+		expect(buff?.attack_bonus).toBe(20);
+		expect(buff?.damage_reduction).toBe(20);
+		expect(buff?.duration).toBe(4);
 	});
 
 	it("has self_buff_extend + periodic_cleanse affix", () => {
-		expect(parsed.primaryAffix!.effects[0].type).toBe(
-			"self_buff_extend",
-		);
-		expect(parsed.primaryAffix!.effects[1].type).toBe(
-			"periodic_cleanse",
-		);
+		expect(parsed.primaryAffix?.effects[0].type).toBe("self_buff_extend");
+		expect(parsed.primaryAffix?.effects[1].type).toBe("periodic_cleanse");
 	});
 });
 
@@ -389,12 +375,12 @@ describe("甲元仙符 (G3, multi-tier with locked)", () => {
 			(e) => e.type === "self_buff" && e.name === "仙佑",
 		);
 		expect(buff).toBeDefined();
-		expect(buff!.attack_bonus).toBe(70);
+		expect(buff?.attack_bonus).toBe(70);
 	});
 
 	it("affix has locked + tiered self_buff_extra", () => {
-		expect(parsed.primaryAffix!.effects[0].data_state).toBe("locked");
-		expect(parsed.primaryAffix!.effects[1].healing_bonus).toBe(70);
+		expect(parsed.primaryAffix?.effects[0].data_state).toBe("locked");
+		expect(parsed.primaryAffix?.effects[1].healing_bonus).toBe(70);
 	});
 });
 
@@ -414,8 +400,8 @@ describe("煞影千幻 (G5, shield + debuff)", () => {
 			(e) => e.type === "debuff" && e.name === "落星",
 		);
 		expect(debuff).toBeDefined();
-		expect(debuff!.dispellable).toBe(false);
-		expect(debuff!.per_hit_stack).toBe(true);
+		expect(debuff?.dispellable).toBe(false);
+		expect(debuff?.per_hit_stack).toBe(true);
 	});
 });
 
@@ -423,13 +409,11 @@ describe("无相魔劫咒 (G3, delayed_burst)", () => {
 	const parsed = parseSingleBook(markdown, "无相魔劫咒")!;
 
 	it("has delayed_burst with correct values", () => {
-		const burst = parsed.skill.find(
-			(e) => e.type === "delayed_burst",
-		);
+		const burst = parsed.skill.find((e) => e.type === "delayed_burst");
 		expect(burst).toBeDefined();
-		expect(burst!.name).toBe("无相魔劫");
-		expect(burst!.duration).toBe(12);
-		expect(burst!.data_state).toBe("enlightenment=0");
+		expect(burst?.name).toBe("无相魔劫");
+		expect(burst?.duration).toBe(12);
+		expect(burst?.data_state).toBe("enlightenment=0");
 	});
 });
 
@@ -481,7 +465,7 @@ describe("states in BookData output", () => {
 		expect(states["罗天魔咒"].chance).toBe(30);
 		expect(states["罗天魔咒"].trigger).toBe("on_attacked");
 		expect(states["罗天魔咒"].children).toBeDefined();
-		expect(states["罗天魔咒"].children!.length).toBeGreaterThan(0);
+		expect(states["罗天魔咒"].children?.length).toBeGreaterThan(0);
 	});
 
 	it("回生灵鹤 has duration 20", () => {
@@ -512,21 +496,17 @@ describe("玄煞灵影诀 (G3, self_hp_cost as DoT)", () => {
 	const parsed = parseSingleBook(markdown, "玄煞灵影诀")!;
 
 	it("has self_hp_cost with tick_interval", () => {
-		const cost = parsed.skill.find(
-			(e) => e.type === "self_hp_cost",
-		);
+		const cost = parsed.skill.find((e) => e.type === "self_hp_cost");
 		expect(cost).toBeDefined();
-		expect(cost!.tick_interval).toBe(1);
-		expect(cost!.name).toBe("怒意滔天");
-		expect(cost!.duration).toBe("permanent");
+		expect(cost?.tick_interval).toBe(1);
+		expect(cost?.name).toBe("怒意滔天");
+		expect(cost?.duration).toBe("permanent");
 	});
 
 	it("has self_lost_hp_damage with parent", () => {
-		const dmg = parsed.skill.find(
-			(e) => e.type === "self_lost_hp_damage",
-		);
+		const dmg = parsed.skill.find((e) => e.type === "self_lost_hp_damage");
 		expect(dmg).toBeDefined();
-		expect(dmg!.parent).toBe("怒意滔天");
+		expect(dmg?.parent).toBe("怒意滔天");
 	});
 });
 
@@ -565,27 +545,29 @@ describe("parseMainSkills with exclusive affixes", () => {
 	it("通天剑诀 exclusive: ignore_damage_reduction + damage_increase", () => {
 		const book = result.books["通天剑诀"];
 		expect(book.exclusive_affix).toBeDefined();
-		expect(book.exclusive_affix!.name).toBe("神威冲云");
+		expect(book.exclusive_affix?.name).toBe("神威冲云");
 		const effects = book.exclusive_affix!.effects;
-		expect(effects.some((e) => e.type === "ignore_damage_reduction")).toBe(true);
+		expect(effects.some((e) => e.type === "ignore_damage_reduction")).toBe(
+			true,
+		);
 		expect(effects.some((e) => e.type === "damage_increase")).toBe(true);
 	});
 
 	it("春黎剑阵 exclusive: dot with on_dispel child", () => {
 		const book = result.books["春黎剑阵"];
-		expect(book.exclusive_affix!.name).toBe("玄心剑魄");
+		expect(book.exclusive_affix?.name).toBe("玄心剑魄");
 		const effects = book.exclusive_affix!.effects;
 		const dot = effects.find((e) => e.type === "dot");
 		expect(dot).toBeDefined();
-		expect(dot!.name).toBe("噬心");
+		expect(dot?.name).toBe("噬心");
 		const dispel = effects.find((e) => e.type === "on_dispel");
 		expect(dispel).toBeDefined();
-		expect(dispel!.parent).toBe("噬心");
+		expect(dispel?.parent).toBe("噬心");
 	});
 
 	it("新-青元剑诀 exclusive: multi-tier next_skill_buff", () => {
 		const book = result.books["新-青元剑诀"];
-		expect(book.exclusive_affix!.name).toBe("天威煌煌");
+		expect(book.exclusive_affix?.name).toBe("天威煌煌");
 		const effects = book.exclusive_affix!.effects;
 		const buffs = effects.filter((e) => e.type === "next_skill_buff");
 		expect(buffs.length).toBe(3);
@@ -595,19 +577,19 @@ describe("parseMainSkills with exclusive affixes", () => {
 
 	it("无相魔劫咒 exclusive: debuff + conditional_damage with parent", () => {
 		const book = result.books["无相魔劫咒"];
-		expect(book.exclusive_affix!.name).toBe("无相魔威");
+		expect(book.exclusive_affix?.name).toBe("无相魔威");
 		const effects = book.exclusive_affix!.effects;
 		const debuff = effects.find((e) => e.type === "debuff");
 		expect(debuff).toBeDefined();
-		expect(debuff!.name).toBe("魔劫");
+		expect(debuff?.name).toBe("魔劫");
 		const cond = effects.find((e) => e.type === "conditional_damage");
 		expect(cond).toBeDefined();
-		expect(cond!.parent).toBe("魔劫");
+		expect(cond?.parent).toBe("魔劫");
 	});
 
 	it("解体化形 exclusive: probability_multiplier with tiers", () => {
 		const book = result.books["解体化形"];
-		expect(book.exclusive_affix!.name).toBe("心逐神随");
+		expect(book.exclusive_affix?.name).toBe("心逐神随");
 		const effects = book.exclusive_affix!.effects;
 		const mults = effects.filter((e) => e.type === "probability_multiplier");
 		expect(mults.length).toBe(2); // two tiers
@@ -615,11 +597,175 @@ describe("parseMainSkills with exclusive affixes", () => {
 
 	it("天煞破虚诀 exclusive: periodic_dispel with damage", () => {
 		const book = result.books["天煞破虚诀"];
-		expect(book.exclusive_affix!.name).toBe("天煞破虚");
+		expect(book.exclusive_affix?.name).toBe("天煞破虚");
 		const effects = book.exclusive_affix!.effects;
 		const dispel = effects.find((e) => e.type === "periodic_dispel");
 		expect(dispel).toBeDefined();
-		expect(dispel!.damage_percent_of_skill).toBe(25.5);
-		expect(dispel!.no_buff_double).toBe(true);
+		expect(dispel?.damage_percent_of_skill).toBe(25.5);
+		expect(dispel?.no_buff_double).toBe(true);
+	});
+});
+
+// ─── Common & School Affixes ────────────────────────────
+
+import {
+	parseCommonAffixes,
+	readSchoolAffixTable,
+	readUniversalAffixTable,
+} from "./common-affixes.js";
+
+const UNIVERSAL_PATH = resolve("data/raw/通用词缀.md");
+const SCHOOL_PATH = resolve("data/raw/修为词缀.md");
+const universalMd = existsSync(UNIVERSAL_PATH)
+	? readFileSync(UNIVERSAL_PATH, "utf-8")
+	: undefined;
+const schoolMd = existsSync(SCHOOL_PATH)
+	? readFileSync(SCHOOL_PATH, "utf-8")
+	: undefined;
+
+describe("readUniversalAffixTable", () => {
+	if (!universalMd) return;
+	const entries = readUniversalAffixTable(universalMd);
+
+	it("reads 16 universal affix entries", () => {
+		expect(entries.length).toBe(16);
+	});
+
+	it("entries have no school", () => {
+		for (const e of entries) {
+			expect(e.school).toBeUndefined();
+		}
+	});
+
+	it("extracts names correctly", () => {
+		const names = entries.map((e) => e.name);
+		expect(names).toContain("咒书");
+		expect(names).toContain("通明");
+		expect(names).toContain("福荫");
+	});
+});
+
+describe("readSchoolAffixTable", () => {
+	if (!schoolMd) return;
+	const entries = readSchoolAffixTable(schoolMd);
+
+	it("reads 17 school affix entries", () => {
+		expect(entries.length).toBe(17);
+	});
+
+	it("assigns correct schools", () => {
+		const sword = entries.filter((e) => e.school === "Sword");
+		const spell = entries.filter((e) => e.school === "Spell");
+		const demon = entries.filter((e) => e.school === "Demon");
+		const body = entries.filter((e) => e.school === "Body");
+		expect(sword.length).toBe(4);
+		expect(spell.length).toBe(4);
+		expect(demon.length).toBe(4);
+		expect(body.length).toBe(5);
+	});
+});
+
+describe("parseCommonAffixes", () => {
+	if (!universalMd || !schoolMd) return;
+	const result = parseCommonAffixes(universalMd, schoolMd);
+
+	it("parses all 16 universal affixes", () => {
+		expect(Object.keys(result.universal).length).toBe(16);
+	});
+
+	it("parses all 17 school affixes across 4 schools", () => {
+		const schools = Object.keys(result.school);
+		expect(schools.length).toBe(4);
+		const total = Object.values(result.school).reduce(
+			(s, g) => s + Object.keys(g).length,
+			0,
+		);
+		expect(total).toBe(17);
+	});
+
+	it("no empty effects arrays", () => {
+		for (const [_name, data] of Object.entries(result.universal)) {
+			expect(data.effects.length).toBeGreaterThan(0);
+		}
+		for (const [_school, affixes] of Object.entries(result.school)) {
+			for (const [_name, data] of Object.entries(affixes)) {
+				expect(data.effects.length).toBeGreaterThan(0);
+			}
+		}
+	});
+
+	it("no warnings", () => {
+		expect(result.warnings).toHaveLength(0);
+	});
+
+	// Spot checks — universal
+	it("咒书: debuff_strength value=20", () => {
+		const e = result.universal["咒书"].effects;
+		expect(e[0].type).toBe("debuff_strength");
+		expect(e[0].value).toBe(20);
+	});
+
+	it("通明: guaranteed_resonance 1.2/25%/1.5", () => {
+		const e = result.universal["通明"].effects;
+		expect(e[0].type).toBe("guaranteed_resonance");
+		expect(e[0].base_multiplier).toBe(1.2);
+		expect(e[0].chance).toBe(25);
+		expect(e[0].upgraded_multiplier).toBe(1.5);
+	});
+
+	it("福荫: random_buff all=20", () => {
+		const e = result.universal["福荫"].effects;
+		expect(e[0].type).toBe("random_buff");
+		expect(e[0].attack).toBe(20);
+	});
+
+	it("斩岳: flat_extra_damage value=2000", () => {
+		const e = result.universal["斩岳"].effects;
+		expect(e[0].type).toBe("flat_extra_damage");
+		expect(e[0].value).toBe(2000);
+	});
+
+	// Spot checks — school
+	it("灵犀九重 (Sword): guaranteed_resonance 2.97/25%/3.97", () => {
+		const e = result.school["Sword"]["灵犀九重"].effects;
+		expect(e[0].type).toBe("guaranteed_resonance");
+		expect(e[0].base_multiplier).toBe(2.97);
+		expect(e[0].upgraded_multiplier).toBe(3.97);
+	});
+
+	it("破碎无双 (Sword): triple_bonus", () => {
+		const e = result.school["Sword"]["破碎无双"].effects;
+		expect(e[0].type).toBe("triple_bonus");
+		expect(e[0].attack_bonus).toBe(15);
+		expect(e[0].damage_increase).toBe(15);
+		expect(e[0].crit_damage_increase).toBe(15);
+	});
+
+	it("天命有归 (Spell): probability_to_certain", () => {
+		const e = result.school["Spell"]["天命有归"].effects;
+		expect(e[0].type).toBe("probability_to_certain");
+		expect(e[0].damage_increase).toBe(50);
+	});
+
+	it("溃魂击瑕 (Demon): execute_conditional with guaranteed_crit", () => {
+		const e = result.school["Demon"]["溃魂击瑕"].effects;
+		expect(e[0].type).toBe("execute_conditional");
+		expect(e[0].damage_increase).toBe(100);
+		expect(e[0].guaranteed_crit).toBe(1);
+	});
+
+	it("意坠深渊 (Body): min_lost_hp_threshold", () => {
+		const e = result.school["Body"]["意坠深渊"].effects;
+		expect(e[0].type).toBe("min_lost_hp_threshold");
+		expect(e[0].min_percent).toBe(11);
+		expect(e[0].damage_increase).toBe(50);
+	});
+
+	it("贪狼吞星 (Body): per_enemy_lost_hp only (not per_self_lost_hp)", () => {
+		const e = result.school["Body"]["贪狼吞星"].effects;
+		expect(e.length).toBe(1);
+		expect(e[0].type).toBe("per_enemy_lost_hp");
+		expect(e[0].per_percent).toBe(1);
+		expect(e[0].value).toBe(1);
 	});
 });

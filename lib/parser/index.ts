@@ -8,12 +8,12 @@
  * 4. Emit YAML output
  */
 
-import { readMainSkillTables, splitCell } from "./md-table.js";
 import { BOOK_TABLE } from "./book-table.js";
-import { parseBook, type ParsedBook } from "./split.js";
-import { emitBooks, formatYaml } from "./emit.js";
-import { readExclusiveAffixTable, parseExclusiveAffix } from "./exclusive.js";
 import type { BookData } from "./emit.js";
+import { emitBooks, formatYaml } from "./emit.js";
+import { parseExclusiveAffix, readExclusiveAffixTable } from "./exclusive.js";
+import { readMainSkillTables, splitCell } from "./md-table.js";
+import { type ParsedBook, parseBook } from "./split.js";
 
 export interface ParseResult {
 	books: Record<string, BookData>;
@@ -62,13 +62,9 @@ export function parseMainSkills(
 			);
 
 			// Validate: must have at least base_attack
-			const hasBaseAttack = parsed.skill.some(
-				(e) => e.type === "base_attack",
-			);
+			const hasBaseAttack = parsed.skill.some((e) => e.type === "base_attack");
 			if (!hasBaseAttack && parsed.skill.length > 0) {
-				warnings.push(
-					`${entry.name}: no base_attack found in skill effects`,
-				);
+				warnings.push(`${entry.name}: no base_attack found in skill effects`);
 			}
 
 			parsedBooks.set(entry.name, parsed);
@@ -154,7 +150,9 @@ export function parseSingleBook(
 	// Merge exclusive affix if provided
 	if (exclusiveMarkdown) {
 		const exclusiveEntries = readExclusiveAffixTable(exclusiveMarkdown);
-		const exclusiveEntry = exclusiveEntries.find((e) => e.bookName === bookName);
+		const exclusiveEntry = exclusiveEntries.find(
+			(e) => e.bookName === bookName,
+		);
 		if (exclusiveEntry) {
 			const states = parsed.states ?? {};
 			parsed.exclusiveAffix = parseExclusiveAffix(exclusiveEntry, states);

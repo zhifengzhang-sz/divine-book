@@ -18,9 +18,7 @@ export interface TierSpec {
  * Build data_state from tier spec.
  * Returns undefined if no progression qualifier, "locked" for locked tiers.
  */
-export function buildDataState(
-	tier: TierSpec,
-): undefined | string | string[] {
+export function buildDataState(tier: TierSpec): undefined | string | string[] {
 	if (tier.locked) return "locked";
 
 	const parts: string[] = [];
@@ -68,7 +66,11 @@ export function resolveFields(
 			out[key] = val;
 		} else if (typeof val === "string" && vars[val] !== undefined) {
 			out[key] = vars[val];
-		} else if (typeof val === "string" && val.startsWith("-") && vars[val.slice(1)] !== undefined) {
+		} else if (
+			typeof val === "string" &&
+			val.startsWith("-") &&
+			vars[val.slice(1)] !== undefined
+		) {
 			// Negated variable reference: "-x" → -vars.x
 			out[key] = -vars[val.slice(1)];
 		} else if (typeof val === "string") {

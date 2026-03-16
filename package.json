@@ -3,22 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "parse": "bun app/parse.ts data/normalized/normalized.data.md data/yaml",
-    "map": "bun app/map.ts",
-    "generate": "bun app/generate.ts",
-    "candidates": "bun app/candidates.ts",
-    "sync-style": "bun scripts/sync-style.ts",
-    "verify-domain": "bun scripts/verify-domain.ts",
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test"
   },
   "dependencies": {
-    "xstate": "^5.28.0",
-    "yaml": "^2.7.1",
-    "zod": "^3.25.67"
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.4",
-    "@types/bun": "^1.3.9"
+    "@types/bun": "^1.3.9",
+    "typescript": "^5.9.3"
   }
 }
