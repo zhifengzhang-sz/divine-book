@@ -415,4 +415,4 @@ flowchart TB
     MB -. "DEATH (absorbing boundary)" .-> STOP
 ```
 
-The simulator is a player-state-event generator. Books are reactive declarations. Named states are event emitters. Players are event processors. Time is events. The simulation is the event stream. DEATH is the absorbing boundary.
+The diagram above is the complete system. Configuration enters from the top. Two player state machines exchange intent events across the boundary. State-change events flow downward into the output stream. Subscribers derive whatever they need from that stream. When either player reaches the absorbing boundary, the process terminates and the stream is complete.
