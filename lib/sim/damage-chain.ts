@@ -16,7 +16,7 @@ export function buildHitEvents(
 	let hits = 0;
 	let flatExtra = 0;
 	let spDamage = 0;
-	const zones = { M_dmg: 0, M_skill: 0, M_final: 0, M_synchro: 1 };
+	const zones = { S_coeff: 0, M_dmg: 0, M_skill: 0, M_final: 0, M_synchro: 1 };
 
 	// Collect escalation and per-hit effect functions (last one wins per category)
 	let escalationFn:
@@ -30,6 +30,7 @@ export function buildHitEvents(
 		if (r.flatExtra !== undefined) flatExtra += r.flatExtra;
 		if (r.spDamage !== undefined) spDamage += r.spDamage;
 		if (r.zones) {
+			zones.S_coeff += r.zones.S_coeff ?? 0;
 			zones.M_dmg += r.zones.M_dmg ?? 0;
 			zones.M_skill += r.zones.M_skill ?? 0;
 			zones.M_final += r.zones.M_final ?? 0;
@@ -50,7 +51,8 @@ export function buildHitEvents(
 
 	for (let k = 0; k < hits; k++) {
 		const esc = escalationFn?.(k) ?? {};
-		let damage = (perHitPercent / 100) * atk + perHitFlat;
+		// combat.md §2.1: (D_base × S_coeff + D_flat) × zones
+		let damage = (perHitPercent / 100) * atk * (1 + zones.S_coeff) + perHitFlat;
 		damage *= 1 + zones.M_dmg + (esc.M_dmg ?? 0);
 		damage *= 1 + zones.M_skill + (esc.M_skill ?? 0);
 		damage *= 1 + zones.M_final;

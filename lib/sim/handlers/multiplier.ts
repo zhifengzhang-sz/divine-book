@@ -37,23 +37,9 @@ register("skill_damage_increase", (effect) => ({
 }));
 
 // attack_bonus: { value }
-// Multiplicative ATK scaling. In the damage chain this is an ATK multiplier,
-// but we model it as a self buff that changes effective ATK.
+// ATK scaling zone (S_coeff in combat.md §2.1).
+// Cast-scoped: multiplies ATK within the damage chain for this cast.
+// NOT a persistent state — it's a zone like M_dmg or M_skill.
 register("attack_bonus", (effect) => ({
-	intents: [
-		{
-			type: "APPLY_STATE" as const,
-			state: {
-				name: "attack_bonus",
-				kind: "buff" as const,
-				source: "",
-				target: "self" as const,
-				effects: [{ stat: "attack_bonus", value: effect.value as number }],
-				remainingDuration: 0, // lasts for cast
-				stacks: 1,
-				maxStacks: 1,
-				dispellable: true,
-			},
-		},
-	],
+	zones: { S_coeff: (effect.value as number) / 100 },
 }));

@@ -33,6 +33,7 @@ export interface HandlerResult {
 	flatExtra?: number;
 	/** Multiplicative zone contributions */
 	zones?: {
+		S_coeff?: number;
 		M_dmg?: number;
 		M_skill?: number;
 		M_final?: number;

@@ -228,8 +228,7 @@ export const playerMachine = setup({
 							context.listeners.push(listener);
 						}
 
-						// Step 2: Separate events by category
-						const preBuffs: IntentEvent[] = [];
+						// Separate self-targeted vs opponent-targeted events
 						const selfEvents: IntentEvent[] = [];
 						const opponentHits: HitEvent[] = [];
 						const opponentIntents: IntentEvent[] = [];
@@ -237,17 +236,6 @@ export const playerMachine = setup({
 						for (const ev of result.directEvents) {
 							if (ev.type === "HIT") {
 								opponentHits.push(ev);
-							} else if (
-								ev.type === "APPLY_STATE" &&
-								ev.state.target === "self" &&
-								ev.state.effects.some(
-									(e) =>
-										e.stat === "attack_bonus" ||
-										e.stat === "defense_bonus",
-								)
-							) {
-								// Stat buffs must apply BEFORE damage computation
-								preBuffs.push(ev);
 							} else if (isSelfTargeted(ev)) {
 								selfEvents.push(ev);
 							} else {
@@ -255,42 +243,15 @@ export const playerMachine = setup({
 							}
 						}
 
-						// Step 3: Apply stat buffs first → recalc ATK/DEF
-						for (const ev of preBuffs) {
-							processSelfIntent(context, ev, enqueue);
-						}
-
-						// Step 4: Re-run damage chain with buffed ATK if any pre-buffs applied
-						let finalHits = opponentHits;
-						if (preBuffs.length > 0 && opponentHits.length > 0) {
-							const rebuildResult = processBook(
-								bookData,
-								affixEffects,
-								{
-									sourcePlayer: context.state,
-									targetPlayer: context.state,
-									book: bookSlot.platform,
-									slot,
-									rng: context.rng,
-									atk: context.state.atk, // now uses buffed ATK
-									hits: extractHits(bookData, context.progression),
-								},
-								context.progression,
-							);
-							finalHits = rebuildResult.directEvents.filter(
-								(e): e is HitEvent => e.type === "HIT",
-							);
-						}
-
 						// Store hits and intents for arena to collect
 						enqueue(
 							assign({
-								pendingHits: finalHits,
+								pendingHits: opponentHits,
 								pendingIntents: opponentIntents,
 							}),
 						);
 
-						// Process remaining self-targeted events
+						// Process self-targeted events
 						for (const ev of selfEvents) {
 							processSelfIntent(context, ev, enqueue);
 						}
