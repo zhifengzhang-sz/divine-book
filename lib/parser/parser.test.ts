@@ -677,6 +677,187 @@ describe("十方真魄 — self-heal on lost-HP damage", () => {
 	});
 });
 
+// ─── Parser Coverage Gap Audit Fixes ─────────────────────
+
+describe("周天星元 — shield trigger, per-tick heal, heal echo damage", () => {
+	const parsed = parseSingleBook(markdown, "周天星元")!;
+
+	it("has per-tick self_heal from 灵鹤 HoT", () => {
+		const heal = parsed.skill.find(
+			(e) => e.type === "self_heal" && e.name === "灵鹤",
+		);
+		expect(heal).toBeDefined();
+		expect(heal?.tick_interval).toBe(1);
+		expect(heal?.per_tick).toBe(3.5);
+		expect(heal?.total).toBe(70);
+	});
+
+	it("has heal_echo_damage effect", () => {
+		const echo = parsed.skill.find((e) => e.type === "heal_echo_damage");
+		expect(echo).toBeDefined();
+		expect(echo?.ratio).toBe(1);
+	});
+
+	it("shield affix has trigger: per_tick", () => {
+		const shield = parsed.primaryAffix?.effects.find(
+			(e) => e.type === "shield",
+		);
+		expect(shield).toBeDefined();
+		expect(shield?.trigger).toBe("per_tick");
+	});
+});
+
+describe("天刹真魔 — cycling debuff with lethal_rate", () => {
+	const parsed = parseSingleBook(markdown, "天刹真魔")!;
+
+	it("has 6 affix effects (counter_debuff + 5 stat reductions)", () => {
+		expect(parsed.primaryAffix?.effects.length).toBe(6);
+	});
+
+	it("has lethal_rate_reduction (致命率)", () => {
+		const lr = parsed.primaryAffix?.effects.find(
+			(e) => e.type === "lethal_rate_reduction",
+		);
+		expect(lr).toBeDefined();
+		expect(lr?.value).toBe(-50);
+		expect(lr?.cycle_interval).toBe(3);
+		expect(lr?.rotating).toBe(true);
+	});
+
+	it("all stat reductions have cycle_interval and rotating", () => {
+		const reductions = parsed.primaryAffix?.effects.filter(
+			(e) => e.type !== "counter_debuff",
+		);
+		for (const r of reductions ?? []) {
+			expect(r.cycle_interval).toBe(3);
+			expect(r.rotating).toBe(true);
+		}
+	});
+});
+
+describe("元磁神光 — 天狼之啸 max_stacks from variable", () => {
+	const parsed = parseSingleBook(markdown, "元磁神光")!;
+
+	it("天狼之啸 state has max_stacks=3", () => {
+		expect(parsed.states?.["天狼之啸"]?.max_stacks).toBe(3);
+	});
+});
+
+describe("春黎剑阵 — summon trigger: on_cast", () => {
+	const parsed = parseSingleBook(markdown, "春黎剑阵")!;
+
+	it("summon has trigger: on_cast", () => {
+		const summon = parsed.skill.find((e) => e.type === "summon");
+		expect(summon?.trigger).toBe("on_cast");
+	});
+});
+
+describe("九天真雷诀 — conditional_damage max_triggers: 3", () => {
+	const parsed = parseSingleBook(markdown, "九天真雷诀")!;
+
+	it("conditional_damage has max_triggers=3", () => {
+		const cond = parsed.skill.find((e) => e.type === "conditional_damage");
+		expect(cond).toBeDefined();
+		expect(cond?.max_triggers).toBe(3);
+	});
+});
+
+describe("九重天凤诀 — no duplicate self_lost_hp_damage", () => {
+	const parsed = parseSingleBook(markdown, "九重天凤诀")!;
+
+	it("has exactly 4 skill effects (no duplicate)", () => {
+		expect(parsed.skill.length).toBe(4);
+	});
+
+	it("has exactly one self_lost_hp_damage (per_hit version)", () => {
+		const dmgs = parsed.skill.filter((e) => e.type === "self_lost_hp_damage");
+		expect(dmgs.length).toBe(1);
+		expect(dmgs[0].per_hit).toBe(true);
+	});
+});
+
+describe("玄煞灵影诀 — includes_hp_spent", () => {
+	const parsed = parseSingleBook(markdown, "玄煞灵影诀")!;
+
+	it("self_lost_hp_damage has includes_hp_spent: true", () => {
+		const dmg = parsed.skill.find((e) => e.type === "self_lost_hp_damage");
+		expect(dmg).toBeDefined();
+		expect(dmg?.includes_hp_spent).toBe(true);
+	});
+
+	it("affix self_lost_hp_damage also has includes_hp_spent", () => {
+		const affix = parsed.primaryAffix?.effects.find(
+			(e) => e.type === "self_lost_hp_damage",
+		);
+		expect(affix?.includes_hp_spent).toBe(true);
+	});
+});
+
+describe("星元化岳 — echo_damage ignore_damage_bonus", () => {
+	const parsed = parseSingleBook(markdown, "星元化岳")!;
+
+	it("echo_damage debuff has ignore_damage_bonus: true", () => {
+		const echo = parsed.skill.find((e) => e.target === "echo_damage");
+		expect(echo).toBeDefined();
+		expect(echo?.ignore_damage_bonus).toBe(true);
+	});
+});
+
+describe("无极御剑诀 — cross_skill accumulation", () => {
+	const parsed = parseSingleBook(markdown, "无极御剑诀")!;
+
+	it("percent_current_hp_damage has accumulation: cross_skill", () => {
+		const dmg = parsed.skill.find(
+			(e) => e.type === "percent_current_hp_damage",
+		);
+		expect(dmg).toBeDefined();
+		expect(dmg?.accumulation).toBe("cross_skill");
+	});
+});
+
+describe("大罗幻诀 — child DoT duration=4", () => {
+	const parsed = parseSingleBook(markdown, "大罗幻诀")!;
+
+	it("噬心之咒 state has duration=4", () => {
+		expect(parsed.states?.["噬心之咒"]?.duration).toBe(4);
+	});
+
+	it("断魂之咒 state has duration=4", () => {
+		expect(parsed.states?.["断魂之咒"]?.duration).toBe(4);
+	});
+
+	it("噬心之咒 skill DoT has duration=4", () => {
+		const dot = parsed.skill.find(
+			(e) => e.type === "dot" && e.name === "噬心之咒",
+		);
+		expect(dot?.duration).toBe(4);
+	});
+});
+
+describe("新-青元剑诀 — sequenced cooldown debuff", () => {
+	const parsed = parseSingleBook(markdown, "新-青元剑诀")!;
+
+	it("cooldown debuff has sequenced: true", () => {
+		const debuff = parsed.skill.find(
+			(e) => e.type === "debuff" && e.name === "神通封印",
+		);
+		expect(debuff).toBeDefined();
+		expect(debuff?.sequenced).toBe(true);
+	});
+});
+
+describe("解体化形 — attack_bonus timing: pre_cast", () => {
+	const parsed = parseSingleBook(markdown, "解体化形")!;
+
+	it("affix attack_bonus has timing: pre_cast", () => {
+		const bonus = parsed.primaryAffix?.effects.find(
+			(e) => e.type === "attack_bonus",
+		);
+		expect(bonus).toBeDefined();
+		expect(bonus?.timing).toBe("pre_cast");
+	});
+});
+
 // ─── Common & School Affixes ────────────────────────────
 
 import {

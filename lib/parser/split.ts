@@ -40,6 +40,19 @@ export function parseBook(
 	// Build state registry from skill description
 	const states = buildStateRegistry(skillCell.description);
 
+	// Resolve any variable references in state definitions using tier data
+	if (skillCell.tiers.length > 0) {
+		const tierVars = skillCell.tiers[0]?.vars ?? {};
+		for (const sDef of Object.values(states)) {
+			const rec = sDef as unknown as Record<string, unknown>;
+			const varRef = rec._max_stacks_var;
+			if (typeof varRef === "string" && tierVars[varRef] !== undefined) {
+				sDef.max_stacks = tierVars[varRef];
+			}
+			delete rec._max_stacks_var;
+		}
+	}
+
 	// Parse skill effects
 	const skill = parseSkillEffects(name, grammar, skillCell, states);
 
@@ -596,7 +609,8 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 	// 天魔降临咒: handled by generic pipeline (extractDotPermanentMaxHp + extractPerDebuffStackDamageUpgrade)
 	// 天轮魔经: handled by generic pipeline (extractPerStolenBuffDebuff)
 
-	// 5-effect compound pattern: counter_debuff + 3 stat reductions + debuff, too complex to generalize
+	// 6-effect compound pattern: counter_debuff + 5 cycling stat reductions
+	// Source: 每3秒轮流降低目标x%致命率、x%暴击伤害、x%暴击率、y%攻击力、y%最终伤害减免
 	天刹真魔: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -609,19 +623,32 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				parent: "不灭魔体",
 			} as EffectRow,
 			{
-				type: "crit_rate_reduction",
+				type: "lethal_rate_reduction",
 				value: -tier.vars.x,
 				parent: "天人五衰",
+				cycle_interval: 3,
+				rotating: true,
 			} as EffectRow,
 			{
 				type: "crit_damage_reduction",
 				value: -tier.vars.x,
 				parent: "天人五衰",
+				cycle_interval: 3,
+				rotating: true,
+			} as EffectRow,
+			{
+				type: "crit_rate_reduction",
+				value: -tier.vars.x,
+				parent: "天人五衰",
+				cycle_interval: 3,
+				rotating: true,
 			} as EffectRow,
 			{
 				type: "attack_reduction",
 				value: -tier.vars.y,
 				parent: "天人五衰",
+				cycle_interval: 3,
+				rotating: true,
 			} as EffectRow,
 			{
 				type: "debuff",
@@ -630,6 +657,8 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 				value: -tier.vars.y,
 				duration: 15,
 				parent: "天人五衰",
+				cycle_interval: 3,
+				rotating: true,
 			} as EffectRow,
 		];
 	},

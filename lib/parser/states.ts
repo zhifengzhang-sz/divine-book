@@ -85,27 +85,43 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 		}
 	}
 
-	// Duration — search all lines mentioning the state name
+	// Duration — prefer the state's own definition line (【name】：) over other lines
 	let duration: number | "permanent" = 0;
-	for (const line of lines) {
-		if (!line.includes(name)) continue;
-		const stateIdx = line.indexOf(`【${name}】`);
-		if (stateIdx === -1) continue;
 
-		// Look AFTER the state name first
-		const afterState = line.slice(stateIdx + name.length + 2);
-		const durAfter = afterState.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
-		if (durAfter) {
-			duration = Number(durAfter[1]);
-			break;
+	// First: check if there is a definition line (【name】：...) and extract from it
+	if (defLine) {
+		const stateIdx = defLine.indexOf(`【${name}】`);
+		if (stateIdx !== -1) {
+			const afterState = defLine.slice(stateIdx + name.length + 2);
+			const durAfter = afterState.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
+			if (durAfter) {
+				duration = Number(durAfter[1]);
+			}
 		}
+	}
 
-		// Also look BEFORE the state name (e.g. "持续存在20秒的【回生灵鹤】")
-		const beforeState = line.slice(0, stateIdx);
-		const durBefore = beforeState.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
-		if (durBefore) {
-			duration = Number(durBefore[1]);
-			break;
+	// Second: if no duration from def line, search all lines mentioning the state
+	if (duration === 0) {
+		for (const line of lines) {
+			if (!line.includes(name)) continue;
+			const stateIdx = line.indexOf(`【${name}】`);
+			if (stateIdx === -1) continue;
+
+			// Look AFTER the state name first
+			const afterState = line.slice(stateIdx + name.length + 2);
+			const durAfter = afterState.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
+			if (durAfter) {
+				duration = Number(durAfter[1]);
+				break;
+			}
+
+			// Also look BEFORE the state name (e.g. "持续存在20秒的【回生灵鹤】")
+			const beforeState = line.slice(0, stateIdx);
+			const durBefore = beforeState.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
+			if (durBefore) {
+				duration = Number(durBefore[1]);
+				break;
+			}
 		}
 	}
 	// Also check in full text for "【name】战斗状态内永久生效" pattern
@@ -122,12 +138,19 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 	}
 
 	// Max stacks — check all lines mentioning the state name
+	// Supports both literal numbers and variable references (e.g. "最多叠加z层")
 	let max_stacks: number | undefined;
+	let max_stacks_var: string | undefined;
 	for (const line of lines) {
 		if (!line.includes(name)) continue;
-		const stackMatch = line.match(/最多叠加(\d+)层/);
+		const stackMatch = line.match(/最多叠加(\w+)层/);
 		if (stackMatch) {
-			max_stacks = Number(stackMatch[1]);
+			const val = Number(stackMatch[1]);
+			if (!Number.isNaN(val)) {
+				max_stacks = val;
+			} else {
+				max_stacks_var = stackMatch[1];
+			}
 			break;
 		}
 		const limitMatch = line.match(/上限(\d+)层/);
@@ -175,6 +198,11 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 
 	const result: StateDef = { target, duration };
 	if (max_stacks !== undefined) result.max_stacks = max_stacks;
+	// Store unresolved variable reference for later resolution by split.ts
+	if (max_stacks_var) {
+		(result as unknown as Record<string, unknown>)._max_stacks_var =
+			max_stacks_var;
+	}
 	if (trigger && trigger !== "on_cast") result.trigger = trigger;
 	if (chance !== undefined) result.chance = chance;
 	if (dispellable !== undefined) result.dispellable = dispellable;

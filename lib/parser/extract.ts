@@ -366,6 +366,11 @@ export function extractSummon(text: string): ExtractedEffect | null {
 		/持续(?:存在)?(\w+)秒的分身[，,]继承自身(\w+)%的属性.*?分身受到的伤害为自身的(\w+)%/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = {};
+		// "主角释放神通后分身会攻击敌方" → summon attacks on caster skill use
+		if (/释放神通后分身.*?攻击/.test(text)) {
+			meta.trigger = "on_cast";
+		}
 		return {
 			type: "summon",
 			fields: {
@@ -373,6 +378,7 @@ export function extractSummon(text: string): ExtractedEffect | null {
 				inherit_stats: m[2],
 				damage_taken_multiplier: m[3],
 			},
+			meta: Object.keys(meta).length > 0 ? meta : undefined,
 		};
 	}
 	return null;
@@ -422,10 +428,15 @@ export function extractPercentCurrentHpDamage(
 	// 额外附加{y}%目标当前气血值的伤害
 	const m = text.match(/额外附加(\w+)%(?:目标)?当前气血值的伤害/);
 	if (m) {
+		const meta: Record<string, unknown> = { per_prior_hit: true };
+		// "此前敌方每被神通多段攻击命中一次" → accumulated across ALL prior skills in combat
+		if (/此前.*?每被神通.*?攻击命中/.test(text)) {
+			meta.accumulation = "cross_skill";
+		}
 		return {
 			type: "percent_current_hp_damage",
 			fields: { value: m[1] },
-			meta: { per_prior_hit: true },
+			meta,
 		};
 	}
 	return null;
@@ -560,6 +571,9 @@ export function extractNoShieldDoubleDamage(
 // ─────────────────────────────────────────────────────────
 
 export function extractSelfLostHpDamage(text: string): ExtractedEffect | null {
+	// Skip per-hit patterns (handled by extractSelfLostHpDamagePerHit)
+	if (/每段攻击(?:额外)?对目标造成自身\w+%已损/.test(text)) return null;
+
 	// 额外对(其|目标)造成自身{x}%已损失气血值的伤害[，并等额恢复自身气血]
 	const m = text.match(
 		/(?:额外)?对(?:其|目标)?造成自身(\w+)%已损(?:失)?气血值的伤害/,
@@ -574,18 +588,6 @@ export function extractSelfLostHpDamage(text: string): ExtractedEffect | null {
 			type: "self_lost_hp_damage",
 			fields: { value: m[1] },
 			meta: Object.keys(meta).length > 0 ? meta : undefined,
-		};
-	}
-
-	// 每段攻击额外对目标造成自身{y}%已损失气血值的伤害
-	const perHitMatch = text.match(
-		/每段攻击(?:额外)?对目标造成自身(\w+)%已损(?:失)?气血值的伤害/,
-	);
-	if (perHitMatch) {
-		return {
-			type: "self_lost_hp_damage",
-			fields: { value: perHitMatch[1] },
-			meta: { per_hit: true },
 		};
 	}
 
@@ -789,6 +791,44 @@ export function extractSelfHeal(text: string): ExtractedEffect | null {
 }
 
 // ─────────────────────────────────────────────────────────
+// Per-tick heal (HoT from named state, e.g. 灵鹤)
+// ─────────────────────────────────────────────────────────
+
+export function extractPerTickHeal(text: string): ExtractedEffect | null {
+	// 每秒恢复自身和友方z%气血值，共计恢复w%的最大气血值
+	const m = text.match(
+		/每秒恢复(?:自身)?(?:和友方)?(\w+)%(?:的)?(?:最大)?气血值[，,]共计恢复(\w+)%(?:的)?最大气血值/,
+	);
+	if (m) {
+		// Find parent from 【X】 in surrounding context
+		const parentMatch = text.match(/【(.+?)】/);
+		const meta: Record<string, unknown> = { tick_interval: 1 };
+		if (parentMatch) meta.name = parentMatch[1];
+		return {
+			type: "self_heal",
+			fields: { per_tick: m[1], total: m[2] },
+			meta,
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Heal echo damage (bonus damage equal to HP healed during cast)
+// ─────────────────────────────────────────────────────────
+
+export function extractHealEchoDamage(text: string): ExtractedEffect | null {
+	// 附加临摹期间所恢复气血值的等额伤害
+	if (/附加(?:临摹)?期间(?:所)?恢复气血值的等额伤害/.test(text)) {
+		return {
+			type: "heal_echo_damage",
+			fields: { ratio: 1 },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
 // Delayed burst
 // ─────────────────────────────────────────────────────────
 
@@ -824,10 +864,27 @@ export function extractConditionalDamageFromCleanse(
 		/若净化.*?接下来.*?每段攻击附加(\w+)%自身最大气血值的伤害/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = { condition: "cleanse_excess" };
+		// "接下来的三个神通命中时" → applies to next N skill hits
+		const scopeMatch = text.match(
+			/接下来.*?([一二三四五六七八九十\d]+)个?神通/,
+		);
+		if (scopeMatch) {
+			const CN_NUMS_LOCAL: Record<string, number> = {
+				一: 1,
+				二: 2,
+				三: 3,
+				四: 4,
+				五: 5,
+			};
+			const n =
+				CN_NUMS_LOCAL[scopeMatch[1]] ?? Number.parseInt(scopeMatch[1], 10);
+			if (!Number.isNaN(n)) meta.max_triggers = n;
+		}
 		return {
 			type: "conditional_damage",
 			fields: { value: m[1] },
-			meta: { condition: "cleanse_excess" },
+			meta,
 		};
 	}
 	return null;
@@ -843,6 +900,11 @@ export function extractSkillCooldownDebuff(
 	// 使其下一个未释放的神通进入{d}秒冷却时间
 	const m = text.match(/下一个未释放的神通进入(\d+)秒冷却/);
 	if (m) {
+		const meta: Record<string, unknown> = { name: "神通封印" };
+		// "依敌方神通装配顺序" → targets next unfired skill in sequence
+		if (/依.*?神通装配顺序/.test(text)) {
+			meta.sequenced = true;
+		}
 		return {
 			type: "debuff",
 			fields: {
@@ -850,7 +912,7 @@ export function extractSkillCooldownDebuff(
 				value: Number(m[1]),
 				duration: Number(m[1]),
 			},
-			meta: { name: "神通封印" },
+			meta,
 		};
 	}
 	return null;
@@ -866,6 +928,11 @@ export function extractEchoDamage(text: string): ExtractedEffect | null {
 		/(?:每次)?受到(?:的)?伤害时[，,].*?额外受到.*?伤害(?:值)?为当次伤害的(\w+)%.*?持续(\w+)秒/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = {};
+		// "该伤害不受伤害加成影响" → echo damage ignores damage bonuses
+		if (/该伤害不受伤害加成影响/.test(text)) {
+			meta.ignore_damage_bonus = true;
+		}
 		return {
 			type: "debuff",
 			fields: {
@@ -873,6 +940,7 @@ export function extractEchoDamage(text: string): ExtractedEffect | null {
 				value: m[1],
 				duration: m[2],
 			},
+			meta: Object.keys(meta).length > 0 ? meta : undefined,
 		};
 	}
 	return null;
@@ -924,12 +992,18 @@ export function extractSelfLostHpDamageDot(
 ): ExtractedEffect | null {
 	// 每秒对目标造成自身{z}%已损气血值和期间消耗气血的伤害
 	const m = text.match(
-		/每秒对目标造成(?:自身)?(\w+)%已损(?:失)?气血值(?:和期间消耗气血)?的伤害/,
+		/每秒对目标造成(?:自身)?(\w+)%已损(?:失)?气血值(和期间消耗气血)?的伤害/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = {};
+		// "和期间消耗气血" → damage includes accumulated HP spent during the state
+		if (m[2]) {
+			meta.includes_hp_spent = true;
+		}
 		return {
 			type: "self_lost_hp_damage",
 			fields: { value: m[1], tick_interval: 1 },
+			meta: Object.keys(meta).length > 0 ? meta : undefined,
 		};
 	}
 	return null;
@@ -1978,7 +2052,10 @@ export function extractShieldOnHeal(text: string): ExtractedEffect | null {
 	if (m) {
 		// Find parent from 【X】 in text
 		const parentMatch = text.match(/【(.+?)】/);
-		const meta: Record<string, unknown> = { source: "self_max_hp" };
+		const meta: Record<string, unknown> = {
+			source: "self_max_hp",
+			trigger: "per_tick",
+		};
 		if (parentMatch) meta.parent = parentMatch[1];
 		return { type: "shield", fields: { value: m[1], duration: m[2] }, meta };
 	}
@@ -2022,10 +2099,15 @@ export function extractAttackBonusPerDebuff(
 		/减益状态.*?(?:最高)?层数.*?攻击力.*?每层.*?(\w+)%.*?最多.*?(\d+)层/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = { per_debuff_stack: true };
+		// "释放前" → attack bonus applies pre-cast based on existing debuff stacks
+		if (/释放前/.test(text)) {
+			meta.timing = "pre_cast";
+		}
 		return {
 			type: "attack_bonus",
 			fields: { value: m[1], max_stacks: Number(m[2]) },
-			meta: { per_debuff_stack: true },
+			meta,
 		};
 	}
 	return null;
@@ -2125,6 +2207,10 @@ export function extractSelfLostHpDamageEveryN(
 		const parentMatch = text.match(/【(.+?)】/);
 		const meta: Record<string, unknown> = { every_n_hits: Number(m[1]) };
 		if (parentMatch) meta.parent = parentMatch[1];
+		// "和期间消耗气血值" → damage includes accumulated HP spent
+		if (/和期间消耗气血/.test(text)) {
+			meta.includes_hp_spent = true;
+		}
 		return {
 			type: "self_lost_hp_damage",
 			fields: { value: m[2] },
@@ -2394,6 +2480,8 @@ export const SKILL_EXTRACTORS: ExtractorDef[] = [
 		order: 20,
 	},
 	{ name: "self_heal", fn: extractSelfHeal, order: 20 },
+	{ name: "per_tick_heal", fn: extractPerTickHeal, order: 20 },
+	{ name: "heal_echo_damage", fn: extractHealEchoDamage, order: 20 },
 	{ name: "self_cleanse", fn: extractSelfCleanse, order: 20 },
 	{ name: "delayed_burst", fn: extractDelayedBurst, order: 20 },
 	{
