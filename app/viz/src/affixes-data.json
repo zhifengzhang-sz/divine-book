@@ -1,0 +1,304 @@
+{
+  "universal": {
+    "咒书": {
+      "effects": [
+        {
+          "type": "debuff_strength",
+          "value": 20
+        }
+      ]
+    },
+    "清灵": {
+      "effects": [
+        {
+          "type": "buff_strength",
+          "value": 20
+        }
+      ]
+    },
+    "业焰": {
+      "effects": [
+        {
+          "type": "all_state_duration",
+          "value": 69
+        }
+      ]
+    },
+    "击瑕": {
+      "effects": [
+        {
+          "type": "conditional_damage",
+          "value": 40,
+          "condition": "target_controlled"
+        }
+      ]
+    },
+    "破竹": {
+      "effects": [
+        {
+          "type": "per_hit_escalation",
+          "value": 1,
+          "max": 10,
+          "stat": "remaining_hits"
+        }
+      ]
+    },
+    "金汤": {
+      "effects": [
+        {
+          "type": "damage_reduction_during_cast",
+          "value": 10
+        }
+      ]
+    },
+    "怒目": {
+      "effects": [
+        {
+          "type": "execute_conditional",
+          "hp_threshold": 30,
+          "damage_increase": 20,
+          "crit_rate_increase": 30
+        }
+      ]
+    },
+    "鬼印": {
+      "effects": [
+        {
+          "type": "dot_extra_per_tick",
+          "value": 2
+        }
+      ]
+    },
+    "福荫": {
+      "effects": [
+        {
+          "type": "random_buff",
+          "attack": 20,
+          "crit_damage": 20,
+          "damage": 20
+        }
+      ]
+    },
+    "战意": {
+      "effects": [
+        {
+          "type": "per_self_lost_hp",
+          "per_percent": 2.95
+        }
+      ]
+    },
+    "斩岳": {
+      "effects": [
+        {
+          "type": "flat_extra_damage",
+          "value": 2000
+        }
+      ]
+    },
+    "吞海": {
+      "effects": [
+        {
+          "type": "per_enemy_lost_hp",
+          "per_percent": 1,
+          "value": 0.4
+        }
+      ]
+    },
+    "灵盾": {
+      "effects": [
+        {
+          "type": "shield_value_increase",
+          "value": 20
+        }
+      ]
+    },
+    "灵威": {
+      "effects": [
+        {
+          "type": "next_skill_buff",
+          "value": 118,
+          "stat": "skill_damage_increase"
+        }
+      ]
+    },
+    "摧山": {
+      "effects": [
+        {
+          "type": "attack_bonus",
+          "value": 20
+        }
+      ]
+    },
+    "通明": {
+      "effects": [
+        {
+          "type": "guaranteed_resonance",
+          "base_multiplier": 1.2,
+          "chance": 25,
+          "upgraded_multiplier": 1.5
+        }
+      ]
+    }
+  },
+  "school": {
+    "Sword": {
+      "摧云折月": {
+        "effects": [
+          {
+            "type": "attack_bonus",
+            "value": 300
+          }
+        ]
+      },
+      "灵犀九重": {
+        "effects": [
+          {
+            "type": "guaranteed_resonance",
+            "base_multiplier": 2.97,
+            "chance": 25,
+            "upgraded_multiplier": 3.97
+          }
+        ]
+      },
+      "破碎无双": {
+        "effects": [
+          {
+            "type": "triple_bonus",
+            "attack_bonus": 15,
+            "damage_increase": 15,
+            "crit_damage_increase": 15
+          }
+        ]
+      },
+      "心火淬锋": {
+        "effects": [
+          {
+            "type": "per_hit_escalation",
+            "value": 5,
+            "max": 50,
+            "stat": "remaining_hits"
+          }
+        ]
+      }
+    },
+    "Spell": {
+      "长生天则": {
+        "effects": [
+          {
+            "type": "healing_increase",
+            "value": 50
+          }
+        ]
+      },
+      "明王之路": {
+        "effects": [
+          {
+            "type": "final_damage_bonus",
+            "value": 50
+          }
+        ]
+      },
+      "天命有归": {
+        "effects": [
+          {
+            "type": "probability_to_certain",
+            "damage_increase": 50
+          }
+        ]
+      },
+      "景星天佑": {
+        "effects": [
+          {
+            "type": "random_buff",
+            "attack": 55,
+            "crit_damage": 55,
+            "damage": 55
+          }
+        ]
+      }
+    },
+    "Demon": {
+      "瑶光却邪": {
+        "effects": [
+          {
+            "type": "healing_to_damage",
+            "value": 50
+          }
+        ]
+      },
+      "溃魂击瑕": {
+        "effects": [
+          {
+            "type": "execute_conditional",
+            "hp_threshold": 30,
+            "damage_increase": 100,
+            "guaranteed_crit": 1
+          }
+        ]
+      },
+      "玄女护心": {
+        "effects": [
+          {
+            "type": "damage_to_shield",
+            "value": 50,
+            "duration": 8
+          }
+        ]
+      },
+      "祸星无妄": {
+        "effects": [
+          {
+            "type": "random_debuff",
+            "attack": 20,
+            "crit_rate": 20,
+            "crit_damage": 50
+          }
+        ]
+      }
+    },
+    "Body": {
+      "金刚护体": {
+        "effects": [
+          {
+            "type": "damage_reduction_during_cast",
+            "value": 55
+          }
+        ]
+      },
+      "破灭天光": {
+        "effects": [
+          {
+            "type": "flat_extra_damage",
+            "value": 2500
+          }
+        ]
+      },
+      "青云灵盾": {
+        "effects": [
+          {
+            "type": "shield_value_increase",
+            "value": 50
+          }
+        ]
+      },
+      "贪狼吞星": {
+        "effects": [
+          {
+            "type": "per_enemy_lost_hp",
+            "per_percent": 1,
+            "value": 1
+          }
+        ]
+      },
+      "意坠深渊": {
+        "effects": [
+          {
+            "type": "min_lost_hp_threshold",
+            "min_percent": 11,
+            "damage_increase": 50
+          }
+        ]
+      }
+    }
+  }
+}
