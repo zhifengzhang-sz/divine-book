@@ -487,6 +487,8 @@ export function extractDebuff(text: string): ExtractedEffect | null {
 	}
 
 	// 攻击力降低{x}%，持续{d}秒
+	// Skip if this is part of a per-stolen-buff pattern (handled by extractPerStolenBuffDebuff)
+	if (/每偷取.*?增益状态.*?攻击力降低/.test(text)) return null;
 	const atkMatch = text.match(/攻击力降低(\w+)%[，,]持续(\w+)秒/);
 	if (atkMatch) {
 		return {
@@ -1040,6 +1042,8 @@ export function extractHpCostAvoidChance(text: string): ExtractedEffect | null {
 // ─────────────────────────────────────────────────────────
 
 export function extractLifesteal(text: string): ExtractedEffect | null {
+	// Skip if lifesteal-with-parent pattern matches (has 【X】 parent reference)
+	if (/恢复【.+?】造成/.test(text)) return null;
 	// 恢复...造成伤害x%的气血值
 	const m = text.match(
 		/恢复.*?(?:造成(?:的)?)?(?:伤害|本次伤害)(\w+)%(?:的)?气血值/,
@@ -1083,6 +1087,9 @@ export function extractShieldStrength(text: string): ExtractedEffect | null {
 
 export function extractSelfBuffExtra(text: string): ExtractedEffect | null {
 	// 【X】额外提升自身x%攻击力 / 【X】状态额外使自身获得x%治疗加成
+	// Skip "提升敌方" / "提升...伤害上限" patterns (not self-buff)
+	if (/【.+?】.*?提升敌方/.test(text)) return null;
+	if (/【.+?】.*?伤害.*?上限/.test(text)) return null;
 	const m = text.match(
 		/【(.+?)】(?:状态)?(?:额外|下)?(?:使自身获得|提升(?:自身)?)/,
 	);
@@ -1125,6 +1132,8 @@ export function extractDamageIncrease(text: string): ExtractedEffect | null {
 	// NOT "持续伤害" / "已损" / "气血" / "伤害加深"
 	if (/持续伤害/.test(text) || /已损/.test(text) || /气血/.test(text))
 		return null;
+	// Exclude delayed_burst_increase patterns (handled by extractDelayedBurstIncrease)
+	if (/状态结束时的伤害提升/.test(text)) return null;
 	// Exclude "段数伤害" (per-hit escalation), "任意1个加成" (random buff), "概率触发" (probability_to_certain)
 	if (
 		/段数伤害/.test(text) ||
@@ -1810,6 +1819,448 @@ export function extractMinLostHpThreshold(
 }
 
 // ─────────────────────────────────────────────────────────
+// Summon buff (affix: damage_taken_reduction + damage_increase for summon)
+// ─────────────────────────────────────────────────────────
+
+/** 分身受到伤害降低至自身的x%，造成的伤害增加y% */
+export function extractSummonBuff(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/分身受到(?:的)?伤害降低至(?:自身的)?(\w+)%[，,]\s*造成的伤害增加(\w+)%/,
+	);
+	if (m) {
+		return {
+			type: "summon_buff",
+			fields: { damage_taken_reduction_to: m[1], damage_increase: m[2] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Extended dot (affix: dot persists after skill ends)
+// ─────────────────────────────────────────────────────────
+
+/** 额外持续存在x秒，每y秒造成一次伤害 */
+export function extractExtendedDot(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/额外持续(?:存在)?(\w+)秒[，,]每(\w+(?:\.\w+)?)秒造成一次伤害/,
+	);
+	if (m) {
+		return {
+			type: "extended_dot",
+			fields: { extra_seconds: m[1], tick_interval: m[2] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Shield destroy DoT (affix: per-shield periodic damage)
+// ─────────────────────────────────────────────────────────
+
+/** 【X】每y秒对目标造成`湮灭护盾`的总个数*z%攻击力的伤害 */
+export function extractShieldDestroyDot(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/【(.+?)】每(\w+(?:\.\w+)?)秒对目标造成.*?湮灭护盾.*?(\d+)%攻击力的伤害/,
+	);
+	if (!m) return null;
+	const fields: Record<string, string | number> = {
+		tick_interval: Number(m[2]),
+		per_shield_damage: Number(m[3]),
+	};
+	const meta: Record<string, unknown> = { parent: m[1] };
+	// Check for "若...敌方无护盾...计算湮灭N个护盾" fallback
+	const noShieldMatch = text.match(
+		/(?:无护盾.*?计算湮灭|无护盾.*?则计算.*?)(\d+)个/,
+	);
+	if (noShieldMatch) fields.no_shield_assumed = Number(noShieldMatch[1]);
+	return { type: "shield_destroy_dot", fields, meta };
+}
+
+// ─────────────────────────────────────────────────────────
+// Lifesteal with parent from 【parentName】
+// ─────────────────────────────────────────────────────────
+
+/** 恢复【X】造成伤害y%的气血值 / 造成伤害时恢复...with parent */
+export function extractLifestealWithParent(
+	text: string,
+): ExtractedEffect | null {
+	// Pattern: 恢复【X】造成伤害y%的气血值
+	const m1 = text.match(/恢复【(.+?)】造成(?:的)?伤害(\w+)%(?:的)?气血值/);
+	if (m1) {
+		return {
+			type: "lifesteal",
+			fields: { value: Number(m1[2]) },
+			meta: { parent: m1[1] },
+		};
+	}
+	// Pattern: 【X】造成伤害时，恢复...本次伤害x%的气血值
+	const m2 = text.match(
+		/(?:真灵)?(?:.+?)造成伤害时[，,]恢复.*?(?:伤害|本次伤害)(\w+)%(?:的)?气血值/,
+	);
+	if (m2) {
+		// Find parent from 【X】 in the text
+		const parentMatch = text.match(/【(.+?)】/);
+		if (parentMatch) {
+			return {
+				type: "lifesteal",
+				fields: { value: m2[1] },
+				meta: { parent: parentMatch[1] },
+			};
+		}
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Shield from heal (affix: shield on heal with named parent)
+// ─────────────────────────────────────────────────────────
+
+/** 每次恢复气血时会为目标添加一个x%自身最大气血值的护盾，持续d秒 */
+export function extractShieldOnHeal(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/恢复气血时.*?添加.*?(\w+)%(?:自身)?最大气血值的护盾[，,]持续(\w+)秒/,
+	);
+	if (m) {
+		// Find parent from 【X】 in text
+		const parentMatch = text.match(/【(.+?)】/);
+		const meta: Record<string, unknown> = { source: "self_max_hp" };
+		if (parentMatch) meta.parent = parentMatch[1];
+		return { type: "shield", fields: { value: m[1], duration: m[2] }, meta };
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Per-stolen-buff debuff
+// ─────────────────────────────────────────────────────────
+
+/** 每偷取目标一个增益状态对目标附加一层【X】状态：攻击力降低x%，持续d秒 */
+export function extractPerStolenBuffDebuff(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每偷取.*?增益状态.*?附加.*?层【(.+?)】.*?攻击力降低(\w+)%[，,]持续(\w+)秒/,
+	);
+	if (m) {
+		return {
+			type: "debuff",
+			fields: {
+				target: "attack",
+				value: `-${m[2]}`,
+				duration: m[3],
+			},
+			meta: { name: m[1], per_stolen_buff: true },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Attack bonus per debuff stack
+// ─────────────────────────────────────────────────────────
+
+/** 根据目标身上减益状态的最高层数提升自身攻击力，每层提升x%，最多计算n层 */
+export function extractAttackBonusPerDebuff(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/减益状态.*?(?:最高)?层数.*?攻击力.*?每层.*?(\w+)%.*?最多.*?(\d+)层/,
+	);
+	if (m) {
+		return {
+			type: "attack_bonus",
+			fields: { value: m[1], max_stacks: Number(m[2]) },
+			meta: { per_debuff_stack: true },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Percent max HP damage (affix: named state variant)
+// ─────────────────────────────────────────────────────────
+
+/** 每叠加N层便会消耗并造成目标x%最大气血值伤害 */
+export function extractPercentMaxHpDamageAffix(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/叠加.*?层.*?造成(?:目标)?(\w+)%最大气血值(?:的)?伤害/);
+	if (m) {
+		// Find named state from 【X】
+		const nameMatch = text.match(/【(.+?)】/);
+		const meta: Record<string, unknown> = {};
+		if (nameMatch) meta.name = nameMatch[1];
+		return { type: "percent_max_hp_damage", fields: { value: m[1] }, meta };
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Self buff extend
+// ─────────────────────────────────────────────────────────
+
+/** 延长x秒【Y】持续时间 */
+export function extractSelfBuffExtend(text: string): ExtractedEffect | null {
+	const m = text.match(/延长(\w+)秒【(.+?)】持续时间/);
+	if (m) {
+		return {
+			type: "self_buff_extend",
+			fields: { value: m[1] },
+			meta: { buff_name: m[2] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Periodic cleanse (affix)
+// ─────────────────────────────────────────────────────────
+
+/** 每秒有y%概率驱散自身所有控制状态，N秒内最多触发M次 */
+export function extractPeriodicCleanse(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/(?:每秒有)?(\w+)%概率驱散自身.*?(?:`?控制状态`?|负面状态)[，,](\d+)秒内最多触发(\d+)次/,
+	);
+	if (m) {
+		return {
+			type: "periodic_cleanse",
+			fields: {
+				chance: m[1],
+				interval: 1,
+				cooldown: Number(m[2]),
+				max_triggers: Number(m[3]),
+			},
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Delayed burst increase (affix)
+// ─────────────────────────────────────────────────────────
+
+/** 【X】状态结束时的伤害提升y% */
+export function extractDelayedBurstIncrease(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/【(.+?)】状态结束时的伤害提升(\d+)%/);
+	if (m) {
+		return {
+			type: "delayed_burst_increase",
+			fields: { value: Number(m[2]) },
+			meta: { parent: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Self lost HP damage every N hits (affix)
+// ─────────────────────────────────────────────────────────
+
+/** 每造成N次伤害，额外附加x%自身已损气血值...的伤害 */
+export function extractSelfLostHpDamageEveryN(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(
+		/每造成(\d+)次伤害[，,]额外.*?(\w+)%自身已损(?:失)?气血值/,
+	);
+	if (m) {
+		// Find parent from 【X】
+		const parentMatch = text.match(/【(.+?)】/);
+		const meta: Record<string, unknown> = { every_n_hits: Number(m[1]) };
+		if (parentMatch) meta.parent = parentMatch[1];
+		return {
+			type: "self_lost_hp_damage",
+			fields: { value: m[2] },
+			meta,
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Periodic dispel (affix: simple dispel without damage)
+// ─────────────────────────────────────────────────────────
+
+/** 造成伤害前优先驱散目标N个增益效果 */
+export function extractPeriodicDispelAffix(
+	text: string,
+): ExtractedEffect | null {
+	const CN_NUMS_LOCAL: Record<string, number> = {
+		一: 1,
+		二: 2,
+		两: 2,
+		三: 3,
+		四: 4,
+		五: 5,
+		六: 6,
+		七: 7,
+		八: 8,
+		九: 9,
+		十: 10,
+	};
+	const m = text.match(
+		/(?:造成伤害前)?(?:优先)?驱散目标([\w一二两三四五六七八九十]+)个增益(?:效果|状态)/,
+	);
+	if (m) {
+		const val = m[1];
+		const count =
+			CN_NUMS_LOCAL[val] !== undefined
+				? CN_NUMS_LOCAL[val]
+				: Number.parseInt(val, 10);
+		return {
+			type: "periodic_dispel",
+			fields: { count: Number.isNaN(count) ? val : count },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Self HP floor (affix)
+// ─────────────────────────────────────────────────────────
+
+/** 气血不会降至x%以下 */
+export function extractSelfHpFloor(text: string): ExtractedEffect | null {
+	const m = text.match(/气血不会降至(\w+)%以下/);
+	if (m) {
+		return {
+			type: "self_hp_floor",
+			fields: { value: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Permanent DoT based on max HP (affix)
+// ─────────────────────────────────────────────────────────
+
+/** 处于【X】下，每秒受到x%最大气血值的伤害 */
+export function extractDotPermanentMaxHp(text: string): ExtractedEffect | null {
+	const m = text.match(/处于【(.+?)】下[，,]每秒受到(\w+)%最大气血值的伤害/);
+	if (m) {
+		return {
+			type: "dot",
+			fields: {
+				tick_interval: 1,
+				percent_max_hp: m[2],
+				duration: "permanent",
+			},
+			meta: { parent: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Per debuff stack damage with fixed value (affix: 天魔降临咒 pattern)
+// ─────────────────────────────────────────────────────────
+
+/** 【X】提升敌方受到的伤害上限提升至y% */
+export function extractPerDebuffStackDamageUpgrade(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/【(.+?)】.*?伤害.*?上限(?:提升至|增加至)(\w+)%/);
+	if (m) {
+		return {
+			type: "per_debuff_stack_damage",
+			fields: { per_n_stacks: 1, value: 0.5, max: m[2] },
+			meta: { parent: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Counter debuff upgrade (affix: 大罗幻诀 pattern)
+// ─────────────────────────────────────────────────────────
+
+/** 【X】状态下附加异常概率提升至y% */
+export function extractCounterDebuffUpgrade(
+	text: string,
+): ExtractedEffect | null {
+	const m = text.match(/【(.+?)】状态下.*?概率提升至(\d+)%/);
+	if (m) {
+		return {
+			type: "counter_debuff_upgrade",
+			fields: { on_attacked_chance: Number(m[2]) },
+			meta: { parent: m[1] },
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// Cross-slot debuff (affix: 大罗幻诀 pattern)
+// ─────────────────────────────────────────────────────────
+
+/** 受到攻击时，额外给目标附加【X】：最终伤害减免减低y%，持续d秒 */
+export function extractCrossSlotDebuff(text: string): ExtractedEffect | null {
+	const m = text.match(
+		/受到攻击时[，,].*?附加【(.+?)】[：:].*?(?:最终伤害减免|`最终伤害减免`)(?:减低|降低)(\w+)%[，,]持续(\w+)秒/,
+	);
+	if (m) {
+		// Find the parent state (the state under which this happens)
+		// It's typically the first 【X】 in the text
+		const parentMatch = text.match(/【(.+?)】状态下/);
+		const meta: Record<string, unknown> = {
+			name: m[1],
+			trigger: "on_attacked",
+		};
+		if (parentMatch) meta.parent = parentMatch[1];
+		return {
+			type: "cross_slot_debuff",
+			fields: {
+				target: "final_damage_reduction",
+				value: `-${m[2]}`,
+				duration: m[3],
+			},
+			meta,
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// DoT per N stacks (affix: 梵圣真魔咒 pattern)
+// ─────────────────────────────────────────────────────────
+
+/** 每获得N个【X】，会额外附加一层持续d秒的【Y】：每秒造成...伤害 */
+export function extractDotPerNStacks(text: string): ExtractedEffect | null {
+	const CN_NUMS_LOCAL: Record<string, number> = {
+		一: 1,
+		二: 2,
+		两: 2,
+		三: 3,
+		四: 4,
+		五: 5,
+	};
+	const m = text.match(
+		/每获得.*?([\d一二两三四五])个【(.+?)】.*?附加.*?持续(\w+)秒的【(.+?)】.*?每秒造成(?:目标)?(\w+)%已损(?:失)?气血值(?:的)?伤害/,
+	);
+	if (m) {
+		const nVal = CN_NUMS_LOCAL[m[1]] ?? Number(m[1]);
+		return {
+			type: "dot",
+			fields: {
+				tick_interval: 1,
+				percent_lost_hp: m[5],
+				duration: m[3],
+			},
+			meta: {
+				name: m[4],
+				parent: m[2],
+				per_n_stacks: nVal,
+			},
+		};
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
 // Extractor Registry
 // ─────────────────────────────────────────────────────────
 
@@ -1984,11 +2435,73 @@ export const AFFIX_EXTRACTORS: ExtractorDef[] = [
 
 	// Existing extractors reused for affixes
 	{ name: "per_hit_escalation", fn: extractPerHitEscalation, order: 10 },
+	{
+		name: "lifesteal_with_parent",
+		fn: extractLifestealWithParent,
+		order: 8,
+	},
 	{ name: "lifesteal", fn: extractLifesteal, order: 10 },
 	{ name: "shield_strength", fn: extractShieldStrength, order: 10 },
 	{ name: "self_buff_extra", fn: extractSelfBuffExtra, order: 15 },
 	{ name: "per_enemy_lost_hp", fn: extractPerEnemyLostHp, order: 10 },
 	{ name: "hp_cost_avoid_chance", fn: extractHpCostAvoidChance, order: 20 },
+
+	// Book-specific affix extractors (migrated from AFFIX_PARSERS)
+	{ name: "summon_buff", fn: extractSummonBuff, order: 10 },
+	{ name: "extended_dot", fn: extractExtendedDot, order: 10 },
+	{ name: "shield_destroy_dot", fn: extractShieldDestroyDot, order: 5 },
+	{ name: "debuff", fn: extractDebuff, order: 15 },
+	{
+		name: "per_stolen_buff_debuff",
+		fn: extractPerStolenBuffDebuff,
+		order: 10,
+	},
+	{
+		name: "attack_bonus_per_debuff",
+		fn: extractAttackBonusPerDebuff,
+		order: 10,
+	},
+	{
+		name: "percent_max_hp_damage_affix",
+		fn: extractPercentMaxHpDamageAffix,
+		order: 10,
+	},
+	{ name: "self_buff_extend", fn: extractSelfBuffExtend, order: 10 },
+	{ name: "periodic_cleanse", fn: extractPeriodicCleanse, order: 15 },
+	{
+		name: "delayed_burst_increase",
+		fn: extractDelayedBurstIncrease,
+		order: 10,
+	},
+	{
+		name: "self_lost_hp_damage_every_n",
+		fn: extractSelfLostHpDamageEveryN,
+		order: 10,
+	},
+	{
+		name: "periodic_dispel_affix",
+		fn: extractPeriodicDispelAffix,
+		order: 10,
+	},
+	{ name: "self_hp_floor", fn: extractSelfHpFloor, order: 15 },
+	{
+		name: "dot_permanent_max_hp",
+		fn: extractDotPermanentMaxHp,
+		order: 10,
+	},
+	{
+		name: "per_debuff_stack_damage_upgrade",
+		fn: extractPerDebuffStackDamageUpgrade,
+		order: 15,
+	},
+	{
+		name: "counter_debuff_upgrade",
+		fn: extractCounterDebuffUpgrade,
+		order: 5,
+	},
+	{ name: "cross_slot_debuff", fn: extractCrossSlotDebuff, order: 10 },
+	{ name: "dot_per_n_stacks", fn: extractDotPerNStacks, order: 10 },
+	{ name: "shield_on_heal", fn: extractShieldOnHeal, order: 10 },
 
 	// Common/school affix extractors
 	{ name: "debuff_strength", fn: extractDebuffStrength, order: 10 },

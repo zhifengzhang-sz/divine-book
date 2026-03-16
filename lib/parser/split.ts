@@ -311,8 +311,11 @@ export function genericAffixParse(
 	// Sort by order
 	extracted.sort((a, b) => a.order - b.order);
 
+	// Detect "（数据为没有悟境的情况）" annotation → data_state: "enlightenment=0"
+	const noEnlightenment = /数据为没有悟境/.test(text);
+
 	// Effect types that use buff_name instead of parent
-	const NO_PARENT_TYPES = new Set(["self_buff_extra"]);
+	const NO_PARENT_TYPES = new Set(["self_buff_extra", "self_buff_extend"]);
 
 	// Helper: resolve one set of effects from a tier
 	const resolveEffects = (
@@ -336,7 +339,8 @@ export function genericAffixParse(
 			) {
 				extra.parent = options.defaultParent;
 			}
-			if (ds !== undefined) extra.data_state = ds;
+			if (noEnlightenment) extra.data_state = "enlightenment=0";
+			else if (ds !== undefined) extra.data_state = ds;
 			effects.push({ type: effect.type, ...resolved, ...extra } as EffectRow);
 		}
 		return effects;
@@ -449,70 +453,14 @@ type AffixParser = (cell: SplitCell) => EffectRow[];
 
 const AFFIX_PARSERS: Record<string, AffixParser> = {
 	// 千锋聚灵剑: handled by generic pipeline (extractPerHitEscalation + defaultParent)
+	// 春黎剑阵: handled by generic pipeline (extractSummonBuff)
+	// 皓月剑诀: handled by generic pipeline (extractShieldDestroyDot)
+	// 念剑诀: handled by generic pipeline (extractExtendedDot)
+	// 通天剑诀: handled by generic pipeline (extractPerEnemyLostHp)
+	// 新-青元剑诀: handled by generic pipeline (extractDebuff)
+	// 元磁神光: handled by generic pipeline (extractSelfBuffExtra)
 
-	春黎剑阵: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "summon_buff",
-				damage_taken_reduction_to: tier.vars.x,
-				damage_increase: tier.vars.y,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	皓月剑诀: () => [
-		{
-			type: "shield_destroy_dot",
-			tick_interval: 0.5,
-			per_shield_damage: 600,
-			no_shield_assumed: 2,
-			parent: "寂灭剑心",
-		} as EffectRow,
-	],
-
-	念剑诀: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "extended_dot",
-				extra_seconds: tier.vars.x,
-				tick_interval: 0.5,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	通天剑诀: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "per_enemy_lost_hp",
-				per_percent: 2,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	"新-青元剑诀": (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "debuff",
-				name: "追命剑阵",
-				target: "skill_damage",
-				value: -tier.vars.x,
-				duration: 16,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
+	// parent "天鹤之佑" comes from skill state registry, not from affix text
 	浩然星灵诀: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -526,8 +474,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	// 元磁神光: handled by generic pipeline (extractSelfBuffExtra)
-
+	// parent "回生灵鹤" comes from skill state registry (text says "灵鹤" only)
 	周天星元: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -544,6 +491,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 
 	// 甲元仙符: handled by generic pipeline (extractSelfBuffExtra, multi-tier with locked)
 
+	// parent "天龙印" comes from skill state registry (text says "真灵天龙" only)
 	星元化岳: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -556,6 +504,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
+	// condition string "self_hp_above_20" needs resolved variable value (x=20)
 	玉书天戈符: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -570,43 +519,10 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	天魔降临咒: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "dot",
-				parent: "结魂锁链",
-				tick_interval: 1,
-				percent_max_hp: tier.vars.x,
-				duration: "permanent",
-			} as EffectRow,
-			{
-				type: "per_debuff_stack_damage",
-				per_n_stacks: 1,
-				value: 0.5,
-				max: tier.vars.y,
-				parent: "结魂锁链",
-			} as EffectRow,
-		];
-	},
+	// 天魔降临咒: handled by generic pipeline (extractDotPermanentMaxHp + extractPerDebuffStackDamageUpgrade)
+	// 天轮魔经: handled by generic pipeline (extractPerStolenBuffDebuff)
 
-	天轮魔经: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "debuff",
-				name: "惧意",
-				target: "attack",
-				value: -tier.vars.x,
-				duration: 12,
-				per_stolen_buff: true,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
+	// 5-effect compound pattern: counter_debuff + 3 stat reductions + debuff, too complex to generalize
 	天刹真魔: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
@@ -644,134 +560,14 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	解体化形: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "attack_bonus",
-				value: tier.vars.x,
-				per_debuff_stack: true,
-				max_stacks: 30,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	大罗幻诀: () => [
-		{
-			type: "counter_debuff_upgrade",
-			on_attacked_chance: 60,
-			parent: "罗天魔咒",
-		} as EffectRow,
-		{
-			type: "cross_slot_debuff",
-			name: "命损",
-			target: "final_damage_reduction",
-			value: -100,
-			duration: 8,
-			trigger: "on_attacked",
-			parent: "罗天魔咒",
-		} as EffectRow,
-	],
-
-	梵圣真魔咒: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "dot",
-				name: "瞋痴业火",
-				parent: "贪妄业火",
-				per_n_stacks: 2,
-				tick_interval: 1,
-				percent_lost_hp: tier.vars.x,
-				duration: 8,
-			} as EffectRow,
-		];
-	},
-
-	无相魔劫咒: () => [
-		{
-			type: "delayed_burst_increase",
-			value: 65,
-			parent: "无相魔劫",
-			data_state: "enlightenment=0",
-		} as EffectRow,
-	],
-
-	玄煞灵影诀: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		const ds = buildDataState(tier);
-		return [
-			{
-				type: "self_lost_hp_damage",
-				value: tier.vars.x,
-				parent: "怒意滔天",
-				every_n_hits: 4,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow,
-		];
-	},
-
-	惊蜇化龙: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "percent_max_hp_damage",
-				name: "镇杀",
-				value: tier.vars.x,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	十方真魄: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "self_buff_extend",
-				buff_name: "怒灵降世",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "periodic_cleanse",
-				chance: tier.vars.y,
-				interval: 1,
-				cooldown: 25,
-				max_triggers: 1,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
-
-	疾风九变: () => [
-		{
-			type: "lifesteal",
-			value: 82,
-			parent: "极怒",
-		} as EffectRow,
-	],
-
+	// 解体化形: handled by generic pipeline (extractAttackBonusPerDebuff)
+	// 大罗幻诀: handled by generic pipeline (extractCounterDebuffUpgrade + extractCrossSlotDebuff)
+	// 梵圣真魔咒: handled by generic pipeline (extractDotPerNStacks)
+	// 无相魔劫咒: handled by generic pipeline (extractDelayedBurstIncrease + noEnlightenment)
+	// 玄煞灵影诀: handled by generic pipeline (extractSelfLostHpDamageEveryN)
+	// 惊蜇化龙: handled by generic pipeline (extractPercentMaxHpDamageAffix)
+	// 十方真魄: handled by generic pipeline (extractSelfBuffExtend + extractPeriodicCleanse)
+	// 疾风九变: handled by generic pipeline (extractLifestealWithParent)
 	// 煞影千幻: handled by generic pipeline (extractShieldStrength + extractHpCostAvoidChance)
-
-	九重天凤诀: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "periodic_dispel",
-				count: 2,
-				parent: "this",
-			} as EffectRow,
-			{
-				type: "self_hp_floor",
-				value: tier.vars.x,
-				parent: "this",
-			} as EffectRow,
-		];
-	},
+	// 九重天凤诀: handled by generic pipeline (extractPeriodicDispelAffix + extractSelfHpFloor)
 };
