@@ -1,0 +1,17 @@
+{
+  "progression": { "enlightenment": 10, "fusion": 51 },
+  "player": {
+    "entity": { "hp": 1e8, "atk": 1000, "sp": 5000, "def": 9e5 },
+    "books": [
+      { "slot": 1, "platform": "甲元仙符" }
+    ]
+  },
+  "opponent": {
+    "entity": { "scale": 1.0 },
+    "books": [
+      { "slot": 1, "platform": "千锋聚灵剑" }
+    ]
+  },
+  "formulas": { "dr_constant": 1e6, "sp_shield_ratio": 1.0 },
+  "t_gap": 6
+}
