@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import sampleData from "./sample-data.json";
+import {
+	type Metric,
+	type TimeSeries,
+	buildTimeSeries,
+	buildTimeSeriesUpTo,
+} from "./buildTimeSeries.ts";
+import { Chart } from "./Chart.tsx";
 import type { SimulationData } from "./types.ts";
 import { useReplay } from "./useReplay.ts";
 
 const data = sampleData as SimulationData;
+const METRICS: Metric[] = ["hp", "sp", "shield", "atk", "def"];
+const PLAYERS = ["A", "B"] as const;
+
+interface ChartConfig {
+	id: number;
+	selections: { player: "A" | "B"; metric: Metric }[];
+}
+
 
 function Bar({
 	value,
@@ -106,9 +121,25 @@ function formatEvent(ev: Record<string, unknown>): string {
 	}
 }
 
+let nextChartId = 1;
+
 export function App() {
 	const [speed, setSpeed] = useState(1);
 	const replay = useReplay(data, speed);
+	const [charts, setCharts] = useState<ChartConfig[]>([
+		{ id: nextChartId++, selections: [{ player: "A", metric: "hp" }, { player: "B", metric: "hp" }] },
+	]);
+
+	// Pre-build all time series
+	const allSeries = useMemo(() => {
+		const result: Record<string, TimeSeries> = {};
+		for (const p of PLAYERS) {
+			for (const m of METRICS) {
+				result[`${p}-${m}`] = buildTimeSeries(data, p, m);
+			}
+		}
+		return result;
+	}, []);
 
 	return (
 		<div
@@ -167,6 +198,76 @@ export function App() {
 				</span>
 			</div>
 
+			{/* Charts */}
+			{charts.map((chart) => {
+				const series = chart.selections.map((sel) => {
+					const full = allSeries[`${sel.player}-${sel.metric}`];
+					return full ? buildTimeSeriesUpTo(full, replay.time) : null;
+				}).filter(Boolean) as TimeSeries[];
+
+				return (
+					<div key={chart.id} style={{ marginBottom: 8 }}>
+						<div style={{ display: "flex", gap: 4, marginBottom: 4, alignItems: "center" }}>
+							{PLAYERS.map((p) =>
+								METRICS.map((m) => {
+									const key = `${p}-${m}`;
+									const selected = chart.selections.some(
+										(s) => s.player === p && s.metric === m,
+									);
+									return (
+										<button
+											type="button"
+											key={key}
+											onClick={() => {
+												setCharts((prev) =>
+													prev.map((c) => {
+														if (c.id !== chart.id) return c;
+														const has = c.selections.some(
+															(s) => s.player === p && s.metric === m,
+														);
+														return {
+															...c,
+															selections: has
+																? c.selections.filter(
+																		(s) => !(s.player === p && s.metric === m),
+																	)
+																: [...c.selections, { player: p, metric: m }],
+														};
+													}),
+												);
+											}}
+											style={{
+												...chipStyle,
+												background: selected ? (allSeries[key]?.color ?? "#61afef") : "#2c313a",
+												color: selected ? "#282c34" : "#5c6370",
+												borderColor: selected ? "transparent" : "#4b5263",
+											}}
+										>
+											{p} {m}
+										</button>
+									);
+								}),
+							)}
+							<button
+								type="button"
+								onClick={() => setCharts((prev) => prev.filter((c) => c.id !== chart.id))}
+								style={{ ...chipStyle, color: "#e06c75", borderColor: "#4b5263" }}
+							>
+								×
+							</button>
+						</div>
+						<Chart series={series} width={900} title={chart.selections.map((s) => `${s.player} ${s.metric}`).join(", ")} />
+					</div>
+				);
+			})}
+			<button
+				type="button"
+				onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])}
+				style={{ ...btnStyle, marginBottom: 16 }}
+			>
+				+ Add Chart
+			</button>
+
 			{/* Event log */}
 			<div
 				style={{
@@ -224,5 +325,16 @@ const btnStyle: React.CSSProperties = {
 	padding: "6px 12px",
 	cursor: "pointer",
 	fontSize: 13,
+	fontFamily: "inherit",
+};
+
+const chipStyle: React.CSSProperties = {
+	background: "#2c313a",
+	color: "#5c6370",
+	border: "1px solid #4b5263",
+	borderRadius: 12,
+	padding: "2px 8px",
+	cursor: "pointer",
+	fontSize: 11,
 	fontFamily: "inherit",
 };
