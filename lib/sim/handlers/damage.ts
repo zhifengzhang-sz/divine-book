@@ -12,21 +12,17 @@ register("base_attack", (effect) => ({
 }));
 
 // percent_max_hp_damage: { value, cap_vs_monster?, data_state }
-// Per-hit %maxHP damage. The source text says "伤害" (damage), not "真实伤害"
-// (true damage), so it goes through normal DR + shield resolution.
-// The damage VALUE is computed from target's maxHP, but it's resolved as a
-// normal HIT — the target applies their own DR and shields.
-register("percent_max_hp_damage", (effect, ctx) => {
+// Per-hit %maxHP damage. "造成目标27%最大气血值的伤害" — damage based on
+// TARGET's maxHP, goes through DR. Source doesn't know target's state,
+// so we emit a PERCENT_MAX_HP_HIT carrying the percentage. The target
+// resolves it using their own maxHp.
+register("percent_max_hp_damage", (effect, _ctx) => {
 	const percent = effect.value as number;
-	// Compute absolute damage from target's maxHP
-	const damagePerHit = (percent / 100) * ctx.targetPlayer.maxHp;
 	return {
 		perHitEffects: () => [
 			{
-				type: "HIT" as const,
-				hitIndex: -1, // supplementary hit
-				damage: damagePerHit,
-				spDamage: 0,
+				type: "PERCENT_MAX_HP_HIT" as const,
+				percent,
 			},
 		],
 	};

@@ -54,11 +54,11 @@ describe("processBook", () => {
 			}
 		}
 
-		// Should also produce %maxHP as HIT perHitEffects (goes through DR)
+		// Should carry %maxHP as PERCENT_MAX_HP_HIT (resolved by target)
 		const firstHit = hits[0];
 		if (firstHit.type === "HIT" && firstHit.perHitEffects) {
 			expect(firstHit.perHitEffects.length).toBeGreaterThan(0);
-			expect(firstHit.perHitEffects[0].type).toBe("HIT");
+			expect(firstHit.perHitEffects[0].type).toBe("PERCENT_MAX_HP_HIT");
 		}
 	});
 

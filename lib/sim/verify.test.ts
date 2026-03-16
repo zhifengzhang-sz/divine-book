@@ -100,15 +100,14 @@ describe("Verification: 千锋聚灵剑 hand-calculated snapshot", () => {
 		}
 	});
 
-	test("each hit carries %maxHP per-hit effect as HIT (not HP_DAMAGE)", () => {
+	test("each hit carries %maxHP as PERCENT_MAX_HP_HIT (target resolves)", () => {
 		for (const hit of pendingHits) {
 			expect(hit.perHitEffects).toBeDefined();
 			expect(hit.perHitEffects).toHaveLength(1);
-			// %maxHP is now a HIT event (goes through DR), not HP_DAMAGE
-			expect(hit.perHitEffects?.[0].type).toBe("HIT");
-			if (hit.perHitEffects?.[0].type === "HIT") {
-				expect(hit.perHitEffects[0].damage).toBeCloseTo(expectedMaxHpDamageRaw(), 0);
-			}
+			expect(hit.perHitEffects?.[0]).toMatchObject({
+				type: "PERCENT_MAX_HP_HIT",
+				percent: MAX_HP_PERCENT,
+			});
 		}
 	});
 

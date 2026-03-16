@@ -505,10 +505,18 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 		);
 	}
 
-	// 6. Per-hit effects (e.g., %maxHP damage as HIT)
+	// 6. Per-hit effects (e.g., %maxHP damage)
 	if (hit.perHitEffects) {
 		for (const effect of hit.perHitEffects) {
-			if (effect.type === "HIT") {
+			if (effect.type === "PERCENT_MAX_HP_HIT") {
+				// Resolve against TARGET's own maxHp, then apply DR
+				const rawDamage = (effect.percent / 100) * s.maxHp;
+				resolveHit(
+					ctx,
+					{ type: "HIT", hitIndex: -1, damage: rawDamage, spDamage: 0 },
+					enqueue,
+				);
+			} else if (effect.type === "HIT") {
 				resolveHit(ctx, effect, enqueue);
 			} else if (effect.type === "HP_DAMAGE") {
 				resolveHpDamage(ctx, effect, enqueue);

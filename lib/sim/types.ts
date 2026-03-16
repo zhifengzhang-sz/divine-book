@@ -69,6 +69,7 @@ export interface SeededRNGInterface {
 
 export type IntentEvent =
 	| HitEvent
+	| PercentMaxHpHitEvent
 	| HpDamageEvent
 	| ApplyStateEvent
 	| ApplyDotEvent
@@ -88,6 +89,11 @@ export interface HitEvent {
 	damage: number;
 	spDamage: number;
 	perHitEffects?: IntentEvent[];
+}
+
+export interface PercentMaxHpHitEvent {
+	type: "PERCENT_MAX_HP_HIT";
+	percent: number;
 }
 
 export interface HpDamageEvent {
