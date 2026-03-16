@@ -54,11 +54,11 @@ describe("processBook", () => {
 			}
 		}
 
-		// Should also produce HP_DAMAGE events for %maxHP (as perHitEffects)
+		// Should also produce %maxHP as HIT perHitEffects (goes through DR)
 		const firstHit = hits[0];
 		if (firstHit.type === "HIT" && firstHit.perHitEffects) {
 			expect(firstHit.perHitEffects.length).toBeGreaterThan(0);
-			expect(firstHit.perHitEffects[0].type).toBe("HP_DAMAGE");
+			expect(firstHit.perHitEffects[0].type).toBe("HIT");
 		}
 	});
 

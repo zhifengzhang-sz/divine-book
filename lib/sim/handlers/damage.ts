@@ -12,12 +12,22 @@ register("base_attack", (effect) => ({
 }));
 
 // percent_max_hp_damage: { value, cap_vs_monster?, data_state }
-// Per-hit %maxHP damage — bypasses DR and shields. Emitted as HP_DAMAGE per hit.
-register("percent_max_hp_damage", (effect, _ctx) => {
+// Per-hit %maxHP damage. The source text says "伤害" (damage), not "真实伤害"
+// (true damage), so it goes through normal DR + shield resolution.
+// The damage VALUE is computed from target's maxHP, but it's resolved as a
+// normal HIT — the target applies their own DR and shields.
+register("percent_max_hp_damage", (effect, ctx) => {
 	const percent = effect.value as number;
+	// Compute absolute damage from target's maxHP
+	const damagePerHit = (percent / 100) * ctx.targetPlayer.maxHp;
 	return {
 		perHitEffects: () => [
-			{ type: "HP_DAMAGE" as const, percent, basis: "max" as const },
+			{
+				type: "HIT" as const,
+				hitIndex: -1, // supplementary hit
+				damage: damagePerHit,
+				spDamage: 0,
+			},
 		],
 	};
 });

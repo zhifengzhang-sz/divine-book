@@ -43,17 +43,18 @@ describe("base_attack", () => {
 });
 
 describe("percent_max_hp_damage", () => {
-	test("returns perHitEffects producing HP_DAMAGE", () => {
+	test("returns perHitEffects producing HIT (goes through DR)", () => {
 		const effect: EffectRow = { type: "percent_max_hp_damage", value: 27 };
-		const result = resolve(effect, makeCtx());
+		const ctx = makeCtx();
+		const result = resolve(effect, ctx);
 		expect(result?.perHitEffects).toBeDefined();
 		const events = result?.perHitEffects?.(0);
 		expect(events).toHaveLength(1);
-		expect(events?.[0]).toMatchObject({
-			type: "HP_DAMAGE",
-			percent: 27,
-			basis: "max",
-		});
+		expect(events?.[0].type).toBe("HIT");
+		if (events?.[0].type === "HIT") {
+			// 27% of target maxHp (1e8) = 27,000,000
+			expect(events[0].damage).toBeCloseTo(27_000_000, 0);
+		}
 	});
 });
 

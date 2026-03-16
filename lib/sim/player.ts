@@ -505,10 +505,12 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 		);
 	}
 
-	// 6. Per-hit effects (e.g., %maxHP damage)
+	// 6. Per-hit effects (e.g., %maxHP damage as HIT)
 	if (hit.perHitEffects) {
 		for (const effect of hit.perHitEffects) {
-			if (effect.type === "HP_DAMAGE") {
+			if (effect.type === "HIT") {
+				resolveHit(ctx, effect, enqueue);
+			} else if (effect.type === "HP_DAMAGE") {
 				resolveHpDamage(ctx, effect, enqueue);
 			}
 		}
