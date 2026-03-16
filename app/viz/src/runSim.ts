@@ -18,17 +18,10 @@ import combatConfig from "./combat-config.json";
 
 export { manifest, combatConfig };
 
-export interface SimConfig {
-	playerA: {
-		platform: string;
-		op1: string;
-		op2: string;
-	};
-	playerB: {
-		platform: string;
-		op1: string;
-		op2: string;
-	};
+export interface PlayerBookConfig {
+	platform: string;
+	op1: string;
+	op2: string;
 	stats: {
 		hp: number;
 		atk: number;
@@ -36,6 +29,11 @@ export interface SimConfig {
 		def: number;
 		spRegen: number;
 	};
+}
+
+export interface SimConfig {
+	playerA: PlayerBookConfig;
+	playerB: PlayerBookConfig;
 	formulas: {
 		dr_constant: number;
 		sp_shield_ratio: number;
@@ -58,21 +56,24 @@ function formatBook(b: { platform: string; op1: string; op2: string }): string {
 export function runSimulation(config: SimConfig): SimulationData {
 	const booksYaml = booksData as Parameters<typeof validatePlayerConfig>[1];
 	const affixesYaml = affixesData as Parameters<typeof validatePlayerConfig>[2];
-	const { stats, formulas, progression, seed } = config;
+	const { formulas, progression, seed } = config;
 
 	const slotA = { slot: 1, platform: config.playerA.platform, op1: config.playerA.op1 || undefined, op2: config.playerA.op2 || undefined };
 	const slotB = { slot: 1, platform: config.playerB.platform, op1: config.playerB.op1 || undefined, op2: config.playerB.op2 || undefined };
 
+	const statsA = config.playerA.stats;
+	const statsB = config.playerB.stats;
+
 	// Validate
-	const playerConfigA = { entity: stats, formulas, progression, books: [slotA] };
-	const playerConfigB = { entity: stats, formulas, progression, books: [slotB] };
+	const playerConfigA = { entity: statsA, formulas, progression, books: [slotA] };
+	const playerConfigB = { entity: statsB, formulas, progression, books: [slotB] };
 	validatePlayerConfig(playerConfigA, booksYaml, affixesYaml);
 	validatePlayerConfig(playerConfigB, booksYaml, affixesYaml);
 
 	const clock = new SimulationClock();
 	const rng = new SeededRNG(seed);
 
-	function makePlayer(label: string, bookSlot: typeof slotA) {
+	function makePlayer(label: string, bookSlot: typeof slotA, stats: typeof statsA) {
 		return createActor(playerMachine, {
 			input: {
 				label,
@@ -97,8 +98,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		});
 	}
 
-	const playerA = makePlayer("A", slotA);
-	const playerB = makePlayer("B", slotB);
+	const playerA = makePlayer("A", slotA, statsA);
+	const playerB = makePlayer("B", slotB, statsB);
 
 	const events: StateChangeEvent[] = [];
 	playerA.on("*", (ev: StateChangeEvent) => events.push({ ...ev, player: "A" }));
@@ -142,8 +143,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 
 	return {
 		config: {
-			playerA: { label: "A", book: formatBook(config.playerA), hp: stats.hp, atk: stats.atk, sp: stats.sp, def: stats.def },
-			playerB: { label: "B", book: formatBook(config.playerB), hp: stats.hp, atk: stats.atk, sp: stats.sp, def: stats.def },
+			playerA: { label: "A", book: formatBook(config.playerA), ...statsA },
+			playerB: { label: "B", book: formatBook(config.playerB), ...statsB },
 			seed,
 		},
 		events: events as SimulationData["events"],
