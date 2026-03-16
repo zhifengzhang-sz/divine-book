@@ -258,6 +258,28 @@ const winner =
 				? "Draw (both alive)"
 				: "Draw (both dead)";
 
+// ── JSON output mode ────────────────────────────────────────────────
+
+if (hasFlag("json")) {
+	const output = {
+		config: {
+			playerA: { label: "A", book: labelA, ...playerConfig.entity },
+			playerB: { label: "B", book: labelB, ...playerConfig.entity },
+			seed,
+		},
+		events,
+		result: {
+			winner: winner.startsWith("A") ? "A" : winner.startsWith("B") ? "B" : null,
+			aFinalHp: aFinal.hp,
+			bFinalHp: bFinal.hp,
+		},
+	};
+	console.log(JSON.stringify(output));
+	process.exit(0);
+}
+
+// ── Interactive replay ──────────────────────────────────────────────
+
 async function replay() {
 	console.log(`\n⚔  ${labelA}  vs  ${labelB}`);
 	console.log(
