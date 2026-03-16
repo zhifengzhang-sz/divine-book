@@ -102,6 +102,7 @@ books:
           damage_taken_reduction_to: 120
           damage_increase: 200
           parent: this
+          data_state: fusion=50
     exclusive_affix:
       name: 玄心剑魄
       effects:
@@ -191,6 +192,7 @@ books:
           extra_seconds: 6.5
           tick_interval: 0.5
           parent: this
+          data_state: fusion=50
     exclusive_affix:
       name: 仙露护元
       effects:
@@ -211,7 +213,8 @@ books:
       name: 焚心剑芒
       effects:
         - type: per_enemy_lost_hp
-          per_percent: 2
+          per_percent: 5
+          value: 10
           parent: this
     exclusive_affix:
       name: 神威冲云
@@ -234,9 +237,8 @@ books:
       name: 追命剑阵
       effects:
         - type: debuff
-          name: 追命剑阵
           target: skill_damage
-          value: -30
+          value: 30
           duration: 16
           parent: this
     exclusive_affix:
@@ -554,10 +556,10 @@ books:
       name: 魔念生息
       effects:
         - type: dot
-          parent: 结魂锁链
           tick_interval: 1
           percent_max_hp: 1.6
           duration: permanent
+          parent: 结魂锁链
         - type: per_debuff_stack_damage
           per_n_stacks: 1
           value: 0.5
@@ -583,10 +585,10 @@ books:
       name: 魔意震慑
       effects:
         - type: debuff
-          name: 惧意
           target: attack
           value: -14
           duration: 12
+          name: 惧意
           per_stolen_buff: true
           parent: this
     exclusive_affix:
@@ -663,8 +665,8 @@ books:
       effects:
         - type: attack_bonus
           value: 13
-          per_debuff_stack: true
           max_stacks: 30
+          per_debuff_stack: true
           parent: this
     exclusive_affix:
       name: 心逐神随
@@ -778,13 +780,35 @@ books:
         - type: counter_debuff_upgrade
           on_attacked_chance: 60
           parent: 罗天魔咒
+          data_state:
+            - enlightenment=0
+            - fusion=20
         - type: cross_slot_debuff
+          target: final_damage_reduction
+          value: -46
+          duration: 8
           name: 命损
+          trigger: on_attacked
+          parent: 罗天魔咒
+          data_state:
+            - enlightenment=0
+            - fusion=20
+        - type: counter_debuff_upgrade
+          on_attacked_chance: 60
+          parent: 罗天魔咒
+          data_state:
+            - enlightenment=10
+            - fusion=52
+        - type: cross_slot_debuff
           target: final_damage_reduction
           value: -100
           duration: 8
+          name: 命损
           trigger: on_attacked
           parent: 罗天魔咒
+          data_state:
+            - enlightenment=10
+            - fusion=52
     exclusive_affix:
       name: 古魔之魂
       effects:
@@ -805,12 +829,12 @@ books:
       name: 魔心焚尽
       effects:
         - type: dot
-          name: 瞋痴业火
-          parent: 贪妄业火
-          per_n_stacks: 2
           tick_interval: 1
           percent_lost_hp: 8
           duration: 8
+          name: 瞋痴业火
+          parent: 贪妄业火
+          per_n_stacks: 2
     exclusive_affix:
       name: 天魔真解
       effects:
@@ -892,8 +916,8 @@ books:
       effects:
         - type: self_lost_hp_damage
           value: 12
-          parent: 怒意滔天
           every_n_hits: 4
+          parent: 怒意滔天
           data_state:
             - enlightenment=1
             - fusion=51
@@ -916,8 +940,8 @@ books:
       name: 星猿幻杀
       effects:
         - type: percent_max_hp_damage
-          name: 镇杀
           value: 10
+          name: 镇杀
           parent: this
     exclusive_affix:
       name: 索心真诀
@@ -952,8 +976,8 @@ books:
       name: 星猿弃天
       effects:
         - type: self_buff_extend
-          buff_name: 怒灵降世
           value: 3.5
+          buff_name: 怒灵降世
         - type: periodic_cleanse
           chance: 30
           interval: 1
