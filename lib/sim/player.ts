@@ -192,25 +192,28 @@ export const playerMachine = setup({
 						);
 
 						const t = context.clock.now();
+						const bookLabel = [bookSlot.platform, bookSlot.op1, bookSlot.op2]
+							.filter(Boolean)
+							.join(" + ");
 
-						// Emit CAST_START
+						// Emit CAST_START with full divine book label
 						enqueue(
 							emit({
 								type: "CAST_START" as const,
 								player: context.label,
 								slot,
-								book: bookSlot.platform,
+								book: bookLabel,
 								t,
 							}),
 						);
 
-						// Call book function (pure computation)
+						// Step 1: Run book function to get all events
 						const result = processBook(
 							bookData,
 							affixEffects,
 							{
 								sourcePlayer: context.state,
-								targetPlayer: context.state, // opponent state not needed for source-side computation
+								targetPlayer: context.state,
 								book: bookSlot.platform,
 								slot,
 								rng: context.rng,
@@ -225,7 +228,8 @@ export const playerMachine = setup({
 							context.listeners.push(listener);
 						}
 
-						// Separate self-targeted vs opponent-targeted events
+						// Step 2: Separate events by category
+						const preBuffs: IntentEvent[] = [];
 						const selfEvents: IntentEvent[] = [];
 						const opponentHits: HitEvent[] = [];
 						const opponentIntents: IntentEvent[] = [];
@@ -233,6 +237,17 @@ export const playerMachine = setup({
 						for (const ev of result.directEvents) {
 							if (ev.type === "HIT") {
 								opponentHits.push(ev);
+							} else if (
+								ev.type === "APPLY_STATE" &&
+								ev.state.target === "self" &&
+								ev.state.effects.some(
+									(e) =>
+										e.stat === "attack_bonus" ||
+										e.stat === "defense_bonus",
+								)
+							) {
+								// Stat buffs must apply BEFORE damage computation
+								preBuffs.push(ev);
 							} else if (isSelfTargeted(ev)) {
 								selfEvents.push(ev);
 							} else {
@@ -240,15 +255,42 @@ export const playerMachine = setup({
 							}
 						}
 
+						// Step 3: Apply stat buffs first → recalc ATK/DEF
+						for (const ev of preBuffs) {
+							processSelfIntent(context, ev, enqueue);
+						}
+
+						// Step 4: Re-run damage chain with buffed ATK if any pre-buffs applied
+						let finalHits = opponentHits;
+						if (preBuffs.length > 0 && opponentHits.length > 0) {
+							const rebuildResult = processBook(
+								bookData,
+								affixEffects,
+								{
+									sourcePlayer: context.state,
+									targetPlayer: context.state,
+									book: bookSlot.platform,
+									slot,
+									rng: context.rng,
+									atk: context.state.atk, // now uses buffed ATK
+									hits: extractHits(bookData, context.progression),
+								},
+								context.progression,
+							);
+							finalHits = rebuildResult.directEvents.filter(
+								(e): e is HitEvent => e.type === "HIT",
+							);
+						}
+
 						// Store hits and intents for arena to collect
 						enqueue(
 							assign({
-								pendingHits: opponentHits,
+								pendingHits: finalHits,
 								pendingIntents: opponentIntents,
 							}),
 						);
 
-						// Process self-targeted events immediately
+						// Process remaining self-targeted events
 						for (const ev of selfEvents) {
 							processSelfIntent(context, ev, enqueue);
 						}
