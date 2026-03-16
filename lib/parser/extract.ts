@@ -461,11 +461,13 @@ export function extractDebuff(text: string): ExtractedEffect | null {
 		/降低(\w+)%(?:的)?最终伤害减免[，,]持续(\w+)秒/,
 	);
 	if (finalDrMatch) {
+		// "降低" → negative value
+		const raw = finalDrMatch[1];
 		return {
 			type: "debuff",
 			fields: {
 				target: "final_damage_reduction",
-				value: finalDrMatch[1],
+				value: /^\d/.test(raw) ? -Number(raw) : `-${raw}`,
 				duration: finalDrMatch[2],
 			},
 		};
@@ -476,11 +478,13 @@ export function extractDebuff(text: string): ExtractedEffect | null {
 		/使敌方的?神通伤害降低(\w+)%[，,]持续(\w+)秒/,
 	);
 	if (skillDmgMatch) {
+		// "降低" → negative value
+		const raw = skillDmgMatch[1];
 		return {
 			type: "debuff",
 			fields: {
 				target: "skill_damage",
-				value: skillDmgMatch[1],
+				value: /^\d/.test(raw) ? -Number(raw) : `-${raw}`,
 				duration: skillDmgMatch[2],
 			},
 		};
@@ -491,11 +495,13 @@ export function extractDebuff(text: string): ExtractedEffect | null {
 	if (/每偷取.*?增益状态.*?攻击力降低/.test(text)) return null;
 	const atkMatch = text.match(/攻击力降低(\w+)%[，,]持续(\w+)秒/);
 	if (atkMatch) {
+		// "降低" → negative value
+		const raw = atkMatch[1];
 		return {
 			type: "debuff",
 			fields: {
 				target: "attack",
-				value: atkMatch[1],
+				value: /^\d/.test(raw) ? -Number(raw) : `-${raw}`,
 				duration: atkMatch[2],
 			},
 		};

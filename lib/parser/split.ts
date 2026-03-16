@@ -225,13 +225,15 @@ function enrichWithNamedStates(
 				const segText = text.slice(seg.start, seg.end);
 
 				if (effect.type === "debuff") {
+					// Match using absolute value (strip leading "-" from already-negated values)
 					const val = String(effect.fields.value);
-					if (segText.includes(`${val}%`)) {
+					const absVal = val.startsWith("-") ? val.slice(1) : val;
+					if (segText.includes(`${absVal}%`)) {
 						if (!effect.meta) effect.meta = {};
 						effect.meta.name = seg.name;
 						if (stateDef.per_hit_stack) effect.meta.per_hit_stack = true;
 						if (stateDef.dispellable === false) effect.meta.dispellable = false;
-						effect.fields.value = -Number(val) || `-${val}`;
+						// Value is already negative from extractDebuff — don't negate again
 						break;
 					}
 				}
@@ -474,20 +476,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 
-	// parent "回生灵鹤" comes from skill state registry (text says "灵鹤" only)
-	周天星元: (cell) => {
-		const tier = cell.tiers[0];
-		if (!tier) return [];
-		return [
-			{
-				type: "shield",
-				value: tier.vars.x,
-				source: "self_max_hp",
-				duration: 16,
-				parent: "回生灵鹤",
-			} as EffectRow,
-		];
-	},
+	// 周天星元: handled by generic pipeline (extractShieldOnHeal + state registry match)
 
 	// 甲元仙符: handled by generic pipeline (extractSelfBuffExtra, multi-tier with locked)
 

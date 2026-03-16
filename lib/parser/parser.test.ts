@@ -468,9 +468,9 @@ describe("states in BookData output", () => {
 		expect(states["罗天魔咒"].children?.length).toBeGreaterThan(0);
 	});
 
-	it("回生灵鹤 has duration 20", () => {
+	it("灵鹤 has duration 20", () => {
 		const states = result.books["周天星元"].states!;
-		expect(states["回生灵鹤"].duration).toBe(20);
+		expect(states["灵鹤"].duration).toBe(20);
 	});
 
 	it("不灭魔体 is permanent on_attacked", () => {

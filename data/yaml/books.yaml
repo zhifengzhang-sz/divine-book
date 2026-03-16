@@ -238,7 +238,7 @@ books:
       effects:
         - type: debuff
           target: skill_damage
-          value: 30
+          value: -30
           duration: 16
           parent: this
     exclusive_affix:
@@ -331,7 +331,7 @@ books:
   周天星元:
     school: Spell
     states:
-      回生灵鹤:
+      灵鹤:
         target: self
         duration: 20
       逆转阴阳:
@@ -341,16 +341,40 @@ books:
       - type: base_attack
         hits: 5
         total: 1500
+        data_state:
+          - enlightenment=1
+          - fusion=20
       - type: self_heal
         value: 20
+        data_state:
+          - enlightenment=1
+          - fusion=20
+      - type: base_attack
+        hits: 5
+        total: 19065
+        data_state:
+          - enlightenment=3
+          - fusion=50
+      - type: self_heal
+        value: 20
+        data_state:
+          - enlightenment=3
+          - fusion=50
     primary_affix:
       name: 天书灵盾
       effects:
         - type: shield
           value: 3.5
-          source: self_max_hp
           duration: 16
-          parent: 回生灵鹤
+          source: self_max_hp
+          parent: 灵鹤
+          data_state: fusion=20
+        - type: shield
+          value: 4.4
+          duration: 16
+          source: self_max_hp
+          parent: 灵鹤
+          data_state: fusion=50
     exclusive_affix:
       name: 奇能诡道
       effects:
