@@ -6,17 +6,17 @@
  * understands how to parse each book's specific patterns.
  */
 
-import type { EffectRow } from "./emit.js";
 import type { Grammar } from "./book-table.js";
-import type { SplitCell, TierLine } from "./md-table.js";
-import { resolveFields } from "./tiers.js";
-import { buildStateRegistry, type StateRegistry } from "./states.js";
+import type { EffectRow } from "./emit.js";
 import {
-	extractDot,
-	SKILL_EXTRACTORS,
 	AFFIX_EXTRACTORS,
 	type ExtractedEffect,
+	extractDot,
+	SKILL_EXTRACTORS,
 } from "./extract.js";
+import type { SplitCell } from "./md-table.js";
+import { buildStateRegistry, type StateRegistry } from "./states.js";
+import { buildDataState, resolveFields } from "./tiers.js";
 
 export interface ParsedBook {
 	school: string;
@@ -40,21 +40,12 @@ export function parseBook(
 	const states = buildStateRegistry(skillCell.description);
 
 	// Parse skill effects
-	const skill = parseSkillEffects(
-		name,
-		grammar,
-		skillCell,
-		states,
-	);
+	const skill = parseSkillEffects(name, grammar, skillCell, states);
 
 	// Parse primary affix
 	let primaryAffix: { name: string; effects: EffectRow[] } | undefined;
 	if (affixCell.description.length > 0) {
-		primaryAffix = parsePrimaryAffix(
-			name,
-			affixCell,
-			states,
-		);
+		primaryAffix = parsePrimaryAffix(name, affixCell, states);
 	}
 
 	const result: ParsedBook = { school, skill };
@@ -172,7 +163,7 @@ function genericSkillParse(
 			continue;
 		}
 
-		const ds = buildDs(tier);
+		const ds = buildDataState(tier);
 		for (const { effect } of extracted) {
 			const resolved = resolveFields(effect.fields, tier.vars);
 			const extra: Record<string, unknown> = {};
@@ -221,9 +212,13 @@ function enrichWithNamedStates(
 		const effect = item.effect;
 
 		// For various effect types, check if the pattern is inside a named state def
-		if (effect.type === "debuff" || effect.type === "counter_debuff" ||
-			effect.type === "self_hp_cost" || effect.type === "self_lost_hp_damage" ||
-			effect.type === "counter_buff") {
+		if (
+			effect.type === "debuff" ||
+			effect.type === "counter_debuff" ||
+			effect.type === "self_hp_cost" ||
+			effect.type === "self_lost_hp_damage" ||
+			effect.type === "counter_buff"
+		) {
 			for (const seg of stateSegments) {
 				const stateDef = states[seg.name];
 				if (!stateDef) continue;
@@ -251,8 +246,11 @@ function enrichWithNamedStates(
 				}
 
 				// self_hp_cost / self_lost_hp_damage / counter_buff inside a named state
-				if (effect.type === "self_hp_cost" || effect.type === "self_lost_hp_damage" ||
-					effect.type === "counter_buff") {
+				if (
+					effect.type === "self_hp_cost" ||
+					effect.type === "self_lost_hp_damage" ||
+					effect.type === "counter_buff"
+				) {
 					const val = String(effect.fields.value);
 					if (segText.includes(`${val}%`)) {
 						if (!effect.meta) effect.meta = {};
@@ -290,7 +288,7 @@ function enrichWithNamedStates(
  */
 export function genericAffixParse(
 	cell: SplitCell,
-	states: StateRegistry,
+	_states: StateRegistry,
 	options?: { lastTierOnly?: boolean; defaultParent?: string },
 ): EffectRow[] {
 	let text = cell.description.join("，");
@@ -331,7 +329,11 @@ export function genericAffixParse(
 				}
 			}
 			// Apply defaultParent unless effect already has parent or is a NO_PARENT type
-			if (options?.defaultParent && !extra.parent && !NO_PARENT_TYPES.has(effect.type)) {
+			if (
+				options?.defaultParent &&
+				!extra.parent &&
+				!NO_PARENT_TYPES.has(effect.type)
+			) {
 				extra.parent = options.defaultParent;
 			}
 			if (ds !== undefined) extra.data_state = ds;
@@ -362,7 +364,7 @@ export function genericAffixParse(
 			continue;
 		}
 
-		const ds = buildDs(tier);
+		const ds = buildDataState(tier);
 		effects.push(...resolveEffects(tier.vars, ds));
 	}
 
@@ -373,10 +375,7 @@ export function genericAffixParse(
 // Book-specific parsers
 // ─────────────────────────────────────────────────────────
 
-type BookParser = (
-	cell: SplitCell,
-	states: StateRegistry,
-) => EffectRow[];
+type BookParser = (cell: SplitCell, states: StateRegistry) => EffectRow[];
 
 const BOOK_PARSERS: Record<string, BookParser> = {
 	天魔降临咒: parseTianMoJiangLin,
@@ -412,7 +411,6 @@ function parseTianMoJiangLin(cell: SplitCell): EffectRow[] {
 		} as EffectRow,
 	];
 }
-
 
 // ─────────────────────────────────────────────────────────
 // Primary Affix parsing
@@ -705,7 +703,7 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 	玄煞灵影诀: (cell) => {
 		const tier = cell.tiers[0];
 		if (!tier) return [];
-		const ds = buildDs(tier);
+		const ds = buildDataState(tier);
 		return [
 			{
 				type: "self_lost_hp_damage",
@@ -777,22 +775,3 @@ const AFFIX_PARSERS: Record<string, AffixParser> = {
 		];
 	},
 };
-
-// ─────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────
-
-function buildDs(
-	tier: TierLine,
-): undefined | string | string[] {
-	const parts: string[] = [];
-	if (tier.enlightenment !== undefined) {
-		parts.push(`enlightenment=${tier.enlightenment}`);
-	}
-	if (tier.fusion !== undefined) {
-		parts.push(`fusion=${tier.fusion}`);
-	}
-	if (parts.length === 0) return undefined;
-	if (parts.length === 1) return parts[0];
-	return parts;
-}

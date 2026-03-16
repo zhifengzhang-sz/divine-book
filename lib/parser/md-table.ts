@@ -12,7 +12,7 @@ export interface RawBookEntry {
 	affixText: string;
 }
 
-const SCHOOL_MAP: Record<string, string> = {
+export const SCHOOL_MAP: Record<string, string> = {
 	剑修: "Sword",
 	法修: "Spell",
 	魔修: "Demon",

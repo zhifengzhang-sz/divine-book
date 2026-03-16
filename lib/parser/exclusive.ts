@@ -11,9 +11,10 @@
  */
 
 import type { EffectRow } from "./emit.js";
-import { splitCell, type SplitCell } from "./md-table.js";
-import { buildStateRegistry, type StateRegistry } from "./states.js";
+import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
 import { genericAffixParse } from "./split.js";
+import { buildStateRegistry, type StateRegistry } from "./states.js";
+import { buildDataState } from "./tiers.js";
 
 export interface ExclusiveAffixEntry {
 	bookName: string;
@@ -22,24 +23,19 @@ export interface ExclusiveAffixEntry {
 	cell: SplitCell;
 }
 
-const SCHOOL_MAP: Record<string, string> = {
-	剑修: "Sword",
-	法修: "Spell",
-	魔修: "Demon",
-	体修: "Body",
-};
-
 /** Normalize name variants between 专属词缀.md and 主书.md / BOOK_TABLE */
 const NAME_NORMALIZE: Record<string, string> = {
-	"天剎真魔": "天刹真魔",
-	"焚圣真魔咒": "梵圣真魔咒",
-	"惊蛰化龙": "惊蜇化龙",
+	天剎真魔: "天刹真魔",
+	焚圣真魔咒: "梵圣真魔咒",
+	惊蛰化龙: "惊蜇化龙",
 };
 
 /**
  * Read 专属词缀.md into per-book entries.
  */
-export function readExclusiveAffixTable(markdown: string): ExclusiveAffixEntry[] {
+export function readExclusiveAffixTable(
+	markdown: string,
+): ExclusiveAffixEntry[] {
 	const lines = markdown.split("\n");
 	const entries: ExclusiveAffixEntry[] = [];
 	let currentSchool = "";
@@ -116,25 +112,10 @@ export function parseExclusiveAffix(
 	// Generic affix parse as fallback
 	// For exclusive affixes with a single tier, use last-tier-only mode
 	// (use variable values without data_state — matches legacy behavior)
-	const effects = genericAffixParse(entry.cell, stateRegistry, { lastTierOnly: true });
+	const effects = genericAffixParse(entry.cell, stateRegistry, {
+		lastTierOnly: true,
+	});
 	return { name: entry.affixName, effects };
-}
-
-// ─── Helpers ────────────────────────────────────────────────────
-
-function buildDs(
-	tier: { enlightenment?: number; fusion?: number },
-): undefined | string | string[] {
-	const parts: string[] = [];
-	if (tier.enlightenment !== undefined) {
-		parts.push(`enlightenment=${tier.enlightenment}`);
-	}
-	if (tier.fusion !== undefined) {
-		parts.push(`fusion=${tier.fusion}`);
-	}
-	if (parts.length === 0) return undefined;
-	if (parts.length === 1) return parts[0];
-	return parts;
 }
 
 type ExclusiveParser = (cell: SplitCell) => EffectRow[];
@@ -157,7 +138,7 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		const tiers = cell.tiers;
 		const effects: EffectRow[] = [];
 		for (const tier of tiers) {
-			const ds = buildDs(tier);
+			const ds = buildDataState(tier);
 			effects.push({
 				type: "dot",
 				name: "噬心",
@@ -200,7 +181,7 @@ const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
 		const tiers = cell.tiers;
 		const effects: EffectRow[] = [];
 		for (const tier of tiers) {
-			const ds = buildDs(tier);
+			const ds = buildDataState(tier);
 			effects.push({
 				type: "debuff_stack_chance",
 				value: tier.vars.x,
