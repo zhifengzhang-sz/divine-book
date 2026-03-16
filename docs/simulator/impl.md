@@ -526,6 +526,28 @@ The platform reads the book spec and produces events. It does NOT hardcode what 
 
 When the platform creates a named state (e.g., `self_buff` with `name: 仙佑`), it sends a `STATE_CREATED` event to the player. The player adds it to `named_states` and schedules expiry.
 
+### Book → Player context access
+
+The book actor needs the player's live state (HP, ATK, etc.) to compute damage and effects. The book queries the player via the system:
+
+```typescript
+// Book queries player for current stats:
+const playerSnapshot = system.get("player-a").getSnapshot();
+const atk = effectiveAtk(playerSnapshot.context);
+```
+
+Alternatively, the player passes its current stats as part of the `ACTIVATE` event:
+
+```typescript
+// Player slot fires:
+sendTo("player-a.book-0", {
+  type: "ACTIVATE",
+  stats: { hp: context.hp, effective_atk: effectiveAtk(context), ... },
+});
+```
+
+The second approach avoids the book reaching into the player's internals. The player provides what the book needs at activation time. Self-events (buffs, HP costs) that change state mid-activation are sent back to the player immediately, and subsequent effects in the same activation read updated stats from the player.
+
 ### Reactive affixes
 
 Primary and exclusive affixes are **guards** on the player's named state events. When a `STATE_CREATED` event matches the affix's `parent` field, the affix triggers.
@@ -611,6 +633,28 @@ Named states are the central concept. Their lifecycle in XState:
 - Per-tick states (DoTs) schedule their own ticks via delayed `raise`
 - Stacking states increment `stacks` on re-application
 - Refreshing states reset the expiry timer (cancel + re-raise)
+
+### Trigger modes
+
+Named states have different activation triggers (from `StateDef.trigger`):
+
+| Trigger | XState pattern |
+|---------|---------------|
+| `on_cast` (default) | Effects fire immediately when `STATE_CREATED` is processed |
+| `on_attacked` | Player listens for `INBOUND_INTENTS` with ATK_DAMAGE; if this state is active, fire its effects |
+| `per_tick` | Schedule recurring `raise` with delay = `tick_interval × 1000ms`; fire effects on each tick |
+
+```typescript
+// on_attacked trigger:
+on: {
+  INBOUND_INTENTS: {
+    guard: ({ context, event }) =>
+      event.intents.some(i => i.type === "ATK_DAMAGE") &&
+      context.named_states.has("天狼之啸"),
+    actions: "triggerOnAttackedStates",
+  },
+}
+```
 
 ### Expiry
 
@@ -728,7 +772,7 @@ XState v5's `emit()` action + `actor.on()` subscription.
 
 ### Emitting
 
-Every state mutation emits a typed event. Entities emit to their parent (player), players emit to the root (arena). The arena re-emits for external subscribers.
+Every state mutation emits a typed event. Books emit to their parent (player), players emit to the root (arena). The arena re-emits for external subscribers.
 
 ```typescript
 // Player emits on state change:

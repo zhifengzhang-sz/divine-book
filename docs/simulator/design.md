@@ -213,7 +213,7 @@ Example: 甲元仙符's primary affix 天光虹露:
 
 ### Exclusive affix
 
-Same reactive model as primary affix — bound to a named state, triggers when active.
+Same reactive model as primary affix — bound to a named state via `parent`, triggers when active. Some exclusive affixes have no `parent` field (e.g., 神威冲云 on 通天剑诀: `ignore_damage_reduction`, `damage_increase`). These are **unconditional modifiers** that apply whenever the platform activates, without binding to a specific named state.
 
 ### The publisher-subscriber pattern
 
@@ -296,9 +296,17 @@ Named states are the central concept. They are created by platforms, listened to
 Each named state has:
 - **Target**: `self`, `opponent`, or `both`
 - **Duration**: real time (seconds), or `permanent`
-- **Trigger**: `on_cast`, `on_attacked`, `per_tick`
+- **Trigger**: `on_cast`, `on_attacked`, or `per_tick` — determines when the state's effects fire
 - **Max stacks**: optional stacking limit
 - **Dispellable**: whether it can be cleansed
+
+### Trigger modes
+
+| Trigger | When effects fire | Example |
+|---------|-------------------|---------|
+| `on_cast` (default) | When the platform activates | 仙佑 (ATK buff on cast) |
+| `on_attacked` | When the player receives an attack | 天狼之啸 (buff stacks on hit taken) |
+| `per_tick` | On a periodic interval while active | DoTs (damage every N seconds) |
 
 Named states **expire on their own timeline**. They are not tied to the slot that created them. A state with duration 12s created at t=0 expires at t=12, regardless of what slots fire in between.
 
