@@ -21,21 +21,19 @@ import "./escalation.js";
 import "./resonance.js";
 import "./multiplier.js";
 
-const warned = new Set<string>();
+export class MissingHandlerError extends Error {
+	constructor(type: string) {
+		super(
+			`No handler for effect type: "${type}". Cannot simulate — all effects must be handled.`,
+		);
+		this.name = "MissingHandlerError";
+	}
+}
 
-export function resolve(
-	effect: EffectRow,
-	ctx: HandlerContext,
-): HandlerResult | null {
+export function resolve(effect: EffectRow, ctx: HandlerContext): HandlerResult {
 	const handler = getHandler(effect.type);
 	if (!handler) {
-		if (!warned.has(effect.type)) {
-			console.warn(
-				`[sim] No handler for effect type: ${effect.type} (skipped)`,
-			);
-			warned.add(effect.type);
-		}
-		return null;
+		throw new MissingHandlerError(effect.type);
 	}
 	return handler(effect, ctx);
 }

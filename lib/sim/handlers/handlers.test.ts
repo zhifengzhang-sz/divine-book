@@ -292,9 +292,10 @@ describe("skill_damage_increase", () => {
 });
 
 describe("unknown type", () => {
-	test("returns null", () => {
+	test("throws MissingHandlerError", () => {
 		const effect: EffectRow = { type: "totally_unknown_effect" };
-		const result = resolve(effect, makeCtx());
-		expect(result).toBeNull();
+		expect(() => resolve(effect, makeCtx())).toThrow(
+			"No handler for effect type",
+		);
 	});
 });

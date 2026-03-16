@@ -8,6 +8,7 @@
 import { readFileSync } from "node:fs";
 import { parse as parseYaml } from "yaml";
 import type { BookData, EffectRow } from "../data/types.js";
+import { hasHandler } from "./handlers/index.js";
 import type { ArenaConfig, PlayerConfig, ProgressionConfig } from "./types.js";
 
 // ── YAML Loading ────────────────────────────────────────────────────
@@ -95,6 +96,49 @@ export function validatePlayerConfig(
 				);
 			}
 		}
+
+		// All effects must have handlers — no faking
+		validateHandlerCoverage(slot, bookData, books, affixes, progression);
+	}
+}
+
+function validateHandlerCoverage(
+	slot: { platform: string; op1?: string; op2?: string },
+	bookData: BookData,
+	books: BooksYaml,
+	affixes: AffixesYaml,
+	progression: ProgressionConfig,
+): void {
+	const allEffects: EffectRow[] = [];
+	if (bookData.skill) allEffects.push(...bookData.skill);
+	if (bookData.primary_affix)
+		allEffects.push(...bookData.primary_affix.effects);
+	if (bookData.exclusive_affix)
+		allEffects.push(...bookData.exclusive_affix.effects);
+
+	// Aux affix effects
+	for (const opName of [slot.op1, slot.op2]) {
+		if (!opName) continue;
+		if (affixes.universal[opName]) {
+			allEffects.push(...affixes.universal[opName].effects);
+		}
+		for (const school of Object.values(affixes.school)) {
+			if (school[opName]) allEffects.push(...school[opName].effects);
+		}
+	}
+
+	// Select usable tiers, then check all types have handlers
+	const tiered = selectTiers(allEffects, progression);
+	const missing: string[] = [];
+	for (const effect of tiered) {
+		if (!hasHandler(effect.type)) {
+			if (!missing.includes(effect.type)) missing.push(effect.type);
+		}
+	}
+	if (missing.length > 0) {
+		throw new ConfigValidationError(
+			`Book "${slot.platform}" uses effect types without handlers: ${missing.join(", ")}. Cannot simulate.`,
+		);
 	}
 }
 

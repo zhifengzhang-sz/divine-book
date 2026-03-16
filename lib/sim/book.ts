@@ -58,24 +58,22 @@ export function processBook(
 	// Select tiers for direct effects
 	const directTiered = selectTiers(directRaw, progression);
 
-	// Run direct effects through handlers
+	// Run direct effects through handlers — throws MissingHandlerError if unhandled
 	const handlerResults: HandlerResult[] = [];
 	for (const effect of directTiered) {
 		const result = resolve(effect, ctx);
-		if (result) {
-			// Fill in source book name on any state intents
-			if (result.intents) {
-				for (const intent of result.intents) {
-					if (intent.type === "APPLY_STATE") {
-						intent.state.source = ctx.book;
-					}
-					if (intent.type === "APPLY_DOT") {
-						intent.source = ctx.book;
-					}
+		// Fill in source book name on any state intents
+		if (result.intents) {
+			for (const intent of result.intents) {
+				if (intent.type === "APPLY_STATE") {
+					intent.state.source = ctx.book;
+				}
+				if (intent.type === "APPLY_DOT") {
+					intent.source = ctx.book;
 				}
 			}
-			handlerResults.push(result);
 		}
+		handlerResults.push(result);
 	}
 
 	// Build HIT events from accumulated handler results

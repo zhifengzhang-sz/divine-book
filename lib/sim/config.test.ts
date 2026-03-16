@@ -181,4 +181,15 @@ describe("validatePlayerConfig", () => {
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
+
+	test("rejects book with unhandled effect types", () => {
+		// 周天星元 has debuff_stack_chance (no handler)
+		const config = {
+			...validConfig,
+			books: [{ slot: 1, platform: "周天星元" }],
+		};
+		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
+			"without handlers",
+		);
+	});
 });
