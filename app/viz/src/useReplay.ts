@@ -8,7 +8,9 @@ import type {
 
 function initSnapshot(config: {
 	hp: number;
+	atk: number;
 	sp: number;
+	def: number;
 }): PlayerSnapshot {
 	return {
 		hp: config.hp,
@@ -16,6 +18,10 @@ function initSnapshot(config: {
 		sp: config.sp,
 		maxSp: config.sp,
 		shield: 0,
+		atk: config.atk,
+		baseAtk: config.atk,
+		def: config.def,
+		baseDef: config.def,
 		alive: true,
 		states: [],
 	};
@@ -67,6 +73,13 @@ export function useReplay(data: SimulationData, speed: number) {
 					case "SHIELD_CHANGE":
 						p.shield = ev.next as number;
 						break;
+					case "STAT_CHANGE": {
+						const stat = ev.stat as string;
+						const next = ev.next as number;
+						if (stat === "atk") p.atk = next;
+						if (stat === "def") p.def = next;
+						break;
+					}
 					case "STATE_APPLY": {
 						const state = ev.state as Record<string, unknown>;
 						if (state) {

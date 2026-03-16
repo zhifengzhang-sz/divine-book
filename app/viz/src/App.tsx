@@ -98,6 +98,25 @@ function PlayerPanel({
 			<Bar value={snapshot.hp} max={snapshot.maxHp} color="#98c379" label="HP (气血)" />
 			<Bar value={snapshot.sp} max={snapshot.maxSp} color="#61afef" label="SP (灵力)" />
 			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color="#c678dd" label="Shield (护盾)" />
+			{/* Base stats */}
+			<div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 12, color: "#abb2bf" }}>
+				<span>
+					ATK: <span style={{ color: snapshot.atk !== snapshot.baseAtk ? "#e5c07b" : "#abb2bf" }}>
+						{snapshot.atk.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+					</span>
+					{snapshot.atk !== snapshot.baseAtk && (
+						<span style={{ color: "#5c6370" }}> ({snapshot.baseAtk.toLocaleString()})</span>
+					)}
+				</span>
+				<span>
+					DEF: <span style={{ color: snapshot.def !== snapshot.baseDef ? "#e5c07b" : "#abb2bf" }}>
+						{snapshot.def.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+					</span>
+					{snapshot.def !== snapshot.baseDef && (
+						<span style={{ color: "#5c6370" }}> ({snapshot.baseDef.toLocaleString()})</span>
+					)}
+				</span>
+			</div>
 			{/* Active effects */}
 			{snapshot.states.length > 0 && (
 				<div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>

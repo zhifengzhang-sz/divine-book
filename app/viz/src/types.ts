@@ -31,6 +31,10 @@ export interface PlayerSnapshot {
 	sp: number;
 	maxSp: number;
 	shield: number;
+	atk: number;
+	baseAtk: number;
+	def: number;
+	baseDef: number;
 	alive: boolean;
 	states: ActiveState[];
 }
