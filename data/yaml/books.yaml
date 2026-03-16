@@ -147,6 +147,12 @@ books:
         data_state:
           - enlightenment=10
           - fusion=57
+      - type: no_shield_double_damage
+        no_shield_double: 1
+        cap_vs_monster: 4800
+        data_state:
+          - enlightenment=10
+          - fusion=57
     primary_affix:
       name: 碎魂剑意
       effects:
@@ -638,6 +644,7 @@ books:
       - type: counter_buff
         heal_on_damage_taken: 8
         no_healing_bonus: true
+        name: 不灭魔体
     primary_affix:
       name: 魔妄吞天
       effects:
@@ -747,7 +754,7 @@ books:
           - fusion=20
       - type: dot
         tick_interval: 0.5
-        percent_current_hp: 2
+        percent_current_hp: 7
         duration: 4
         name: 噬心之咒
         parent: 罗天魔咒
@@ -757,7 +764,7 @@ books:
           - fusion=20
       - type: dot
         tick_interval: 0.5
-        percent_lost_hp: 2
+        percent_lost_hp: 7
         duration: 4
         name: 断魂之咒
         parent: 罗天魔咒
@@ -849,6 +856,11 @@ books:
       - type: base_attack
         hits: 6
         total: 1500
+      - type: dot
+        tick_interval: 1
+        percent_current_hp: 3
+        duration: 8
+        name: 贪妄业火
     primary_affix:
       name: 魔心焚尽
       effects:
@@ -954,12 +966,15 @@ books:
     school: Body
     skill:
       - type: self_hp_cost
-        value: 1500
+        value: x
       - type: base_attack
         hits: 8
         total: 1500
       - type: self_lost_hp_damage
         value: 10
+      - type: self_buff
+        skill_damage_increase: 20
+        duration: 4
     primary_affix:
       name: 星猿幻杀
       effects:
@@ -991,6 +1006,7 @@ books:
         total: 1500
       - type: self_lost_hp_damage
         value: 16
+        self_heal: true
       - type: self_buff
         attack_bonus: 20
         damage_reduction: 20
@@ -1028,6 +1044,11 @@ books:
       - type: base_attack
         hits: 10
         total: 1500
+      - type: counter_buff
+        reflect_received_damage: 50
+        reflect_percent_lost_hp: 15
+        duration: 4
+        name: 极怒
     primary_affix:
       name: 星猿复灵
       effects:

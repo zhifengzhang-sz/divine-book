@@ -11,6 +11,7 @@ import type { EffectRow } from "./emit.js";
 import {
 	AFFIX_EXTRACTORS,
 	type ExtractedEffect,
+	extractCounterBuff,
 	extractDot,
 	SKILL_EXTRACTORS,
 } from "./extract.js";
@@ -102,15 +103,17 @@ function genericSkillParse(
 	extracted.sort((a, b) => a.order - b.order);
 
 	// Parse child state definitions from description lines (【name】：...)
+	// Match both line-start and inline patterns
 	for (const line of cell.description) {
-		const childMatch = line.match(/^【(.+?)】[：:]/);
-		if (!childMatch) continue;
-		const childName = childMatch[1];
-		const childText = line.slice(childMatch[0].length);
+		const childRe = /【(.+?)】[：:]/g;
+		for (const childMatch of line.matchAll(childRe)) {
+			const childName = childMatch[1];
+			const childText = line.slice(childMatch.index + childMatch[0].length);
 
-		// Extract dot from child definition
-		const dot = extractDot(childText);
-		if (dot) {
+			// Skip if this is a state reference (e.g. "添加1层【X】与【Y】") not a definition
+			// A definition has descriptive text after 【name】：
+			if (childText.length === 0) continue;
+
 			// Find parent state name
 			let parentName: string | undefined;
 			for (const [sName, sDef] of Object.entries(states)) {
@@ -126,10 +129,54 @@ function genericSkillParse(
 			const childState = states[childName];
 			if (childState?.max_stacks) extra.max_stacks = childState.max_stacks;
 
-			extracted.push({
-				effect: { ...dot, meta: extra },
-				order: 30,
-			});
+			// Try extracting dot from child definition
+			const dot = extractDot(childText);
+			if (dot) {
+				// Resolve child DoT fields against the parent skill's tier vars
+				if (tiers.length > 0) {
+					const lastTier = tiers[tiers.length - 1];
+					if (lastTier && !lastTier.locked) {
+						dot.fields = Object.fromEntries(
+							Object.entries(dot.fields).map(([k, v]) => {
+								if (typeof v === "string" && lastTier.vars[v] !== undefined) {
+									return [k, lastTier.vars[v]];
+								}
+								return [k, v];
+							}),
+						) as Record<string, string | number>;
+					}
+				}
+
+				extracted.push({
+					effect: { ...dot, meta: extra },
+					order: 30,
+				});
+				continue;
+			}
+
+			// Try extracting counter_buff from child definition
+			const counterBuff = extractCounterBuff(childText);
+			if (counterBuff) {
+				// Check if a duplicate counter_buff already exists from SKILL_EXTRACTORS
+				const duplicate = extracted.find(
+					(e) => e.effect.type === "counter_buff",
+				);
+				if (duplicate) {
+					// Enrich the existing one with child state metadata
+					if (!duplicate.effect.meta) duplicate.effect.meta = {};
+					for (const [k, v] of Object.entries(extra)) {
+						duplicate.effect.meta[k] = v;
+					}
+				} else {
+					extracted.push({
+						effect: {
+							...counterBuff,
+							meta: { ...counterBuff.meta, ...extra },
+						},
+						order: 30,
+					});
+				}
+			}
 		}
 	}
 
@@ -385,6 +432,7 @@ type BookParser = (cell: SplitCell, states: StateRegistry) => EffectRow[];
 
 const BOOK_PARSERS: Record<string, BookParser> = {
 	天魔降临咒: parseTianMoJiangLin,
+	惊蜇化龙: parseJingZheHuaLong,
 };
 
 // ─── Remaining book-specific parsers ────────────────────
@@ -414,6 +462,43 @@ function parseTianMoJiangLin(cell: SplitCell): EffectRow[] {
 			value: tier.vars.w,
 			max: tier.vars.u,
 			parent: "结魂锁链",
+		} as EffectRow,
+	];
+}
+
+/**
+ * 惊蜇化龙: G4 grammar — hp_cost + base_attack + lost_hp_damage + self_buff
+ *
+ * Source text uses "x" for BOTH self_hp_cost% and base_attack total%,
+ * but x=1500 is the attack total — not a reasonable HP cost.
+ * The same "x" in "消耗自身x%当前气血值" is a source data variable collision.
+ * We treat self_hp_cost as unresolved (the game likely uses a fixed or
+ * separate internal value). Use the typical body-book pattern of keeping
+ * x as HP cost only when it's a small number.
+ *
+ * Vars: x=1500, y=10, z=20
+ * - base_attack: 八段共x% → 1500
+ * - self_lost_hp_damage: y% → 10
+ * - self_buff (skill_damage_increase): z% → 20, duration=4
+ */
+function parseJingZheHuaLong(
+	cell: SplitCell,
+	_states: StateRegistry,
+): EffectRow[] {
+	const tier = cell.tiers[0];
+	if (!tier) return [];
+	const { x, y, z } = tier.vars;
+	return [
+		{
+			type: "self_hp_cost",
+			value: x >= 100 ? "x" : x,
+		} as EffectRow,
+		{ type: "base_attack", hits: 8, total: x } as EffectRow,
+		{ type: "self_lost_hp_damage", value: y } as EffectRow,
+		{
+			type: "self_buff",
+			skill_damage_increase: z,
+			duration: 4,
 		} as EffectRow,
 	];
 }

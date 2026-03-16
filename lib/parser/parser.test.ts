@@ -606,6 +606,77 @@ describe("parseMainSkills with exclusive affixes", () => {
 	});
 });
 
+// ─── Coverage Gap Fixes ─────────────────────────────────
+
+describe("梵圣真魔咒 — child DoT variable resolution", () => {
+	const parsed = parseSingleBook(markdown, "梵圣真魔咒")!;
+
+	it("has 贪妄业火 DoT with numeric values (not string 'y')", () => {
+		const dot = parsed.skill.find(
+			(e) => e.type === "dot" && e.name === "贪妄业火",
+		);
+		expect(dot).toBeDefined();
+		expect(typeof dot?.percent_current_hp).toBe("number");
+		expect(dot?.percent_current_hp).toBe(3);
+		expect(dot?.tick_interval).toBe(1);
+		expect(dot?.duration).toBe(8);
+	});
+});
+
+describe("疾风九变 — 极怒 counter_buff", () => {
+	const parsed = parseSingleBook(markdown, "疾风九变")!;
+
+	it("has counter_buff with reflect fields and name", () => {
+		const cb = parsed.skill.find(
+			(e) => e.type === "counter_buff" && e.name === "极怒",
+		);
+		expect(cb).toBeDefined();
+		expect(cb?.reflect_received_damage).toBe(50);
+		expect(cb?.reflect_percent_lost_hp).toBe(15);
+		expect(cb?.duration).toBe(4);
+	});
+});
+
+describe("皓月剑诀 — no-shield-double-damage", () => {
+	const parsed = parseSingleBook(markdown, "皓月剑诀")!;
+
+	it("has no_shield_double_damage effect", () => {
+		const nsd = parsed.skill.find((e) => e.type === "no_shield_double_damage");
+		expect(nsd).toBeDefined();
+		expect(nsd?.no_shield_double).toBe(1);
+		expect(nsd?.cap_vs_monster).toBe(4800);
+	});
+});
+
+describe("惊蜇化龙 — self_hp_cost + self_buff", () => {
+	const parsed = parseSingleBook(markdown, "惊蜇化龙")!;
+
+	it("has self_hp_cost that is NOT 1500", () => {
+		const cost = parsed.skill.find((e) => e.type === "self_hp_cost");
+		expect(cost).toBeDefined();
+		// x=1500 is the base_attack total, not a valid hp cost
+		expect(cost?.value).not.toBe(1500);
+	});
+
+	it("has self_buff with skill_damage_increase", () => {
+		const buff = parsed.skill.find((e) => e.type === "self_buff");
+		expect(buff).toBeDefined();
+		expect(buff?.skill_damage_increase).toBe(20);
+		expect(buff?.duration).toBe(4);
+	});
+});
+
+describe("十方真魄 — self-heal on lost-HP damage", () => {
+	const parsed = parseSingleBook(markdown, "十方真魄")!;
+
+	it("has self_lost_hp_damage with self_heal flag", () => {
+		const dmg = parsed.skill.find((e) => e.type === "self_lost_hp_damage");
+		expect(dmg).toBeDefined();
+		expect(dmg?.self_heal).toBe(true);
+		expect(dmg?.value).toBe(16);
+	});
+});
+
 // ─── Common & School Affixes ────────────────────────────
 
 import {

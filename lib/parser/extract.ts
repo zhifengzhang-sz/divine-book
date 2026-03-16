@@ -340,18 +340,17 @@ export function extractDot(text: string): ExtractedEffect | null {
 		};
 	}
 
-	// 每秒对目标造成{x}%最大气血值的伤害 (no explicit tick_interval)
+	// 每秒对目标造成{x}%最大气血值的伤害[，持续d秒]
 	const perSecMaxHpMatch = text.match(
-		/每秒(?:对目标)?造成(?:目标)?(\w+)%(?:最大)?(?:当前)?气血值的伤害/,
+		/每秒(?:对目标)?造成(?:目标)?(\w+)%(?:最大)?(?:当前)?气血值的伤害(?:[，,]持续(\w+)秒)?/,
 	);
 	if (perSecMaxHpMatch) {
-		return {
-			type: "dot",
-			fields: {
-				tick_interval: 1,
-				percent_current_hp: perSecMaxHpMatch[1],
-			},
+		const fields: Record<string, string | number> = {
+			tick_interval: 1,
+			percent_current_hp: perSecMaxHpMatch[1],
 		};
+		if (perSecMaxHpMatch[2]) fields.duration = perSecMaxHpMatch[2];
+		return { type: "dot", fields };
 	}
 
 	return null;
@@ -536,18 +535,45 @@ export function extractShieldDestroyDamage(
 }
 
 // ─────────────────────────────────────────────────────────
+// No-shield double damage
+// ─────────────────────────────────────────────────────────
+
+export function extractNoShieldDoubleDamage(
+	text: string,
+): ExtractedEffect | null {
+	// 对无盾目标造成双倍伤害（对怪物最多造成w%攻击力的伤害）
+	const m = text.match(
+		/对无盾目标造成双倍伤害(?:（对怪物最多造成(\w+)%攻击力的伤害）)?/,
+	);
+	if (m) {
+		const fields: Record<string, string | number> = {
+			no_shield_double: 1,
+		};
+		if (m[1]) fields.cap_vs_monster = m[1];
+		return { type: "no_shield_double_damage", fields };
+	}
+	return null;
+}
+
+// ─────────────────────────────────────────────────────────
 // Self lost HP damage
 // ─────────────────────────────────────────────────────────
 
 export function extractSelfLostHpDamage(text: string): ExtractedEffect | null {
-	// 额外对(其|目标)造成自身{x}%已损失气血值的伤害
+	// 额外对(其|目标)造成自身{x}%已损失气血值的伤害[，并等额恢复自身气血]
 	const m = text.match(
 		/(?:额外)?对(?:其|目标)?造成自身(\w+)%已损(?:失)?气血值的伤害/,
 	);
 	if (m) {
+		const meta: Record<string, unknown> = {};
+		// Check for "等额恢复自身气血" — self-heal equal to damage dealt
+		if (/等额恢复自身气血/.test(text)) {
+			meta.self_heal = true;
+		}
 		return {
 			type: "self_lost_hp_damage",
 			fields: { value: m[1] },
+			meta: Object.keys(meta).length > 0 ? meta : undefined,
 		};
 	}
 
@@ -587,7 +613,7 @@ export function extractCounterBuff(text: string): ExtractedEffect | null {
 
 	// 每秒对目标反射自身所受到伤害值的{x}%与自身{y}%已损失气血值的伤害，持续{d}秒
 	const reflectMatch = text.match(
-		/(?:每秒)?对目标(?:反射|造成)自身所?受到(?:的)?伤害(?:值)?的(\w+)%与自身(\w+)%已损(?:失)?气血值的伤害[，,]持续(\w+)秒/,
+		/(?:每秒)?对目标`?(?:反射|造成)`?自身所?受到(?:的)?伤害(?:值)?的(\w+)%与自身(\w+)%已损(?:失)?气血值的伤害[，,]持续(\w+)秒/,
 	);
 	if (reflectMatch) {
 		return {
@@ -968,6 +994,28 @@ export function extractSelfBuff(text: string): ExtractedEffect | null {
 		fields,
 		meta: { name },
 	};
+}
+
+// ─────────────────────────────────────────────────────────
+// Self buff: skill_damage_increase (standalone pattern)
+// ─────────────────────────────────────────────────────────
+
+export function extractSelfBuffSkillDamageIncrease(
+	text: string,
+): ExtractedEffect | null {
+	// 提升自身z%神通伤害加深，持续d秒 (standalone, not inside a 【name】 state def)
+	// Skip if already inside a named state pattern (handled by extractSelfBuff)
+	if (/(?:获得|添加|进入).*?【.+?】/.test(text)) return null;
+	const m = text.match(
+		/(?:并)?提升自身(\w+)%(?:的)?神通伤害加深[，,]持续(\w+)秒/,
+	);
+	if (m) {
+		return {
+			type: "self_buff",
+			fields: { skill_damage_increase: m[1], duration: m[2] },
+		};
+	}
+	return null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -2313,6 +2361,11 @@ export const SKILL_EXTRACTORS: ExtractorDef[] = [
 	{ name: "debuff", fn: extractDebuff, order: 20 },
 	{ name: "shield_destroy_damage", fn: extractShieldDestroyDamage, order: 20 },
 	{
+		name: "no_shield_double_damage",
+		fn: extractNoShieldDoubleDamage,
+		order: 21,
+	},
+	{
 		name: "percent_current_hp_damage",
 		fn: extractPercentCurrentHpDamage,
 		order: 20,
@@ -2350,6 +2403,12 @@ export const SKILL_EXTRACTORS: ExtractorDef[] = [
 	},
 	{ name: "skill_cooldown_debuff", fn: extractSkillCooldownDebuff, order: 25 },
 	{ name: "self_buff", fn: extractSelfBuff, order: 25 },
+	{
+		name: "self_buff_skill_damage_increase",
+		fn: extractSelfBuffSkillDamageIncrease,
+		order: 25,
+		grammars: ["G4"],
+	},
 	{ name: "next_skill_carry", fn: extractNextSkillCarry, order: 25 },
 	{ name: "per_enemy_lost_hp", fn: extractPerEnemyLostHp, order: 30 },
 ];
