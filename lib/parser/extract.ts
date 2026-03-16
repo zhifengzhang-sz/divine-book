@@ -14,45 +14,13 @@ export interface ExtractedEffect {
 }
 
 // ─────────────────────────────────────────────────────────
-// Numeric capture helper
-// ─────────────────────────────────────────────────────────
-
-const NUM = "(-?\\d+(?:\\.\\d+)?)";
-
-function _num(name: string): string {
-	return `(?<${name}>${NUM.slice(1, -1)})`;
-}
-
-function _capture(groups: Record<string, number>): Record<string, number> {
-	const out: Record<string, number> = {};
-	for (const [k, v] of Object.entries(groups)) {
-		out[k] = v;
-	}
-	return out;
-}
-
-function _toNum(
-	match: RegExpMatchArray,
-	...names: string[]
-): Record<string, number> {
-	const out: Record<string, number> = {};
-	for (const name of names) {
-		const val = match.groups?.[name];
-		if (val !== undefined) out[name] = Number(val);
-	}
-	return out;
-}
-
-// ─────────────────────────────────────────────────────────
 // Base attack pattern
 // ─────────────────────────────────────────────────────────
-
-const BASE_ATTACK_RE =
-	/造成(?<hits_text>(?:(?:一|二|三|四|五|六|七|八|九|十)+)段)?(?:共(?:计)?)?(?<total>\d+(?:\.\d+)?)%攻击力的(?:灵法)?伤害/;
 
 const CN_NUMS: Record<string, number> = {
 	一: 1,
 	二: 2,
+	两: 2,
 	三: 3,
 	四: 4,
 	五: 5,
@@ -72,21 +40,6 @@ function parseCnNumber(text: string): number {
 		return 10 + (CN_NUMS[text[1]] || 0);
 	}
 	return CN_NUMS[text] || 1;
-}
-
-export function extractBaseAttack(
-	text: string,
-): { hits: number | string; total: number | string } | null {
-	const m = BASE_ATTACK_RE.exec(text);
-	if (!m) return null;
-
-	const hitsText = m.groups?.hits_text;
-	const total = m.groups?.total;
-
-	return {
-		hits: hitsText ? parseCnNumber(hitsText) : 1,
-		total: total ? (total.includes(".") ? Number(total) : "x") : "x",
-	};
 }
 
 /**
@@ -165,100 +118,6 @@ export function extractSelfHpCost(text: string): ExtractedEffect | null {
 		};
 	}
 	return null;
-}
-
-// ─────────────────────────────────────────────────────────
-// Named state extraction
-// ─────────────────────────────────────────────────────────
-
-export interface NamedStateInfo {
-	name: string;
-	target: "self" | "opponent" | "both";
-	trigger: "on_cast" | "on_attacked" | "per_tick";
-	duration?: number | "permanent";
-	maxStacks?: number;
-	chance?: number;
-	dispellable?: boolean;
-	perHitStack?: boolean;
-	children?: string[];
-	/** Raw description text after the state name */
-	descriptionText: string;
-}
-
-/**
- * Extract named state info from text containing 【name】.
- */
-export function extractNamedState(text: string): NamedStateInfo | null {
-	// Match 【X】 pattern
-	const nameMatch = text.match(/【(.+?)】/);
-	if (!nameMatch) return null;
-
-	const name = nameMatch[1];
-	const fullText = text;
-
-	// Determine target
-	let target: "self" | "opponent" | "both" = "self";
-	if (
-		/对其施加|对敌方施加|对攻击方添加|为目标添加|对目标/.test(
-			text.split("【")[0],
-		)
-	) {
-		target = "opponent";
-	}
-	if (/为自身添加|自身获得|使自身进入/.test(text.split("【")[0])) {
-		target = "self";
-	}
-
-	// Determine trigger
-	let trigger: "on_cast" | "on_attacked" | "per_tick" = "on_cast";
-	if (/受到(?:伤害|攻击)时/.test(fullText)) {
-		trigger = "on_attacked";
-	}
-
-	// Duration
-	let duration: number | "permanent" | undefined;
-	const durMatch = fullText.match(/持续(\d+(?:\.\d+)?)秒/);
-	if (durMatch) duration = Number(durMatch[1]);
-	if (/战斗状态内永久生效/.test(fullText)) duration = "permanent";
-
-	// Max stacks
-	let maxStacks: number | undefined;
-	const stackMatch = fullText.match(/最多叠加(\d+)层/);
-	if (stackMatch) maxStacks = Number(stackMatch[1]);
-
-	// Chance
-	let chance: number | undefined;
-	const chanceMatch = fullText.match(/各?有?(\d+)%概率/);
-	if (chanceMatch) chance = Number(chanceMatch[1]);
-
-	// Dispellable
-	let dispellable: boolean | undefined;
-	if (/不可驱散|无法被驱散/.test(fullText)) dispellable = false;
-
-	// Per-hit stacking
-	let perHitStack: boolean | undefined;
-	if (/每段攻击.*?添加1层/.test(fullText)) perHitStack = true;
-
-	// Children (【X】与【Y】)
-	const childMatch = fullText.match(/添加.*?层【(.+?)】与【(.+?)】/);
-	const children = childMatch ? [childMatch[1], childMatch[2]] : undefined;
-
-	// Description text after 【name】：
-	const colonIdx = text.indexOf("】：");
-	const descriptionText = colonIdx !== -1 ? text.slice(colonIdx + 2) : "";
-
-	return {
-		name,
-		target,
-		trigger,
-		duration,
-		maxStacks,
-		chance,
-		dispellable,
-		perHitStack,
-		children,
-		descriptionText,
-	};
 }
 
 // ─────────────────────────────────────────────────────────
@@ -870,15 +729,7 @@ export function extractConditionalDamageFromCleanse(
 			/接下来.*?([一二三四五六七八九十\d]+)个?神通/,
 		);
 		if (scopeMatch) {
-			const CN_NUMS_LOCAL: Record<string, number> = {
-				一: 1,
-				二: 2,
-				三: 3,
-				四: 4,
-				五: 5,
-			};
-			const n =
-				CN_NUMS_LOCAL[scopeMatch[1]] ?? Number.parseInt(scopeMatch[1], 10);
+			const n = CN_NUMS[scopeMatch[1]] ?? Number.parseInt(scopeMatch[1], 10);
 			if (!Number.isNaN(n)) meta.max_triggers = n;
 		}
 		return {
@@ -2228,28 +2079,13 @@ export function extractSelfLostHpDamageEveryN(
 export function extractPeriodicDispelAffix(
 	text: string,
 ): ExtractedEffect | null {
-	const CN_NUMS_LOCAL: Record<string, number> = {
-		一: 1,
-		二: 2,
-		两: 2,
-		三: 3,
-		四: 4,
-		五: 5,
-		六: 6,
-		七: 7,
-		八: 8,
-		九: 9,
-		十: 10,
-	};
 	const m = text.match(
 		/(?:造成伤害前)?(?:优先)?驱散目标([\w一二两三四五六七八九十]+)个增益(?:效果|状态)/,
 	);
 	if (m) {
 		const val = m[1];
 		const count =
-			CN_NUMS_LOCAL[val] !== undefined
-				? CN_NUMS_LOCAL[val]
-				: Number.parseInt(val, 10);
+			CN_NUMS[val] !== undefined ? CN_NUMS[val] : Number.parseInt(val, 10);
 		return {
 			type: "periodic_dispel",
 			fields: { count: Number.isNaN(count) ? val : count },
@@ -2370,19 +2206,11 @@ export function extractCrossSlotDebuff(text: string): ExtractedEffect | null {
 
 /** 每获得N个【X】，会额外附加一层持续d秒的【Y】：每秒造成...伤害 */
 export function extractDotPerNStacks(text: string): ExtractedEffect | null {
-	const CN_NUMS_LOCAL: Record<string, number> = {
-		一: 1,
-		二: 2,
-		两: 2,
-		三: 3,
-		四: 4,
-		五: 5,
-	};
 	const m = text.match(
 		/每获得.*?([\d一二两三四五])个【(.+?)】.*?附加.*?持续(\w+)秒的【(.+?)】.*?每秒造成(?:目标)?(\w+)%已损(?:失)?气血值(?:的)?伤害/,
 	);
 	if (m) {
-		const nVal = CN_NUMS_LOCAL[m[1]] ?? Number(m[1]);
+		const nVal = CN_NUMS[m[1]] ?? Number(m[1]);
 		return {
 			type: "dot",
 			fields: {
@@ -2411,8 +2239,6 @@ export interface ExtractorDef {
 	order: number;
 	/** Only run for these grammar types (undefined = all) */
 	grammars?: string[];
-	/** Context: "skill" | "affix" | "both" */
-	context?: "skill" | "affix" | "both";
 }
 
 export const SKILL_EXTRACTORS: ExtractorDef[] = [

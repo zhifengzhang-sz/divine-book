@@ -44,12 +44,11 @@ export function parseBook(
 	if (skillCell.tiers.length > 0) {
 		const tierVars = skillCell.tiers[0]?.vars ?? {};
 		for (const sDef of Object.values(states)) {
-			const rec = sDef as unknown as Record<string, unknown>;
-			const varRef = rec._max_stacks_var;
+			const varRef = sDef._max_stacks_var;
 			if (typeof varRef === "string" && tierVars[varRef] !== undefined) {
 				sDef.max_stacks = tierVars[varRef];
 			}
-			delete rec._max_stacks_var;
+			delete sDef._max_stacks_var;
 		}
 	}
 
@@ -450,7 +449,10 @@ const BOOK_PARSERS: Record<string, BookParser> = {
 
 // ─── Remaining book-specific parsers ────────────────────
 
-function parseTianMoJiangLin(cell: SplitCell): EffectRow[] {
+function parseTianMoJiangLin(
+	cell: SplitCell,
+	_states: StateRegistry,
+): EffectRow[] {
 	const tier = cell.tiers[0];
 	if (!tier) return [];
 	return [
@@ -525,7 +527,7 @@ function parsePrimaryAffix(
 	cell: SplitCell,
 	states: StateRegistry,
 ): { name: string; effects: EffectRow[] } | undefined {
-	const text = cell.description.join(" ");
+	const text = cell.description.join("，");
 
 	// Extract affix name from 【name】
 	const nameMatch = text.match(/【(.+?)】/);

@@ -5,8 +5,6 @@
  * into extracted effect fields to produce rows with data_state.
  */
 
-import type { TierLine } from "./md-table.js";
-
 export interface TierSpec {
 	enlightenment?: number;
 	fusion?: number;
@@ -32,20 +30,6 @@ export function buildDataState(tier: TierSpec): undefined | string | string[] {
 	if (parts.length === 0) return undefined;
 	if (parts.length === 1) return parts[0];
 	return parts;
-}
-
-/**
- * Substitute tier variables into a template string.
- * Template uses {x}, {y}, etc. placeholders.
- * Returns the string with numeric values substituted.
- */
-export function substituteVars(
-	template: string,
-	vars: Record<string, number>,
-): string {
-	return template.replace(/\{(\w+)\}/g, (_, key) => {
-		return vars[key] !== undefined ? String(vars[key]) : `{${key}}`;
-	});
 }
 
 /**
@@ -83,44 +67,4 @@ export function resolveFields(
 		}
 	}
 	return out;
-}
-
-/**
- * Expand an effect template across multiple tiers.
- * Returns one effect row per tier (or one if no tiers).
- */
-export function expandTiers(
-	baseFields: Record<string, string | number>,
-	type: string,
-	tiers: TierLine[],
-	extraFields?: Record<string, unknown>,
-): Record<string, unknown>[] {
-	if (tiers.length === 0) {
-		// No tier data — resolve with empty vars
-		const resolved = resolveFields(baseFields, {});
-		return [{ type, ...resolved, ...(extraFields || {}) }];
-	}
-
-	const results: Record<string, unknown>[] = [];
-	for (const tier of tiers) {
-		if (tier.locked) {
-			results.push({
-				type,
-				data_state: "locked",
-				...(extraFields || {}),
-			});
-			continue;
-		}
-
-		const resolved = resolveFields(baseFields, tier.vars);
-		const ds = buildDataState(tier);
-		results.push({
-			type,
-			...resolved,
-			...(ds !== undefined ? { data_state: ds } : {}),
-			...(extraFields || {}),
-		});
-	}
-
-	return results;
 }

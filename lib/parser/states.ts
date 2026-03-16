@@ -75,7 +75,11 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 		if (idx === -1) continue;
 		const before = line.slice(0, idx);
 
-		if (/对其施加|对敌方施加|对攻击方添加|为目标添加|对目标添加/.test(before)) {
+		if (
+			/对其施加|对敌方施加|对敌方添加|对攻击方添加|为目标添加|对目标添加|对目标施加/.test(
+				before,
+			)
+		) {
 			target = "opponent";
 			break;
 		}
@@ -200,8 +204,7 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 	if (max_stacks !== undefined) result.max_stacks = max_stacks;
 	// Store unresolved variable reference for later resolution by split.ts
 	if (max_stacks_var) {
-		(result as unknown as Record<string, unknown>)._max_stacks_var =
-			max_stacks_var;
+		result._max_stacks_var = max_stacks_var;
 	}
 	if (trigger && trigger !== "on_cast") result.trigger = trigger;
 	if (chance !== undefined) result.chance = chance;

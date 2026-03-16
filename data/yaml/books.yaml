@@ -5,7 +5,7 @@ books:
     school: Sword
     states:
       灵涸:
-        target: self
+        target: opponent
         duration: 8
         dispellable: false
     skill:
@@ -79,7 +79,7 @@ books:
     school: Sword
     states:
       噬心:
-        target: self
+        target: opponent
         duration: 0
     skill:
       - type: base_attack
@@ -345,7 +345,7 @@ books:
         target: self
         duration: 20
       逆转阴阳:
-        target: self
+        target: opponent
         duration: 0
     skill:
       - type: base_attack
@@ -445,7 +445,7 @@ books:
         target: self
         duration: 12
       灵枯:
-        target: self
+        target: opponent
         duration: 20
     skill:
       - type: base_attack
@@ -931,7 +931,7 @@ books:
         target: opponent
         duration: 12
       魔劫:
-        target: self
+        target: opponent
         duration: 8
     skill:
       - type: base_attack

@@ -25,6 +25,8 @@ export interface StateDef {
 	dispellable?: boolean;
 	children?: string[];
 	per_hit_stack?: boolean;
+	/** Unresolved variable reference for max_stacks — internal, resolved by split.ts */
+	_max_stacks_var?: string;
 }
 
 /** Per-book parsed data — one entry in books.yaml */
