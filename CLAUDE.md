@@ -12,6 +12,3 @@ Available skills:
 
 If skills aren't working, run `cd .claude/skills/gstack && ./setup`
 
-## xstate
-XState v5 skill — always use v5 APIs, never v4.
-Skill location: .claude/skills/xstate
