@@ -1,12 +1,16 @@
 #!/usr/bin/env bun
 /**
- * Combat simulator CLI.
+ * Combat simulator CLI — divine book vs divine book.
+ *
+ * A divine book = platform + up to 2 auxiliary affixes.
  *
  * Usage:
- *   bun app/simulate.ts --a 千锋聚灵剑 --b 星元化岳
+ *   bun app/simulate.ts --a 千锋聚灵剑+通明+斩岳 --b 星元化岳+摧山+灵犀九重
  *   bun app/simulate.ts --a 千锋聚灵剑 --b 星元化岳 --speed 2
- *   bun app/simulate.ts --a 千锋聚灵剑 --b 星元化岳 --instant
+ *   bun app/simulate.ts --a 千锋聚灵剑+通明+斩岳 --b 星元化岳 --instant
  *   bun app/simulate.ts --list
+ *
+ * Format: --a "platform+affix1+affix2" (affixes optional)
  */
 
 import { createActor } from "xstate";
@@ -62,15 +66,27 @@ if (hasFlag("list")) {
 
 // ── Config ──────────────────────────────────────────────────────────
 
-const platformA = getArg("a");
-const platformB = getArg("b");
-if (!platformA || !platformB) {
+function parseBookArg(raw: string): {
+	platform: string;
+	op1?: string;
+	op2?: string;
+} {
+	const parts = raw.split("+").map((s) => s.trim());
+	return { platform: parts[0], op1: parts[1], op2: parts[2] };
+}
+
+const rawA = getArg("a");
+const rawB = getArg("b");
+if (!rawA || !rawB) {
 	console.error(
-		"Usage: bun app/simulate.ts --a <book> --b <book> [--speed N] [--instant]",
+		'Usage: bun app/simulate.ts --a "platform+affix1+affix2" --b "platform+affix1+affix2"',
 	);
 	console.error("       bun app/simulate.ts --list");
 	process.exit(1);
 }
+
+const bookA = parseBookArg(rawA);
+const bookB = parseBookArg(rawB);
 
 const speed = Number(getArg("speed") ?? "1");
 const instant = hasFlag("instant");
@@ -86,15 +102,18 @@ const playerConfig = {
 	progression: { enlightenment: 10, fusion: 51 },
 };
 
+const slotA = { slot: 1, ...bookA };
+const slotB = { slot: 1, ...bookB };
+
 // Validate
 try {
 	validatePlayerConfig(
-		{ ...playerConfig, books: [{ slot: 1, platform: platformA }] },
+		{ ...playerConfig, books: [slotA] },
 		booksYaml,
 		affixesYaml,
 	);
 	validatePlayerConfig(
-		{ ...playerConfig, books: [{ slot: 1, platform: platformB }] },
+		{ ...playerConfig, books: [slotB] },
 		booksYaml,
 		affixesYaml,
 	);
@@ -108,7 +127,7 @@ try {
 const clock = new SimulationClock();
 const rng = new SeededRNG(seed);
 
-function makePlayer(label: string, platform: string) {
+function makePlayer(label: string, bookSlot: typeof slotA) {
 	return createActor(playerMachine, {
 		input: {
 			label,
@@ -128,7 +147,7 @@ function makePlayer(label: string, platform: string) {
 			} as PlayerState,
 			formulas: playerConfig.formulas,
 			progression: playerConfig.progression,
-			bookSlots: [{ slot: 1, platform }],
+			bookSlots: [bookSlot],
 			booksYaml,
 			affixesYaml,
 			clock,
@@ -139,8 +158,8 @@ function makePlayer(label: string, platform: string) {
 	});
 }
 
-const playerA = makePlayer("A", platformA);
-const playerB = makePlayer("B", platformB);
+const playerA = makePlayer("A", slotA);
+const playerB = makePlayer("B", slotB);
 
 // Collect all events with timestamps
 const events: StateChangeEvent[] = [];
@@ -215,19 +234,32 @@ function formatEvent(ev: StateChangeEvent): string | null {
 
 // ── Output ──────────────────────────────────────────────────────────
 
+function formatBook(b: {
+	platform: string;
+	op1?: string;
+	op2?: string;
+}): string {
+	const parts = [b.platform];
+	if (b.op1) parts.push(b.op1);
+	if (b.op2) parts.push(b.op2);
+	return parts.join(" + ");
+}
+
+const labelA = formatBook(bookA);
+const labelB = formatBook(bookB);
 const aFinal = playerA.getSnapshot().context.state;
 const bFinal = playerB.getSnapshot().context.state;
 const winner =
 	aFinal.alive && !bFinal.alive
-		? `A (${platformA})`
+		? `A (${labelA})`
 		: !aFinal.alive && bFinal.alive
-			? `B (${platformB})`
+			? `B (${labelB})`
 			: aFinal.alive
 				? "Draw (both alive)"
 				: "Draw (both dead)";
 
 async function replay() {
-	console.log(`\n⚔  ${platformA}  vs  ${platformB}`);
+	console.log(`\n⚔  ${labelA}  vs  ${labelB}`);
 	console.log(
 		`   HP: ${hp.toLocaleString()}  ATK: ${atk.toLocaleString()}  DEF: ${def.toLocaleString()}  SP: ${sp.toLocaleString()}`,
 	);
@@ -254,10 +286,10 @@ async function replay() {
 	console.log("─".repeat(70));
 	console.log(`Result: ${winner}`);
 	console.log(
-		`  A (${platformA}): HP=${aFinal.hp.toLocaleString()} ${aFinal.alive ? "alive" : "dead"}`,
+		`  A (${labelA}): HP=${aFinal.hp.toLocaleString()} ${aFinal.alive ? "alive" : "dead"}`,
 	);
 	console.log(
-		`  B (${platformB}): HP=${bFinal.hp.toLocaleString()} ${bFinal.alive ? "alive" : "dead"}`,
+		`  B (${labelB}): HP=${bFinal.hp.toLocaleString()} ${bFinal.alive ? "alive" : "dead"}`,
 	);
 }
 
