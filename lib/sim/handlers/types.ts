@@ -7,7 +7,12 @@
  */
 
 import type { EffectRow } from "../../data/types.js";
-import type { IntentEvent, PlayerState, SeededRNGInterface } from "../types.js";
+import type {
+	IntentEvent,
+	ListenerRegistration,
+	PlayerState,
+	SeededRNGInterface,
+} from "../types.js";
 
 export interface HandlerContext {
 	sourcePlayer: Readonly<PlayerState>;
@@ -41,6 +46,8 @@ export interface HandlerResult {
 	spDamage?: number;
 	/** Non-damage intent events (buffs, debuffs, heal, shield, etc.) */
 	intents?: IntentEvent[];
+	/** Reactive listener registrations (for effects that subscribe to events) */
+	listeners?: ListenerRegistration[];
 }
 
 export type Handler = (effect: EffectRow, ctx: HandlerContext) => HandlerResult;

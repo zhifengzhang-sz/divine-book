@@ -84,9 +84,14 @@ export function processBook(
 	// Collect non-damage intent events
 	const otherEvents = handlerResults.flatMap((r) => r.intents ?? []);
 
-	// Build listener registrations for reactive effects
-	// (tier selection applied per-effect)
+	// Collect listener registrations from direct-effect handlers
+	// (e.g., self_heal per_tick, heal_echo_damage)
 	const listeners: ListenerRegistration[] = [];
+	for (const r of handlerResults) {
+		if (r.listeners) listeners.push(...r.listeners);
+	}
+
+	// Build listener registrations for reactive effects (parent != "this")
 	const reactiveTiered = selectTiers(reactiveRaw, progression);
 	for (const effect of reactiveTiered) {
 		const reg = buildListenerRegistration(effect, ctx.book);

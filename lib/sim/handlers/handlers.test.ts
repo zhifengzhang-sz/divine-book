@@ -156,6 +156,53 @@ describe("lifesteal", () => {
 	});
 });
 
+describe("self_heal (instant)", () => {
+	test("produces HEAL scaled by ATK", () => {
+		const effect: EffectRow = { type: "self_heal", value: 20 };
+		const result = resolve(effect, makeCtx({ atk: 1000 }));
+		expect(result?.intents).toHaveLength(1);
+		expect(result?.intents?.[0]).toMatchObject({
+			type: "HEAL",
+			value: 200, // 20% / 100 * 1000
+		});
+	});
+});
+
+describe("self_heal (per_tick)", () => {
+	test("produces APPLY_STATE + listener registration", () => {
+		const effect: EffectRow = {
+			type: "self_heal",
+			per_tick: 12.5,
+			total: 250,
+			tick_interval: 1,
+			name: "灵鹤",
+		};
+		const result = resolve(effect, makeCtx({ atk: 1000 }));
+		// APPLY_STATE for the named state
+		expect(result?.intents).toHaveLength(1);
+		expect(result?.intents?.[0]).toMatchObject({
+			type: "APPLY_STATE",
+		});
+		if (result?.intents?.[0]?.type === "APPLY_STATE") {
+			expect(result.intents[0].state.name).toBe("灵鹤");
+			expect(result.intents[0].state.trigger).toBe("per_tick");
+		}
+		// Listener for per_tick healing
+		expect(result?.listeners).toHaveLength(1);
+		expect(result?.listeners?.[0].parent).toBe("灵鹤");
+		expect(result?.listeners?.[0].trigger).toBe("per_tick");
+	});
+});
+
+describe("heal_echo_damage", () => {
+	test("produces listener registration", () => {
+		const effect: EffectRow = { type: "heal_echo_damage", ratio: 1 };
+		const result = resolve(effect, makeCtx());
+		expect(result?.listeners).toHaveLength(1);
+		expect(result?.listeners?.[0].parent).toBe("__heal__");
+	});
+});
+
 describe("self_hp_cost", () => {
 	test("produces HP_COST", () => {
 		const effect: EffectRow = { type: "self_hp_cost", value: 10 };
