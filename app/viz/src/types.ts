@@ -1,7 +1,23 @@
 export interface SimulationData {
 	config: {
-		playerA: { label: string; book: string; hp: number; atk: number; sp: number; def: number; spRegen: number };
-		playerB: { label: string; book: string; hp: number; atk: number; sp: number; def: number; spRegen: number };
+		playerA: {
+			label: string;
+			book: string;
+			hp: number;
+			atk: number;
+			sp: number;
+			def: number;
+			spRegen: number;
+		};
+		playerB: {
+			label: string;
+			book: string;
+			hp: number;
+			atk: number;
+			sp: number;
+			def: number;
+			spRegen: number;
+		};
 		seed: number;
 	};
 	events: SimEvent[];

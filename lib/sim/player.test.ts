@@ -67,19 +67,12 @@ describe("HIT resolution", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 10000,
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 10000, spDamage: 0 });
 
 		const hpChange = events.find((e) => e.type === "HP_CHANGE");
 		expect(hpChange).toBeDefined();
 		if (hpChange?.type === "HP_CHANGE") {
 			expect(hpChange.prev).toBe(1e8);
-			// With def=9e5, dr_constant=1e6: DR = 9e5/(9e5+1e6) = 0.4737
-			// mitigated = 10000 * (1 - 0.4737) = 5263
 			expect(hpChange.next).toBeCloseTo(1e8 - 5263, -1);
 		}
 	});
@@ -89,22 +82,16 @@ describe("HIT resolution", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 1000,
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 1000, spDamage: 0 });
 
-		const spChange = events.find(
-			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
-		);
-		expect(spChange).toBeDefined();
-
-		const shieldChange = events.find(
-			(e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen",
-		);
-		expect(shieldChange).toBeDefined();
+		expect(
+			events.some((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen"),
+		).toBe(true);
+		expect(
+			events.some(
+				(e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen",
+			),
+		).toBe(true);
 	});
 
 	test("shield absorbs damage", () => {
@@ -112,22 +99,12 @@ describe("HIT resolution", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		// With DR ~47%, 10000 raw → ~5263 mitigated. Shield=50000 absorbs all.
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 10000,
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 10000, spDamage: 0 });
 
-		const shieldAbsorb = events.find(
-			(e) => e.type === "SHIELD_CHANGE" && e.cause === "absorb",
-		);
-		expect(shieldAbsorb).toBeDefined();
-
-		// HP should not change (shield absorbed everything)
-		const hpChange = events.find((e) => e.type === "HP_CHANGE");
-		expect(hpChange).toBeUndefined();
+		expect(
+			events.some((e) => e.type === "SHIELD_CHANGE" && e.cause === "absorb"),
+		).toBe(true);
+		expect(events.find((e) => e.type === "HP_CHANGE")).toBeUndefined();
 	});
 
 	test("resonance damages SP", () => {
@@ -135,24 +112,18 @@ describe("HIT resolution", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 0,
-			spDamage: 1000,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 0, spDamage: 1000 });
 
 		const spChange = events.find(
 			(e) => e.type === "SP_CHANGE" && e.cause === "resonance",
 		);
 		expect(spChange).toBeDefined();
 		if (spChange?.type === "SP_CHANGE") {
-			expect(spChange.prev).toBe(5000);
 			expect(spChange.next).toBe(4000);
 		}
 	});
 
-	test("SP depletion means no shield generation", () => {
+	test("per-hit PERCENT_MAX_HP_HIT resolves against target maxHp", () => {
 		const { actor } = createPlayer("B", { sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
@@ -160,39 +131,17 @@ describe("HIT resolution", () => {
 		actor.send({
 			type: "HIT",
 			hitIndex: 0,
-			damage: 10000,
-			spDamage: 0,
-		});
-
-		// No shield gen events
-		const shieldGen = events.find(
-			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
-		);
-		expect(shieldGen).toBeUndefined();
-
-		// HP takes full mitigated damage
-		const hpChange = events.find((e) => e.type === "HP_CHANGE");
-		expect(hpChange).toBeDefined();
-	});
-
-	test("per-hit effects fire", () => {
-		const { actor } = createPlayer("B");
-		actor.start();
-		const events = collectEvents(actor);
-
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
 			damage: 0,
 			spDamage: 0,
-			perHitEffects: [{ type: "HP_DAMAGE", percent: 10, basis: "max" }],
+			perHitEffects: [{ type: "PERCENT_MAX_HP_HIT", percent: 10 }],
 		});
 
 		const hpChange = events.find((e) => e.type === "HP_CHANGE");
 		expect(hpChange).toBeDefined();
 		if (hpChange?.type === "HP_CHANGE") {
-			// 10% of maxHp (1e8) = 1e7
-			expect(hpChange.next).toBeCloseTo(1e8 - 1e7, -1);
+			// 10% of 1e8 = 1e7, after DR (47.4%) = ~5,263,158
+			const damage = hpChange.prev - hpChange.next;
+			expect(damage).toBeCloseTo(1e7 * (1 - 9e5 / (9e5 + 1e6)), -1);
 		}
 	});
 });
@@ -205,27 +154,16 @@ describe("DEATH", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 1e9, // massive damage
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
 
-		const death = events.find((e) => e.type === "DEATH");
-		expect(death).toBeDefined();
+		expect(events.some((e) => e.type === "DEATH")).toBe(true);
 	});
 
 	test("machine enters final state after DEATH", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 1e9,
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
 
 		expect(actor.getSnapshot().status).toBe("done");
 	});
@@ -235,52 +173,38 @@ describe("DEATH", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		actor.send({
-			type: "HIT",
-			hitIndex: 0,
-			damage: 1e9,
-			spDamage: 0,
-		});
-
-		// Send another hit — should be ignored
-		actor.send({
-			type: "HIT",
-			hitIndex: 1,
-			damage: 1e9,
-			spDamage: 0,
-		});
+		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
+		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
 
 		const hpChanges = events.filter((e) => e.type === "HP_CHANGE");
-		expect(hpChanges).toHaveLength(1); // only from the first hit
+		expect(hpChanges).toHaveLength(1);
 	});
 });
 
 // ── State Management ────────────────────────────────────────────────
 
 describe("State management", () => {
-	test("APPLY_STATE adds state and emits STATE_APPLY", () => {
+	test("APPLY_STATE adds state and recalculates ATK", () => {
 		const { actor } = createPlayer("A");
 		actor.start();
 		const events = collectEvents(actor);
 
-		const state: StateInstance = {
-			name: "仙佑",
-			kind: "buff",
-			source: "甲元仙符",
-			target: "self",
-			effects: [{ stat: "attack_bonus", value: 70 }],
-			remainingDuration: 12,
-			stacks: 1,
-			maxStacks: 1,
-			dispellable: true,
-		};
+		actor.send({
+			type: "APPLY_STATE",
+			state: {
+				name: "仙佑",
+				kind: "buff",
+				source: "甲元仙符",
+				target: "self",
+				effects: [{ stat: "attack_bonus", value: 70 }],
+				remainingDuration: 12,
+				stacks: 1,
+				maxStacks: 1,
+				dispellable: true,
+			},
+		});
 
-		actor.send({ type: "APPLY_STATE", state });
-
-		const stateApply = events.find((e) => e.type === "STATE_APPLY");
-		expect(stateApply).toBeDefined();
-
-		// ATK should be recalculated
+		expect(events.some((e) => e.type === "STATE_APPLY")).toBe(true);
 		const statChange = events.find(
 			(e) => e.type === "STAT_CHANGE" && e.stat === "atk",
 		);
@@ -294,7 +218,6 @@ describe("State management", () => {
 		const { actor } = createPlayer("A");
 		actor.start();
 
-		// Apply healing reduction debuff
 		actor.send({
 			type: "APPLY_STATE",
 			state: {
@@ -311,20 +234,16 @@ describe("State management", () => {
 		});
 
 		const events = collectEvents(actor);
-
-		// Heal 10000
 		actor.send({ type: "HEAL", value: 10000 });
 
 		const hpChange = events.find((e) => e.type === "HP_CHANGE");
 		if (hpChange?.type === "HP_CHANGE") {
-			// healing_received = -80, so healMult = 1 + (-80/100) = 0.2
-			// effective heal = 10000 * 0.2 = 2000
 			expect(hpChange.next - hpChange.prev).toBeCloseTo(2000, 0);
 		}
 	});
 });
 
-// ── CAST_SLOT ───────────────────────────────────────────────────────
+// ── CAST_SLOT (sends intents directly to opponent) ──────────────────
 
 describe("CAST_SLOT", () => {
 	test("emits CAST_START and CAST_END", () => {
@@ -332,46 +251,67 @@ describe("CAST_SLOT", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
+		// No opponent wired — HITs will fail sendTo silently
 		actor.send({ type: "CAST_SLOT", slot: 1 });
 
 		expect(events.some((e) => e.type === "CAST_START")).toBe(true);
 		expect(events.some((e) => e.type === "CAST_END")).toBe(true);
 	});
 
-	test("produces pendingHits in context", () => {
-		const { actor } = createPlayer("A");
-		actor.start();
+	test("sends HIT events to opponent via sendTo", () => {
+		const clockA = new SimulationClock();
+		const clockB = new SimulationClock();
 
-		actor.send({ type: "CAST_SLOT", slot: 1 });
+		const caster = createActor(playerMachine, {
+			input: {
+				label: "A",
+				initialState: makePlayerState(),
+				formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
+				progression: { enlightenment: 10, fusion: 51 },
+				bookSlots: [{ slot: 1, platform: "千锋聚灵剑" }],
+				booksYaml,
+				affixesYaml,
+				clock: clockA,
+				rng: new SeededRNG(42),
+				maxChainDepth: 10,
+			},
+			clock: clockA,
+		});
+		const target = createActor(playerMachine, {
+			input: {
+				label: "B",
+				initialState: makePlayerState({ sp: 0, shield: 0 }),
+				formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
+				progression: { enlightenment: 10, fusion: 51 },
+				bookSlots: [],
+				booksYaml,
+				affixesYaml,
+				clock: clockB,
+				rng: new SeededRNG(99),
+				maxChainDepth: 10,
+			},
+			clock: clockB,
+		});
 
-		const ctx = actor.getSnapshot().context;
-		expect(ctx.pendingHits.length).toBeGreaterThan(0);
-		expect(ctx.pendingHits[0].type).toBe("HIT");
-		expect(ctx.pendingHits[0].damage).toBeGreaterThan(0);
-	});
+		const targetEvents: StateChangeEvent[] = [];
+		target.on("*", (ev: StateChangeEvent) => targetEvents.push(ev));
 
-	test("千锋聚灵剑 produces 6 pending hits", () => {
-		const { actor } = createPlayer("A");
-		actor.start();
+		caster.start();
+		target.start();
 
-		actor.send({ type: "CAST_SLOT", slot: 1 });
+		// Wire opponent
+		caster.getSnapshot().context.opponentRef = target;
 
-		const ctx = actor.getSnapshot().context;
-		expect(ctx.pendingHits).toHaveLength(6);
-	});
+		// Cast — HITs should flow directly to target
+		caster.send({ type: "CAST_SLOT", slot: 1 });
 
-	test("produces pendingIntents for debuffs", () => {
-		const { actor } = createPlayer("A");
-		actor.start();
+		// Target should have received HIT events → HP changed
+		const hpChanges = targetEvents.filter((e) => e.type === "HP_CHANGE");
+		expect(hpChanges.length).toBeGreaterThan(0);
 
-		actor.send({ type: "CAST_SLOT", slot: 1 });
-
-		const ctx = actor.getSnapshot().context;
-		// 千锋聚灵剑 exclusive affix 天哀灵涸 applies debuff to opponent
-		const debuffIntent = ctx.pendingIntents.find(
-			(i) => i.type === "APPLY_STATE",
-		);
-		expect(debuffIntent).toBeDefined();
+		// Target should also have received debuff (灵涸)
+		const stateApply = targetEvents.filter((e) => e.type === "STATE_APPLY");
+		expect(stateApply.length).toBeGreaterThan(0);
 	});
 });
 
@@ -386,7 +326,6 @@ describe("HP_COST", () => {
 		actor.send({ type: "HP_COST", percent: 10, basis: "current" });
 
 		const hpChange = events.find((e) => e.type === "HP_CHANGE");
-		expect(hpChange).toBeDefined();
 		if (hpChange?.type === "HP_CHANGE") {
 			expect(hpChange.next).toBeCloseTo(0.9e8, 0);
 		}

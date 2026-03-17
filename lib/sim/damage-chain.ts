@@ -19,7 +19,8 @@ export function buildHitEvents(
 	const zones = { S_coeff: 0, M_dmg: 0, M_skill: 0, M_final: 0, M_synchro: 1 };
 
 	// Collect all escalation and per-hit effect functions (they stack)
-	const escalationFns: ((k: number) => { M_skill?: number; M_dmg?: number })[] = [];
+	const escalationFns: ((k: number) => { M_skill?: number; M_dmg?: number })[] =
+		[];
 	let perHitEffectsFn: ((k: number) => IntentEvent[]) | undefined;
 
 	for (const r of results) {

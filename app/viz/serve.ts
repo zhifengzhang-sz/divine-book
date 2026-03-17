@@ -12,7 +12,7 @@ const server = Bun.serve({
 	port,
 	async fetch(req) {
 		const url = new URL(req.url);
-		let path = url.pathname;
+		const path = url.pathname;
 
 		if (path === "/" || path === "/index.html") {
 			return new Response(Bun.file("app/viz/index.html"));

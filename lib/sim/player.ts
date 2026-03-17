@@ -58,6 +58,7 @@ export interface PlayerInput {
 	clock: SimulationClock;
 	rng: SeededRNG;
 	maxChainDepth: number;
+	opponentRef?: unknown;
 }
 
 // ── Player Machine Context ──────────────────────────────────────────
@@ -75,10 +76,8 @@ interface PlayerContext {
 	listeners: ListenerRegistration[];
 	maxChainDepth: number;
 	chainDepth: number;
-	/** Pending HIT events for arena to interleave */
-	pendingHits: HitEvent[];
-	/** Pending non-HIT events to send after hits */
-	pendingIntents: IntentEvent[];
+	/** Reference to opponent player actor for sendTo */
+	opponentRef: unknown;
 	/** Clock callback IDs for cleanup */
 	clockCallbackIds: number[];
 }
@@ -168,8 +167,7 @@ export const playerMachine = setup({
 		listeners: [],
 		maxChainDepth: input.maxChainDepth,
 		chainDepth: 0,
-		pendingHits: [],
-		pendingIntents: [],
+		opponentRef: input.opponentRef,
 		clockCallbackIds: [],
 	}),
 	initial: "alive",
@@ -228,32 +226,14 @@ export const playerMachine = setup({
 							context.listeners.push(listener);
 						}
 
-						// Separate self-targeted vs opponent-targeted events
-						const selfEvents: IntentEvent[] = [];
-						const opponentHits: HitEvent[] = [];
-						const opponentIntents: IntentEvent[] = [];
-
+						// Send events directly — players communicate via sendTo
 						for (const ev of result.directEvents) {
-							if (ev.type === "HIT") {
-								opponentHits.push(ev);
-							} else if (isSelfTargeted(ev)) {
-								selfEvents.push(ev);
+							if (isSelfTargeted(ev)) {
+								processSelfIntent(context, ev, enqueue);
 							} else {
-								opponentIntents.push(ev);
+								// Opponent-targeted: send directly to opponent
+								enqueue(sendTo(context.opponentRef, ev));
 							}
-						}
-
-						// Store hits and intents for arena to collect
-						enqueue(
-							assign({
-								pendingHits: opponentHits,
-								pendingIntents: opponentIntents,
-							}),
-						);
-
-						// Process self-targeted events
-						for (const ev of selfEvents) {
-							processSelfIntent(context, ev, enqueue);
 						}
 
 						// Emit CAST_END

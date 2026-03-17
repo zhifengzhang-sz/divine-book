@@ -56,7 +56,10 @@ export function useReplay(data: SimulationData, speed: number) {
 			const b = { ...s.playerB, states: [...s.playerB.states] };
 			const newVisible: SimEvent[] = [];
 
-			while (idx < data.events.length && (data.events[idx].t ?? 0) <= targetTime) {
+			while (
+				idx < data.events.length &&
+				(data.events[idx].t ?? 0) <= targetTime
+			) {
 				const ev = data.events[idx];
 				newVisible.push(ev);
 				const p = ev.player === "A" ? a : b;
@@ -148,8 +151,14 @@ export function useReplay(data: SimulationData, speed: number) {
 		playerA: s.playerA,
 		playerB: s.playerB,
 		visibleEvents: s.visibleEvents,
-		play: () => { s.playing = true; rerender(); },
-		pause: () => { s.playing = false; rerender(); },
+		play: () => {
+			s.playing = true;
+			rerender();
+		},
+		pause: () => {
+			s.playing = false;
+			rerender();
+		},
 		reset: () => {
 			s.playing = false;
 			s.time = 0;

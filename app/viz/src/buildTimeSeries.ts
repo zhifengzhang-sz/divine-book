@@ -44,7 +44,7 @@ export function buildTimeSeries(
 	const config = player === "A" ? data.config.playerA : data.config.playerB;
 	let initialValue: number;
 	let eventType: string;
-	let field: "prev" | "next" = "next";
+	const field: "prev" | "next" = "next";
 
 	switch (metric) {
 		case "hp":
@@ -77,7 +77,11 @@ export function buildTimeSeries(
 	for (const ev of data.events) {
 		if (ev.player !== player) continue;
 		if (ev.type !== eventType) continue;
-		if (eventType === "STAT_CHANGE" && (ev as Record<string, unknown>).stat !== metric) continue;
+		if (
+			eventType === "STAT_CHANGE" &&
+			(ev as Record<string, unknown>).stat !== metric
+		)
+			continue;
 
 		const t = ((ev.t as number) ?? 0) / 1000;
 		const value = (ev as Record<string, unknown>).next as number;

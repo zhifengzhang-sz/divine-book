@@ -169,35 +169,13 @@ playerB.on("*", (ev: StateChangeEvent) => events.push({ ...ev, player: "B" }));
 playerA.start();
 playerB.start();
 
-// Cast slot 1
+// Wire opponent refs — players send intents directly to each other
+playerA.getSnapshot().context.opponentRef = playerB;
+playerB.getSnapshot().context.opponentRef = playerA;
+
+// Arena is just a clock — send CAST_SLOT, players handle everything
 playerA.send({ type: "CAST_SLOT", slot: 1 });
 playerB.send({ type: "CAST_SLOT", slot: 1 });
-
-// Interleave hits
-const aHits = playerA.getSnapshot().context.pendingHits;
-const bHits = playerB.getSnapshot().context.pendingHits;
-const maxHits = Math.max(aHits.length, bHits.length);
-
-for (let i = 0; i < maxHits; i++) {
-	if (i < aHits.length && playerB.getSnapshot().context.state.alive) {
-		playerB.send(aHits[i]);
-	}
-	if (i < bHits.length && playerA.getSnapshot().context.state.alive) {
-		playerA.send(bHits[i]);
-	}
-}
-
-// Non-HIT intents
-if (playerB.getSnapshot().context.state.alive) {
-	for (const intent of playerA.getSnapshot().context.pendingIntents) {
-		playerB.send(intent);
-	}
-}
-if (playerA.getSnapshot().context.state.alive) {
-	for (const intent of playerB.getSnapshot().context.pendingIntents) {
-		playerA.send(intent);
-	}
-}
 
 // ── Format event for display ────────────────────────────────────────
 
@@ -269,7 +247,11 @@ if (hasFlag("json")) {
 		},
 		events,
 		result: {
-			winner: winner.startsWith("A") ? "A" : winner.startsWith("B") ? "B" : null,
+			winner: winner.startsWith("A")
+				? "A"
+				: winner.startsWith("B")
+					? "B"
+					: null,
 			aFinalHp: aFinal.hp,
 			bFinalHp: bFinal.hp,
 		},
