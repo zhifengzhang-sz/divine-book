@@ -153,21 +153,31 @@ flowchart LR
 
 ---
 
-## 2. Books as Reactive Declarations
+## 2. Two Levels: Player State Machine and Book Actor
 
-A book set is not a program to execute. It is a **set of reactive declarations** — statements about what events should be emitted in response to what conditions.
+The simulator has two distinct levels with different responsibilities:
 
-Each effect in a book's YAML data declares a reactive relationship through the `parent` field:
+**Player = state machine.** Manages combat state (HP, SP, shield, buffs, debuffs). Resolves incoming intent events against its own state. Emits state-change events. Reaches the absorbing boundary (DEATH) when HP ≤ 0.
 
-- **`parent: "this"`** — "When this book casts, emit this event." A direct declaration. It fires once, at cast time, and produces immediate events (HIT, HEAL, APPLY_STATE, etc.).
+**Book = actor.** Each divine book is an actor owned by the player. It combines effects from all its sources — main skill, primary affix, exclusive affix, and auxiliary affixes — into intent events. The book actor does not manage state. It produces intents.
 
-- **`parent: "<state_name>"`** — "When this named state emits a lifecycle event, react by emitting these events." A subscription. It activates when the named state is created and remains active for the state's lifetime.
+```
+Player State Machine
+  ├── Book Actor (slot 1)
+  │     combines: skill + primary affix + exclusive affix + aux affixes
+  │     produces: intent events → opponent's player state machine
+  ├── Book Actor (slot 2)
+  ├── ...
+  └── Book Actor (slot 6)
+```
 
-The book function translates YAML into two outputs:
-1. **Immediate events** — from direct declarations
-2. **Listener registrations** — from reactive declarations
+A book's effects declare reactive relationships through the `parent` field:
 
-It does not execute anything. It declares what the player's state machine should do in response to future events.
+- **`parent: "this"`** — "When this book casts, emit this event." Direct: the book actor produces the intent immediately on cast.
+
+- **`parent: "<state_name>"`** — "When this named state emits a lifecycle event, react by emitting these events." Reactive: the book actor registers a listener on the player's state machine.
+
+The book actor combines all effects from all sources, computes the damage chain (zones, escalation, resonance), and produces the final intent events. The player state machine does not know about damage chains or zones — it only receives and resolves intents.
 
 **Example — 周天星元:**
 
@@ -180,7 +190,7 @@ The YAML declares:
 | `heal_echo_damage` (ratio=1) | this | On cast: register listener — when HEAL fires, emit HIT to opponent |
 | `shield` (value=4.4%, trigger=per_tick) | 灵鹤 | Listener: when 灵鹤 emits STATE_TICK, emit SHIELD |
 
-The book does not "heal the player" or "generate shields." It declares that healing and shielding should happen in response to specific events. The player's state machine does the rest.
+The book actor combines all these effects. On cast, it produces the immediate intents (HIT events, APPLY_STATE for 灵鹤). It also registers reactive listeners (天书灵盾 subscribes to 灵鹤's ticks). The player state machine resolves the intents and manages the state lifecycle.
 
 ---
 
@@ -197,7 +207,7 @@ Events in the simulator fall into two layers that serve different purposes:
 flowchart LR
     subgraph "Player A (source)"
         A_ATK["A's ATK + zones"]
-        A_BOOK["Book function"]
+        A_BOOK["Book actor"]
         A_ATK --> A_BOOK
     end
     A_BOOK -- "HIT { damage: 3377 }" --> INTENT["Intent Event<br/>(boundary)"]
@@ -286,22 +296,29 @@ Each tick produces a cascade: the named state's own effect (healing) and the aff
 
 ---
 
-## 5. The Player as Event Processor
+## 5. The Player State Machine
 
-The player's state machine is the heart of the simulator. It is the only stateful component and the only XState v5 machine in the system.
+The player state machine manages **combat state only** — HP, SP, shield, buffs, debuffs, named states. It does not know about damage chains, zones, or effect combination. Those are the book actor's responsibility.
 
-The player:
+The player state machine:
+- **Owns** 6 book actors (one per slot)
 - **Receives** intent events from the opponent (via `sendTo`)
 - **Receives** lifecycle events from the clock (STATE_TICK, STATE_EXPIRE)
-- **Receives** CAST_SLOT events from the scheduler
-- **Reacts** to each event by mutating its own state
+- **Receives** CAST_SLOT events from the scheduler → delegates to the appropriate book actor
+- **Resolves** incoming intents by mutating its own state (DR, shield, HP)
 - **Emits** state-change events to all subscribers (via `emit`)
-- **Routes** named state lifecycle events to registered affix listeners
-- **Produces** new intent events as reactions (on_attacked triggers, heal_echo_damage, etc.)
+- **Routes** named state lifecycle events to registered listeners (reactive affix subscriptions)
 - **Schedules** future events on the clock (state expiry, periodic ticks)
 - **Terminates** when HP reaches zero (final state = absorbing boundary)
 
-The player does not know about books, slots, opponents, or the cast schedule. It receives events and reacts. The simulation emerges from two players reacting to each other's intent events.
+The book actor:
+- **Combines** effects from all sources (skill + primary affix + exclusive affix + aux affixes)
+- **Computes** the damage chain (zones, escalation, S_coeff, M_synchro)
+- **Produces** intent events (HIT, APPLY_STATE, PERCENT_MAX_HP_HIT, etc.)
+- **Sends** intents directly to the opponent's player state machine (via `sendTo`)
+- **Registers** reactive listeners for parent-based effects
+
+The player resolves intents. The book produces intents. These are separate responsibilities at separate levels.
 
 ---
 
@@ -361,13 +378,15 @@ These are the patterns that killed the prior two simulator attempts. Each repres
 | Imperative instinct | Reactive correction |
 |:---------------------|:-------------------|
 | "The arena calls the book function, gets results, routes them" | The arena emits CAST_SLOT. The player reacts. The book declares events. The player sends intents to the opponent. The arena is a clock, not a controller. |
-| "The book computes damage and returns intents" | The book declares reactive relationships. The damage chain produces HIT events, but it is triggered by CAST_SLOT — not called imperatively. |
+| "The book is a function called by the player" | The book is an actor owned by the player. It reacts to CAST by combining effects and producing intents via sendTo. The player does not call the book — it delegates CAST_SLOT to the book actor. |
 | "The player resolves an intent: step 1, step 2, step 3" | Each step is a reaction. HIT arrives → DR reacts → SP reacts → shield reacts → HP reacts → triggers react. Each reaction may emit new events that cascade further. |
 | "After reducing HP, check if the player is dead" | DEATH is a reaction to HP_CHANGE where hp ≤ 0. It is the absorbing boundary, not a condition to poll. |
 | "Named state active = true/false" | Named state emits lifecycle events. Listeners subscribe. The state's presence is expressed through its event stream, not a boolean flag. |
 | "The arena manages the fight loop" | There is no loop. There are scheduled events on a clock. The fight emerges from event cascades. |
 | "Process all of A's hits, then all of B's hits" | Hits interleave: A-1, B-1, A-2, B-2. Each hit is an event that fully resolves before the next. |
 | "The simulator computes the winner" | The simulator produces an event stream. A subscriber observes DEATH and derives the winner. |
+| "The player computes the damage chain" | The book actor computes the damage chain. The player only resolves intents (DR, shield, HP). Damage chains, zones, and effect combination are the book's responsibility, not the player's. |
+| "Store pendingHits for the arena to deliver" | Players send intents directly to each other via sendTo. The arena is a clock, not a delivery service. No storing, no reading context, no imperative delivery loops. |
 
 If you find yourself writing code that matches the left column, stop. Translate it to the right column before proceeding.
 
@@ -390,10 +409,18 @@ flowchart TB
         CLK -- "CAST_SLOT" --> MB
         CLK -- "STATE_TICK / STATE_EXPIRE" --> MB
 
-        MA["Player A<br/>state machine"]
-        MB["Player B<br/>state machine"]
-        MA -- "intent events<br/>(HIT, APPLY_STATE, ...)" --> MB
-        MB -- "intent events<br/>(HIT, APPLY_STATE, ...)" --> MA
+        subgraph PA["Player A"]
+            MA["State Machine<br/>(HP, SP, buffs)"]
+            BA["Book Actors<br/>(slots 1-6)"]
+            BA -- "intents" --> MA
+        end
+        subgraph PB["Player B"]
+            MB["State Machine<br/>(HP, SP, buffs)"]
+            BB["Book Actors<br/>(slots 1-6)"]
+            BB -- "intents" --> MB
+        end
+        BA -- "intent events<br/>(HIT, APPLY_STATE, ...)" --> MB
+        BB -- "intent events<br/>(HIT, APPLY_STATE, ...)" --> MA
 
         MA -- "state-change events" --> ES
         MB -- "state-change events" --> ES
