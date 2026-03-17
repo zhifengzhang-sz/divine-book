@@ -89,10 +89,14 @@ strong {
 }
 </style>
 
+---
+initial date: 2026-03-16
+dates of modification: [2026-03-16, 2026-03-17]
+---
+
 # Reactive Design Principles
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
-**Date:** 2026-03-16
 
 > **This document is invariant.** It defines what the combat simulator is, how it is structured, and how it behaves. Two prior attempts failed because imperative thinking was applied to a fundamentally reactive problem. This document exists to prevent that from happening again.
 
@@ -334,3 +338,14 @@ flowchart TB
 ```
 
 Configuration enters from the top. The clock schedules cast events. Players delegate to their book actors. Book actors produce intents and send them to the opponent's state machine. State machines resolve intents and emit state-change events into the output stream. Subscribers derive whatever they need. When either player reaches the absorbing boundary, the process terminates.
+
+---
+
+## Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-03-16 | Initial draft |
+| 2.0 | 2026-03-16 | Added SP system, per-hit model, reactive affixes, event model |
+| 3.0 | 2026-03-16 | Rewrote §2 (two levels), §5 (player + book), anti-patterns |
+| 4.0 | 2026-03-17 | **Full rewrite from scratch.** Clean 10-section structure. Two levels: player state machine + book actor. No patches — written from corrected understanding. |

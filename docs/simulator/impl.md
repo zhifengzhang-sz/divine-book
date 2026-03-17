@@ -1,23 +1,104 @@
 <style>
-body { max-width: none !important; width: 95% !important; margin: 0 auto !important; padding: 20px 40px !important; background-color: #282c34 !important; color: #abb2bf !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important; line-height: 1.6 !important; }
-h1, h2, h3, h4, h5, h6 { color: #ffffff !important; }
-a { color: #61afef !important; }
-code { background-color: #3e4451 !important; color: #e5c07b !important; padding: 2px 6px !important; border-radius: 3px !important; }
-pre { background-color: #2c313a !important; border: 1px solid #4b5263 !important; border-radius: 6px !important; padding: 16px !important; overflow-x: auto !important; }
-pre code { background-color: transparent !important; color: #abb2bf !important; padding: 0 !important; }
-table { border-collapse: collapse !important; width: auto !important; margin: 16px 0 !important; }
-table th, table td { border: 1px solid #4b5263 !important; padding: 8px 10px !important; }
-table th { background: #3e4451 !important; color: #e5c07b !important; text-align: center !important; }
-table td { background: #2c313a !important; font-size: 12px !important; }
-blockquote { border-left: 3px solid #4b5263 !important; padding-left: 10px !important; color: #5c6370 !important; }
-strong { color: #e5c07b !important; }
+body {
+  max-width: none !important;
+  width: 95% !important;
+  margin: 0 auto !important;
+  padding: 20px 40px !important;
+  background-color: #282c34 !important;
+  color: #abb2bf !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+  line-height: 1.6 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff !important;
+}
+
+a {
+  color: #61afef !important;
+}
+
+code {
+  background-color: #3e4451 !important;
+  color: #e5c07b !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+}
+
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  width: auto !important;
+  margin: 16px 0 !important;
+  table-layout: auto !important;
+  display: table !important;
+}
+
+table th,
+table td {
+  border: 1px solid #4b5263 !important;
+  padding: 8px 10px !important;
+  word-wrap: break-word !important;
+}
+
+table th:first-child,
+table td:first-child {
+  min-width: 60px !important;
+}
+
+table th {
+  background: #3e4451 !important;
+  color: #e5c07b !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+table td {
+  background: #2c313a !important;
+  font-size: 12px !important;
+  text-align: left !important;
+}
+
+blockquote {
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
+}
+
+strong {
+  color: #e5c07b !important;
+}
 </style>
+
+---
+initial date: 2026-03-16
+dates of modification: [2026-03-16, 2026-03-17]
+---
 
 # Implementation Guide — XState v5
 
-**Date:** 2026-03-16
+**Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> Maps [design.reactive.md](design.reactive.md) to XState v5 code.
+> Maps [design.reactive.md](design.reactive.md) to XState v5 code. For design principles, see [design.reactive.md](design.reactive.md). For detailed spec, see [design.md](design.md).
 
 ---
 
@@ -297,3 +378,12 @@ Phase 4: Monte Carlo + analytics
   9. Batch runner with seeded RNG
   10. Win rate, damage breakdown subscribers
 ```
+
+---
+
+## Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-03-16 | Initial: imperative model (book as function, pendingHits, arena routing) |
+| 2.0 | 2026-03-17 | **Full rewrite.** XState v5 actor system: Arena spawns Players, Players spawn Books. Books send intents via system.get(). No pendingHits, no arena delivery. |

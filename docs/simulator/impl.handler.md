@@ -1,19 +1,102 @@
 <style>
-body { max-width: none !important; width: 95% !important; margin: 0 auto !important; padding: 20px 40px !important; background-color: #282c34 !important; color: #abb2bf !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important; line-height: 1.6 !important; }
-h1, h2, h3, h4, h5, h6 { color: #ffffff !important; }
-code { background-color: #3e4451 !important; color: #e5c07b !important; padding: 2px 6px !important; border-radius: 3px !important; }
-pre { background-color: #2c313a !important; border: 1px solid #4b5263 !important; border-radius: 6px !important; padding: 16px !important; }
-pre code { background-color: transparent !important; color: #abb2bf !important; padding: 0 !important; }
-table { border-collapse: collapse !important; width: auto !important; margin: 16px 0 !important; }
-table th, table td { border: 1px solid #4b5263 !important; padding: 8px 10px !important; }
-table th { background: #3e4451 !important; color: #e5c07b !important; text-align: center !important; }
-table td { background: #2c313a !important; font-size: 12px !important; }
-strong { color: #e5c07b !important; }
+body {
+  max-width: none !important;
+  width: 95% !important;
+  margin: 0 auto !important;
+  padding: 20px 40px !important;
+  background-color: #282c34 !important;
+  color: #abb2bf !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+  line-height: 1.6 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff !important;
+}
+
+a {
+  color: #61afef !important;
+}
+
+code {
+  background-color: #3e4451 !important;
+  color: #e5c07b !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+}
+
+pre {
+  background-color: #2c313a !important;
+  border: 1px solid #4b5263 !important;
+  border-radius: 6px !important;
+  padding: 16px !important;
+  overflow-x: auto !important;
+}
+
+pre code {
+  background-color: transparent !important;
+  color: #abb2bf !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+table {
+  border-collapse: collapse !important;
+  width: auto !important;
+  margin: 16px 0 !important;
+  table-layout: auto !important;
+  display: table !important;
+}
+
+table th,
+table td {
+  border: 1px solid #4b5263 !important;
+  padding: 8px 10px !important;
+  word-wrap: break-word !important;
+}
+
+table th:first-child,
+table td:first-child {
+  min-width: 60px !important;
+}
+
+table th {
+  background: #3e4451 !important;
+  color: #e5c07b !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+table td {
+  background: #2c313a !important;
+  font-size: 12px !important;
+  text-align: left !important;
+}
+
+blockquote {
+  border-left: 3px solid #4b5263 !important;
+  padding-left: 10px !important;
+  color: #5c6370 !important;
+  background-color: #2c313a !important;
+}
+
+strong {
+  color: #e5c07b !important;
+}
 </style>
+
+---
+initial date: 2026-03-16
+dates of modification: [2026-03-16, 2026-03-17]
+---
 
 # Effect Handler Specification
 
-**Date:** 2026-03-16
+**Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
 > Each handler is a pure function inside the book actor. It reads an EffectRow from the YAML data and produces a HandlerResult (zone contributions + intent events). The book actor collects all results, computes the damage chain, and sends the final intents.
 
@@ -209,3 +292,12 @@ totalDamage = sum(all HIT.damage)
 lifestealHeal = (lifestealPercent / 100) × totalDamage
 → self-targeted HEAL { value: lifestealHeal }
 ```
+
+---
+
+## Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-03-16 | Initial audit: confident/partial/not-confident categories |
+| 2.0 | 2026-03-17 | **Full rewrite.** All handlers specified against source text. No open questions. shield checks source field. Lifesteal computed from source-side damage. DoT is %ATK. |

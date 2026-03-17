@@ -89,584 +89,258 @@ strong {
 }
 </style>
 
-# Combat Simulator — Design
+---
+initial date: 2026-03-16
+dates of modification: [2026-03-16, 2026-03-17]
+---
+
+# Combat Simulator — Design Specification
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
-**Date:** 2026-03-16
 
-> **Purpose.** This document specifies the conceptual design of the combat simulator — what it does, what abstractions it uses, and how data flows through it. It is implementation-agnostic: no XState, no TypeScript types, no file paths. The companion [impl.md](impl.md) maps this design to concrete XState v5 code.
-
----
-
-## 1. Core Principle
-
-**Combat is a process of mutating player states on both sides.**
-
-The simulator's job is to:
-1. Initialize two players with their combat attributes and book configurations
-2. Execute a cast schedule that fires books in slot order
-3. Each book cast produces per-hit effects that mutate player states (self and/or opponent)
-4. Every state mutation is an observable event
-5. The fight ends when one player's HP reaches zero
-
-The simulator produces a **stream of state-change events**. All consumers — trace formatting, visualization, analytics, replay — are subscribers to this stream. The simulator has zero knowledge of how its output is consumed.
+> **Detailed design spec.** This document specifies the concrete data structures, event types, formulas, and configuration of the combat simulator. It is implementation-agnostic — no XState, no TypeScript types. For principles, see [design.reactive.md](design.reactive.md). For XState v5 mapping, see [impl.md](impl.md).
 
 ---
 
-## 2. Two Combat Resources
+## 1. Two Combat Resources
 
-Characters have two resource pools that must be managed:
+Characters have two resource pools:
 
-```
-  气血 (HP)                         灵力 (SP)
-  ─────────                         ─────────
-  Primary health.                   Spiritual power.
-  Zero = death.                     Consumed to generate 护盾 (shields)
-  Attacked by: 攻击 (ATK)           on taking damage.
-                                    Attacked by: 会心 (resonance)
-```
+| Resource | Chinese | Role | Attacked by |
+|:---------|:--------|:-----|:------------|
+| HP | 气血 | Primary health. Zero = death. | 攻击 (ATK) |
+| SP | 灵力 | Consumed to generate 护盾 (shield) on taking damage. | 会心 (resonance) |
 
 **Shield generation** (reactive, on taking damage):
-```
-  On receiving mitigated damage:
-    1. shieldGenerated = min(sp, damage) × sp_shield_ratio
-    2. sp -= shieldGenerated / sp_shield_ratio     → emit SP_CHANGE
-    3. shield += shieldGenerated                    → emit SHIELD_CHANGE
-    4. Resolve damage against shield, then HP
-```
 
-**灵力 depletion consequence:** When SP reaches zero, the character cannot generate shields. All subsequent damage hits 气血 directly (no shield buffer). This makes 会心 (resonance) one of the highest-value attack vectors — it removes the opponent's defense layer.
+1. `shieldGenerated = min(sp, mitigatedDamage) × sp_shield_ratio`
+2. `sp -= shieldGenerated / sp_shield_ratio`
+3. `shield += shieldGenerated`
+4. Resolve remaining damage against shield, then HP
 
-**灵力 recovery:** SP regenerates passively at `sp_regen_per_second` (from 灵力恢复 stat). Capped at maxSp.
+When SP reaches zero, no shield is generated. All subsequent damage hits HP directly.
+
+**SP recovery:** `sp += spRegen × dt` per second, capped at maxSp.
 
 ---
 
-## 3. Player State
+## 2. Player State
 
-Player state is the primary abstraction. It contains **only combat attributes** — nothing about scheduling, slots, or turn order.
-
-### 3.1 State Fields
+Player state contains **only combat attributes**. No scheduling, slots, or book data.
 
 | Field | Type | Description |
 |:------|:-----|:------------|
-| hp | number | Current 气血. Death when ≤ 0. |
-| maxHp | number | Maximum 气血. Reference for %maxHP effects. |
-| sp | number | Current 灵力. Consumed to generate shields on damage. |
-| maxSp | number | Maximum 灵力. |
-| spRegen | number | 灵力 recovery per second. |
-| shield | number | Current 护盾 HP. Absorbs damage before 气血. |
-| atk | number | Current effective 攻击 (base + buff modifiers). |
-| baseAtk | number | Unmodified base 攻击. Buffs modify atk, not baseAtk. |
-| def | number | Current effective 守御. |
-| baseDef | number | Unmodified base 守御. |
-| states | StateInstance[] | All active states — buffs, debuffs, and named states (see §3.2). |
-| alive | boolean | false when hp ≤ 0. |
+| hp | number | Current 气血 |
+| maxHp | number | Maximum 气血 |
+| sp | number | Current 灵力 |
+| maxSp | number | Maximum 灵力 |
+| spRegen | number | 灵力 recovery per second |
+| shield | number | Current 护盾 HP |
+| atk | number | Current effective 攻击 (base + buff modifiers) |
+| baseAtk | number | Unmodified base 攻击 |
+| def | number | Current effective 守御 |
+| baseDef | number | Unmodified base 守御 |
+| states | StateInstance[] | All active buffs, debuffs, and named states |
+| alive | boolean | false when hp ≤ 0 |
 
-### 3.2 State Instances
+### 2.1 State Instances
 
-All active effects on a player — buffs, debuffs, and named states — are stored in a single `states[]` collection. Each state instance has:
+All active effects on a player — buffs, debuffs, named states — in a single collection.
 
 | Field | Type | Description |
 |:------|:-----|:------------|
-| name | string | Display name (e.g., 灵涸, 仙佑, 罗天魔咒). Natural key. |
+| name | string | Display name (natural key) |
 | kind | "buff" \| "debuff" \| "named" | Classification |
 | source | string | Book that created it |
 | target | "self" \| "opponent" | Who this state lives on |
-| effects | StateEffect[] | What this state does (stat modifiers, triggers, etc.) |
+| effects | StateEffect[] | Stat modifiers: `{ stat, value }` per stack |
 | remainingDuration | number | Seconds until expiry (Infinity = permanent) |
-| stacks | number | Current stack count |
-| maxStacks | number | Maximum stacks allowed |
-| dispellable | boolean | Can be removed by cleanse/dispel |
+| stacks / maxStacks | number | Stack count and cap |
+| dispellable | boolean | Can be removed by dispel/cleanse |
 | trigger | string? | "on_cast", "on_attacked", "per_tick" |
-| parent | string? | Parent state ID (child expires when parent expires) |
+| parent | string? | Parent state name (child expires with parent) |
 
-### 3.3 State Effects
+### 2.2 Effective Stats
 
-Each state instance carries one or more effects that modify the player:
-
-| Field | Type | Description |
-|:------|:-----|:------------|
-| stat | string | What it modifies (e.g., attack_bonus, healing_received, damage_reduction) |
-| value | number | Magnitude per stack |
-
-**Derived views:** "All buffs" = states where kind="buff". "All debuffs" = states where kind="debuff". These are queries on the single collection, not separate storage.
-
-**Parent-child relationship:** States reference a parent via the `parent` field (matching the parent state's `name`). When the parent expires, all children expire. When the parent stacks, children scale.
-
-### 3.4 Named State Events and Reactive Affixes
-
-Named states are **event emitters with a rich lifecycle**. During their lifetime they can emit multiple event types:
-
-| Event | When | Example |
-|:------|:-----|:--------|
-| STATE_APPLY | State created | 灵鹤 created on cast |
-| STATE_EXPIRE | Duration reached 0 or removed | 灵鹤 expires at 20s |
-| STATE_TICK | Periodic interval (`per_tick` trigger) | 灵鹤 heals every 1s |
-| STATE_TRIGGERED | Reactive condition (`on_attacked`, `on_cast`) | 罗天魔咒 triggers on taking damage |
-
-**Example — 周天星元 + 灵鹤:**
+Derived from base stats + all active state effects:
 
 ```
-  Main skill creates 灵鹤 (self_heal per_tick: 3.5%, interval: 1s, duration: 20s)
-  Also applies heal_echo_damage (ratio: 1) — heals echo as damage to opponent
-
-  Primary affix 【天书灵盾】 subscribes: parent=灵鹤, trigger=per_tick
-    → on each 灵鹤 tick: generates shield (4.4% max HP)
-
-  灵鹤 lifecycle:
-    t=0   STATE_APPLY        → affix listeners registered
-    t=1   STATE_TICK          → heals 3.5% → heal echoes as damage → shield generated
-    t=2   STATE_TICK          → heals 3.5% → heal echoes as damage → shield generated
-    ...
-    t=20  STATE_EXPIRE        → affix listeners deactivated, shield stops
+effectiveAtk = baseAtk × (1 + sum(attack_bonus effects) / 100)
+effectiveDef = baseDef × (1 + sum(defense_bonus effects) / 100)
+effectiveDR  = effectiveDef / (effectiveDef + dr_constant) + sum(damage_reduction effects) / 100
+healingMult  = 1 + sum(healing_received effects) / 100
 ```
 
-**Example — 大罗幻诀 + 罗天魔咒:**
-
-```
-  Main skill creates 罗天魔咒 (counter_debuff: on_attacked, 30% chance, duration: 8s)
-
-  Primary affix 【魔魂咒界】 subscribes: parent=罗天魔咒
-    → on STATE_APPLY: upgrades chance from 30% → 60%, adds 命损 debuff
-
-  罗天魔咒 lifecycle:
-    t=0   STATE_APPLY         → affix activates (upgrades chance, adds 命损)
-    t=?   STATE_TRIGGERED     → on_attacked → applies 噬心之咒/断魂之咒
-    t=8   STATE_EXPIRE        → affix deactivates
-```
-
-**Affixes are reactive listeners to named state events.** Any effect with a `parent` field subscribes to its parent state's event stream:
-
-- **`parent: "this"`** = direct effect, fires immediately on cast. Not reactive.
-- **`parent: "<state_name>"`** = reactive listener. The `trigger` field specifies which event to listen for:
-  - No trigger: activate on STATE_APPLY, deactivate on STATE_EXPIRE (simple on/off modifier)
-  - `trigger: per_tick`: fire on every STATE_TICK of the parent
-  - `trigger: on_attacked`: fire on every STATE_TRIGGERED(on_attacked) of the parent
-  - `trigger: on_cast`: fire on every STATE_TRIGGERED(on_cast) of the parent
-
-This is a pub/sub pattern:
-- **Publishers:** named states emit lifecycle events (apply, expire, tick, triggered)
-- **Subscribers:** affix effects with `parent` field listen to specific events
-- **The player's state machine is the event bus** — it owns the states and routes events to listeners
-
-Both primary and exclusive affixes can be reactive subscribers. Universal/school aux affixes (from affixes.yaml) are always active — they don't use `parent`.
-
-### 3.5 "Casting" is a Temporary State
-
-When a book casts, it does NOT set a `castPhase` field. Instead, the book creates a temporary named state on the player for the cast duration. Effects like `self_damage_reduction_during_cast` subscribe to this state via `parent`. Casting is just another state — no special handling.
-
-### 3.6 Effective Stats
-
-The player's effective stats are derived from base stats + all active state effects:
-
-```
-  effectiveAtk = baseAtk × (1 + sum of attack_bonus effects / 100)
-  effectiveDef = baseDef × (1 + sum of def_bonus effects / 100)
-  effectiveDR  = effectiveDef / (effectiveDef + dr_constant)
-                 + sum of damage_reduction effects / 100
-  effectiveHealMult = 1 + sum of healing_received effects / 100
-```
-
-These are recomputed whenever a state is added, removed, stacked, or expired.
+Recomputed whenever a state is added, removed, stacked, or expired.
 
 ---
 
-## 4. Event Model
+## 3. Event Types
 
-The entire simulator is reactive: **events flow in, reactions produce new events, those flow downstream.** There is no imperative control flow — only event streams.
+### 3.1 Intent Events (book actor → opponent player)
 
-### 4.1 Two Layers of Events
+Intent events carry what the source wants to do. Computed from source state only.
 
-Every interaction in the system is an event. Events fall into two layers:
+| Event | Key fields | Resolution |
+|:------|:-----------|:-----------|
+| HIT | damage, spDamage, hitIndex, perHitEffects | DR → SP shield → shield absorb → HP → resonance SP → per-hit effects → triggers |
+| PERCENT_MAX_HP_HIT | percent | `damage = percent% × target.maxHp` → DR → shield → HP |
+| HP_DAMAGE | percent, basis | `damage = percent% × basis(maxHp\|hp\|lostHp)` → HP (bypasses DR) |
+| APPLY_STATE | state: StateInstance | Add to states[], recalc stats, schedule expiry/ticks |
+| APPLY_DOT | name, damagePerTick, tickInterval, duration | Add debuff state, schedule periodic damage |
+| HEAL | value (absolute) | `hp += value × healingMult`, capped at maxHp |
+| SHIELD | value, duration | `shield += value` |
+| HP_COST | percent, basis | `hp -= percent% × basis` (self-damage, bypasses DR/shield) |
+| LIFESTEAL | value (absolute) | `hp += value × healingMult` (self-targeted HEAL) |
+| DISPEL | count | Remove N dispellable buffs |
+| BUFF_STEAL | count | Remove N buffs from target, send to source as APPLY_STATE |
+| SELF_CLEANSE | count? | Remove debuffs from self |
+| HP_FLOOR | minPercent | `hp = max(hp, minPercent% × maxHp)` after self-damage |
+| DELAYED_BURST | damage, delay | Schedule future damage |
 
-**Intent events** — cross-player communication. Carry source-side computation. The source player does not need to know the target's state. The target resolves the intent against their own state.
+### 3.2 State-Change Events (player → subscribers)
 
-**State-change events** — within-player reactions. Emitted when player state mutates as a consequence of resolving an intent. Flow outward to all subscribers (internal reactive listeners + external consumers).
+Emitted when player state mutates. Observable by all subscribers.
 
-**Intent events (cross-player, A does not know B's state):**
-
-| Event | Emitted by | Resolved by |
-|:------|:-----------|:------------|
-| HIT | Book (on cast) | Opponent player (applies own DR → shield → HP) |
-| HP_DAMAGE | DoT ticks, %maxHP effects, heal_echo | Target player (HP reduction, bypasses DR) |
-| APPLY_STATE | Book, reactive listeners | Target player (adds to states[]) |
-| APPLY_DOT | Book | Target player (adds debuff with periodic tick) |
-| HEAL | Book, lifesteal, per_tick effects | Self player (HP increase, applies own healing modifiers) |
-| SHIELD | Book, reactive listeners | Self player (adds to shield) |
-| HP_COST | Book | Self player (self-damage, bypasses DR/shield) |
-| DISPEL | Book | Target player (removes N buffs) |
-| BUFF_STEAL | Book | Target player → source player (moves buffs) |
-| DELAYED_BURST | Book | Scheduled on clock, detonates as HP_DAMAGE later |
-
-**State-change events (within-player reactions, observable by all subscribers):**
-
-| Event | Emitted when | Reacted to by |
-|:------|:-------------|:--------------|
-| CAST_SLOT | Arena clock fires | Player (triggers book processing) |
-| HP_CHANGE | HP mutated (damage, healing, cost) | Death check, heal_echo_damage, conditional triggers |
-| SP_CHANGE | SP mutated (shield gen, resonance, regen) | SP depletion tracking |
-| SHIELD_CHANGE | Shield mutated (gen, absorb, expire) | Shield-related triggers |
-| STATE_APPLY | New state added to player | Reactive affix listeners (activation) |
-| STATE_EXPIRE | State duration reached 0 | Reactive affix listeners (deactivation), child cleanup |
-| STATE_TICK | Periodic interval of active state | Reactive affix listeners (per_tick effects) |
-| STATE_TRIGGERED | Reactive condition (on_attacked, on_cast) | Reactive affix listeners |
-| STATE_REMOVE | Dispel, cleanse, steal | Child cleanup, stat recalc |
-| STAT_CHANGE | Effective stats recalculated | Consumers of current ATK/DEF/DR |
-| DEATH | hp ≤ 0 | Arena (fight ends) |
-
-### 4.2 Event Propagation
-
-Events cascade through the system reactively:
-
-```
-  CAST_SLOT(1) arrives at Player A
-    → Player A processes book(slot 1)
-    → Book emits: HIT(1), HIT(2), ..., STATE_APPLY(灵鹤), SELF_HEAL(20%)
-    → HIT events sent to Player B's state machine
-    → STATE_APPLY(灵鹤) processed by Player A's state machine
-      → Reactive affix listeners for 灵鹤 activate
-
-  Later, clock fires STATE_TICK(灵鹤)
-    → self_heal reacts: emits HEAL(3.5%)
-    → affix listener reacts: emits SHIELD(4.4%)
-    → HEAL processed by Player A:
-      → HP_CHANGE emitted
-      → heal_echo_damage reacts to HP_CHANGE: emits HIT(3.5%) to opponent
-
-  HIT arrives at Player B
-    → DR reacts: mitigated damage
-    → SP shield gen reacts: SP_CHANGE, SHIELD_CHANGE
-    → Shield absorb reacts: SHIELD_CHANGE
-    → HP reduced: HP_CHANGE
-    → on_attacked states react: may emit new events
-    → HP_CHANGE(hp ≤ 0): DEATH
-```
-
-**Every arrow is a reaction.** No component "calls" another. Events flow in, reactions flow out.
-
-### 4.3 Event Structure
-
-| Field | Type | Description |
-|:------|:-----|:------------|
-| t | number | Simulation time (milliseconds) |
-| type | string | Event type (from §4.1) |
-| source | string | Who emitted it (player label, book name, state name) |
-| target | string | Who should react ("A", "B", "self") |
-| data | object | Type-specific payload |
-| meta | object? | Additional context for tracing/debugging |
-
-### 4.4 External Subscriber Interface
-
-The same event stream that drives the simulation is exposed to external consumers:
-
-```
-subscribe(listener: (event: Event) => void) → unsubscribe()
-```
-
-External subscribers (trace formatter, visualizer, analytics) see the exact same events that drive internal behavior. The simulator's internal reactive behavior and external observability use the same event bus.
+| Event | When |
+|:------|:-----|
+| HP_CHANGE | HP mutated (damage, healing, cost) |
+| SP_CHANGE | SP mutated (shield gen, resonance, regen) |
+| SHIELD_CHANGE | Shield mutated (gen, absorb, expire) |
+| STAT_CHANGE | Effective stat recalculated |
+| STATE_APPLY | New state added |
+| STATE_EXPIRE | State duration reached zero |
+| STATE_TICK | Periodic interval of active state |
+| STATE_TRIGGERED | Reactive condition (on_attacked, on_cast) |
+| STATE_REMOVE | State dispelled/cleansed/stolen |
+| CAST_START / CAST_END | Book cast began/ended |
+| DEATH | hp ≤ 0 (absorbing boundary — event stream terminates) |
 
 ---
 
-## 5. System Components
+## 4. Named States and Reactive Affixes
 
-### 5.1 Arena (Clock + Scheduler)
+Named states are event emitters. During their lifetime they emit STATE_APPLY, STATE_TICK, STATE_TRIGGERED, STATE_EXPIRE.
 
-The Arena is a minimal scheduler. It owns:
-- **Clock**: Virtual simulation clock. Priority queue of timed callbacks. Advances instantly.
-- **Cast schedule**: Emits CAST_SLOT events at t=0, 6s, 12s, 18s, 24s, 30s.
-- **Hit interleaving**: When both players produce HIT events simultaneously, delivers them alternately (A-hit-1, B-hit-1, A-hit-2, ...). See §7.
+Affix effects subscribe via the `parent` field:
 
-The Arena does NOT own player state, route events between players, or make decisions. It is a clock.
+- `parent: "this"` — direct: fires on cast
+- `parent: "<state_name>"` — reactive: fires when the named state emits. The `trigger` field specifies which event (per_tick, on_attacked, on_cast, or on_apply/on_expire by default)
 
-### 5.2 Player (XState v5 State Machine)
-
-The Player is the **only state machine** in the system. It is an event-driven reactive processor:
-
-- Receives events (HIT, HEAL, STATE_APPLY, STATE_TICK, etc.)
-- Reacts by mutating its own state (PlayerState, §3)
-- Emits new events as a consequence of state changes
-- Manages registered reactive listeners (affix effects with `parent`)
-- Schedules time-based events on the clock (state expiry, DoT ticks, SP regen)
-
-The Player does NOT know about books, slots, or the cast schedule. It only reacts to events.
-
-**Reactive listener management:** When a book is loaded, its reactive effects (those with `parent: "<state_name>"`) are registered as listeners on the player machine. When the named state's event fires, the listener reacts.
-
-### 5.3 Book (Pure Function)
-
-A Book is a **pure function** owned by the Player. When the player reacts to CAST_SLOT, it calls the book function for that slot.
-
-The book function:
-1. Selects the correct tier for each effect based on progression (§10.4)
-2. Separates direct effects (`parent: "this"`) from reactive effects (`parent: "<name>"`)
-3. For direct effects: computes the damage chain (§6), produces HIT and other events
-4. For reactive effects: returns listener registrations (what to listen for, what to emit)
-
-The book function is called once at cast time for direct effects. Reactive effects are registered once at simulation start and respond to events throughout the fight.
+The book actor registers reactive listeners on its player's state machine. When a named state emits, listeners react by producing new intent events.
 
 ---
 
-## 6. Damage Chain
+## 5. Damage Chain
 
-When a book reacts to CAST_SLOT, its direct effects produce HIT events. The damage for each hit is computed from the multiplicative chain:
+The book actor computes the damage chain from all its effects:
 
-```
-  basePercent = base_attack.total                        (e.g., 20265)
-  perHitPercent = basePercent / hits                      (e.g., 20265 / 6 = 3377.5)
+$$D_{hit}(k) = \left(\frac{D_{base}}{n} \times (1 + S_{coeff}) + \frac{D_{flat}}{n}\right) \times (1 + M_{dmg} + \Delta M_{dmg}(k)) \times (1 + M_{skill} + \Delta M_{skill}(k)) \times (1 + M_{final}) \times M_{synchro}$$
 
-  For hit k (0-indexed):
-    hitDamage = (perHitPercent / 100) × sourceAtk
-    hitDamage += flatExtra / hits                         (flat_extra_damage)
-    hitDamage × (1 + M_dmg)                               (damage_increase zone)
-             × (1 + M_skill + escalation(k))              (skill_damage_increase + per_hit_escalation)
-             × (1 + M_final)                               (final_damage_bonus zone)
-             × M_synchro                                   (probability_multiplier)
+Where:
+- $D_{base}$ = `base_attack.total` (% ATK)
+- $n$ = number of hits
+- $S_{coeff}$ = ATK scaling from `attack_bonus` (cast-scoped)
+- $D_{flat}$ = flat extra damage from `flat_extra_damage`
+- $M_{dmg}$, $M_{skill}$, $M_{final}$ = additive zones from `damage_increase`, `skill_damage_increase`, etc.
+- $\Delta M_{dmg}(k)$, $\Delta M_{skill}(k)$ = per-hit escalation (from `per_hit_escalation`, stacking across sources)
+- $M_{synchro}$ = multiplicative synchrony from `probability_multiplier`
 
-    spDamage = resonance multiplier × sourceAtk           (guaranteed_resonance)
-```
+One HIT intent per hit, with `damage = D_{hit}(k) / 100 × ATK` (absolute value).
 
-Each hit becomes a HIT event with `damage` and `spDamage` pre-computed.
+Resonance (SP damage) is separate: `spDamage = resonanceMult × ATK`, distributed across hits.
 
 ---
 
-## 7. Hit Resolution (Reactive Chain)
+## 6. Hit Resolution
 
-When a HIT event arrives at a player, a chain of reactions fires:
+When a HIT intent arrives at the player state machine:
 
-```
-  HIT { damage, spDamage, perHitEffects }
-    │
-    ├─→ DR reaction: mitigatedDamage = damage × (1 - totalDR)
-    │
-    ├─→ SP shield gen reaction:
-    │     shieldGen = min(sp, mitigatedDamage) × sp_shield_ratio
-    │     → SP_CHANGE (sp decreases)
-    │     → SHIELD_CHANGE (shield increases)
-    │
-    ├─→ Shield absorb reaction:
-    │     absorbed = min(mitigatedDamage, shield)
-    │     → SHIELD_CHANGE (shield decreases)
-    │     hpDamage = mitigatedDamage - absorbed
-    │
-    ├─→ HP reaction:
-    │     hp -= hpDamage
-    │     → HP_CHANGE
-    │     → if hp ≤ 0: DEATH
-    │
-    ├─→ SP damage reaction (resonance):
-    │     sp -= spDamage
-    │     → SP_CHANGE
-    │
-    ├─→ perHitEffects reaction:
-    │     e.g., HP_DAMAGE { percent: 27, basis: "max" } for %maxHP per hit
-    │     → HP reduction (bypasses DR and shields)
-    │     → HP_CHANGE
-    │
-    └─→ on_attacked trigger reaction:
-          For each state with trigger="on_attacked":
-            Listener fires → may emit new events (debuffs, damage, etc.)
-            → those events cascade through the same reactive chain
-```
+$$\text{mitigated} = \text{damage} \times (1 - DR)$$
+$$DR = \frac{DEF}{DEF + K} + \sum \text{damage\_reduction effects} / 100$$
 
-**Counter-chain limit:** Reactive triggers can cascade (on_attacked → new event → on_attacked). Maximum depth: 10. Exceeded = drop + warning.
+Then:
+1. SP → shield generation: $\text{shieldGen} = \min(SP, \text{mitigated}) \times \text{sp\_shield\_ratio}$
+2. Shield absorption: $\text{absorbed} = \min(\text{mitigated}, \text{shield})$
+3. HP reduction: $HP \mathrel{-}= \text{mitigated} - \text{absorbed}$
+4. Resonance: $SP \mathrel{-}= \text{spDamage}$
+5. Per-hit effects (e.g., PERCENT_MAX_HP_HIT → computed from target's own maxHp → DR → shield → HP)
+6. on_attacked triggers → may produce new intents
+
+If HP ≤ 0 at any point: DEATH (absorbing boundary).
 
 ---
 
-## 8. Time Model
+## 7. Time Model
 
-### 8.1 Virtual Clock
+The virtual clock is a priority queue of timed events. No game loop.
 
-The clock is a priority queue of timed callbacks. `advance()` pops and executes callbacks in time order. A 36-second fight completes in <1ms wall time.
+### 7.1 Cast Schedule (PvP)
 
-### 8.2 Cast Schedule and Hit Interleaving
+| Time (s) | Event |
+|:---------|:------|
+| 0, 6, 12, 18, 24, 30 | Both players cast their slot (1 through 6) |
 
-Both players cast simultaneously at each slot time. Hit events are interleaved:
+### 7.2 Timed Events
 
-```
-  t=0:  A casts slot 1 (6 hits), B casts slot 1 (5 hits)
-
-    A HIT(1) → sent to B    (B reacts: DR, shield, HP, triggers)
-    B HIT(1) → sent to A    (A reacts: DR, shield, HP, triggers)
-    A HIT(2) → sent to B
-    B HIT(2) → sent to A
-    ...
-    B HIT(5) → sent to A    (B's last hit)
-    A HIT(6) → sent to B    (A continues solo)
-
-  Non-damage events (STATE_APPLY, HEAL, etc.) resolve after all hits.
-```
-
-Each hit fully resolves (including reactive cascades) before the next hit.
-
-### 8.3 Time-Based Events
-
-Between casts, the clock fires:
-- STATE_EXPIRE: state duration reached 0 → listeners deactivate, children removed
-- STATE_TICK: periodic interval → listeners react (healing, shields, DoT damage)
-- SP regen: 灵力恢复 per second
-- DELAYED_BURST: accumulated damage releases
-
-These are scheduled on the clock when the triggering state is first applied.
-
-### 8.4 Counter-Chain Limit
-
-Maximum reactive chain depth: 10 (configurable). If exceeded, remaining reactions are dropped with a warning event.
+Scheduled on the clock when effects are applied:
+- STATE_EXPIRE at `t + duration`
+- STATE_TICK at `t + tickInterval`, `t + 2×tickInterval`, ...
+- SP_REGEN every second
+- DELAYED_BURST at `t + delay`
 
 ---
 
-## 9. Effect Handlers
+## 8. Configuration
 
-Effect handlers are the bridge between book data (EffectRow from YAML) and intents. Each handler is a **pure function**:
+### 8.1 Player Configuration
 
-```
-handler(effect: EffectRow, context: HandlerContext) → HandlerResult
-```
+| Field | Description |
+|:------|:------------|
+| entity.hp, atk, sp, def, spRegen | Base combat attributes |
+| formulas.dr_constant | DR formula: K in `DEF / (DEF + K)` |
+| formulas.sp_shield_ratio | SP → shield conversion rate |
+| progression.enlightenment | 悟境 (0-10), selects effect tiers |
+| progression.fusion | 融合重数, selects effect tiers |
+| books[1..6] | Six book slot configurations |
 
-### 9.1 Handler Context
-
-| Field | Type | Description |
-|:------|:-----|:------------|
-| sourcePlayer | PlayerState | Current state of the casting player (read-only) |
-| targetPlayer | PlayerState | Current state of the opponent (read-only) |
-| book | string | Name of the casting book |
-| slot | number | Slot position (1-6) |
-| rng | SeededRNG | Random number generator |
-| atk | number | Source player's current effective ATK |
-| hits | number | Number of hits from the book's base_attack |
-
-### 9.2 Handler Result
-
-Handlers don't produce intents directly. They produce **zone contributions** and **non-damage intents**:
-
-| Field | Type | Description |
-|:------|:-----|:------------|
-| basePercent | number? | Base damage percent (from base_attack) |
-| flatExtra | number? | Flat extra damage |
-| zones | { M_dmg?, M_skill?, M_final?, M_synchro? } | Multiplicative zone contributions |
-| perHitEscalation | function? | (hitIndex) → zone bonus for this hit |
-| spDamage | number? | Resonance 灵力 damage |
-| intents | Intent[] | Non-damage intents (buffs, debuffs, etc.) |
-
-The Book actor collects all HandlerResults, accumulates zones, computes the damage chain (§7.1), and produces the final HIT intents.
-
-### 9.3 Handler Registry
-
-A lookup table mapping effect type strings to handler functions. Every effect type in books.yaml must have a registered handler, or a warning is emitted and the effect is skipped.
-
-### 9.4 Phase 1 Handlers (15 core types)
-
-| Handler | Effect Type | Contributes |
-|:--------|:-----------|:------------|
-| base_attack | base_attack | basePercent, hits |
-| percent_max_hp | percent_max_hp_damage | perHitEffects (HP_DAMAGE per hit) |
-| debuff | debuff | intents: APPLY_STATE(kind=debuff) |
-| self_buff | self_buff | intents: APPLY_STATE(kind=buff) |
-| dot | dot | intents: APPLY_DOT |
-| shield | shield_strength | intents: SHIELD |
-| lifesteal | lifesteal | intents: LIFESTEAL |
-| hp_cost | self_hp_cost | intents: HP_COST |
-| per_hit_escalation | per_hit_escalation | perHitEscalation function |
-| resonance | guaranteed_resonance | spDamage |
-| probability_mult | probability_multiplier | zones.M_synchro |
-| damage_increase | damage_increase | zones.M_dmg |
-| skill_damage_increase | skill_damage_increase | zones.M_skill |
-| flat_extra_damage | flat_extra_damage | flatExtra |
-| damage_reduction | self_damage_reduction_during_cast | intents: APPLY_STATE(kind=buff, stat=DR) |
-
----
-
-## 10. Configuration
-
-### 10.1 Player Configuration
-
-Each player is configured with:
-
-| Field | Description | Source |
-|:------|:------------|:-------|
-| entity.hp | Starting 气血 | config/*.json |
-| entity.atk | Base 攻击 | config/*.json |
-| entity.sp | Base 灵力 | config/*.json |
-| entity.def | Base 守御 | config/*.json |
-| entity.spRegen | 灵力恢复 per second | config/*.json |
-| formulas.dr_constant | DR formula constant K | config/*.json |
-| formulas.sp_shield_ratio | 灵力 → shield conversion rate | config/*.json |
-| progression.enlightenment | 悟境 level (0-10) | config/*.json |
-| progression.fusion | 融合重数 | config/*.json |
-| books | 6 BookSlot entries | config/*.json |
-
-### 10.2 Book Slot Configuration
-
-Each slot specifies:
+### 8.2 Book Slot
 
 | Field | Description |
 |:------|:------------|
 | slot | Position (1-6) |
-| platform | Main book name (e.g., "千锋聚灵剑") |
-| op1 | Aux affix 1 name (e.g., "吞海") — from universal, school, or exclusive pool |
-| op2 | Aux affix 2 name (e.g., "通明") |
+| platform | Main book name |
+| op1, op2 | Aux affix names |
 
-### 10.3 Validation
+### 8.3 Validation
 
-Before simulation starts, validate:
-1. All referenced books exist in books.yaml
-2. All referenced affixes exist in affixes.yaml or as exclusive affixes
-3. Each book has at least one usable tier matching the player's enlightenment/fusion
-4. No duplicate platforms across slots (核心冲突 rule)
-5. No duplicate affix sources across slots (副词缀冲突 rule)
+Before simulation:
+1. All books and affixes exist in YAML data
+2. Each book has usable tiers at the player's progression
+3. No duplicate platforms (核心冲突)
+4. All effects in all configured books have handlers
 
-Invalid configurations are rejected with a descriptive error. No silent degradation.
+Invalid = reject with descriptive error. No silent degradation.
 
-### 10.4 Tier Selection
+### 8.4 Tier Selection
 
-Each effect has a `data_state` field that specifies its tier requirements:
-```yaml
-- type: base_attack
-  total: 20265
-  data_state:
-    - enlightenment=10
-    - fusion=51
-```
-
-The simulator selects the highest tier whose requirements are met by the player's progression. If no tier matches, the book is rejected at config validation time.
+Effects have `data_state` requirements (`enlightenment=N`, `fusion=M`, or `locked`). The simulator selects the highest tier per effect type **within each source** (skill, primary affix, exclusive affix, each aux affix independently). Effects of the same type from different sources are independent — never deduped across sources.
 
 ---
 
-## 11. Monte Carlo
+## 9. Monte Carlo
 
-For win rate estimation, the simulator runs N fights with different RNG seeds:
+For win rate estimation: run N fights with seeds `baseSeed + 1` through `baseSeed + N`. Same seed = same fight. Aggregate wins, compute confidence interval.
 
-1. For each run i = 1..N:
-   - Create a SeededRNG with seed = baseSeed + i
-   - Run one full fight
-   - Record winner
-2. Aggregate: win rate = wins_A / N, with confidence interval
-
-The RNG affects:
-- `probability_multiplier` tier selection
-- `chance`-based triggers (counter_buff, counter_debuff)
-- `random_buff` / `random_debuff` selection
-- Any other stochastic effect
-
-Same seed = same fight. Deterministic and reproducible.
+RNG affects: `probability_multiplier` tier selection, `chance`-based triggers, `guaranteed_resonance` upgrade roll.
 
 ---
 
-## 12. GvG Extension (Future)
+## Document History
 
-The design supports GvG without changing Player or Book actors:
-- Arena spawns multiple players per team
-- Intent routing adds a targeting step: `INTENT + targeting_rule → specific opponent`
-- Player and Book actors are unchanged — they don't know about teams
-
----
-
-## 13. Design Constraints
-
-1. **Player state is the only mutable state.** Books, handlers, and the Arena are stateless or read-only.
-2. **Every state mutation emits an event.** No silent changes.
-3. **Handlers are pure functions.** No side effects. Given the same input, always produce the same results.
-4. **The simulator is data-driven.** It reads BookData from YAML and dispatches to handlers by type. No hardcoded book logic.
-5. **The event stream is the public API.** All output (traces, analytics, visualization) derives from events.
-6. **Scheduling is not player state.** The cast schedule, slot ordering, and timing belong to the Arena.
-7. **Damage chain computation lives in the Book.** The Book computes final per-hit damage; the Player only applies DR + shield + HP.
-8. **Hits are the atomic unit of combat.** Each hit fully resolves before the next. No batching.
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2026-03-16 | Initial design spec |
+| 2.0 | 2026-03-16 | Added SP system (§2), per-hit resolution (§7), hit interleaving (§8.2), reactive affixes (§3.4) |
+| 3.0 | 2026-03-16 | %maxHP goes through DR. PERCENT_MAX_HP_HIT carries percentage, target resolves. attack_bonus is S_coeff zone. Tier selection per-source. |
+| 4.0 | 2026-03-17 | **Full rewrite.** Two-level architecture: player state machine + book actor. Removed imperative patterns (pendingHits, arena routing). Intent events sent directly by book actor. Aligned with rewritten design.reactive.md. Damage chain formula with LaTeX. Document history added. |
