@@ -386,7 +386,7 @@ These are the patterns that killed the prior two simulator attempts. Each repres
 | "Process all of A's hits, then all of B's hits" | Hits interleave: A-1, B-1, A-2, B-2. Each hit is an event that fully resolves before the next. |
 | "The simulator computes the winner" | The simulator produces an event stream. A subscriber observes DEATH and derives the winner. |
 | "The player computes the damage chain" | The book actor computes the damage chain. The player only resolves intents (DR, shield, HP). Damage chains, zones, and effect combination are the book's responsibility, not the player's. |
-| "Store pendingHits for the arena to deliver" | Players send intents directly to each other via sendTo. The arena is a clock, not a delivery service. No storing, no reading context, no imperative delivery loops. |
+| "Store pendingHits for the arena to deliver" | Book actors send intents directly to the opponent's player state machine via sendTo. The arena is a clock, not a delivery service. |
 
 If you find yourself writing code that matches the left column, stop. Translate it to the right column before proceeding.
 
