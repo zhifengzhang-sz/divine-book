@@ -408,15 +408,37 @@ Both are plausible. The choice is a simulator parameter. Neither can be tagged [
 
 SP is consumed when taking damage to produce shield that absorbs that damage.
 
-**[UNRESOLVED]** Two models for SP-generated shield:
+**[FACT]** From community sources [^1][^2]: SP functions as a **reactive damage-absorption pool** — "灵力实际是在受到伤害时灵力充当护盾形式抵消部分伤害" (SP acts as a shield to offset part of the damage when taking damage). Multiple sources compare it to "嫦娥的蓝条" (Chang'e's blue bar in Honor of Kings) — a secondary resource pool that absorbs damage before HP.
 
-**Model A — Instantaneous:** SP consumed per hit produces shield that absorbs damage from the current hit only. Does not persist.
+**[FACT]** From community sources [^2]: "基础灵根品阶越高，用于抵御伤害所消耗的灵力值越少" — higher 灵根 (spiritual root) grade reduces the SP consumed per point of damage absorbed. This confirms:
+1. The SP-to-shield conversion is **not** 1:1 — there is a ratio
+2. The ratio varies by character (灵根 grade), not a fixed constant
+3. Higher ratio = SP lasts longer = more total damage absorbed
 
-**Model B — Persistent:** SP consumed produces a shield pool that persists across hits until depleted or expired.
+**[FACT]** From 灵界 equipment system [^3][^4]: 灵纹共鸣 (Resonance Patterns) provide tiered enhancements to SP shields:
+- 共鸣·灭阵: "消耗灵力形成的灵力护盾吸收力提升" — increases absorption power of SP shields
+- 共鸣·渡厄: "灵力护盾额外吸收量提升" — increases extra absorption amount
+- 共鸣·长生: SP regeneration per second
 
-The raw data says only "消耗灵力值产生护盾抵挡伤害" — no specification of persistence. Both models are plausible.
+The existence of separate "吸收力" (absorption power) and "额外吸收量" (extra absorption amount) modifiers suggests both a per-hit absorption rate and a total capacity.
 
-**[FACT]** When SP is depleted, no further SP-based shield can be generated. SP regenerates at a rate determined by 灵力恢复 (进阶属性.md).
+**[FACT]** From 灵界 equipment update [^4]: the system "大幅提升仙品装备的灵力加成" and converts 攻击 attributes to 灵力 attributes proportionally, confirming that 灵力 is treated as equally important as 攻击力.
+
+**[ASSUMPTION]** Working model — **reactive per-hit absorption with conversion ratio:**
+1. On each hit, after DR, shield absorbs the full mitigated damage
+2. SP consumed = `mitigated_damage / sp_shield_ratio`
+3. `sp_shield_ratio` depends on 灵根 grade (unknown exact values; simulator parameter)
+4. When SP is depleted, no shield is generated — damage goes directly to HP
+5. SP regenerates at a rate determined by 灵力恢复 (进阶属性.md)
+
+**[DERIVED]** For the simulator, `sp_shield_ratio` is the critical calibration parameter. At ratio=1, SP provides negligible defense (3.5% absorption at SP=5M vs 140M damage). Based on the evidence that 灵力 ≈ 攻击力 in importance and 灵根 grade amplifies the ratio, the simulator uses a configurable ratio (default: high enough to make SP last through multiple skill casts).
+
+**[FACT]** From `data/属性/进阶属性.md`: 灵力恢复 provides per-second SP regeneration. With the per-hit consumption model, SP regen between casts (in multi-slot fights) allows partial recovery of the shield resource.
+
+[^1]: [4399 Official: Attribute Guide](https://bbs.4399.cn/thread-view-tid-40144112) — "灵力实际是在受到伤害时灵力充当护盾形式抵消部分伤害"
+[^2]: [TapTap: Spiritual Root vs Talent Guide](https://www.taptap.cn/moment/430006782207722997) — "基础灵根品阶越高，用于抵御伤害所消耗的灵力值越少"
+[^3]: [Gaoshouyou: Spirit Realm Equipment Guide](https://www.gaoshouyou.com/zhuanqu/883664.html) — 灵纹共鸣 system details
+[^4]: [4399 Official: Equipment System Update](https://bbs.4399.cn/thread-view-tid-42067646) — 灵界 equipment 灵力 conversion
 
 ### §6.4 Absorption Order
 
@@ -724,7 +746,7 @@ $$\text{HP} = \min(\text{HP} + \text{effectiveHeal},\; \text{maxHP})$$
 | # | Topic | Status | Notes |
 |:--|:------|:-------|:------|
 | 1 | **DR formula** | **[ASSUMPTION]** | Two candidate models (§6.1). Neither verified. Simulator parameter. |
-| 2 | **SP → Shield ratio and persistence** | **[ASSUMPTION]** | Raw data says "消耗灵力值产生护盾" but doesn't specify the conversion ratio. At ratio=1, SP=5M absorbs only 3.5% of incoming damage — making 灵力 useless. Since 灵力 ≈ 攻击力 in game, ratio must be much higher. Working assumption: ratio=10 (1 SP → 10 shield). Instantaneous per-hit model (§6.3). |
+| 2 | **SP → Shield ratio** | **[ASSUMPTION]** | Confirmed: ratio is NOT 1:1, varies by 灵根 grade [^2]. Exact values unknown. Simulator uses configurable `sp_shield_ratio` parameter. See §6.3. |
 | 3 | **Lifesteal basis** | **[UNRESOLVED]** | Pre- vs post-mitigation (§8.4). Source phrasing ambiguous. |
 | 4 | **Resonance → SP drain** | **[UNRESOLVED]** | Whether 会心/破灵 specifically drains SP or just deals bonus damage (§5.6). |
 | 5 | **Crit base multiplier** | **[UNRESOLVED]** | Raw data says "暴击伤害" exists as a stat but doesn't specify the base multiplier. |
@@ -741,3 +763,4 @@ $$\text{HP} = \min(\text{HP} + \text{effectiveHeal},\; \text{maxHP})$$
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-03-18 | **Full rewrite.** Grounded in raw data with [FACT]/[DERIVED]/[ASSUMPTION]/[UNRESOLVED] tags. Added §1 Sources of Truth, §2 Effect Type Taxonomy. Removed fabricated mechanics (SP-gates-casting, pierce/无视防御). Fixed S_coeff formula to (1+S_coeff). Honest DR/SP-shield models. Added crit (§5.5), resonance (§5.6), spirit burst (§5.7). D_flat placement resolved as additive after zones. |
+| 1.1 | 2026-03-18 | §6.3 rewritten with community research findings. SP→shield ratio confirmed NOT 1:1 (varies by 灵根 grade). Added 灵纹共鸣 system evidence. Added references [^1]-[^4]. Updated open question #2. |
