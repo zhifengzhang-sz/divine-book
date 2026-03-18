@@ -435,8 +435,11 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	const totalDR = Math.min(Math.max(baseDR + buffDR, 0), 1);
 	const mitigated = hit.damage * (1 - totalDR);
 
-	// 2. SP → shield generation (design §2)
-	const shieldGen = Math.min(s.sp, mitigated) * f.sp_shield_ratio;
+	// 2. SP → shield generation
+	// Shield generated = min(SP × ratio, mitigated damage)
+	// SP consumed = shieldGen / ratio
+	const maxShield = s.sp * f.sp_shield_ratio;
+	const shieldGen = Math.min(maxShield, mitigated);
 	if (shieldGen > 0) {
 		const prevSp = s.sp;
 		s.sp -= shieldGen / f.sp_shield_ratio;
