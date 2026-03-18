@@ -88,6 +88,7 @@ function formatEvent(ev: Record<string, unknown>): string | null {
 		case "STATE_APPLY": return `${t}  ${p} +${(ev.state as Record<string, string>).name} (${(ev.state as Record<string, string>).kind})`;
 		case "STAT_CHANGE": return `${t}  ${p} ${ev.stat}: ${(ev.prev as number).toLocaleString()} → ${(ev.next as number).toLocaleString()}`;
 		case "DEATH": return `${t}  💀 ${p} DIES`;
+		case "HANDLER_ERROR": return `${t}  ⚠ ${p} [slot ${ev.slot}] ${ev.message}`;
 		default: return null;
 	}
 }
@@ -181,8 +182,9 @@ function SimView({ data }: { data: SimulationData }) {
 					const isDeath = ev.type === "DEATH";
 					const isCast = ev.type === "CAST_START";
 					const isHp = ev.type === "HP_CHANGE";
+					const isError = ev.type === "HANDLER_ERROR";
 					return (
-						<div key={`${ev.type}-${i}`} style={{ color: isDeath ? "#e06c75" : isCast ? "#e5c07b" : isHp ? "#98c379" : "#abb2bf", whiteSpace: "pre" }}>
+						<div key={`${ev.type}-${i}`} style={{ color: isError ? "#d19a66" : isDeath ? "#e06c75" : isCast ? "#e5c07b" : isHp ? "#98c379" : "#abb2bf", whiteSpace: "pre" }}>
 							{line}
 						</div>
 					);

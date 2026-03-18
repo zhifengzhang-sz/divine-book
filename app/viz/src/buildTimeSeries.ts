@@ -1,4 +1,4 @@
-import type { SimEvent, SimulationData } from "./types.ts";
+import type { SimulationData } from "./types.ts";
 
 export interface TimePoint {
 	t: number; // seconds
@@ -44,7 +44,6 @@ export function buildTimeSeries(
 	const config = player === "A" ? data.config.playerA : data.config.playerB;
 	let initialValue: number;
 	let eventType: string;
-	const field: "prev" | "next" = "next";
 
 	switch (metric) {
 		case "hp":

@@ -45,7 +45,7 @@ export function useReplay(data: SimulationData, speed: number) {
 	const rafRef = useRef<number>(0);
 	const lastFrameRef = useRef<number>(0);
 
-	const rerender = () => forceUpdate((c) => c + 1);
+	const rerender = useCallback(() => forceUpdate((c) => c + 1), []);
 
 	// Process events up to target simulation time
 	const processTo = useCallback(
@@ -115,7 +115,7 @@ export function useReplay(data: SimulationData, speed: number) {
 				rerender();
 			}
 		},
-		[data.events],
+		[data.events, rerender],
 	);
 
 	// Animation loop
@@ -141,7 +141,7 @@ export function useReplay(data: SimulationData, speed: number) {
 
 		rafRef.current = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafRef.current);
-	}, [stateRef.current.playing, speed, processTo, data.events.length]);
+	}, [speed, processTo, data.events.length, rerender]);
 
 	const s = stateRef.current;
 

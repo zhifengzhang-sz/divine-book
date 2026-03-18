@@ -5,8 +5,7 @@
 
 import { createActor } from "xstate";
 import { SimulationClock } from "../../../lib/sim/clock.js";
-import { selectTiers, validatePlayerConfig } from "../../../lib/sim/config.js";
-import { hasHandler } from "../../../lib/sim/handlers/index.js";
+import { validatePlayerConfig } from "../../../lib/sim/config.js";
 import { playerMachine } from "../../../lib/sim/player.js";
 import { SeededRNG } from "../../../lib/sim/rng.js";
 import type { PlayerState, StateChangeEvent } from "../../../lib/sim/types.js";
@@ -142,9 +141,9 @@ export function runSimulation(config: SimConfig): SimulationData {
 	playerA.start();
 	playerB.start();
 
-	// Wire opponent refs after start (actors need to be started for sendTo)
-	playerA.getSnapshot().context.opponentRef = playerB;
-	playerB.getSnapshot().context.opponentRef = playerA;
+	// Wire opponent refs via events (snapshots are immutable — cannot mutate directly)
+	playerA.send({ type: "SET_OPPONENT", ref: playerB });
+	playerB.send({ type: "SET_OPPONENT", ref: playerA });
 
 	// Arena is just a clock — send CAST_SLOT, players handle everything
 	playerA.send({ type: "CAST_SLOT", slot: 1 });

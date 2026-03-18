@@ -6,9 +6,9 @@
  * Usage: bun app/viz/serve.ts
  */
 
-const port = 3000;
+const port = Number(process.env.PORT ?? 3000);
 
-const server = Bun.serve({
+Bun.serve({
 	port,
 	async fetch(req) {
 		const url = new URL(req.url);
