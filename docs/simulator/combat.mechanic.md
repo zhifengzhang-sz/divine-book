@@ -724,7 +724,7 @@ $$\text{HP} = \min(\text{HP} + \text{effectiveHeal},\; \text{maxHP})$$
 | # | Topic | Status | Notes |
 |:--|:------|:-------|:------|
 | 1 | **DR formula** | **[ASSUMPTION]** | Two candidate models (§6.1). Neither verified. Simulator parameter. |
-| 2 | **SP → Shield persistence** | **[UNRESOLVED]** | Instantaneous vs persistent shield (§6.3). No raw data distinguishes them. |
+| 2 | **SP → Shield ratio and persistence** | **[ASSUMPTION]** | Raw data says "消耗灵力值产生护盾" but doesn't specify the conversion ratio. At ratio=1, SP=5M absorbs only 3.5% of incoming damage — making 灵力 useless. Since 灵力 ≈ 攻击力 in game, ratio must be much higher. Working assumption: ratio=10 (1 SP → 10 shield). Instantaneous per-hit model (§6.3). |
 | 3 | **Lifesteal basis** | **[UNRESOLVED]** | Pre- vs post-mitigation (§8.4). Source phrasing ambiguous. |
 | 4 | **Resonance → SP drain** | **[UNRESOLVED]** | Whether 会心/破灵 specifically drains SP or just deals bonus damage (§5.6). |
 | 5 | **Crit base multiplier** | **[UNRESOLVED]** | Raw data says "暴击伤害" exists as a stat but doesn't specify the base multiplier. |
