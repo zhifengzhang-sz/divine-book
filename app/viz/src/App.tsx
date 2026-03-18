@@ -176,6 +176,10 @@ function SimView({ data }: { data: SimulationData }) {
 
 			{/* Event log */}
 			<div style={{ background: "#282c34", border: "1px solid #4b5263", borderRadius: 8, padding: 12, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6 }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+				{/* Config summary */}
+				<div style={{ color: "#5c6370", marginBottom: 8, whiteSpace: "pre", borderBottom: "1px solid #3e4451", paddingBottom: 8 }}>
+					{`A: ${data.config.playerA.book}  HP=${fmt(data.config.playerA.hp)} ATK=${fmt(data.config.playerA.atk)} SP=${fmt(data.config.playerA.sp)} DEF=${fmt(data.config.playerA.def)}\nB: ${data.config.playerB.book}  HP=${fmt(data.config.playerB.hp)} ATK=${fmt(data.config.playerB.atk)} SP=${fmt(data.config.playerB.sp)} DEF=${fmt(data.config.playerB.def)}\nDR_K=${fmt(data.config.formulas.dr_constant)} SP→Shield=${data.config.formulas.sp_shield_ratio} 悟${data.config.progression.enlightenment}/融${data.config.progression.fusion} seed=${data.config.seed}`}
+				</div>
 				{replay.visibleEvents.map((ev, i) => {
 					const line = formatEvent(ev as Record<string, unknown>);
 					if (!line) return null;
@@ -226,6 +230,14 @@ export function App() {
 			{simData && <SimView key={runCount} data={simData} />}
 		</div>
 	);
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────
+
+function fmt(n: number): string {
+	if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+	if (Math.abs(n) >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
+	return n.toString();
 }
 
 // ── Styles ──────────────────────────────────────────────────────────

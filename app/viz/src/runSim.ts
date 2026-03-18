@@ -156,6 +156,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		config: {
 			playerA: { label: "A", book: formatBook(config.playerA), ...statsA },
 			playerB: { label: "B", book: formatBook(config.playerB), ...statsB },
+			formulas,
+			progression,
 			seed,
 		},
 		events: events as SimulationData["events"],
