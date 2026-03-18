@@ -102,7 +102,8 @@ type PlayerMachineEvent =
 	| { type: "HP_FLOOR"; minPercent: number }
 	| { type: "STATE_TICK_INTERNAL"; name: string }
 	| { type: "STATE_EXPIRE_INTERNAL"; name: string }
-	| { type: "CLOCK_TICK"; dt: number };
+	| { type: "CLOCK_TICK"; dt: number }
+	| { type: "CHECK_DEATH" };
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -152,7 +153,7 @@ export const playerMachine = setup({
 		emitted: {} as StateChangeEvent,
 	},
 	guards: {
-		isDead: ({ context }) => !context.state.alive,
+		isDead: ({ context }) => context.state.hp <= 0,
 	},
 }).createMachine({
 	id: "player",
@@ -271,37 +272,37 @@ export const playerMachine = setup({
 					}),
 				},
 				HIT: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						resolveHit(context, event as HitEvent, enqueue);
 					}),
 				},
 				HP_DAMAGE: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						resolveHpDamage(context, event as HpDamageEvent, enqueue);
 					}),
 				},
 				APPLY_STATE: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						applyState(context, (event as ApplyStateEvent).state, enqueue);
 					}),
 				},
 				APPLY_DOT: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						applyDot(context, event as ApplyDotEvent, enqueue);
 					}),
 				},
 				HEAL: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						resolveHeal(context, (event as HealEvent).value, enqueue);
 					}),
 				},
 				SHIELD: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const ev = event as ShieldEvent;
 						const prev = context.state.shield;
@@ -319,7 +320,7 @@ export const playerMachine = setup({
 					}),
 				},
 				HP_COST: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const ev = event as HpCostEvent;
 						const basis =
@@ -337,11 +338,11 @@ export const playerMachine = setup({
 								t: context.clock.now(),
 							}),
 						);
-						if (context.state.hp <= 0) context.state.alive = false;
+						// Death is deferred to CHECK_DEATH
 					}),
 				},
 				STATE_TICK_INTERNAL: {
-					guard: ({ context }) => context.state.alive,
+	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const name = (event as { type: string; name: string }).name;
 						const t = context.clock.now();
@@ -393,19 +394,25 @@ export const playerMachine = setup({
 						}
 					}),
 				},
-			},
-			always: {
-				target: "dead",
-				guard: "isDead",
+				CHECK_DEATH: {
+					target: "dead",
+					guard: "isDead",
+				},
 			},
 		},
 		dead: {
 			type: "final",
-			entry: emit(({ context }) => ({
-				type: "DEATH" as const,
-				player: context.label,
-				t: context.clock.now(),
-			})),
+			entry: [
+				assign(({ context }) => {
+					context.state.alive = false;
+					return context;
+				}),
+				emit(({ context }) => ({
+					type: "DEATH" as const,
+					player: context.label,
+					t: context.clock.now(),
+				})),
+			],
 		},
 	},
 });
@@ -489,7 +496,7 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 				t,
 			}),
 		);
-		if (s.hp <= 0) s.alive = false;
+		// Death is deferred to CHECK_DEATH — do not set alive=false here
 	}
 
 	// 5. SP damage (resonance — 灵力 attack line)
@@ -566,7 +573,7 @@ function resolveHpDamage(
 			t: ctx.clock.now(),
 		}),
 	);
-	if (s.hp <= 0) s.alive = false;
+	// Death is deferred to CHECK_DEATH
 }
 
 function resolveHeal(
@@ -774,7 +781,7 @@ function processSelfIntent(
 					t: ctx.clock.now(),
 				}),
 			);
-			if (ctx.state.hp <= 0) ctx.state.alive = false;
+			// Death is deferred to CHECK_DEATH
 			break;
 		}
 		case "LIFESTEAL":

@@ -149,31 +149,53 @@ describe("HIT resolution", () => {
 // ── DEATH (absorbing boundary) ──────────────────────────────────────
 
 describe("DEATH", () => {
-	test("emits DEATH when HP reaches 0", () => {
+	test("emits DEATH on CHECK_DEATH after HP reaches 0", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
-
+		// Death is deferred — no DEATH yet
+		expect(events.some((e) => e.type === "DEATH")).toBe(false);
+		// CHECK_DEATH triggers the transition
+		actor.send({ type: "CHECK_DEATH" });
 		expect(events.some((e) => e.type === "DEATH")).toBe(true);
 	});
 
-	test("machine enters final state after DEATH", () => {
+	test("machine enters final state after CHECK_DEATH", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
-
+		expect(actor.getSnapshot().status).toBe("active");
+		actor.send({ type: "CHECK_DEATH" });
 		expect(actor.getSnapshot().status).toBe("done");
 	});
 
-	test("ignores events after DEATH", () => {
+	test("processes events before CHECK_DEATH even at HP<=0", () => {
+		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
+		actor.start();
+		const events = collectEvents(actor);
+
+		// Both hits resolve even though first one brings HP to 0
+		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
+		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
+
+		const hpChanges = events.filter((e) => e.type === "HP_CHANGE");
+		expect(hpChanges).toHaveLength(2);
+
+		actor.send({ type: "CHECK_DEATH" });
+		expect(events.some((e) => e.type === "DEATH")).toBe(true);
+	});
+
+	test("ignores events after CHECK_DEATH", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
+		actor.send({ type: "CHECK_DEATH" });
+		// After dead (final state), further events are ignored
 		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
 
 		const hpChanges = events.filter((e) => e.type === "HP_CHANGE");

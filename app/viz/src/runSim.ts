@@ -145,9 +145,11 @@ export function runSimulation(config: SimConfig): SimulationData {
 	playerA.send({ type: "SET_OPPONENT", ref: playerB });
 	playerB.send({ type: "SET_OPPONENT", ref: playerA });
 
-	// Arena is just a clock — send CAST_SLOT, players handle everything
+	// Arena is just a clock — both players cast simultaneously, then check death
 	playerA.send({ type: "CAST_SLOT", slot: 1 });
 	playerB.send({ type: "CAST_SLOT", slot: 1 });
+	playerA.send({ type: "CHECK_DEATH" });
+	playerB.send({ type: "CHECK_DEATH" });
 
 	const aFinal = playerA.getSnapshot().context.state;
 	const bFinal = playerB.getSnapshot().context.state;
