@@ -33,9 +33,9 @@ function initSnapshot(config: {
  */
 export function useReplay(data: SimulationData, speed: number) {
 	const [, forceUpdate] = useState(0);
+	const [playing, setPlaying] = useState(false);
 	const stateRef = useRef({
 		time: 0,
-		playing: false,
 		eventIndex: 0,
 		visibleEvents: [] as SimEvent[],
 		playerA: initSnapshot(data.config.playerA),
@@ -118,10 +118,10 @@ export function useReplay(data: SimulationData, speed: number) {
 		[data.events, rerender],
 	);
 
-	// Animation loop
+	// Animation loop — depends on `playing` state to re-trigger
 	useEffect(() => {
+		if (!playing) return;
 		const s = stateRef.current;
-		if (!s.playing) return;
 
 		lastFrameRef.current = performance.now();
 
@@ -132,8 +132,7 @@ export function useReplay(data: SimulationData, speed: number) {
 			processTo(s.time);
 
 			if (s.eventIndex >= data.events.length) {
-				s.playing = false;
-				rerender();
+				setPlaying(false);
 				return;
 			}
 			rafRef.current = requestAnimationFrame(tick);
@@ -141,26 +140,20 @@ export function useReplay(data: SimulationData, speed: number) {
 
 		rafRef.current = requestAnimationFrame(tick);
 		return () => cancelAnimationFrame(rafRef.current);
-	}, [speed, processTo, data.events.length, rerender]);
+	}, [playing, speed, processTo, data.events.length]);
 
 	const s = stateRef.current;
 
 	return {
 		time: s.time,
-		playing: s.playing,
+		playing,
 		playerA: s.playerA,
 		playerB: s.playerB,
 		visibleEvents: s.visibleEvents,
-		play: () => {
-			s.playing = true;
-			rerender();
-		},
-		pause: () => {
-			s.playing = false;
-			rerender();
-		},
+		play: () => setPlaying(true),
+		pause: () => setPlaying(false),
 		reset: () => {
-			s.playing = false;
+			setPlaying(false);
 			s.time = 0;
 			s.eventIndex = 0;
 			s.visibleEvents = [];
@@ -170,8 +163,7 @@ export function useReplay(data: SimulationData, speed: number) {
 		},
 		skipToEnd: () => {
 			processTo(Number.POSITIVE_INFINITY);
-			s.playing = false;
-			rerender();
+			setPlaying(false);
 		},
 		finished: s.eventIndex >= data.events.length,
 	};
