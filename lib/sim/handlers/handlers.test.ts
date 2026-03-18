@@ -2,8 +2,15 @@ import { describe, expect, test } from "bun:test";
 import type { EffectRow } from "../../data/types.js";
 import { SeededRNG } from "../rng.js";
 import type { PlayerState } from "../types.js";
-import { resolve } from "./index.js";
-import type { HandlerContext } from "./types.js";
+import { resolve as resolveRaw } from "./index.js";
+import type { HandlerContext, HandlerResult } from "./types.js";
+
+/** Unwrap resolve result — tests expect the HandlerResult directly */
+function resolve(effect: EffectRow, ctx: HandlerContext): HandlerResult {
+	const { result, error } = resolveRaw(effect, ctx);
+	if (error) throw new Error(error);
+	return result;
+}
 
 function makeCtx(overrides?: Partial<HandlerContext>): HandlerContext {
 	const defaultPlayer: PlayerState = {

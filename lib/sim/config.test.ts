@@ -182,14 +182,13 @@ describe("validatePlayerConfig", () => {
 		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
 
-	test("rejects book with unhandled effect types", () => {
-		// 周天星元 has debuff_stack_chance (no handler)
+	test("accepts book with unhandled effect types (errors deferred to runtime)", () => {
+		// 周天星元 has debuff_stack_chance (no handler), but validation no longer
+		// blocks — missing handlers are reported as HANDLER_ERROR events at sim time.
 		const config = {
 			...validConfig,
 			books: [{ slot: 1, platform: "周天星元" }],
 		};
-		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
-			"without handlers",
-		);
+		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
 });

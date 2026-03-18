@@ -18,6 +18,8 @@ export interface BookResult {
 	directEvents: IntentEvent[];
 	/** Reactive affix listener registrations */
 	listeners: ListenerRegistration[];
+	/** Errors from missing or failing handlers */
+	errors: string[];
 }
 
 /**
@@ -60,10 +62,14 @@ export function processBook(
 		}
 	}
 
-	// Run direct effects through handlers — throws MissingHandlerError if unhandled
+	// Run direct effects through handlers — collect errors instead of throwing
 	const handlerResults: HandlerResult[] = [];
+	const errors: string[] = [];
 	for (const effect of directTiered) {
-		const result = resolve(effect, ctx);
+		const { result, error } = resolve(effect, ctx);
+		if (error) {
+			errors.push(error);
+		}
 		// Fill in source book name on any state intents
 		if (result.intents) {
 			for (const intent of result.intents) {
@@ -101,6 +107,7 @@ export function processBook(
 	return {
 		directEvents: [...hitEvents, ...otherEvents],
 		listeners,
+		errors,
 	};
 }
 
@@ -121,7 +128,7 @@ function buildListenerRegistration(
 		trigger: trigger as ListenerRegistration["trigger"],
 		handler: (listenerCtx) => {
 			// When the listener fires, process this effect through its handler
-			const result = resolve(effect, {
+			const { result } = resolve(effect, {
 				sourcePlayer: listenerCtx.sourcePlayer,
 				targetPlayer: listenerCtx.sourcePlayer, // reactive effects are self-context
 				book,

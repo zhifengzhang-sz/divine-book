@@ -30,12 +30,30 @@ export class MissingHandlerError extends Error {
 	}
 }
 
-export function resolve(effect: EffectRow, ctx: HandlerContext): HandlerResult {
+/**
+ * Resolve an effect through its handler.
+ * Returns { result, error }. Never throws.
+ * If the handler is missing, result is empty and error describes the gap.
+ */
+export function resolve(
+	effect: EffectRow,
+	ctx: HandlerContext,
+): { result: HandlerResult; error?: string } {
 	const handler = getHandler(effect.type);
 	if (!handler) {
-		throw new MissingHandlerError(effect.type);
+		return {
+			result: {},
+			error: `No handler for effect type: "${effect.type}". Effect skipped.`,
+		};
 	}
-	return handler(effect, ctx);
+	try {
+		return { result: handler(effect, ctx) };
+	} catch (e) {
+		return {
+			result: {},
+			error: `Handler "${effect.type}" threw: ${(e as Error).message}`,
+		};
+	}
 }
 
 export { hasHandler, registeredTypes };

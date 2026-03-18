@@ -15,6 +15,7 @@
 
 import {
 	type ActorRefFrom,
+	type AnyActorRef,
 	assign,
 	emit,
 	enqueueActions,
@@ -58,7 +59,7 @@ export interface PlayerInput {
 	clock: SimulationClock;
 	rng: SeededRNG;
 	maxChainDepth: number;
-	opponentRef?: unknown;
+	opponentRef?: AnyActorRef;
 }
 
 // ── Player Machine Context ──────────────────────────────────────────
@@ -77,7 +78,7 @@ interface PlayerContext {
 	maxChainDepth: number;
 	chainDepth: number;
 	/** Reference to opponent player actor for sendTo */
-	opponentRef: unknown;
+	opponentRef?: AnyActorRef;
 	/** Clock callback IDs for cleanup */
 	clockCallbackIds: number[];
 }
@@ -85,6 +86,7 @@ interface PlayerContext {
 // ── Player Machine Events ───────────────────────────────────────────
 
 type PlayerMachineEvent =
+	| { type: "SET_OPPONENT"; ref: AnyActorRef }
 	| { type: "CAST_SLOT"; slot: number }
 	| HitEvent
 	| HpDamageEvent
@@ -174,6 +176,12 @@ export const playerMachine = setup({
 	states: {
 		alive: {
 			on: {
+				SET_OPPONENT: {
+					actions: assign(({ context, event }) => ({
+						...context,
+						opponentRef: event.ref,
+					})),
+				},
 				CAST_SLOT: {
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const slot = event.slot;
@@ -221,6 +229,19 @@ export const playerMachine = setup({
 							context.progression,
 						);
 
+						// Emit handler errors as events
+						for (const error of result.errors) {
+							enqueue(
+								emit({
+									type: "HANDLER_ERROR" as const,
+									player: context.label,
+									slot,
+									message: error,
+									t: context.clock.now(),
+								}),
+							);
+						}
+
 						// Register reactive listeners
 						for (const listener of result.listeners) {
 							context.listeners.push(listener);
@@ -232,7 +253,9 @@ export const playerMachine = setup({
 								processSelfIntent(context, ev, enqueue);
 							} else {
 								// Opponent-targeted: send directly to opponent
-								enqueue(sendTo(context.opponentRef, ev));
+								if (context.opponentRef) {
+									enqueue(sendTo(context.opponentRef, ev));
+								}
 							}
 						}
 

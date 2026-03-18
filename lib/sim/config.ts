@@ -127,19 +127,8 @@ function validateHandlerCoverage(
 		}
 	}
 
-	// Select usable tiers, then check all types have handlers
-	const tiered = selectTiers(allEffects, progression);
-	const missing: string[] = [];
-	for (const effect of tiered) {
-		if (!hasHandler(effect.type)) {
-			if (!missing.includes(effect.type)) missing.push(effect.type);
-		}
-	}
-	if (missing.length > 0) {
-		throw new ConfigValidationError(
-			`Book "${slot.platform}" uses effect types without handlers: ${missing.join(", ")}. Cannot simulate.`,
-		);
-	}
+	// Missing handlers are now reported as HANDLER_ERROR events during simulation,
+	// not blocked at validation time. The sim runs with partial coverage.
 }
 
 function validateAffixExists(

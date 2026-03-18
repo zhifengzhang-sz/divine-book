@@ -179,7 +179,16 @@ export type StateChangeEvent =
 	| StateTickEvent
 	| StateTriggeredEvent
 	| StateRemoveEvent
-	| DeathEvent;
+	| DeathEvent
+	| HandlerErrorEvent;
+
+export interface HandlerErrorEvent {
+	type: "HANDLER_ERROR";
+	player: string;
+	slot: number;
+	message: string;
+	t: number;
+}
 
 export interface CastStartEvent {
 	type: "CAST_START";
