@@ -91,7 +91,7 @@ strong {
 
 ---
 initial date: 2026-03-16
-dates of modification: [2026-03-16, 2026-03-17]
+dates of modification: [2026-03-16, 2026-03-17, 2026-03-18]
 ---
 
 # Reactive Design Principles
@@ -246,7 +246,7 @@ When the player state machine receives CAST_SLOT, it delegates to the book actor
 2. **Selects tiers** per source based on the player's progression — effects of the same type from different sources are independent, never deduped across sources
 3. **Separates** direct effects (`parent: "this"`) from reactive effects (`parent: "<state_name>"`)
 4. **Runs handlers** on direct effects → collects zone contributions (S_coeff, M_dmg, M_skill, M_final, M_synchro), per-hit escalation, resonance SP damage, per-hit effects, and non-damage intents
-5. **Computes the damage chain**: `(D_base × (1 + S_coeff) + D_flat) × (1 + M_dmg) × (1 + M_skill) × (1 + M_final) × M_synchro` → produces one HIT intent per hit
+5. **Computes the damage chain**: `D_base × (1 + S_coeff) × (1 + M_dmg) × (1 + M_skill) × (1 + M_final) × M_synchro + D_flat` → produces one HIT intent per hit. $D_{flat}$ is additive (x% of player ATK, not scaled by zones).
 6. **Sends** each intent directly to the opponent's player state machine
 7. **Registers** reactive listeners for parent-based effects on its own player state machine
 
@@ -349,3 +349,4 @@ Configuration enters from the top. The clock schedules cast events. Players dele
 | 2.0 | 2026-03-16 | Added SP system, per-hit model, reactive affixes, event model |
 | 3.0 | 2026-03-16 | Rewrote §2 (two levels), §5 (player + book), anti-patterns |
 | 4.0 | 2026-03-17 | **Full rewrite from scratch.** Clean 10-section structure. Two levels: player state machine + book actor. No patches — written from corrected understanding. |
+| 4.1 | 2026-03-18 | D_flat formula corrected: additive after zones, not inside base. |

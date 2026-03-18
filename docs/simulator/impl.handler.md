@@ -91,7 +91,7 @@ strong {
 
 ---
 initial date: 2026-03-16
-dates of modification: [2026-03-16, 2026-03-17]
+dates of modification: [2026-03-16, 2026-03-17, 2026-03-18]
 ---
 
 # Effect Handler Specification
@@ -110,7 +110,7 @@ A handler returns a `HandlerResult` — it does not send intents. The book actor
 |:------|:-----|:--------|
 | `basePercent` | number | Base damage % (from base_attack) |
 | `hitsOverride` | number | Number of hits |
-| `flatExtra` | number | D_flat: absolute flat damage added to chain |
+| `flatExtra` | number | D_flat: absolute flat damage, additive (not multiplied by zones) |
 | `zones.S_coeff` | number | ATK scaling: `effectiveATK = ATK × (1 + S_coeff)` |
 | `zones.M_dmg` | number | Damage zone (additive within zone) |
 | `zones.M_skill` | number | Skill zone (additive within zone) |
@@ -146,7 +146,7 @@ Target resolves: `damage = percent/100 × target.maxHp` → applies DR. Source d
 
 **Source:** "额外造成2000%攻击力的伤害" (斩岳)
 **Data:** `{ value }`
-**Result:** `{ flatExtra: (value/100) × ATK }`
+**Result:** `{ flatExtra: (value/100) × ATK }` — additive, not multiplied by zones. 攻击力 = player's ATK attribute.
 
 ### damage_increase
 
@@ -276,12 +276,13 @@ The book actor collects all HandlerResults and computes:
 
 ```
 For hit k (0-indexed):
-  baseDmg = (basePercent / hits / 100) × ATK × (1 + S_coeff) + flatExtra / hits
-  damage = baseDmg
-         × (1 + M_dmg + escalation_M_dmg(k))
-         × (1 + M_skill + escalation_M_skill(k))
-         × (1 + M_final)
-         × M_synchro
+  chainDmg = (basePercent / hits / 100) × ATK × (1 + S_coeff)
+           × (1 + M_dmg + escalation_M_dmg(k))
+           × (1 + M_skill + escalation_M_skill(k))
+           × (1 + M_final)
+           × M_synchro
+  flatDmg  = flatExtra / hits          ← additive, NOT multiplied by zones
+  damage   = chainDmg + flatDmg
 ```
 
 One HIT intent per hit, with `damage` pre-computed and `perHitEffects` attached.
@@ -301,3 +302,4 @@ lifestealHeal = (lifestealPercent / 100) × totalDamage
 |---------|------|---------|
 | 1.0 | 2026-03-16 | Initial audit: confident/partial/not-confident categories |
 | 2.0 | 2026-03-17 | **Full rewrite.** All handlers specified against source text. No open questions. shield checks source field. Lifesteal computed from source-side damage. DoT is %ATK. |
+| 2.1 | 2026-03-18 | D_flat/flatExtra clarified: additive after zones, not multiplied. Damage chain formula updated. |

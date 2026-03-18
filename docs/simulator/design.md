@@ -91,7 +91,7 @@ strong {
 
 ---
 initial date: 2026-03-16
-dates of modification: [2026-03-16, 2026-03-17]
+dates of modification: [2026-03-16, 2026-03-17, 2026-03-18]
 ---
 
 # Combat Simulator — Design Specification
@@ -235,18 +235,20 @@ The book actor registers reactive listeners on its player's state machine. When 
 
 The book actor computes the damage chain from all its effects:
 
-$$D_{hit}(k) = \left(\frac{D_{base}}{n} \times (1 + S_{coeff}) + \frac{D_{flat}}{n}\right) \times (1 + M_{dmg} + \Delta M_{dmg}(k)) \times (1 + M_{skill} + \Delta M_{skill}(k)) \times (1 + M_{final}) \times M_{synchro}$$
+$$D_{hit}(k) = \frac{D_{base}}{n} \times (1 + S_{coeff}) \times (1 + M_{dmg} + \Delta M_{dmg}(k)) \times (1 + M_{skill} + \Delta M_{skill}(k)) \times (1 + M_{final}) \times M_{synchro}$$
+$$D_{flat,hit} = \frac{D_{flat}}{n}$$
+$$D_{total,hit}(k) = D_{hit}(k) + D_{flat,hit}$$
 
 Where:
 - $D_{base}$ = `base_attack.total` (% ATK)
 - $n$ = number of hits
 - $S_{coeff}$ = ATK scaling from `attack_bonus` (cast-scoped)
-- $D_{flat}$ = flat extra damage from `flat_extra_damage`
+- $D_{flat}$ = flat extra damage from `flat_extra_damage`: $x/100 \times ATK$ (player's 攻击力 attribute, not scaled by zones)
 - $M_{dmg}$, $M_{skill}$, $M_{final}$ = additive zones from `damage_increase`, `skill_damage_increase`, etc.
 - $\Delta M_{dmg}(k)$, $\Delta M_{skill}(k)$ = per-hit escalation (from `per_hit_escalation`, stacking across sources)
 - $M_{synchro}$ = multiplicative synchrony from `probability_multiplier`
 
-One HIT intent per hit, with `damage = D_{hit}(k) / 100 × ATK` (absolute value).
+One HIT intent per hit, with `damage = D_{total,hit}(k) / 100 × ATK` (absolute value). $D_{flat}$ is additive — it is not multiplied by zones. See [combat.mechanic.md §5.2](combat.mechanic.md) for derivation.
 
 Resonance (SP damage) is separate: `spDamage = resonanceMult × ATK`, distributed across hits.
 
@@ -344,3 +346,4 @@ RNG affects: `probability_multiplier` tier selection, `chance`-based triggers, `
 | 2.0 | 2026-03-16 | Added SP system (§2), per-hit resolution (§7), hit interleaving (§8.2), reactive affixes (§3.4) |
 | 3.0 | 2026-03-16 | %maxHP goes through DR. PERCENT_MAX_HP_HIT carries percentage, target resolves. attack_bonus is S_coeff zone. Tier selection per-source. |
 | 4.0 | 2026-03-17 | **Full rewrite.** Two-level architecture: player state machine + book actor. Removed imperative patterns (pendingHits, arena routing). Intent events sent directly by book actor. Aligned with rewritten design.reactive.md. Damage chain formula with LaTeX. Document history added. |
+| 4.1 | 2026-03-18 | D_flat moved out of base damage — additive after zone multiplication, not inside. Aligned with combat.mechanic.md §5.2 derivation. |

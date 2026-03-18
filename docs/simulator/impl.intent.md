@@ -91,7 +91,7 @@ strong {
 
 ---
 initial date: 2026-03-16
-dates of modification: [2026-03-16, 2026-03-17]
+dates of modification: [2026-03-16, 2026-03-17, 2026-03-18]
 ---
 
 # Intent Event Specification
@@ -108,7 +108,7 @@ Primary damage event. One per hit in the damage chain.
 
 | Field | Filled by book (source) | Resolved by player (target) |
 |:------|:----------------------|:---------------------------|
-| `damage` | `(basePercent/hits/100) × ATK × (1+S_coeff) × zones` | `mitigated = damage × (1 - DR)` → shield → HP |
+| `damage` | `(basePercent/hits/100) × ATK × (1+S_coeff) × zones + flatExtra/hits` | `mitigated = damage × (1 - DR)` → shield → HP |
 | `spDamage` | `resonanceMult × ATK` (from guaranteed_resonance) | `sp -= spDamage` |
 | `hitIndex` | Position in hit sequence (0-indexed) | Logging/tracing |
 | `perHitEffects` | Sub-intents per hit (e.g., PERCENT_MAX_HP_HIT) | Resolve each as a separate intent |
@@ -264,3 +264,4 @@ Accumulate damage, release after delay.
 |---------|------|---------|
 | 1.0 | 2026-03-16 | Initial: mixed imperative model, open questions |
 | 2.0 | 2026-03-17 | **Full rewrite.** All intents specified: source fills, target resolves. No open questions. Lifesteal uses source-side damage. PERCENT_MAX_HP_HIT carries percentage. |
+| 2.1 | 2026-03-18 | HIT.damage formula updated: flatExtra additive, not inside zone multiplication. |
