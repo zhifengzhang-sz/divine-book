@@ -266,18 +266,13 @@ export const playerMachine = setup({
 							}
 						}
 
-						// Schedule HIT events on the clock (~1s per hit).
-						// Each callback sends DELIVER_HIT to self, which then
-						// forwards the HIT to the opponent via sendTo — keeping
-						// all event routing inside the XState action system.
+						// Schedule HIT events via XState's delayed sendTo (~1s per hit).
+						// XState uses the SimulationClock internally for delays.
 						const hitGapMs = 1000;
-						const selfRef = self;
 						for (let i = 0; i < hitEvents.length; i++) {
 							const hitEv = hitEvents[i];
-							context.clockCallbackIds.push(
-								context.clock.setTimeout(() => {
-									selfRef.send({ type: "DELIVER_HIT", hit: hitEv });
-								}, i * hitGapMs),
+							enqueue(
+								sendTo(self, { type: "DELIVER_HIT", hit: hitEv }, { delay: i * hitGapMs }),
 							);
 						}
 					}),
