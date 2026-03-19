@@ -11,6 +11,7 @@ import {
 	KIND_COLORS,
 	btnStyle,
 	chipStyle,
+	dividerStyle,
 	fmt,
 	theme as T,
 } from "./components.tsx";
@@ -35,33 +36,38 @@ interface ChartConfig {
 // ── Sub-components ──────────────────────────────────────────────────
 
 function PlayerPanel({ label, book, snapshot }: { label: string; book: string; snapshot: PlayerSnapshot }) {
-	const borderColor = snapshot.alive ? T.accentDim : T.red;
 	return (
 		<div style={{
-			flex: 1, padding: 16, background: T.panel, borderRadius: 8,
-			border: `1px solid ${borderColor}`,
-			boxShadow: `0 0 12px ${borderColor}33`,
+			flex: 1, padding: 16,
+			backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+			backgroundSize: "500px",
+			backgroundColor: T.bgPanel,
+			borderRadius: 12,
+			boxShadow: `0 0 0 3px #2c3e50, 0 0 0 5px ${snapshot.alive ? T.goldDark : T.red}, 0 0 20px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.7)`,
 			opacity: snapshot.alive ? 1 : 0.6,
 		}}>
 			<h2 style={{
-				margin: "0 0 8px", fontSize: 14,
-				color: snapshot.alive ? T.gold : T.red,
-				textTransform: "uppercase", letterSpacing: 1,
+				margin: "0 0 8px", fontSize: 15,
+				fontFamily: T.heading,
+				color: snapshot.alive ? T.goldLight : T.red,
+				textShadow: "2px 2px 4px #000",
+				borderBottom: `2px solid ${snapshot.alive ? T.goldDark : T.red}`,
+				paddingBottom: 6, display: "inline-block",
 			}}>
 				{label}: {book}{!snapshot.alive && " 💀"}
 			</h2>
-			<Bar value={snapshot.hp} max={snapshot.maxHp} color={T.green} label="HP 气血" />
-			<Bar value={snapshot.sp} max={snapshot.maxSp} color={T.accent} label="SP 灵力" />
-			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color={T.purple} label="Shield 护盾" />
-			<div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 12, color: T.text }}>
+			<Bar value={snapshot.hp} max={snapshot.maxHp} color={T.hp} label="HP 气血" />
+			<Bar value={snapshot.sp} max={snapshot.maxSp} color={T.sp} label="SP 灵力" />
+			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color={T.shield} label="Shield 护盾" />
+			<div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 12, color: T.text, textShadow: "1px 1px 2px black" }}>
 				<span>
-					ATK: <span style={{ color: snapshot.atk !== snapshot.baseAtk ? T.gold : T.text }}>
+					ATK: <span style={{ color: snapshot.atk !== snapshot.baseAtk ? T.goldLight : T.text }}>
 						{snapshot.atk.toLocaleString(undefined, { maximumFractionDigits: 0 })}
 					</span>
 					{snapshot.atk !== snapshot.baseAtk && <span style={{ color: T.textMuted }}> ({snapshot.baseAtk.toLocaleString()})</span>}
 				</span>
 				<span>
-					DEF: <span style={{ color: snapshot.def !== snapshot.baseDef ? T.gold : T.text }}>
+					DEF: <span style={{ color: snapshot.def !== snapshot.baseDef ? T.goldLight : T.text }}>
 						{snapshot.def.toLocaleString(undefined, { maximumFractionDigits: 0 })}
 					</span>
 					{snapshot.def !== snapshot.baseDef && <span style={{ color: T.textMuted }}> ({snapshot.baseDef.toLocaleString()})</span>}
@@ -72,10 +78,11 @@ function PlayerPanel({ label, book, snapshot }: { label: string; book: string; s
 					{snapshot.states.map((s, i) => (
 						<span key={`${s.name}-${i}`} style={{
 							display: "inline-block", padding: "2px 10px", borderRadius: 12, fontSize: 11,
-							background: `${KIND_COLORS[s.kind]}15`,
+							background: `${KIND_COLORS[s.kind]}22`,
 							color: KIND_COLORS[s.kind],
-							border: `1px solid ${KIND_COLORS[s.kind]}44`,
-							boxShadow: `0 0 6px ${KIND_COLORS[s.kind]}22`,
+							border: `1px solid ${KIND_COLORS[s.kind]}55`,
+							boxShadow: T.glow(KIND_COLORS[s.kind], 6),
+							textShadow: "1px 1px 2px black",
 						}}>
 							{s.kind === "buff" ? "+" : s.kind === "debuff" ? "−" : "◆"} {s.name}
 						</span>
@@ -338,29 +345,34 @@ function CausalTrace({
 
 const tracePanel: React.CSSProperties = {
 	flex: 1,
-	background: T.panel,
-	border: `1px solid ${T.panelBorder}`,
-	borderRadius: 8,
+	backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+	backgroundSize: "500px",
+	backgroundColor: T.bgPanel,
+	borderRadius: 12,
 	padding: 14,
 	fontSize: 11,
 	maxHeight: 600,
 	overflowY: "auto",
-	boxShadow: `0 0 8px ${T.purple}22`,
+	boxShadow: `0 0 0 2px #2c3e50, 0 0 0 4px ${T.goldDark}88, 0 0 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.6)`,
 };
 const sectionHeader: React.CSSProperties = {
-	color: T.purple,
+	fontFamily: T.heading,
+	color: T.goldLight,
 	fontWeight: "bold",
 	marginBottom: 4,
-	fontSize: 11,
-	textTransform: "uppercase",
-	letterSpacing: 0.5,
+	fontSize: 12,
+	textShadow: "1px 1px 3px #000",
+	borderBottom: `1px solid ${T.goldDark}66`,
+	paddingBottom: 3,
+	display: "inline-block",
 };
 const rawTextStyle: React.CSSProperties = {
 	color: T.textMuted,
 	whiteSpace: "pre-wrap",
 	paddingLeft: 8,
-	borderLeft: `2px solid ${T.purple}44`,
+	borderLeft: `2px solid ${T.goldDark}44`,
 	fontSize: 11,
+	textShadow: "1px 1px 2px black",
 };
 
 // ── Simulation Results View ─────────────────────────────────────────
@@ -453,9 +465,9 @@ function SimView({ data }: { data: SimulationData }) {
 			<button type="button" onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])} style={{ ...btnStyle, marginBottom: 16 }}>+ Add Chart</button>
 
 			{/* Event log */}
-			<div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: 12, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6 }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+			<div style={{ backgroundImage: "url('/assets/ui_panel_bg.png.webp')", backgroundSize: "500px", backgroundColor: T.bgPanel, borderRadius: 12, padding: 14, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6, boxShadow: `0 0 0 2px #2c3e50, 0 0 0 4px ${T.goldDark}88, 0 0 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.6)` }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
 				{/* Config summary */}
-				<div style={{ color: T.textMuted, marginBottom: 8, whiteSpace: "pre", borderBottom: `1px solid ${T.panelBorder}`, paddingBottom: 8 }}>
+				<div style={{ color: T.textMuted, marginBottom: 8, whiteSpace: "pre", borderBottom: `1px solid ${T.goldDark}44`, paddingBottom: 8, textShadow: "1px 1px 2px black" }}>
 					{`A: ${data.config.playerA.book}  HP=${fmt(data.config.playerA.hp)} ATK=${fmt(data.config.playerA.atk)} SP=${fmt(data.config.playerA.sp)} DEF=${fmt(data.config.playerA.def)}\nB: ${data.config.playerB.book}  HP=${fmt(data.config.playerB.hp)} ATK=${fmt(data.config.playerB.atk)} SP=${fmt(data.config.playerB.sp)} DEF=${fmt(data.config.playerB.def)}\nDR_K=${fmt(data.config.formulas.dr_constant)} SP→Shield=${data.config.formulas.sp_shield_ratio} seed=${data.config.seed}`}
 				</div>
 				{replay.visibleEvents.map((ev, i) => {
@@ -466,13 +478,13 @@ function SimView({ data }: { data: SimulationData }) {
 					const isHp = ev.type === "HP_CHANGE";
 					const isError = ev.type === "HANDLER_ERROR";
 					return (
-						<div key={`${ev.type}-${i}`} style={{ color: isError ? T.gold : isDeath ? T.red : isCast ? T.gold : isHp ? T.green : T.text, whiteSpace: "pre" }}>
+						<div key={`${ev.type}-${i}`} style={{ color: isError ? T.goldDark : isDeath ? T.red : isCast ? T.goldLight : isHp ? T.green : T.text, whiteSpace: "pre", textShadow: "1px 1px 2px black" }}>
 							{line}
 						</div>
 					);
 				})}
 				{replay.finished && (
-					<div style={{ color: T.gold, marginTop: 8, fontWeight: "bold", whiteSpace: "pre", borderTop: `1px solid ${T.panelBorder}`, paddingTop: 8, textShadow: `0 0 8px ${T.gold}44` }}>
+					<div style={{ fontFamily: T.heading, color: T.goldLight, marginTop: 8, fontWeight: "bold", whiteSpace: "pre", borderTop: `1px solid ${T.goldDark}44`, paddingTop: 8, textShadow: "2px 2px 4px #000" }}>
 						{`Result: ${data.result.winner ? `Player ${data.result.winner} wins` : "Draw"}\n`}
 						{`A: HP=${fmt(data.result.aFinal.hp)} SP=${fmt(data.result.aFinal.sp)} Shield=${fmt(data.result.aFinal.shield)} ATK=${fmt(data.result.aFinal.atk)} DEF=${fmt(data.result.aFinal.def)} ${data.result.aFinal.alive ? "alive" : "dead"}\n`}
 						{`B: HP=${fmt(data.result.bFinal.hp)} SP=${fmt(data.result.bFinal.sp)} Shield=${fmt(data.result.bFinal.shield)} ATK=${fmt(data.result.bFinal.atk)} DEF=${fmt(data.result.bFinal.def)} ${data.result.bFinal.alive ? "alive" : "dead"}`}
@@ -503,10 +515,11 @@ export function App() {
 	};
 
 	return (
-		<div style={{ fontFamily: 'Menlo, "Fira Code", monospace', background: T.bg, color: T.text, minHeight: "100vh", padding: 24 }}>
-			<h1 style={{ color: T.gold, margin: "0 0 16px", fontSize: 20, textTransform: "uppercase", letterSpacing: 2, textShadow: `0 0 20px ${T.gold}44` }}>Divine Book Combat Simulator</h1>
+		<div style={{ fontFamily: T.body, backgroundImage: "url('/assets/fantasy_bg.png.webp')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>
+			<h1 style={{ fontFamily: T.heading, color: T.goldLight, margin: "0 0 16px", fontSize: 22, textShadow: `2px 2px 4px #000, ${T.glow(T.goldDark, 12)}`, borderBottom: `2px solid ${T.goldDark}`, display: "inline-block", paddingBottom: 6 }}>Divine Book Combat Simulator</h1>
+			<div style={dividerStyle} />
 			<ConfigPanel onRun={handleRun} />
-			{simError && <div style={{ color: T.red, fontSize: 12, padding: 10, background: `${T.red}11`, border: `1px solid ${T.red}44`, borderRadius: 4, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: `0 0 12px ${T.red}22` }}>{simError}</div>}
+			{simError && <div style={{ color: T.red, fontSize: 12, padding: 12, background: "rgba(0,0,0,0.7)", border: `2px solid ${T.red}88`, borderRadius: 8, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: T.glow(T.red, 12), textShadow: "1px 1px 2px black" }}>{simError}</div>}
 			{simData && <SimView key={runCount} data={simData} />}
 		</div>
 	);
