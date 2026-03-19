@@ -25,8 +25,8 @@ export interface SimulationData {
 	events: SimEvent[];
 	result: {
 		winner: "A" | "B" | null;
-		aFinalHp: number;
-		bFinalHp: number;
+		aFinal: { hp: number; sp: number; shield: number; atk: number; def: number; alive: boolean };
+		bFinal: { hp: number; sp: number; shield: number; atk: number; def: number; alive: boolean };
 	};
 }
 

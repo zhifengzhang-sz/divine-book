@@ -194,8 +194,10 @@ function SimView({ data }: { data: SimulationData }) {
 					);
 				})}
 				{replay.finished && (
-					<div style={{ color: "#e5c07b", marginTop: 8, fontWeight: "bold" }}>
-						Result: {data.result.winner ? `Player ${data.result.winner} wins` : "Draw"}
+					<div style={{ color: "#e5c07b", marginTop: 8, fontWeight: "bold", whiteSpace: "pre", borderTop: "1px solid #3e4451", paddingTop: 8 }}>
+						{`Result: ${data.result.winner ? `Player ${data.result.winner} wins` : "Draw"}\n`}
+						{`A: HP=${fmt(data.result.aFinal.hp)} SP=${fmt(data.result.aFinal.sp)} Shield=${fmt(data.result.aFinal.shield)} ATK=${fmt(data.result.aFinal.atk)} DEF=${fmt(data.result.aFinal.def)} ${data.result.aFinal.alive ? "alive" : "dead"}\n`}
+						{`B: HP=${fmt(data.result.bFinal.hp)} SP=${fmt(data.result.bFinal.sp)} Shield=${fmt(data.result.bFinal.shield)} ATK=${fmt(data.result.bFinal.atk)} DEF=${fmt(data.result.bFinal.def)} ${data.result.bFinal.alive ? "alive" : "dead"}`}
 					</div>
 				)}
 			</div>

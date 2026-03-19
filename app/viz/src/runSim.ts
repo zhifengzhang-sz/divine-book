@@ -170,8 +170,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 					: !aFinal.alive && bFinal.alive
 						? "B"
 						: null,
-			aFinalHp: aFinal.hp,
-			bFinalHp: bFinal.hp,
+			aFinal: { hp: aFinal.hp, sp: aFinal.sp, shield: aFinal.shield, atk: aFinal.atk, def: aFinal.def, alive: aFinal.alive },
+			bFinal: { hp: bFinal.hp, sp: bFinal.sp, shield: bFinal.shield, atk: bFinal.atk, def: bFinal.def, alive: bFinal.alive },
 		},
 	};
 }
