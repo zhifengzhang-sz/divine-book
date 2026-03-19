@@ -5,7 +5,6 @@
 // ── Theme ───────────────────────────────────────────────────────────
 
 const T = {
-	// Core palette from Obsidian Grimoire
 	goldDark: "#b8860b",
 	goldLight: "#ffd700",
 	border: "#5c4033",
@@ -21,12 +20,20 @@ const T = {
 	shieldDark: "#8e44ad",
 	green: "#2ecc71",
 	red: "#e74c3c",
-	// Fonts
 	heading: "'Cinzel', serif",
 	body: "'Menlo', 'Fira Code', monospace",
-	// Helpers
-	glow: (color: string, size = 10) =>
-		`0 0 ${size}px ${color}88`,
+	glow: (color: string, size = 10) => `0 0 ${size}px ${color}88`,
+};
+
+// ── Assets ──────────────────────────────────────────────────────────
+
+const ASSETS = {
+	panelBg: "/assets/ui_panel_bg.png.webp",
+	fantasyBg: "/assets/fantasy_bg.png.webp",
+	healthOrb: "/assets/health_orb.png.webp",
+	manaOrb: "/assets/mana_orb.png.webp",
+	sliderHandle: "/assets/slider_handle.png.webp",
+	ornateBorder: "/assets/ornate_border.png.webp",
 };
 
 // ── Formatting ──────────────────────────────────────────────────────
@@ -66,7 +73,7 @@ export function StatInput({
 	);
 }
 
-// ── Pill ────────────────────────────────────────────────────────────
+// ── Pill (RPG button style) ─────────────────────────────────────────
 
 export function Pill({
 	label,
@@ -87,7 +94,14 @@ export function Pill({
 	);
 }
 
-// ── Bar (RPG-style with gradient + shine) ───────────────────────────
+// ── Bar (RPG-style with orb icon + gradient + shine) ────────────────
+
+/** Map bar color to an orb icon */
+function getOrbIcon(color: string): string | null {
+	if (color === T.hp) return ASSETS.healthOrb;
+	if (color === T.sp) return ASSETS.manaOrb;
+	return null;
+}
 
 export function Bar({
 	value,
@@ -101,49 +115,84 @@ export function Bar({
 	label: string;
 }) {
 	const pct = Math.max(0, Math.min(100, (value / max) * 100));
-	// Derive a darker shade for the gradient
 	const darkColor = `color-mix(in srgb, ${color} 70%, black)`;
+	const orb = getOrbIcon(color);
+
 	return (
-		<div style={{ marginBottom: 6 }}>
-			<div style={barHeader}>
-				<span>{label}</span>
-				<span style={{ fontVariantNumeric: "tabular-nums" }}>
-					{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
-					/ {max.toLocaleString()}
-				</span>
-			</div>
-			<div style={barTrack}>
-				<div
-					style={{
-						height: "100%",
-						width: `${pct}%`,
-						background: `linear-gradient(180deg, ${color}, ${darkColor})`,
-						boxShadow: T.glow(color),
-						transition: "width 0.3s ease-out",
-						borderRadius: "8px 0 0 8px",
-						position: "relative",
-					}}
-				/>
-				{/* Shine overlay */}
-				<div
-					style={{
-						position: "absolute",
-						top: 0,
-						left: 0,
-						width: "100%",
-						height: "50%",
-						background:
-							"linear-gradient(180deg, rgba(255,255,255,0.2), transparent)",
-						pointerEvents: "none",
-						borderRadius: "inherit",
-					}}
-				/>
+		<div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+			{/* Orb icon */}
+			{orb ? (
+				<div style={orbContainer}>
+					<img
+						src={orb}
+						alt={label}
+						style={{ maxWidth: "100%", maxHeight: "100%" }}
+					/>
+				</div>
+			) : (
+				<div style={orbPlaceholder}>
+					<span style={{ fontSize: 10, color }}>{label.split(" ")[0]}</span>
+				</div>
+			)}
+
+			{/* Bar */}
+			<div style={{ flex: 1 }}>
+				<div style={barHeader}>
+					<span>{label}</span>
+					<span style={{ fontVariantNumeric: "tabular-nums" }}>
+						{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
+						/ {max.toLocaleString()}
+					</span>
+				</div>
+				<div style={barTrack}>
+					<div
+						style={{
+							height: "100%",
+							width: `${pct}%`,
+							background: `linear-gradient(180deg, ${color}, ${darkColor})`,
+							boxShadow: T.glow(color),
+							transition: "width 0.3s ease-out",
+							borderRadius: "8px 0 0 8px",
+						}}
+					/>
+					{/* Shine overlay */}
+					<div style={barShine} />
+				</div>
 			</div>
 		</div>
 	);
 }
 
+// ── Divider (gold gradient) ─────────────────────────────────────────
+
+export function Divider() {
+	return <div style={dividerStyle} />;
+}
+
 // ── Styles ──────────────────────────────────────────────────────────
+
+const orbContainer: React.CSSProperties = {
+	width: 36,
+	height: 36,
+	display: "flex",
+	justifyContent: "center",
+	alignItems: "center",
+	filter: "drop-shadow(0 0 5px rgba(255,255,255,0.3))",
+	flexShrink: 0,
+};
+
+const orbPlaceholder: React.CSSProperties = {
+	width: 36,
+	height: 36,
+	display: "flex",
+	justifyContent: "center",
+	alignItems: "center",
+	border: `2px solid ${T.shieldDark}`,
+	borderRadius: "50%",
+	background: "rgba(0,0,0,0.5)",
+	boxShadow: T.glow(T.shieldDark, 6),
+	flexShrink: 0,
+};
 
 export const labelStyle: React.CSSProperties = {
 	fontSize: 11,
@@ -156,7 +205,7 @@ export const selectStyle: React.CSSProperties = {
 	width: "100%",
 	background: "#111",
 	color: T.text,
-	border: `1px solid #444`,
+	border: "1px solid #444",
 	borderRadius: 4,
 	padding: "6px 8px",
 	fontSize: 13,
@@ -196,7 +245,7 @@ export const pillStyle: React.CSSProperties = {
 export const panelStyle: React.CSSProperties = {
 	flex: 1,
 	padding: 16,
-	backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+	backgroundImage: `url('${ASSETS.panelBg}')`,
 	backgroundSize: "500px",
 	backgroundColor: T.bgPanel,
 	borderRadius: 12,
@@ -206,7 +255,6 @@ export const panelStyle: React.CSSProperties = {
 		0 0 20px rgba(0,0,0,0.8),
 		inset 0 0 40px rgba(0,0,0,0.7)
 	`,
-	position: "relative",
 };
 
 export const overlayStyle: React.CSSProperties = {
@@ -224,10 +272,10 @@ export const overlayStyle: React.CSSProperties = {
 };
 
 export const dialogStyle: React.CSSProperties = {
-	backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+	backgroundImage: `url('${ASSETS.panelBg}')`,
 	backgroundSize: "500px",
 	backgroundColor: T.bgPanel,
-	border: `2px solid rgba(255, 215, 0, 0.2)`,
+	border: "2px solid rgba(255, 215, 0, 0.2)",
 	borderRadius: 12,
 	padding: 24,
 	minWidth: 420,
@@ -269,6 +317,17 @@ const barTrack: React.CSSProperties = {
 	position: "relative",
 	overflow: "hidden",
 	boxShadow: "inset 0 2px 5px rgba(0,0,0,0.8)",
+};
+
+const barShine: React.CSSProperties = {
+	position: "absolute",
+	top: 0,
+	left: 0,
+	width: "100%",
+	height: "50%",
+	background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)",
+	pointerEvents: "none",
+	borderRadius: "inherit",
 };
 
 export const btnStyle: React.CSSProperties = {
@@ -366,4 +425,4 @@ export const KIND_COLORS = {
 	named: T.sp,
 } as const;
 
-export { T as theme };
+export { ASSETS, T as theme };

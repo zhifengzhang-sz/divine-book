@@ -7,11 +7,12 @@ import {
 } from "./buildTimeSeries.ts";
 import { Chart } from "./Chart.tsx";
 import {
+	ASSETS,
 	Bar,
+	Divider,
 	KIND_COLORS,
 	btnStyle,
 	chipStyle,
-	dividerStyle,
 	fmt,
 	theme as T,
 } from "./components.tsx";
@@ -39,7 +40,7 @@ function PlayerPanel({ label, book, snapshot }: { label: string; book: string; s
 	return (
 		<div style={{
 			flex: 1, padding: 16,
-			backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+			backgroundImage: `url('${ASSETS.panelBg}')`,
 			backgroundSize: "500px",
 			backgroundColor: T.bgPanel,
 			borderRadius: 12,
@@ -345,7 +346,7 @@ function CausalTrace({
 
 const tracePanel: React.CSSProperties = {
 	flex: 1,
-	backgroundImage: "url('/assets/ui_panel_bg.png.webp')",
+	backgroundImage: `url('${ASSETS.panelBg}')`,
 	backgroundSize: "500px",
 	backgroundColor: T.bgPanel,
 	borderRadius: 12,
@@ -465,7 +466,7 @@ function SimView({ data }: { data: SimulationData }) {
 			<button type="button" onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])} style={{ ...btnStyle, marginBottom: 16 }}>+ Add Chart</button>
 
 			{/* Event log */}
-			<div style={{ backgroundImage: "url('/assets/ui_panel_bg.png.webp')", backgroundSize: "500px", backgroundColor: T.bgPanel, borderRadius: 12, padding: 14, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6, boxShadow: `0 0 0 2px #2c3e50, 0 0 0 4px ${T.goldDark}88, 0 0 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.6)` }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+			<div style={{ backgroundImage: `url('${ASSETS.panelBg}')`, backgroundSize: "500px", backgroundColor: T.bgPanel, borderRadius: 12, padding: 14, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6, boxShadow: `0 0 0 2px #2c3e50, 0 0 0 4px ${T.goldDark}88, 0 0 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.6)` }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
 				{/* Config summary */}
 				<div style={{ color: T.textMuted, marginBottom: 8, whiteSpace: "pre", borderBottom: `1px solid ${T.goldDark}44`, paddingBottom: 8, textShadow: "1px 1px 2px black" }}>
 					{`A: ${data.config.playerA.book}  HP=${fmt(data.config.playerA.hp)} ATK=${fmt(data.config.playerA.atk)} SP=${fmt(data.config.playerA.sp)} DEF=${fmt(data.config.playerA.def)}\nB: ${data.config.playerB.book}  HP=${fmt(data.config.playerB.hp)} ATK=${fmt(data.config.playerB.atk)} SP=${fmt(data.config.playerB.sp)} DEF=${fmt(data.config.playerB.def)}\nDR_K=${fmt(data.config.formulas.dr_constant)} SP→Shield=${data.config.formulas.sp_shield_ratio} seed=${data.config.seed}`}
@@ -515,9 +516,9 @@ export function App() {
 	};
 
 	return (
-		<div style={{ fontFamily: T.body, backgroundImage: "url('/assets/fantasy_bg.png.webp')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>
+		<div style={{ fontFamily: T.body, backgroundImage: `url('${ASSETS.fantasyBg}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>
 			<h1 style={{ fontFamily: T.heading, color: T.goldLight, margin: "0 0 16px", fontSize: 22, textShadow: `2px 2px 4px #000, ${T.glow(T.goldDark, 12)}`, borderBottom: `2px solid ${T.goldDark}`, display: "inline-block", paddingBottom: 6 }}>Divine Book Combat Simulator</h1>
-			<div style={dividerStyle} />
+			<Divider />
 			<ConfigPanel onRun={handleRun} />
 			{simError && <div style={{ color: T.red, fontSize: 12, padding: 12, background: "rgba(0,0,0,0.7)", border: `2px solid ${T.red}88`, borderRadius: 8, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: T.glow(T.red, 12), textShadow: "1px 1px 2px black" }}>{simError}</div>}
 			{simData && <SimView key={runCount} data={simData} />}
