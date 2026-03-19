@@ -329,19 +329,12 @@ function PlayerConfigPanel({
 				/>
 			</div>
 
-			{/* Stats grid */}
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "1fr 1fr",
-					gap: "4px 12px",
-					marginTop: 8,
-				}}
-			>
-				<StatInput label="HP" value={state.hp} onChange={(v) => set("hp", v)} />
-				<StatInput label="ATK" value={state.atk} onChange={(v) => set("atk", v)} />
-				<StatInput label="SP" value={state.sp} onChange={(v) => set("sp", v)} />
-				<StatInput label="DEF" value={state.def} onChange={(v) => set("def", v)} />
+			{/* Stats in one row */}
+			<div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+				<StatInput label="HP" value={state.hp} onChange={(v) => set("hp", v)} width={70} />
+				<StatInput label="ATK" value={state.atk} onChange={(v) => set("atk", v)} width={70} />
+				<StatInput label="SP" value={state.sp} onChange={(v) => set("sp", v)} width={70} />
+				<StatInput label="DEF" value={state.def} onChange={(v) => set("def", v)} width={70} />
 			</div>
 
 			{/* Dialogs */}
