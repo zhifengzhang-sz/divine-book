@@ -10,61 +10,60 @@ const COLS = 16;
 /** Icon position as [col, row] in the sprite sheet */
 type IconPos = [number, number];
 
-/** Map of icon names to sprite positions */
+/** Map of icon names to sprite positions [col, row] — counted from the sprite sheet */
 const ICON_MAP: Record<string, IconPos> = {
-	// Row 0: status effects
-	eye: [0, 0],
-	sleep: [10, 0],
-	sparkle: [8, 0],
-	heart: [9, 0],
-	lightning: [11, 0],
+	// Row 0: misc status
+	sword_icon: [0, 0],
+	sparkle: [6, 0],
+	heart: [8, 0],
+	lightning: [9, 0],
 	water: [13, 0],
 
-	// Row 1-2: arrows & UI
-	arrow_up: [0, 2],
-	arrow_down: [1, 2],
-	plus: [5, 2],
-	crosshair: [7, 2],
-	fire: [11, 2],
+	// Row 1: arrows
+	arrow_up: [0, 1],
+	arrow_down: [1, 1],
 
-	// Row 3-4: weapons
-	sword: [0, 4],
-	sword2: [1, 4],
-	dagger: [2, 4],
-	sword_crossed: [4, 4],
-	axe: [5, 4],
-	shield: [1, 5],
-	shield2: [2, 5],
+	// Row 2: UI/environment
+	fire: [9, 1],
+	skull: [3, 2],
+	crosshair: [5, 2],
+
+	// Row 3: weapons
+	sword: [0, 3],
+	sword2: [1, 3],
+	dagger: [3, 3],
+	sword_crossed: [8, 3],
+	axe: [10, 3],
+
+	// Row 4: shields & tools
+	shield: [1, 4],
+	shield2: [2, 4],
+	pickaxe: [5, 4],
 
 	// Row 5: armor
-	helmet: [5, 5],
-	armor: [3, 6],
-	ring: [3, 7],
+	armor: [3, 5],
+	ring: [8, 5],
 
-	// Row 6-7: potions & items
-	potion_red: [0, 8],
-	potion_blue: [1, 8],
-	potion_green: [2, 8],
-	crystal_ball: [5, 8],
-	hourglass: [15, 8],
+	// Row 6: potions
+	potion_red: [0, 6],
+	potion_blue: [1, 6],
+	potion_green: [2, 6],
+	crystal_ball: [9, 6],
+	hourglass: [15, 6],
 
-	// Row 9-10: misc items
-	scroll: [5, 10],
-	candle: [9, 8],
-	key: [0, 9],
+	// Row 8-9: instruments & misc
+	scroll: [5, 8],
 
-	// Row 11-12: books
-	book_red: [0, 12],
-	book_blue: [1, 12],
-	book_green: [2, 12],
-	book_brown: [3, 12],
-	book_open: [4, 12],
-	letter: [5, 12],
-	scroll_paper: [6, 12],
+	// Row 10: books
+	book_red: [0, 10],
+	book_blue: [1, 10],
+	book_green: [2, 10],
+	book_brown: [3, 10],
+	book_open: [4, 10],
+	letter: [5, 10],
 
-	// Row 13: food (used for healing)
-	apple: [0, 13],
-	mushroom: [11, 13],
+	// Row 11: food
+	apple: [0, 11],
 };
 
 /** Map effect types to icon names */
