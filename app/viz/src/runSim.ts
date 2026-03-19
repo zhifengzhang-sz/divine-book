@@ -28,6 +28,10 @@ export interface PlayerBookConfig {
 		def: number;
 		spRegen: number;
 	};
+	progression: {
+		enlightenment: number;
+		fusion: number;
+	};
 }
 
 export interface SimConfig {
@@ -36,10 +40,6 @@ export interface SimConfig {
 	formulas: {
 		dr_constant: number;
 		sp_shield_ratio: number;
-	};
-	progression: {
-		enlightenment: number;
-		fusion: number;
 	};
 	tGap: number;
 	seed: number;
@@ -55,7 +55,9 @@ function formatBook(b: { platform: string; op1: string; op2: string }): string {
 export function runSimulation(config: SimConfig): SimulationData {
 	const booksYaml = booksData as Parameters<typeof validatePlayerConfig>[1];
 	const affixesYaml = affixesData as Parameters<typeof validatePlayerConfig>[2];
-	const { formulas, progression, seed } = config;
+	const { formulas, seed } = config;
+	const progressionA = config.playerA.progression;
+	const progressionB = config.playerB.progression;
 
 	const slotA = {
 		slot: 1,
@@ -77,13 +79,13 @@ export function runSimulation(config: SimConfig): SimulationData {
 	const playerConfigA = {
 		entity: statsA,
 		formulas,
-		progression,
+		progression: progressionA,
 		books: [slotA],
 	};
 	const playerConfigB = {
 		entity: statsB,
 		formulas,
-		progression,
+		progression: progressionB,
 		books: [slotB],
 	};
 	validatePlayerConfig(playerConfigA, booksYaml, affixesYaml);
@@ -96,6 +98,7 @@ export function runSimulation(config: SimConfig): SimulationData {
 		label: string,
 		bookSlot: typeof slotA,
 		stats: typeof statsA,
+		progression: typeof progressionA,
 	) {
 		return createActor(playerMachine, {
 			input: {
@@ -127,8 +130,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		});
 	}
 
-	const playerA = makePlayer("A", slotA, statsA);
-	const playerB = makePlayer("B", slotB, statsB);
+	const playerA = makePlayer("A", slotA, statsA, progressionA);
+	const playerB = makePlayer("B", slotB, statsB, progressionB);
 
 	const events: StateChangeEvent[] = [];
 	playerA.on("*", (ev: StateChangeEvent) =>
@@ -186,7 +189,6 @@ export function runSimulation(config: SimConfig): SimulationData {
 			playerA: { label: "A", book: formatBook(config.playerA), ...statsA },
 			playerB: { label: "B", book: formatBook(config.playerB), ...statsB },
 			formulas,
-			progression,
 			seed,
 		},
 		events: events as SimulationData["events"],

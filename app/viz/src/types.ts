@@ -19,7 +19,6 @@ export interface SimulationData {
 			spRegen: number;
 		};
 		formulas: { dr_constant: number; sp_shield_ratio: number };
-		progression: { enlightenment: number; fusion: number };
 		seed: number;
 	};
 	events: SimEvent[];

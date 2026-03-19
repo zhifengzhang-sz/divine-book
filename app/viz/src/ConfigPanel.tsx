@@ -59,6 +59,8 @@ interface PlayerPanelState {
 	sp: number;
 	def: number;
 	spRegen: number;
+	enlightenment: number;
+	fusion: number;
 }
 
 /** Get affix list for a given category */
@@ -226,6 +228,18 @@ function PlayerConfigPanel({
 					value={state.def}
 					onChange={(v) => set("def", v)}
 				/>
+				<StatInput
+					label="悟境"
+					value={state.enlightenment}
+					onChange={(v) => set("enlightenment", v)}
+					width={40}
+				/>
+				<StatInput
+					label="融合"
+					value={state.fusion}
+					onChange={(v) => set("fusion", v)}
+					width={50}
+				/>
 			</div>
 		</div>
 	);
@@ -242,6 +256,8 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 		op1Category: "通用",
 		op2Category: "通用",
 		...defaultStats,
+		enlightenment: defaults.enlightenment,
+		fusion: defaults.fusion,
 	});
 	const [playerB, setPlayerB] = useState<PlayerPanelState>({
 		school: schools[0],
@@ -251,6 +267,8 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 		op1Category: "通用",
 		op2Category: "通用",
 		...defaultStats,
+		enlightenment: defaults.enlightenment,
+		fusion: defaults.fusion,
 	});
 	const [seed, setSeed] = useState(42);
 	const [showAdvanced, setShowAdvanced] = useState(false);
@@ -258,8 +276,6 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	const [spShieldRatio, setSpShieldRatio] = useState(
 		defaults.sp_shield_ratio,
 	);
-	const [enlightenment, setEnlightenment] = useState(defaults.enlightenment);
-	const [fusion, setFusion] = useState(defaults.fusion);
 
 	const handleRun = () => {
 		onRun({
@@ -274,6 +290,10 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 					def: playerA.def,
 					spRegen: playerA.spRegen,
 				},
+				progression: {
+					enlightenment: playerA.enlightenment,
+					fusion: playerA.fusion,
+				},
 			},
 			playerB: {
 				platform: playerB.platform,
@@ -286,12 +306,15 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 					def: playerB.def,
 					spRegen: playerB.spRegen,
 				},
+				progression: {
+					enlightenment: playerB.enlightenment,
+					fusion: playerB.fusion,
+				},
 			},
 			formulas: {
 				dr_constant: drConstant,
 				sp_shield_ratio: spShieldRatio,
 			},
-			progression: { enlightenment, fusion },
 			tGap: defaults.tGap,
 			seed,
 		});
@@ -354,18 +377,6 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 						label="SP→Shield"
 						value={spShieldRatio}
 						onChange={setSpShieldRatio}
-						width={50}
-					/>
-					<StatInput
-						label="悟境"
-						value={enlightenment}
-						onChange={setEnlightenment}
-						width={40}
-					/>
-					<StatInput
-						label="融合"
-						value={fusion}
-						onChange={setFusion}
 						width={50}
 					/>
 				</div>
