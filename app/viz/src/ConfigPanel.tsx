@@ -1,5 +1,6 @@
 import { useState } from "react";
 import affixesData from "./affixes-data.json";
+import bookDescriptions from "./book-descriptions.json";
 import booksData from "./books-data.json";
 import {
 	Pill,
@@ -306,9 +307,10 @@ function BookPickerDialog({
 					</select>
 				</div>
 
-				{/* Effect preview at selected progression */}
+				{/* Book preview: raw text + parsed effects */}
 				{(() => {
 					const bookData = allBooksData[sel.platform];
+					const desc = (bookDescriptions as Record<string, { skillText: string; affixText: string }>)[sel.platform];
 					if (!bookData) return null;
 					const skillEffects = bookData.skill
 						? filterEffectsForTier(bookData.skill, sel.enlightenment, sel.fusion)
@@ -324,14 +326,31 @@ function BookPickerDialog({
 								borderRadius: 4,
 								padding: 8,
 								marginBottom: 10,
-								maxHeight: 160,
+								maxHeight: 240,
 								overflowY: "auto",
+								fontSize: 11,
 							}}
 						>
-							<EffectPreview label="Skill" effects={skillEffects} />
-							{bookData.primary_affix && (
+							{desc && (
+								<>
+									<div style={{ color: "#e5c07b", marginBottom: 2 }}>原文 — Skill</div>
+									<div style={{ color: "#7f848e", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #3e4451" }}>
+										{desc.skillText}
+									</div>
+								</>
+							)}
+							<EffectPreview label="→ Parsed Effects" effects={skillEffects} />
+							{desc?.affixText && (
+								<>
+									<div style={{ color: "#e5c07b", marginBottom: 2, marginTop: 6 }}>原文 — Primary Affix</div>
+									<div style={{ color: "#7f848e", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #3e4451" }}>
+										{desc.affixText}
+									</div>
+								</>
+							)}
+							{primaryEffects.length > 0 && (
 								<EffectPreview
-									label={`Primary Affix: ${bookData.primary_affix.name}`}
+									label={`→ Parsed: ${bookData.primary_affix?.name ?? "Primary Affix"}`}
 									effects={primaryEffects}
 								/>
 							)}
