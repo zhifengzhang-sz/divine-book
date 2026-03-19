@@ -1,6 +1,26 @@
 /**
- * Shared UI primitives for the viz app.
+ * Shared UI primitives — sci-fi game aesthetic.
  */
+
+// ── Theme ───────────────────────────────────────────────────────────
+
+const T = {
+	bg: "#0a0e17",
+	panel: "#0f1724",
+	panelBorder: "#1a2744",
+	surface: "#111b2e",
+	surfaceBorder: "#1e3054",
+	accent: "#00d4ff",
+	accentDim: "#0088aa",
+	gold: "#ffd700",
+	purple: "#a855f7",
+	green: "#00ff88",
+	red: "#ff4455",
+	text: "#c8d6e5",
+	textMuted: "#4a6078",
+	glow: (color: string, spread = 8) =>
+		`0 0 ${spread}px ${color}44, inset 0 0 ${spread}px ${color}11`,
+};
 
 // ── Formatting ──────────────────────────────────────────────────────
 
@@ -60,7 +80,7 @@ export function Pill({
 	);
 }
 
-// ── Bar ─────────────────────────────────────────────────────────────
+// ── Bar (with gradient fill + glow) ────────────────────────────────
 
 export function Bar({
 	value,
@@ -75,36 +95,42 @@ export function Bar({
 }) {
 	const pct = Math.max(0, Math.min(100, (value / max) * 100));
 	return (
-		<div style={{ marginBottom: 4 }}>
+		<div style={{ marginBottom: 6 }}>
 			<div
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
-					fontSize: 12,
-					color: "#abb2bf",
+					fontSize: 11,
+					color: T.text,
+					marginBottom: 2,
 				}}
 			>
-				<span>{label}</span>
-				<span>
-					{value.toLocaleString(undefined, { maximumFractionDigits: 0 })} /{" "}
-					{max.toLocaleString()}
+				<span style={{ textTransform: "uppercase", letterSpacing: 1 }}>
+					{label}
+				</span>
+				<span style={{ fontVariantNumeric: "tabular-nums" }}>
+					{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
+					/ {max.toLocaleString()}
 				</span>
 			</div>
 			<div
 				style={{
-					height: 20,
-					background: "#2c313a",
-					borderRadius: 4,
+					height: 22,
+					background: T.surface,
+					borderRadius: 3,
 					overflow: "hidden",
-					border: "1px solid #4b5263",
+					border: `1px solid ${T.surfaceBorder}`,
+					boxShadow: pct > 0 ? `inset 0 0 12px ${color}22` : "none",
 				}}
 			>
 				<div
 					style={{
 						width: `${pct}%`,
 						height: "100%",
-						background: color,
-						transition: "width 0.1s ease",
+						background: `linear-gradient(90deg, ${color}cc, ${color})`,
+						boxShadow: `0 0 12px ${color}66`,
+						transition: "width 0.15s ease",
+						borderRadius: 2,
 					}}
 				/>
 			</div>
@@ -112,53 +138,61 @@ export function Bar({
 	);
 }
 
-// ── Styles (exported for use by dialogs/panels) ─────────────────────
+// ── Styles ──────────────────────────────────────────────────────────
 
 export const labelStyle: React.CSSProperties = {
 	fontSize: 11,
-	color: "#5c6370",
+	color: T.textMuted,
+	textTransform: "uppercase",
+	letterSpacing: 0.5,
 };
 
 export const selectStyle: React.CSSProperties = {
 	display: "block",
 	width: "100%",
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
+	background: T.surface,
+	color: T.text,
+	border: `1px solid ${T.surfaceBorder}`,
 	borderRadius: 4,
-	padding: "4px 6px",
+	padding: "6px 8px",
 	fontSize: 13,
 	fontFamily: "inherit",
+	outline: "none",
 };
 
 export const inputStyle: React.CSSProperties = {
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
+	background: T.surface,
+	color: T.accent,
+	border: `1px solid ${T.surfaceBorder}`,
 	borderRadius: 4,
 	padding: "4px 6px",
 	fontSize: 12,
 	fontFamily: "inherit",
+	fontVariantNumeric: "tabular-nums",
+	outline: "none",
 };
 
 export const pillStyle: React.CSSProperties = {
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
+	background: T.surface,
+	color: T.accent,
+	border: `1px solid ${T.accentDim}55`,
 	borderRadius: 4,
-	padding: "3px 8px",
+	padding: "4px 10px",
 	fontSize: 12,
 	fontFamily: "inherit",
 	cursor: "pointer",
 	textAlign: "left",
+	boxShadow: T.glow(T.accent, 4),
+	transition: "box-shadow 0.2s, border-color 0.2s",
 };
 
 export const panelStyle: React.CSSProperties = {
 	flex: 1,
-	padding: 12,
-	background: "#282c34",
+	padding: 14,
+	background: T.panel,
 	borderRadius: 8,
-	border: "1px solid #4b5263",
+	border: `1px solid ${T.panelBorder}`,
+	boxShadow: T.glow(T.accent, 6),
 };
 
 export const overlayStyle: React.CSSProperties = {
@@ -167,79 +201,92 @@ export const overlayStyle: React.CSSProperties = {
 	left: 0,
 	right: 0,
 	bottom: 0,
-	background: "rgba(0,0,0,0.6)",
+	background: "rgba(4, 8, 16, 0.85)",
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
 	zIndex: 100,
+	backdropFilter: "blur(4px)",
 };
 
 export const dialogStyle: React.CSSProperties = {
-	background: "#21252b",
-	border: "1px solid #4b5263",
-	borderRadius: 8,
-	padding: 20,
-	minWidth: 400,
-	maxWidth: 600,
+	background: T.panel,
+	border: `1px solid ${T.accentDim}66`,
+	borderRadius: 10,
+	padding: 24,
+	minWidth: 420,
+	maxWidth: 640,
+	boxShadow: `0 0 30px ${T.accent}22, 0 0 60px ${T.bg}`,
 };
 
 export const dialogTitleStyle: React.CSSProperties = {
-	color: "#e5c07b",
+	color: T.gold,
 	fontWeight: "bold",
-	fontSize: 14,
-	marginBottom: 12,
+	fontSize: 15,
+	marginBottom: 14,
+	textTransform: "uppercase",
+	letterSpacing: 1.5,
+	borderBottom: `1px solid ${T.gold}33`,
+	paddingBottom: 8,
 };
 
 export const btnStyle: React.CSSProperties = {
-	background: "#3e4451",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
+	background: T.surface,
+	color: T.text,
+	border: `1px solid ${T.surfaceBorder}`,
 	borderRadius: 4,
-	padding: "6px 12px",
+	padding: "6px 14px",
 	cursor: "pointer",
 	fontSize: 13,
 	fontFamily: "inherit",
+	transition: "background 0.2s, border-color 0.2s",
 };
 
 export const runBtnStyle: React.CSSProperties = {
-	background: "#61afef",
-	color: "#282c34",
+	background: `linear-gradient(135deg, ${T.accent}, ${T.accentDim})`,
+	color: T.bg,
 	border: "none",
 	borderRadius: 4,
-	padding: "6px 16px",
+	padding: "8px 20px",
 	cursor: "pointer",
 	fontSize: 13,
 	fontWeight: "bold",
 	fontFamily: "inherit",
+	letterSpacing: 1,
+	textTransform: "uppercase",
+	boxShadow: `0 0 16px ${T.accent}44`,
+	transition: "box-shadow 0.2s",
 };
 
 export const cancelBtnStyle: React.CSSProperties = {
 	background: "none",
-	color: "#5c6370",
-	border: "1px solid #4b5263",
+	color: T.textMuted,
+	border: `1px solid ${T.surfaceBorder}`,
 	borderRadius: 4,
-	padding: "4px 12px",
+	padding: "5px 14px",
 	cursor: "pointer",
 	fontSize: 12,
 	fontFamily: "inherit",
 };
 
 export const confirmBtnStyle: React.CSSProperties = {
-	background: "#61afef",
-	color: "#282c34",
+	background: `linear-gradient(135deg, ${T.accent}, ${T.accentDim})`,
+	color: T.bg,
 	border: "none",
 	borderRadius: 4,
-	padding: "4px 12px",
+	padding: "5px 14px",
 	cursor: "pointer",
 	fontSize: 12,
 	fontWeight: "bold",
 	fontFamily: "inherit",
+	letterSpacing: 0.5,
+	boxShadow: `0 0 8px ${T.accent}44`,
 };
 
 export const linkStyle: React.CSSProperties = {
 	background: "none",
 	border: "none",
-	color: "#5c6370",
+	color: T.accentDim,
 	cursor: "pointer",
 	fontSize: 12,
 	fontFamily: "inherit",
@@ -247,18 +294,22 @@ export const linkStyle: React.CSSProperties = {
 };
 
 export const chipStyle: React.CSSProperties = {
-	background: "#2c313a",
-	color: "#5c6370",
-	border: "1px solid #4b5263",
+	background: T.surface,
+	color: T.textMuted,
+	border: `1px solid ${T.surfaceBorder}`,
 	borderRadius: 12,
-	padding: "2px 8px",
+	padding: "2px 10px",
 	cursor: "pointer",
 	fontSize: 11,
 	fontFamily: "inherit",
+	transition: "background 0.15s, color 0.15s",
 };
 
 export const KIND_COLORS = {
-	buff: "#98c379",
-	debuff: "#e06c75",
-	named: "#61afef",
+	buff: T.green,
+	debuff: T.red,
+	named: T.accent,
 } as const;
+
+// Export theme for use by App.tsx
+export { T as theme };

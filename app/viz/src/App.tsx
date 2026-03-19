@@ -6,7 +6,14 @@ import {
 	buildTimeSeriesUpTo,
 } from "./buildTimeSeries.ts";
 import { Chart } from "./Chart.tsx";
-import { Bar, KIND_COLORS, btnStyle, chipStyle, fmt } from "./components.tsx";
+import {
+	Bar,
+	KIND_COLORS,
+	btnStyle,
+	chipStyle,
+	fmt,
+	theme as T,
+} from "./components.tsx";
 import { ConfigPanel } from "./ConfigPanel.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
 import type {
@@ -28,32 +35,48 @@ interface ChartConfig {
 // ── Sub-components ──────────────────────────────────────────────────
 
 function PlayerPanel({ label, book, snapshot }: { label: string; book: string; snapshot: PlayerSnapshot }) {
+	const borderColor = snapshot.alive ? T.accentDim : T.red;
 	return (
-		<div style={{ flex: 1, padding: 16, background: "#282c34", borderRadius: 8, border: `2px solid ${snapshot.alive ? "#4b5263" : "#e06c75"}`, opacity: snapshot.alive ? 1 : 0.5 }}>
-			<h2 style={{ margin: "0 0 4px", color: snapshot.alive ? "#e5c07b" : "#e06c75" }}>
+		<div style={{
+			flex: 1, padding: 16, background: T.panel, borderRadius: 8,
+			border: `1px solid ${borderColor}`,
+			boxShadow: `0 0 12px ${borderColor}33`,
+			opacity: snapshot.alive ? 1 : 0.6,
+		}}>
+			<h2 style={{
+				margin: "0 0 8px", fontSize: 14,
+				color: snapshot.alive ? T.gold : T.red,
+				textTransform: "uppercase", letterSpacing: 1,
+			}}>
 				{label}: {book}{!snapshot.alive && " 💀"}
 			</h2>
-			<Bar value={snapshot.hp} max={snapshot.maxHp} color="#98c379" label="HP (气血)" />
-			<Bar value={snapshot.sp} max={snapshot.maxSp} color="#61afef" label="SP (灵力)" />
-			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color="#c678dd" label="Shield (护盾)" />
-			<div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 12, color: "#abb2bf" }}>
+			<Bar value={snapshot.hp} max={snapshot.maxHp} color={T.green} label="HP 气血" />
+			<Bar value={snapshot.sp} max={snapshot.maxSp} color={T.accent} label="SP 灵力" />
+			<Bar value={snapshot.shield} max={snapshot.maxHp * 0.1} color={T.purple} label="Shield 护盾" />
+			<div style={{ display: "flex", gap: 16, marginTop: 8, fontSize: 12, color: T.text }}>
 				<span>
-					ATK: <span style={{ color: snapshot.atk !== snapshot.baseAtk ? "#e5c07b" : "#abb2bf" }}>
+					ATK: <span style={{ color: snapshot.atk !== snapshot.baseAtk ? T.gold : T.text }}>
 						{snapshot.atk.toLocaleString(undefined, { maximumFractionDigits: 0 })}
 					</span>
-					{snapshot.atk !== snapshot.baseAtk && <span style={{ color: "#5c6370" }}> ({snapshot.baseAtk.toLocaleString()})</span>}
+					{snapshot.atk !== snapshot.baseAtk && <span style={{ color: T.textMuted }}> ({snapshot.baseAtk.toLocaleString()})</span>}
 				</span>
 				<span>
-					DEF: <span style={{ color: snapshot.def !== snapshot.baseDef ? "#e5c07b" : "#abb2bf" }}>
+					DEF: <span style={{ color: snapshot.def !== snapshot.baseDef ? T.gold : T.text }}>
 						{snapshot.def.toLocaleString(undefined, { maximumFractionDigits: 0 })}
 					</span>
-					{snapshot.def !== snapshot.baseDef && <span style={{ color: "#5c6370" }}> ({snapshot.baseDef.toLocaleString()})</span>}
+					{snapshot.def !== snapshot.baseDef && <span style={{ color: T.textMuted }}> ({snapshot.baseDef.toLocaleString()})</span>}
 				</span>
 			</div>
 			{snapshot.states.length > 0 && (
 				<div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
 					{snapshot.states.map((s, i) => (
-						<span key={`${s.name}-${i}`} style={{ display: "inline-block", padding: "1px 8px", borderRadius: 10, fontSize: 11, background: `${KIND_COLORS[s.kind]}22`, color: KIND_COLORS[s.kind], border: `1px solid ${KIND_COLORS[s.kind]}66` }}>
+						<span key={`${s.name}-${i}`} style={{
+							display: "inline-block", padding: "2px 10px", borderRadius: 12, fontSize: 11,
+							background: `${KIND_COLORS[s.kind]}15`,
+							color: KIND_COLORS[s.kind],
+							border: `1px solid ${KIND_COLORS[s.kind]}44`,
+							boxShadow: `0 0 6px ${KIND_COLORS[s.kind]}22`,
+						}}>
 							{s.kind === "buff" ? "+" : s.kind === "debuff" ? "−" : "◆"} {s.name}
 						</span>
 					))}
@@ -315,25 +338,28 @@ function CausalTrace({
 
 const tracePanel: React.CSSProperties = {
 	flex: 1,
-	background: "#282c34",
-	border: "1px solid #4b5263",
+	background: T.panel,
+	border: `1px solid ${T.panelBorder}`,
 	borderRadius: 8,
-	padding: 12,
+	padding: 14,
 	fontSize: 11,
 	maxHeight: 600,
 	overflowY: "auto",
+	boxShadow: `0 0 8px ${T.purple}22`,
 };
 const sectionHeader: React.CSSProperties = {
-	color: "#c678dd",
+	color: T.purple,
 	fontWeight: "bold",
 	marginBottom: 4,
 	fontSize: 11,
+	textTransform: "uppercase",
+	letterSpacing: 0.5,
 };
 const rawTextStyle: React.CSSProperties = {
-	color: "#7f848e",
+	color: T.textMuted,
 	whiteSpace: "pre-wrap",
 	paddingLeft: 8,
-	borderLeft: "2px solid #3e4451",
+	borderLeft: `2px solid ${T.purple}44`,
 	fontSize: 11,
 };
 
@@ -427,9 +453,9 @@ function SimView({ data }: { data: SimulationData }) {
 			<button type="button" onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])} style={{ ...btnStyle, marginBottom: 16 }}>+ Add Chart</button>
 
 			{/* Event log */}
-			<div style={{ background: "#282c34", border: "1px solid #4b5263", borderRadius: 8, padding: 12, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6 }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
+			<div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: 12, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6 }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
 				{/* Config summary */}
-				<div style={{ color: "#5c6370", marginBottom: 8, whiteSpace: "pre", borderBottom: "1px solid #3e4451", paddingBottom: 8 }}>
+				<div style={{ color: T.textMuted, marginBottom: 8, whiteSpace: "pre", borderBottom: `1px solid ${T.panelBorder}`, paddingBottom: 8 }}>
 					{`A: ${data.config.playerA.book}  HP=${fmt(data.config.playerA.hp)} ATK=${fmt(data.config.playerA.atk)} SP=${fmt(data.config.playerA.sp)} DEF=${fmt(data.config.playerA.def)}\nB: ${data.config.playerB.book}  HP=${fmt(data.config.playerB.hp)} ATK=${fmt(data.config.playerB.atk)} SP=${fmt(data.config.playerB.sp)} DEF=${fmt(data.config.playerB.def)}\nDR_K=${fmt(data.config.formulas.dr_constant)} SP→Shield=${data.config.formulas.sp_shield_ratio} seed=${data.config.seed}`}
 				</div>
 				{replay.visibleEvents.map((ev, i) => {
@@ -440,13 +466,13 @@ function SimView({ data }: { data: SimulationData }) {
 					const isHp = ev.type === "HP_CHANGE";
 					const isError = ev.type === "HANDLER_ERROR";
 					return (
-						<div key={`${ev.type}-${i}`} style={{ color: isError ? "#d19a66" : isDeath ? "#e06c75" : isCast ? "#e5c07b" : isHp ? "#98c379" : "#abb2bf", whiteSpace: "pre" }}>
+						<div key={`${ev.type}-${i}`} style={{ color: isError ? T.gold : isDeath ? T.red : isCast ? T.gold : isHp ? T.green : T.text, whiteSpace: "pre" }}>
 							{line}
 						</div>
 					);
 				})}
 				{replay.finished && (
-					<div style={{ color: "#e5c07b", marginTop: 8, fontWeight: "bold", whiteSpace: "pre", borderTop: "1px solid #3e4451", paddingTop: 8 }}>
+					<div style={{ color: T.gold, marginTop: 8, fontWeight: "bold", whiteSpace: "pre", borderTop: `1px solid ${T.panelBorder}`, paddingTop: 8, textShadow: `0 0 8px ${T.gold}44` }}>
 						{`Result: ${data.result.winner ? `Player ${data.result.winner} wins` : "Draw"}\n`}
 						{`A: HP=${fmt(data.result.aFinal.hp)} SP=${fmt(data.result.aFinal.sp)} Shield=${fmt(data.result.aFinal.shield)} ATK=${fmt(data.result.aFinal.atk)} DEF=${fmt(data.result.aFinal.def)} ${data.result.aFinal.alive ? "alive" : "dead"}\n`}
 						{`B: HP=${fmt(data.result.bFinal.hp)} SP=${fmt(data.result.bFinal.sp)} Shield=${fmt(data.result.bFinal.shield)} ATK=${fmt(data.result.bFinal.atk)} DEF=${fmt(data.result.bFinal.def)} ${data.result.bFinal.alive ? "alive" : "dead"}`}
@@ -477,10 +503,10 @@ export function App() {
 	};
 
 	return (
-		<div style={{ fontFamily: 'Menlo, "Fira Code", monospace', background: "#1e2127", color: "#abb2bf", minHeight: "100vh", padding: 24 }}>
-			<h1 style={{ color: "#e5c07b", margin: "0 0 16px", fontSize: 20 }}>Divine Book Combat Simulator</h1>
+		<div style={{ fontFamily: 'Menlo, "Fira Code", monospace', background: T.bg, color: T.text, minHeight: "100vh", padding: 24 }}>
+			<h1 style={{ color: T.gold, margin: "0 0 16px", fontSize: 20, textTransform: "uppercase", letterSpacing: 2, textShadow: `0 0 20px ${T.gold}44` }}>Divine Book Combat Simulator</h1>
 			<ConfigPanel onRun={handleRun} />
-			{simError && <div style={{ color: "#e06c75", fontSize: 12, padding: 8, background: "#2c313a", borderRadius: 4, marginBottom: 16, whiteSpace: "pre-wrap" }}>{simError}</div>}
+			{simError && <div style={{ color: T.red, fontSize: 12, padding: 10, background: `${T.red}11`, border: `1px solid ${T.red}44`, borderRadius: 4, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: `0 0 12px ${T.red}22` }}>{simError}</div>}
 			{simData && <SimView key={runCount} data={simData} />}
 		</div>
 	);
