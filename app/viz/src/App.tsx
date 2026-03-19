@@ -9,7 +9,12 @@ import { Chart } from "./Chart.tsx";
 import { Bar, KIND_COLORS, btnStyle, chipStyle, fmt } from "./components.tsx";
 import { ConfigPanel } from "./ConfigPanel.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
-import type { PlayerSnapshot, SimulationData } from "./types.ts";
+import type {
+	BookVerification,
+	PlayerSnapshot,
+	SimEvent,
+	SimulationData,
+} from "./types.ts";
 import { useReplay } from "./useReplay.ts";
 
 const METRICS: Metric[] = ["hp", "sp", "shield", "atk", "def"];
@@ -77,6 +82,172 @@ function formatEvent(ev: Record<string, unknown>): string | null {
 	}
 }
 
+// ── Verification Panel ──────────────────────────────────────────────
+
+function VerificationPanel({
+	verification,
+	events,
+}: {
+	verification: { a: BookVerification; b: BookVerification };
+	events: SimEvent[];
+}) {
+	const [expanded, setExpanded] = useState(false);
+
+	return (
+		<div style={{ marginBottom: 16 }}>
+			<button
+				type="button"
+				onClick={() => setExpanded(!expanded)}
+				style={{ ...btnStyle, marginBottom: 8 }}
+			>
+				{expanded ? "▾ Hide" : "▸ Show"} Verification
+			</button>
+			{expanded && (
+				<div style={{ display: "flex", gap: 16 }}>
+					<VerificationSide
+						label="A"
+						ver={verification.a}
+						events={events.filter((e) => e.player === "A")}
+					/>
+					<VerificationSide
+						label="B"
+						ver={verification.b}
+						events={events.filter((e) => e.player === "B")}
+					/>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function VerificationSide({
+	label,
+	ver,
+	events,
+}: {
+	label: string;
+	ver: BookVerification;
+	events: SimEvent[];
+}) {
+	// Summarize sim events by type
+	const eventSummary: Record<string, number> = {};
+	let totalHpDamage = 0;
+	let totalHeal = 0;
+	for (const ev of events) {
+		eventSummary[ev.type as string] = (eventSummary[ev.type as string] ?? 0) + 1;
+		if (ev.type === "HP_CHANGE") {
+			const delta = (ev.next as number) - (ev.prev as number);
+			if (delta < 0) totalHpDamage += Math.abs(delta);
+			else totalHeal += delta;
+		}
+	}
+	const statesApplied = events
+		.filter((e) => e.type === "STATE_APPLY")
+		.map((e) => (e.state as { name: string }).name);
+
+	return (
+		<div
+			style={{
+				flex: 1,
+				background: "#282c34",
+				border: "1px solid #4b5263",
+				borderRadius: 8,
+				padding: 12,
+				fontSize: 11,
+				maxHeight: 500,
+				overflowY: "auto",
+			}}
+		>
+			<div
+				style={{
+					color: "#e5c07b",
+					fontWeight: "bold",
+					marginBottom: 8,
+					fontSize: 13,
+				}}
+			>
+				{label}: {ver.bookName}
+			</div>
+
+			{/* Layer 1: Raw text */}
+			<div style={{ marginBottom: 8 }}>
+				<div style={sectionHeader}>1. 原文 (Source Text)</div>
+				{ver.skillText && (
+					<div style={rawTextStyle}>{ver.skillText}</div>
+				)}
+				{ver.affixText && (
+					<div style={{ ...rawTextStyle, marginTop: 4 }}>
+						{ver.affixText}
+					</div>
+				)}
+			</div>
+
+			{/* Layer 2: Parsed effects */}
+			<div style={{ marginBottom: 8 }}>
+				<div style={sectionHeader}>
+					2. Parsed Effects ({ver.activeEffects.length})
+				</div>
+				{ver.activeEffects.map((e, i) => {
+					const params = Object.entries(e.params)
+						.filter(([, v]) => v !== undefined)
+						.map(([k, v]) => `${k}=${v}`)
+						.join(", ");
+					return (
+						<div key={`${e.type}-${i}`} style={{ paddingLeft: 8, color: "#abb2bf" }}>
+							<span style={{ color: "#61afef" }}>{e.type}</span>
+							{params ? `: ${params}` : ""}
+						</div>
+					);
+				})}
+			</div>
+
+			{/* Layer 3: Simulation results */}
+			<div>
+				<div style={sectionHeader}>3. Sim Results</div>
+				<div style={{ paddingLeft: 8, color: "#abb2bf" }}>
+					<div>
+						Total HP damage taken:{" "}
+						<span style={{ color: "#e06c75" }}>
+							{fmt(totalHpDamage)}
+						</span>
+					</div>
+					{totalHeal > 0 && (
+						<div>
+							Total healed:{" "}
+							<span style={{ color: "#98c379" }}>
+								{fmt(totalHeal)}
+							</span>
+						</div>
+					)}
+					<div>
+						Events:{" "}
+						{Object.entries(eventSummary)
+							.map(([k, v]) => `${k}(${v})`)
+							.join(", ")}
+					</div>
+					{statesApplied.length > 0 && (
+						<div>States applied: {statesApplied.join(", ")}</div>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+const sectionHeader: React.CSSProperties = {
+	color: "#c678dd",
+	fontWeight: "bold",
+	marginBottom: 4,
+	fontSize: 11,
+};
+const rawTextStyle: React.CSSProperties = {
+	color: "#7f848e",
+	whiteSpace: "pre-wrap",
+	paddingLeft: 8,
+	borderLeft: "2px solid #3e4451",
+	fontSize: 11,
+};
+
 // ── Simulation Results View ─────────────────────────────────────────
 
 let nextChartId = 1;
@@ -105,6 +276,14 @@ function SimView({ data }: { data: SimulationData }) {
 				<PlayerPanel label="A" book={data.config.playerA.book} snapshot={replay.playerA} />
 				<PlayerPanel label="B" book={data.config.playerB.book} snapshot={replay.playerB} />
 			</div>
+
+			{/* Verification */}
+			{data.verification && (
+				<VerificationPanel
+					verification={data.verification}
+					events={data.events}
+				/>
+			)}
 
 			{/* Controls */}
 			<div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>

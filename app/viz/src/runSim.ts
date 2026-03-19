@@ -5,7 +5,7 @@
 
 import { createActor } from "xstate";
 import { SimulationClock } from "../../../lib/sim/clock.js";
-import { validatePlayerConfig } from "../../../lib/sim/config.js";
+import { selectTiers, validatePlayerConfig } from "../../../lib/sim/config.js";
 import { playerMachine } from "../../../lib/sim/player.js";
 import { SeededRNG } from "../../../lib/sim/rng.js";
 import type { PlayerState, StateChangeEvent } from "../../../lib/sim/types.js";
@@ -58,6 +58,100 @@ function formatBook(b: { platform: string; op1: string; op2: string }): string {
 	if (b.op1) parts.push(b.op1);
 	if (b.op2) parts.push(b.op2);
 	return parts.join(" + ");
+}
+
+type BookDataEntry = {
+	skill_text?: string;
+	affix_text?: string;
+	skill?: Record<string, unknown>[];
+	primary_affix?: { name: string; effects: Record<string, unknown>[] };
+	exclusive_affix?: { name: string; effects: Record<string, unknown>[] };
+	[k: string]: unknown;
+};
+
+function buildVerification(
+	playerConfig: PlayerBookConfig,
+	booksYamlBooks: Record<string, BookDataEntry>,
+	_rng: SeededRNG,
+) {
+	const bookData = booksYamlBooks[playerConfig.platform];
+	if (!bookData) return null;
+
+	const prog = playerConfig.progression;
+
+	// Get active effects at this tier (same logic as processBook)
+	const sources: Record<string, unknown>[][] = [];
+	if (bookData.skill) sources.push(bookData.skill);
+	if (bookData.primary_affix) sources.push(bookData.primary_affix.effects);
+	if (bookData.exclusive_affix) sources.push(bookData.exclusive_affix.effects);
+
+	const activeEffects: { type: string; params: Record<string, unknown> }[] = [];
+	for (const source of sources) {
+		const tiered = selectTiers(
+			source as { type: string; [k: string]: unknown }[],
+			prog,
+		);
+		for (const effect of tiered) {
+			const { type, data_state, ...params } = effect;
+			activeEffects.push({ type: type as string, params });
+		}
+	}
+
+	// Resolve aux affix effects
+	const auxNames = [playerConfig.op1, playerConfig.op2].filter(Boolean);
+	const auxProgs = [playerConfig.op1Progression, playerConfig.op2Progression];
+	for (let i = 0; i < auxNames.length; i++) {
+		const name = auxNames[i];
+		if (!name) continue;
+		const auxProg = auxProgs[i] ?? prog;
+		// Look up affix effects
+		let raw: Record<string, unknown>[] | undefined;
+		const affixes = affixesData as {
+			universal: Record<string, { effects: Record<string, unknown>[] }>;
+			school: Record<
+				string,
+				Record<string, { effects: Record<string, unknown>[] }>
+			>;
+		};
+		if (affixes.universal[name]) raw = affixes.universal[name].effects;
+		if (!raw) {
+			for (const school of Object.values(affixes.school)) {
+				if (school[name]) {
+					raw = school[name].effects;
+					break;
+				}
+			}
+		}
+		if (!raw) {
+			for (const book of Object.values(booksYamlBooks)) {
+				if (
+					book.exclusive_affix &&
+					(book.exclusive_affix as { name: string }).name === name
+				) {
+					raw = book.exclusive_affix.effects as Record<string, unknown>[];
+					break;
+				}
+			}
+		}
+		if (raw) {
+			const tiered = selectTiers(
+				raw as { type: string; [k: string]: unknown }[],
+				auxProg,
+			);
+			for (const effect of tiered) {
+				const { type, data_state, ...params } = effect;
+				activeEffects.push({ type: type as string, params });
+			}
+		}
+	}
+
+	return {
+		bookName: formatBook(playerConfig),
+		skillText: (bookData.skill_text as string) ?? "",
+		affixText: (bookData.affix_text as string) ?? "",
+		activeEffects,
+		listeners: 0,
+	};
 }
 
 export function runSimulation(config: SimConfig): SimulationData {
@@ -194,7 +288,12 @@ export function runSimulation(config: SimConfig): SimulationData {
 	const aFinal = playerA.getSnapshot().context.state;
 	const bFinal = playerB.getSnapshot().context.state;
 
+	const allBooks = booksYaml.books as unknown as Record<string, BookDataEntry>;
+	const verA = buildVerification(config.playerA, allBooks, rng);
+	const verB = buildVerification(config.playerB, allBooks, rng);
+
 	return {
+		verification: verA && verB ? { a: verA, b: verB } : undefined,
 		config: {
 			playerA: { label: "A", book: formatBook(config.playerA), ...statsA },
 			playerB: { label: "B", book: formatBook(config.playerB), ...statsB },

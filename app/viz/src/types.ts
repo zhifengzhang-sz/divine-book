@@ -1,4 +1,21 @@
+export interface EffectTrace {
+	type: string;
+	params: Record<string, unknown>;
+}
+
+export interface BookVerification {
+	bookName: string;
+	skillText: string;
+	affixText: string;
+	activeEffects: EffectTrace[];
+	listeners: number;
+}
+
 export interface SimulationData {
+	verification?: {
+		a: BookVerification;
+		b: BookVerification;
+	};
 	config: {
 		playerA: {
 			label: string;
