@@ -23,7 +23,7 @@ import {
 } from "xstate";
 import type { EffectRow } from "../data/types.js";
 import { bookMachine, extractHits } from "./book-machine.js";
-import type { AffixesYaml, BooksYaml } from "./config.js";
+import { type AffixesYaml, type BooksYaml, selectTiers } from "./config.js";
 import type { SeededRNG } from "./rng.js";
 import type {
 	ApplyDotEvent,
@@ -37,6 +37,7 @@ import type {
 	IntentEvent,
 	ListenerRegistration,
 	PlayerState,
+	ProgressionConfig,
 	ShieldEvent,
 	StateChangeEvent,
 	StateInstance,
@@ -126,37 +127,46 @@ function resolveAffixEffects(
 	booksYaml: BooksYaml,
 	affixesYaml: AffixesYaml,
 ): EffectRow[] {
-	const effects: EffectRow[] = [];
-	for (const opName of [slot.op1, slot.op2]) {
-		if (!opName) continue;
-		let found = false;
+	const result: EffectRow[] = [];
+	const ops: { name?: string; progression?: ProgressionConfig }[] = [
+		{ name: slot.op1, progression: slot.op1Progression },
+		{ name: slot.op2, progression: slot.op2Progression },
+	];
+	for (const op of ops) {
+		if (!op.name) continue;
+		let raw: EffectRow[] | undefined;
 		// Check universal affixes
-		if (affixesYaml.universal[opName]) {
-			effects.push(...affixesYaml.universal[opName].effects);
-			found = true;
+		if (affixesYaml.universal[op.name]) {
+			raw = affixesYaml.universal[op.name].effects;
 		}
 		// Check school affixes
-		if (!found) {
+		if (!raw) {
 			for (const school of Object.values(affixesYaml.school)) {
-				if (school[opName]) {
-					effects.push(...school[opName].effects);
-					found = true;
+				if (school[op.name]) {
+					raw = school[op.name].effects;
 					break;
 				}
 			}
 		}
 		// Check exclusive affixes (look up by affix name across all books)
-		if (!found) {
+		if (!raw) {
 			for (const book of Object.values(booksYaml.books)) {
-				if (book.exclusive_affix?.name === opName) {
-					effects.push(...book.exclusive_affix.effects);
-					found = true;
+				if (book.exclusive_affix?.name === op.name) {
+					raw = book.exclusive_affix.effects;
 					break;
 				}
 			}
 		}
+		if (raw) {
+			// Apply per-affix tier selection if progression is specified
+			if (op.progression) {
+				result.push(...selectTiers(raw, op.progression));
+			} else {
+				result.push(...raw);
+			}
+		}
 	}
-	return effects;
+	return result;
 }
 
 function isSelfTargeted(ev: IntentEvent): boolean {

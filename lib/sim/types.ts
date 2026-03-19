@@ -321,6 +321,8 @@ export interface BookSlot {
 	op1?: string;
 	op2?: string;
 	progression: ProgressionConfig;
+	op1Progression?: ProgressionConfig;
+	op2Progression?: ProgressionConfig;
 }
 
 export interface PlayerConfig {

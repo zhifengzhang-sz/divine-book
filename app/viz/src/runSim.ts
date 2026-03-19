@@ -32,6 +32,14 @@ export interface PlayerBookConfig {
 		enlightenment: number;
 		fusion: number;
 	};
+	op1Progression?: {
+		enlightenment: number;
+		fusion: number;
+	};
+	op2Progression?: {
+		enlightenment: number;
+		fusion: number;
+	};
 }
 
 export interface SimConfig {
@@ -65,6 +73,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		op1: config.playerA.op1 || undefined,
 		op2: config.playerA.op2 || undefined,
 		progression: progressionA,
+		op1Progression: config.playerA.op1Progression,
+		op2Progression: config.playerA.op2Progression,
 	};
 	const slotB = {
 		slot: 1,
@@ -72,6 +82,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		op1: config.playerB.op1 || undefined,
 		op2: config.playerB.op2 || undefined,
 		progression: progressionB,
+		op1Progression: config.playerB.op1Progression,
+		op2Progression: config.playerB.op2Progression,
 	};
 
 	const statsA = config.playerA.stats;

@@ -143,6 +143,8 @@ function BookPickerDialog({
 interface AffixSelection {
 	category: string;
 	name: string;
+	enlightenment: number;
+	fusion: number;
 }
 
 function getAffixesForCategory(
@@ -198,7 +200,7 @@ function AffixPickerDialog({
 					</select>
 				</div>
 
-				<div style={{ marginBottom: 12 }}>
+				<div style={{ marginBottom: 10 }}>
 					<label style={labelStyle}>词缀 (affix)</label>
 					<select
 						value={sel.name}
@@ -214,6 +216,21 @@ function AffixPickerDialog({
 							</option>
 						))}
 					</select>
+				</div>
+
+				<div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+					<StatInput
+						label="悟境"
+						value={sel.enlightenment}
+						onChange={(v) => setSel({ ...sel, enlightenment: v })}
+						width={50}
+					/>
+					<StatInput
+						label="融合"
+						value={sel.fusion}
+						onChange={(v) => setSel({ ...sel, fusion: v })}
+						width={50}
+					/>
 				</div>
 
 				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -242,8 +259,12 @@ interface PlayerPanelState {
 	fusion: number;
 	op1: string;
 	op1Category: string;
+	op1Enlightenment: number;
+	op1Fusion: number;
 	op2: string;
 	op2Category: string;
+	op2Enlightenment: number;
+	op2Fusion: number;
 	hp: number;
 	atk: number;
 	sp: number;
@@ -297,12 +318,12 @@ function PlayerConfigPanel({
 			<Pill label="Book" value={bookLabel} onClick={() => setBookDialog(true)} />
 			<Pill
 				label="词缀1"
-				value={state.op1}
+				value={state.op1 ? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})` : ""}
 				onClick={() => setAffixDialog(1)}
 			/>
 			<Pill
 				label="词缀2"
-				value={state.op2}
+				value={state.op2 ? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})` : ""}
 				onClick={() => setAffixDialog(2)}
 			/>
 
@@ -349,6 +370,12 @@ function PlayerConfigPanel({
 						category:
 							affixDialog === 1 ? state.op1Category : state.op2Category,
 						name: affixDialog === 1 ? state.op1 : state.op2,
+						enlightenment:
+							affixDialog === 1
+								? state.op1Enlightenment
+								: state.op2Enlightenment,
+						fusion:
+							affixDialog === 1 ? state.op1Fusion : state.op2Fusion,
 					}}
 					onConfirm={(sel) => {
 						if (affixDialog === 1) {
@@ -356,12 +383,16 @@ function PlayerConfigPanel({
 								...state,
 								op1Category: sel.category,
 								op1: sel.name,
+								op1Enlightenment: sel.enlightenment,
+								op1Fusion: sel.fusion,
 							});
 						} else {
 							onChange({
 								...state,
 								op2Category: sel.category,
 								op2: sel.name,
+								op2Enlightenment: sel.enlightenment,
+								op2Fusion: sel.fusion,
 							});
 						}
 						setAffixDialog(null);
@@ -387,8 +418,12 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 		fusion: defaults.fusion,
 		op1: "",
 		op1Category: "通用",
+		op1Enlightenment: defaults.enlightenment,
+		op1Fusion: defaults.fusion,
 		op2: "",
 		op2Category: "通用",
+		op2Enlightenment: defaults.enlightenment,
+		op2Fusion: defaults.fusion,
 		...defaultStats,
 	});
 	const [playerB, setPlayerB] = useState<PlayerPanelState>({
@@ -398,8 +433,12 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 		fusion: defaults.fusion,
 		op1: "",
 		op1Category: "通用",
+		op1Enlightenment: defaults.enlightenment,
+		op1Fusion: defaults.fusion,
 		op2: "",
 		op2Category: "通用",
+		op2Enlightenment: defaults.enlightenment,
+		op2Fusion: defaults.fusion,
 		...defaultStats,
 	});
 	const [seed, setSeed] = useState(42);
@@ -424,6 +463,14 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 					enlightenment: playerA.enlightenment,
 					fusion: playerA.fusion,
 				},
+				op1Progression: {
+					enlightenment: playerA.op1Enlightenment,
+					fusion: playerA.op1Fusion,
+				},
+				op2Progression: {
+					enlightenment: playerA.op2Enlightenment,
+					fusion: playerA.op2Fusion,
+				},
 			},
 			playerB: {
 				platform: playerB.platform,
@@ -439,6 +486,14 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 				progression: {
 					enlightenment: playerB.enlightenment,
 					fusion: playerB.fusion,
+				},
+				op1Progression: {
+					enlightenment: playerB.op1Enlightenment,
+					fusion: playerB.op1Fusion,
+				},
+				op2Progression: {
+					enlightenment: playerB.op2Enlightenment,
+					fusion: playerB.op2Fusion,
 				},
 			},
 			formulas: {

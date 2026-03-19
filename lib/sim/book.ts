@@ -39,16 +39,18 @@ export function processBook(
 	// Gather effects per-source, apply tier selection within each source,
 	// then merge. Tier dedup is only meaningful within a single source —
 	// effects of the same type from different sources must NOT be deduped.
+	// Tier-select book's own sources (skill, primary_affix, exclusive_affix)
 	const sources: EffectRow[][] = [];
 	if (bookData.skill) sources.push(bookData.skill);
 	if (bookData.primary_affix) sources.push(bookData.primary_affix.effects);
 	if (bookData.exclusive_affix) sources.push(bookData.exclusive_affix.effects);
-	if (affixEffects.length > 0) sources.push(affixEffects);
 
 	const allTiered: EffectRow[] = [];
 	for (const source of sources) {
 		allTiered.push(...selectTiers(source, progression));
 	}
+	// Aux affix effects are pre-tiered by resolveAffixEffects (per-affix progression)
+	if (affixEffects.length > 0) allTiered.push(...affixEffects);
 
 	// Separate direct vs reactive by parent field
 	const directTiered: EffectRow[] = [];
