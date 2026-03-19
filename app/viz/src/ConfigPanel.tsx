@@ -103,6 +103,26 @@ interface BookSelection {
 	fusion: number;
 }
 
+/** Find the best matching tier for given enlightenment/fusion */
+function snapToTier(
+	tiers: TierOption[],
+	e: number,
+	f: number,
+): TierOption | undefined {
+	// Exact match first
+	const exact = tiers.find(
+		(t) => t.enlightenment === e && t.fusion === f,
+	);
+	if (exact) return exact;
+	// Highest tier that the player qualifies for (e >= tier.e && f >= tier.f)
+	let best: TierOption | undefined;
+	for (const t of tiers) {
+		if (e >= t.enlightenment && f >= t.fusion) best = t;
+	}
+	// Fall back to highest tier
+	return best ?? tiers[tiers.length - 1];
+}
+
 function BookPickerDialog({
 	current,
 	onConfirm,
@@ -112,7 +132,17 @@ function BookPickerDialog({
 	onConfirm: (sel: BookSelection) => void;
 	onCancel: () => void;
 }) {
-	const [sel, setSel] = useState<BookSelection>({ ...current });
+	const initTiers = getTierOptions(current.platform);
+	const initSnap = snapToTier(
+		initTiers,
+		current.enlightenment,
+		current.fusion,
+	);
+	const [sel, setSel] = useState<BookSelection>({
+		...current,
+		enlightenment: initSnap?.enlightenment ?? current.enlightenment,
+		fusion: initSnap?.fusion ?? current.fusion,
+	});
 	const schoolBooks = books[sel.school] ?? [];
 	const tierOptions = getTierOptions(sel.platform);
 
