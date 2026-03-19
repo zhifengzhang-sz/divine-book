@@ -435,35 +435,24 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	const totalDR = Math.min(Math.max(baseDR + buffDR, 0), 1);
 	const mitigated = hit.damage * (1 - totalDR);
 
-	// 2. SP → shield (divisive DR layer)
-	// SP provides damage reduction: sp_reduction = SP / (SP + sp_shield_ratio)
-	// Higher SP = more reduction; as SP drains (resonance), reduction weakens
-	// SP is NOT consumed by shield generation — only by resonance
-	const spReduction = s.sp > 0 ? s.sp / (s.sp + f.sp_shield_ratio) : 0;
-	const shieldAbsorbed = mitigated * spReduction;
-	const afterShield = mitigated - shieldAbsorbed;
-	if (shieldAbsorbed > 0) {
-		const prevShield = s.shield;
-		// Track shield absorption for display (shield is transient, not a pool)
-		s.shield = shieldAbsorbed;
+	// 2. SP → shield: "消耗灵力值产生护盾抵挡伤害"
+	// SP is CONSUMED to produce shield. 1 SP consumed → ratio points of shield.
+	// sp_consumed = min(currentSP, mitigated / ratio)
+	// shield = sp_consumed × ratio (absorbs that much damage)
+	// remaining damage after shield → HP
+	const spConsumed = s.sp > 0 ? Math.min(s.sp, mitigated / f.sp_shield_ratio) : 0;
+	const shieldAmount = spConsumed * f.sp_shield_ratio;
+	const afterShield = mitigated - shieldAmount;
+	if (spConsumed > 0) {
+		const prevSp = s.sp;
+		s.sp -= spConsumed;
 		enqueue(
 			emit({
-				type: "SHIELD_CHANGE" as const,
+				type: "SP_CHANGE" as const,
 				player: ctx.label,
-				prev: prevShield,
-				next: s.shield,
+				prev: prevSp,
+				next: s.sp,
 				cause: "shield_gen",
-				t,
-			}),
-		);
-		s.shield = 0;
-		enqueue(
-			emit({
-				type: "SHIELD_CHANGE" as const,
-				player: ctx.label,
-				prev: shieldAbsorbed,
-				next: 0,
-				cause: "absorb",
 				t,
 			}),
 		);

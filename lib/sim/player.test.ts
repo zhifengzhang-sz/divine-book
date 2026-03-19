@@ -77,29 +77,20 @@ describe("HIT resolution", () => {
 		}
 	});
 
-	test("SP provides divisive DR (shield absorbs portion of damage)", () => {
-		// SP=5000, sp_shield_ratio=1000000 (default) → sp_reduction = 5000/(5000+1000000) ≈ 0.5%
-		// With sp_shield_ratio matching SP, reduction = 50%
-		const { actor } = createPlayer("B", { sp: 1000000, shield: 0 });
+	test("SP consumed to produce shield that absorbs damage", () => {
+		const { actor } = createPlayer("B", { sp: 5000, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1000, spDamage: 0 });
 
-		// SP is NOT consumed — only resonance drains SP
+		// SP consumed for shield
 		expect(
 			events.some((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen"),
-		).toBe(false);
-		// Shield gen event shows absorption
-		expect(
-			events.some(
-				(e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen",
-			),
 		).toBe(true);
-		// HP takes partial damage (not full — SP absorbed some)
-		const hpChange = events.find((e) => e.type === "HP_CHANGE");
-		expect(hpChange).toBeDefined();
-		// With SP=1M and K=1M, reduction=50%, so HP damage ≈ 500 (after DR + SP reduction)
+		// SP should decrease
+		const spChange = events.find((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen") as { prev: number; next: number };
+		expect(spChange.next).toBeLessThan(spChange.prev);
 	});
 
 	test("shield absorbs damage", () => {

@@ -128,17 +128,16 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 
 // ── SP Shield Generation ────────────────────────────────────────────
 
-describe("SP shield (divisive DR layer)", () => {
+describe("SP shield (consumable pool)", () => {
 	const clock = new SimulationClock();
 	const SP_AMOUNT = 10000;
-	// sp_shield_ratio = K_sp in SP/(SP+K_sp). At SP=K_sp, reduction = 50%.
-	const K_SP = SP_AMOUNT; // 50% reduction
+	const RATIO = 10; // 1 SP consumed → 10 damage absorbed
 
 	const target = createActor(playerMachine, {
 		input: {
 			label: "B",
 			initialState: makeState({ sp: SP_AMOUNT, shield: 0 }),
-			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: K_SP },
+			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: RATIO },
 			progression: { enlightenment: 10, fusion: 51 },
 			bookSlots: [],
 			booksYaml,
@@ -153,31 +152,42 @@ describe("SP shield (divisive DR layer)", () => {
 
 	const events: StateChangeEvent[] = [];
 	target.on("*", (ev: StateChangeEvent) => events.push(ev));
+	// After DR: 50000 * (1 - 900000/1900000) ≈ 26316
+	// SP can absorb: min(10000, 26316/10) × 10 = 10000 × 10 = all of it if enough SP
+	// SP consumed: min(10000, 26316/10) = min(10000, 2632) = 2632
+	// shield = 2632 × 10 = 26316 (covers full mitigated damage)
 	target.send({ type: "HIT", hitIndex: 0, damage: 50000, spDamage: 0 });
 
-	test("SP NOT consumed by shield (only resonance drains SP)", () => {
+	test("SP consumed for shield generation", () => {
 		const spChange = events.find(
 			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
-		);
-		expect(spChange).toBeUndefined();
+		) as { prev: number; next: number } | undefined;
+		expect(spChange).toBeDefined();
+		expect(spChange!.next).toBeLessThan(SP_AMOUNT);
+		expect(spChange!.next).toBeGreaterThan(0); // not fully depleted
 	});
 
-	test("shield absorbs portion of damage", () => {
-		expect(
-			events.some((e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen"),
-		).toBe(true);
-		expect(
-			events.some((e) => e.type === "SHIELD_CHANGE" && e.cause === "absorb"),
-		).toBe(true);
-	});
-
-	test("HP takes partial damage (not full)", () => {
+	test("HP takes reduced damage (shield absorbed some)", () => {
 		const hpChange = events.find((e) => e.type === "HP_CHANGE") as { prev: number; next: number } | undefined;
+		// With SP=10000 and ratio=10, total shield capacity = 100000
+		// mitigated ≈ 26316, which is < 100000, so shield covers it all → no HP damage
+		expect(hpChange).toBeUndefined();
+	});
+
+	test("SP depletes when shield capacity exceeded", () => {
+		// Send a massive hit that exceeds remaining SP shield capacity
+		const events2: StateChangeEvent[] = [];
+		target.on("*", (ev: StateChangeEvent) => events2.push(ev));
+		target.send({ type: "HIT", hitIndex: 1, damage: 5000000, spDamage: 0 });
+
+		// SP should be fully consumed
+		const spChange = events2.filter((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen").pop() as { next: number } | undefined;
+		expect(spChange).toBeDefined();
+		expect(spChange!.next).toBeCloseTo(0, 0);
+
+		// HP should take the remainder
+		const hpChange = events2.find((e) => e.type === "HP_CHANGE");
 		expect(hpChange).toBeDefined();
-		// With DR from DEF + 50% SP reduction, HP damage < mitigated damage
-		const hpDamage = (hpChange?.prev ?? 0) - (hpChange?.next ?? 0);
-		expect(hpDamage).toBeGreaterThan(0);
-		expect(hpDamage).toBeLessThan(50000); // less than raw damage
 	});
 });
 
