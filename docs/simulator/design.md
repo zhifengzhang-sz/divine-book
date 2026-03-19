@@ -214,7 +214,7 @@ Emitted when player state mutates. Observable by all subscribers.
 | STATE_TRIGGERED | Reactive condition (on_attacked, on_cast) |
 | STATE_REMOVE | State dispelled/cleansed/stolen |
 | CAST_START / CAST_END | Book cast began/ended |
-| DEATH | hp ≤ 0 (absorbing boundary — event stream terminates) |
+| DEATH | hp ≤ 0, checked via CHECK_DEATH after each time step (absorbing boundary) |
 
 ---
 
@@ -262,14 +262,13 @@ $$\text{mitigated} = \text{damage} \times (1 - DR)$$
 $$DR = \frac{DEF}{DEF + K} + \sum \text{damage\_reduction effects} / 100$$
 
 Then:
-1. SP → shield generation: $\text{shieldGen} = \min(SP, \text{mitigated}) \times \text{sp\_shield\_ratio}$
-2. Shield absorption: $\text{absorbed} = \min(\text{mitigated}, \text{shield})$
-3. HP reduction: $HP \mathrel{-}= \text{mitigated} - \text{absorbed}$
-4. Resonance: $SP \mathrel{-}= \text{spDamage}$
-5. Per-hit effects (e.g., PERCENT_MAX_HP_HIT → computed from target's own maxHp → DR → shield → HP)
-6. on_attacked triggers → may produce new intents
+1. SP → shield: $\text{spConsumed} = \min(SP, \text{mitigated} / \text{sp\_shield\_ratio})$, $\text{shield} = \text{spConsumed} \times \text{sp\_shield\_ratio}$, $SP \mathrel{-}= \text{spConsumed}$
+2. HP reduction: $HP \mathrel{-}= \text{mitigated} - \text{shield}$
+3. Resonance: $SP \mathrel{-}= \text{spDamage}$
+4. Per-hit effects (e.g., PERCENT_MAX_HP_HIT → computed from target's own maxHp → DR → SP shield → HP)
+5. on_attacked triggers → may produce new intents
 
-If HP ≤ 0 at any point: DEATH (absorbing boundary).
+Death is **deferred**: HP may reach 0 during hit resolution, but the player continues processing events for the current time step. Both players at the same time must complete their casts before either dies. Death is checked via `CHECK_DEATH` after each time step (see §7.1).
 
 ---
 
@@ -283,13 +282,19 @@ The virtual clock is a priority queue of timed events. No game loop.
 |:---------|:------|
 | 0, 6, 12, 18, 24, 30 | Both players cast their slot (1 through 6) |
 
+Within each cast, hits are spread ~1s apart via XState's delayed `sendTo`. Both players' hits at the same time step resolve before either can die.
+
+**Death checking:** After each second of clock time, both players receive `CHECK_DEATH`. If HP ≤ 0, the player transitions to the `dead` final state. This ensures simultaneous casts resolve fairly — neither player has a first-mover advantage.
+
 ### 7.2 Timed Events
 
 Scheduled on the clock when effects are applied:
+- HIT delivery at `t + hitIndex × 1000ms` (per-hit delay within a cast)
 - STATE_EXPIRE at `t + duration`
 - STATE_TICK at `t + tickInterval`, `t + 2×tickInterval`, ...
 - SP_REGEN every second
 - DELAYED_BURST at `t + delay`
+- CHECK_DEATH every second (from arena)
 
 ---
 
@@ -347,3 +352,4 @@ RNG affects: `probability_multiplier` tier selection, `chance`-based triggers, `
 | 3.0 | 2026-03-16 | %maxHP goes through DR. PERCENT_MAX_HP_HIT carries percentage, target resolves. attack_bonus is S_coeff zone. Tier selection per-source. |
 | 4.0 | 2026-03-17 | **Full rewrite.** Two-level architecture: player state machine + book actor. Removed imperative patterns (pendingHits, arena routing). Intent events sent directly by book actor. Aligned with rewritten design.reactive.md. Damage chain formula with LaTeX. Document history added. |
 | 4.1 | 2026-03-18 | D_flat moved out of base damage — additive after zone multiplication, not inside. Aligned with combat.mechanic.md §5.2 derivation. |
+| 4.2 | 2026-03-18 | SP→shield formula rewritten (consumable pool model). Death deferred via CHECK_DEATH per time step. Hits spread ~1s apart via delayed sendTo. DELIVER_HIT event added. |

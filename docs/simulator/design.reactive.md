@@ -222,11 +222,11 @@ The cascade emerges from the subscriptions. No component orchestrates it.
 
 ## 6. DEATH: The Absorbing Boundary
 
-DEATH is not a flag to check. It is the **absorbing boundary** of the event process — the final state of the player's state machine.
+DEATH is the **absorbing boundary** of the event process — the `final` state of the player's state machine.
 
-When HP reaches zero, the player state machine enters its final state. No further events are produced or consumed. The event stream terminates. In XState v5, this is the `final` state. In the stochastic combat model, this is the absorbing barrier of the diffusion process.
+Death is **deferred** to ensure simultaneous fairness: both players at the same time step must complete their casts before either can die. HP may reach zero during hit resolution, but the player continues processing events until `CHECK_DEATH` is received (sent by the arena after each time step). On `CHECK_DEATH`, if HP ≤ 0, the player transitions to the `dead` final state — no further events are produced or consumed.
 
-Every event cascade that reduces HP is potentially the last. DEATH is not checked — it is reached.
+This prevents first-mover advantage: if both players' hits arrive at the same time, both resolve fully before either dies.
 
 ---
 
@@ -260,14 +260,13 @@ When a HIT intent arrives at the player state machine:
 
 1. **DR** — `baseDR = DEF / (DEF + K)` + buff-based DR
 2. **Mitigate** — `mitigated = damage × (1 - totalDR)`
-3. **SP → shield** — `shieldGen = min(SP, mitigated) × sp_shield_ratio`
-4. **Shield absorb** — `absorbed = min(mitigated, shield)`
-5. **HP** — `hp -= mitigated - absorbed` → emit HP_CHANGE
-6. **Resonance** — `sp -= spDamage` → emit SP_CHANGE
-7. **Per-hit effects** — resolve each (e.g., PERCENT_MAX_HP_HIT: `damage = percent% × own maxHp` → apply DR → HP)
-8. **Triggers** — fire on_attacked listeners → may produce new intent events
+3. **SP → shield** — `spConsumed = min(SP, mitigated / sp_shield_ratio)`, `shield = spConsumed × sp_shield_ratio`, `SP -= spConsumed`
+4. **HP** — `hp -= mitigated - shield` → emit HP_CHANGE
+5. **Resonance** — `sp -= spDamage` → emit SP_CHANGE
+6. **Per-hit effects** — resolve each (e.g., PERCENT_MAX_HP_HIT: `damage = percent% × own maxHp` → apply DR → SP shield → HP)
+7. **Triggers** — fire on_attacked listeners → may produce new intent events
 
-Each step is a reaction. Each reaction may emit state-change events. Each state-change event may trigger further reactions. The chain continues until no more reactions fire. If HP ≤ 0 at any point → DEATH (absorbing boundary).
+Each step is a reaction. Each reaction may emit state-change events. Each state-change event may trigger further reactions. The chain continues until no more reactions fire. Death is deferred — see §6.
 
 ---
 
@@ -281,7 +280,7 @@ These patterns killed the prior attempts. Each represents an imperative instinct
 | "The player computes the damage chain" | The book actor computes the damage chain. The player only resolves intents (DR, shield, HP). |
 | "Store pendingHits for the arena to deliver" | Book actors send intents directly to the opponent's player state machine. No storing, no intermediary. |
 | "The player resolves an intent: step 1, step 2, step 3" | Each step is a reaction. HIT → DR reacts → SP reacts → shield reacts → HP reacts → triggers react. |
-| "After reducing HP, check if the player is dead" | DEATH is a reaction to HP ≤ 0. It is the absorbing boundary, not a condition to poll. |
+| "After reducing HP, check if the player is dead" | DEATH is deferred to CHECK_DEATH (sent per time step). Both players at the same time must finish before either dies. |
 | "Named state active = true/false" | Named state emits lifecycle events. Listeners subscribe. Presence is expressed through events, not flags. |
 | "The arena manages the fight" | The arena is a clock. It schedules CAST_SLOT. Players and books handle everything else. |
 | "The simulator computes the winner" | The simulator produces an event stream. A subscriber observes DEATH and derives the winner. |
@@ -350,3 +349,4 @@ Configuration enters from the top. The clock schedules cast events. Players dele
 | 3.0 | 2026-03-16 | Rewrote §2 (two levels), §5 (player + book), anti-patterns |
 | 4.0 | 2026-03-17 | **Full rewrite from scratch.** Clean 10-section structure. Two levels: player state machine + book actor. No patches — written from corrected understanding. |
 | 4.1 | 2026-03-18 | D_flat formula corrected: additive after zones, not inside base. |
+| 4.2 | 2026-03-18 | §6 DEATH rewritten: deferred via CHECK_DEATH per time step for simultaneous fairness. §9 hit resolution updated with consumable SP model. Anti-pattern updated. |

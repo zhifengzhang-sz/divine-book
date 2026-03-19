@@ -207,15 +207,19 @@ const playerMachine = setup({
             ({ event }) => ({ type: 'CAST', slot: event.slot })
           ),
         },
+        DELIVER_HIT: {
+          // Forward scheduled HIT to opponent via sendTo
+          actions: sendTo(({ context }) => context.opponentRef, ({ event }) => event.hit),
+        },
         HIT:                { actions: 'resolveHit' },
         PERCENT_MAX_HP_HIT: { actions: 'resolvePercentMaxHpHit' },
         APPLY_STATE:        { actions: 'resolveApplyState' },
         APPLY_DOT:          { actions: 'resolveApplyDot' },
         HEAL:               { actions: 'resolveHeal' },
         HP_COST:            { actions: 'resolveHpCost' },
+        CHECK_DEATH:        { target: 'dead', guard: 'isDead' },
         // ... other intent types
       },
-      always: { target: 'dead', guard: 'isDead' },
     },
     dead: {
       type: 'final',
@@ -387,3 +391,4 @@ Phase 4: Monte Carlo + analytics
 |---------|------|---------|
 | 1.0 | 2026-03-16 | Initial: imperative model (book as function, pendingHits, arena routing) |
 | 2.0 | 2026-03-17 | **Full rewrite.** XState v5 actor system: Arena spawns Players, Players spawn Books. Books send intents via system.get(). No pendingHits, no arena delivery. |
+| 2.1 | 2026-03-18 | Replaced `always` death transition with CHECK_DEATH event. Added DELIVER_HIT for clock-scheduled per-hit delivery. |
