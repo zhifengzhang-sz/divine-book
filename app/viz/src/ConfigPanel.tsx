@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
 	combatConfig,
 	manifest,
-	type PlayerBookConfig,
 	type SimConfig,
 } from "./runSim.ts";
 
@@ -38,33 +37,117 @@ const defaults = {
 	tGap: combatConfig.t_gap,
 };
 
-// ── Sub-components ──────────────────────────────────────────────────
-
-interface ConfigPanelProps {
-	onRun: (config: SimConfig) => void;
-}
-
 const schools = Object.keys(books);
-const affixCategories = ["通用", ...Object.keys(affixes.school), "专属"] as const;
+const affixCategories = [
+	"通用",
+	...Object.keys(affixes.school),
+	"专属",
+] as const;
 
-interface PlayerPanelState {
+// ── Book Picker Dialog ──────────────────────────────────────────────
+
+interface BookSelection {
 	school: string;
 	platform: string;
-	op1: string;
-	op2: string;
-	op1Category: string;
-	op2Category: string;
-	hp: number;
-	atk: number;
-	sp: number;
-	def: number;
-	spRegen: number;
 	enlightenment: number;
 	fusion: number;
 }
 
-/** Get affix list for a given category */
-function getAffixesForCategory(category: string): { value: string; label: string }[] {
+function BookPickerDialog({
+	current,
+	onConfirm,
+	onCancel,
+}: {
+	current: BookSelection;
+	onConfirm: (sel: BookSelection) => void;
+	onCancel: () => void;
+}) {
+	const [sel, setSel] = useState<BookSelection>({ ...current });
+	const schoolBooks = books[sel.school] ?? [];
+
+	return (
+		<div style={overlayStyle} onClick={onCancel}>
+			<div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
+				<div style={dialogTitleStyle}>Select Skill Book</div>
+
+				<div style={{ marginBottom: 10 }}>
+					<label style={labelStyle}>修为 (school)</label>
+					<select
+						value={sel.school}
+						onChange={(e) => {
+							const s = e.target.value;
+							const sb = books[s] ?? [];
+							setSel({ ...sel, school: s, platform: sb[0] ?? "" });
+						}}
+						style={selectStyle}
+					>
+						{schools.map((s) => (
+							<option key={s} value={s}>
+								{s}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<div style={{ marginBottom: 10 }}>
+					<label style={labelStyle}>功法書 (book)</label>
+					<select
+						value={sel.platform}
+						onChange={(e) =>
+							setSel({ ...sel, platform: e.target.value })
+						}
+						style={selectStyle}
+					>
+						{schoolBooks.map((b) => (
+							<option key={b} value={b}>
+								{b}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+					<StatInput
+						label="悟境"
+						value={sel.enlightenment}
+						onChange={(v) => setSel({ ...sel, enlightenment: v })}
+						width={50}
+					/>
+					<StatInput
+						label="融合"
+						value={sel.fusion}
+						onChange={(v) => setSel({ ...sel, fusion: v })}
+						width={50}
+					/>
+				</div>
+
+				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+					<button type="button" onClick={onCancel} style={cancelBtnStyle}>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={() => onConfirm(sel)}
+						style={confirmBtnStyle}
+					>
+						OK
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ── Affix Picker Dialog ─────────────────────────────────────────────
+
+interface AffixSelection {
+	category: string;
+	name: string;
+}
+
+function getAffixesForCategory(
+	category: string,
+): { value: string; label: string }[] {
 	if (category === "通用") {
 		return affixes.universal.map((a) => ({ value: a, label: a }));
 	}
@@ -74,12 +157,118 @@ function getAffixesForCategory(category: string): { value: string; label: string
 			label: `${affix} (${book})`,
 		}));
 	}
-	// School affix
 	const schoolAffixes = affixes.school[category];
 	if (schoolAffixes) {
 		return schoolAffixes.map((a) => ({ value: a, label: a }));
 	}
 	return [];
+}
+
+function AffixPickerDialog({
+	current,
+	onConfirm,
+	onCancel,
+}: {
+	current: AffixSelection;
+	onConfirm: (sel: AffixSelection) => void;
+	onCancel: () => void;
+}) {
+	const [sel, setSel] = useState<AffixSelection>({ ...current });
+	const affixList = getAffixesForCategory(sel.category);
+
+	return (
+		<div style={overlayStyle} onClick={onCancel}>
+			<div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
+				<div style={dialogTitleStyle}>Select Affix</div>
+
+				<div style={{ marginBottom: 10 }}>
+					<label style={labelStyle}>类别 (category)</label>
+					<select
+						value={sel.category}
+						onChange={(e) =>
+							setSel({ category: e.target.value, name: "" })
+						}
+						style={selectStyle}
+					>
+						{affixCategories.map((c) => (
+							<option key={c} value={c}>
+								{c}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<div style={{ marginBottom: 12 }}>
+					<label style={labelStyle}>词缀 (affix)</label>
+					<select
+						value={sel.name}
+						onChange={(e) =>
+							setSel({ ...sel, name: e.target.value })
+						}
+						style={selectStyle}
+					>
+						<option value="">(none)</option>
+						{affixList.map((a) => (
+							<option key={a.value} value={a.value}>
+								{a.label}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+					<button type="button" onClick={onCancel} style={cancelBtnStyle}>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={() => onConfirm(sel)}
+						style={confirmBtnStyle}
+					>
+						OK
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ── Player Panel ────────────────────────────────────────────────────
+
+interface PlayerPanelState {
+	school: string;
+	platform: string;
+	enlightenment: number;
+	fusion: number;
+	op1: string;
+	op1Category: string;
+	op2: string;
+	op2Category: string;
+	hp: number;
+	atk: number;
+	sp: number;
+	def: number;
+	spRegen: number;
+}
+
+/** Compact pill showing a selection with a change button */
+function Pill({
+	label,
+	value,
+	onClick,
+}: {
+	label: string;
+	value: string;
+	onClick: () => void;
+}) {
+	return (
+		<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+			<span style={labelStyle}>{label}:</span>
+			<button type="button" onClick={onClick} style={pillStyle}>
+				{value || "(none)"}
+			</button>
+		</div>
+	);
 }
 
 function PlayerConfigPanel({
@@ -91,191 +280,132 @@ function PlayerConfigPanel({
 	state: PlayerPanelState;
 	onChange: (s: PlayerPanelState) => void;
 }) {
+	const [bookDialog, setBookDialog] = useState(false);
+	const [affixDialog, setAffixDialog] = useState<1 | 2 | null>(null);
 	const set = (key: keyof PlayerPanelState, value: string | number) =>
 		onChange({ ...state, [key]: value });
 
-	const schoolBooks = books[state.school] ?? [];
-	const op1Affixes = getAffixesForCategory(state.op1Category);
-	const op2Affixes = getAffixesForCategory(state.op2Category);
+	const bookLabel = `${state.platform} (悟${state.enlightenment}/融${state.fusion})`;
 
 	return (
-		<div
-			style={{
-				flex: 1,
-				padding: 12,
-				background: "#282c34",
-				borderRadius: 8,
-				border: "1px solid #4b5263",
-			}}
-		>
-			<div
-				style={{ color: "#e5c07b", fontWeight: "bold", marginBottom: 8 }}
-			>
+		<div style={panelStyle}>
+			<div style={{ color: "#e5c07b", fontWeight: "bold", marginBottom: 8 }}>
 				{label}
 			</div>
 
-			{/* School → Book chained selectors */}
-			<div style={{ marginBottom: 6 }}>
-				<label style={labelStyle}>修为 (school)</label>
-				<select
-					value={state.school}
-					onChange={(e) => {
-						const newSchool = e.target.value;
-						const newBooks = books[newSchool] ?? [];
-						onChange({ ...state, school: newSchool, platform: newBooks[0] ?? "" });
-					}}
-					style={selectStyle}
-				>
-					{schools.map((s) => (
-						<option key={s} value={s}>{s}</option>
-					))}
-				</select>
-			</div>
-			<div style={{ marginBottom: 6 }}>
-				<label style={labelStyle}>功法書 (skill book)</label>
-				<select
-					value={state.platform}
-					onChange={(e) => set("platform", e.target.value)}
-					style={selectStyle}
-				>
-					{schoolBooks.map((b) => (
-						<option key={b} value={b}>{b}</option>
-					))}
-				</select>
-			</div>
+			{/* Book + Affixes as compact pills */}
+			<Pill label="Book" value={bookLabel} onClick={() => setBookDialog(true)} />
+			<Pill
+				label="词缀1"
+				value={state.op1}
+				onClick={() => setAffixDialog(1)}
+			/>
+			<Pill
+				label="词缀2"
+				value={state.op2}
+				onClick={() => setAffixDialog(2)}
+			/>
 
-			{/* Affix category → Affix chained selectors */}
-			<div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-				<div style={{ flex: "0 0 80px" }}>
-					<label style={labelStyle}>词缀1 类别</label>
-					<select
-						value={state.op1Category}
-						onChange={(e) => onChange({ ...state, op1Category: e.target.value, op1: "" })}
-						style={selectStyle}
-					>
-						{affixCategories.map((c) => (
-							<option key={c} value={c}>{c}</option>
-						))}
-					</select>
-				</div>
-				<div style={{ flex: 1 }}>
-					<label style={labelStyle}>词缀1</label>
-					<select
-						value={state.op1}
-						onChange={(e) => set("op1", e.target.value)}
-						style={selectStyle}
-					>
-						<option value="">(none)</option>
-						{op1Affixes.map((a) => (
-							<option key={a.value} value={a.value}>{a.label}</option>
-						))}
-					</select>
-				</div>
-			</div>
-			<div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-				<div style={{ flex: "0 0 80px" }}>
-					<label style={labelStyle}>词缀2 类别</label>
-					<select
-						value={state.op2Category}
-						onChange={(e) => onChange({ ...state, op2Category: e.target.value, op2: "" })}
-						style={selectStyle}
-					>
-						{affixCategories.map((c) => (
-							<option key={c} value={c}>{c}</option>
-						))}
-					</select>
-				</div>
-				<div style={{ flex: 1 }}>
-					<label style={labelStyle}>词缀2</label>
-					<select
-						value={state.op2}
-						onChange={(e) => set("op2", e.target.value)}
-						style={selectStyle}
-					>
-						<option value="">(none)</option>
-						{op2Affixes.map((a) => (
-							<option key={a.value} value={a.value}>{a.label}</option>
-						))}
-					</select>
-				</div>
-			</div>
-
-			{/* Per-player stats */}
+			{/* Stats grid */}
 			<div
 				style={{
 					display: "grid",
 					gridTemplateColumns: "1fr 1fr",
 					gap: "4px 12px",
+					marginTop: 8,
 				}}
 			>
-				<StatInput
-					label="HP"
-					value={state.hp}
-					onChange={(v) => set("hp", v)}
-				/>
-				<StatInput
-					label="ATK"
-					value={state.atk}
-					onChange={(v) => set("atk", v)}
-				/>
-				<StatInput
-					label="SP"
-					value={state.sp}
-					onChange={(v) => set("sp", v)}
-				/>
-				<StatInput
-					label="DEF"
-					value={state.def}
-					onChange={(v) => set("def", v)}
-				/>
-				<StatInput
-					label="悟境"
-					value={state.enlightenment}
-					onChange={(v) => set("enlightenment", v)}
-					width={40}
-				/>
-				<StatInput
-					label="融合"
-					value={state.fusion}
-					onChange={(v) => set("fusion", v)}
-					width={50}
-				/>
+				<StatInput label="HP" value={state.hp} onChange={(v) => set("hp", v)} />
+				<StatInput label="ATK" value={state.atk} onChange={(v) => set("atk", v)} />
+				<StatInput label="SP" value={state.sp} onChange={(v) => set("sp", v)} />
+				<StatInput label="DEF" value={state.def} onChange={(v) => set("def", v)} />
 			</div>
+
+			{/* Dialogs */}
+			{bookDialog && (
+				<BookPickerDialog
+					current={{
+						school: state.school,
+						platform: state.platform,
+						enlightenment: state.enlightenment,
+						fusion: state.fusion,
+					}}
+					onConfirm={(sel) => {
+						onChange({
+							...state,
+							school: sel.school,
+							platform: sel.platform,
+							enlightenment: sel.enlightenment,
+							fusion: sel.fusion,
+						});
+						setBookDialog(false);
+					}}
+					onCancel={() => setBookDialog(false)}
+				/>
+			)}
+			{affixDialog !== null && (
+				<AffixPickerDialog
+					current={{
+						category:
+							affixDialog === 1 ? state.op1Category : state.op2Category,
+						name: affixDialog === 1 ? state.op1 : state.op2,
+					}}
+					onConfirm={(sel) => {
+						if (affixDialog === 1) {
+							onChange({
+								...state,
+								op1Category: sel.category,
+								op1: sel.name,
+							});
+						} else {
+							onChange({
+								...state,
+								op2Category: sel.category,
+								op2: sel.name,
+							});
+						}
+						setAffixDialog(null);
+					}}
+					onCancel={() => setAffixDialog(null)}
+				/>
+			)}
 		</div>
 	);
 }
 
 // ── Main ConfigPanel ────────────────────────────────────────────────
 
+interface ConfigPanelProps {
+	onRun: (config: SimConfig) => void;
+}
+
 export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	const [playerA, setPlayerA] = useState<PlayerPanelState>({
 		school: schools[0],
 		platform: firstBook,
-		op1: "",
-		op2: "",
-		op1Category: "通用",
-		op2Category: "通用",
-		...defaultStats,
 		enlightenment: defaults.enlightenment,
 		fusion: defaults.fusion,
+		op1: "",
+		op1Category: "通用",
+		op2: "",
+		op2Category: "通用",
+		...defaultStats,
 	});
 	const [playerB, setPlayerB] = useState<PlayerPanelState>({
 		school: schools[0],
 		platform: secondBook,
-		op1: "",
-		op2: "",
-		op1Category: "通用",
-		op2Category: "通用",
-		...defaultStats,
 		enlightenment: defaults.enlightenment,
 		fusion: defaults.fusion,
+		op1: "",
+		op1Category: "通用",
+		op2: "",
+		op2Category: "通用",
+		...defaultStats,
 	});
 	const [seed, setSeed] = useState(42);
 	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [drConstant, setDrConstant] = useState(defaults.dr_constant);
-	const [spShieldRatio, setSpShieldRatio] = useState(
-		defaults.sp_shield_ratio,
-	);
+	const [spShieldRatio, setSpShieldRatio] = useState(defaults.sp_shield_ratio);
 
 	const handleRun = () => {
 		onRun({
@@ -322,7 +452,6 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 
 	return (
 		<div style={{ marginBottom: 16 }}>
-			{/* Player panels side by side */}
 			<div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
 				<PlayerConfigPanel
 					label="Player A"
@@ -336,7 +465,6 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 				/>
 			</div>
 
-			{/* Shared controls */}
 			<div
 				style={{
 					display: "flex",
@@ -385,7 +513,7 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	);
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// ── Shared Components ───────────────────────────────────────────────
 
 function StatInput({
 	label,
@@ -440,6 +568,50 @@ const inputStyle: React.CSSProperties = {
 	fontSize: 12,
 	fontFamily: "inherit",
 };
+const panelStyle: React.CSSProperties = {
+	flex: 1,
+	padding: 12,
+	background: "#282c34",
+	borderRadius: 8,
+	border: "1px solid #4b5263",
+};
+const pillStyle: React.CSSProperties = {
+	background: "#1e2127",
+	color: "#abb2bf",
+	border: "1px solid #4b5263",
+	borderRadius: 4,
+	padding: "3px 8px",
+	fontSize: 12,
+	fontFamily: "inherit",
+	cursor: "pointer",
+	textAlign: "left",
+};
+const overlayStyle: React.CSSProperties = {
+	position: "fixed",
+	top: 0,
+	left: 0,
+	right: 0,
+	bottom: 0,
+	background: "rgba(0,0,0,0.6)",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	zIndex: 100,
+};
+const dialogStyle: React.CSSProperties = {
+	background: "#21252b",
+	border: "1px solid #4b5263",
+	borderRadius: 8,
+	padding: 20,
+	minWidth: 320,
+	maxWidth: 400,
+};
+const dialogTitleStyle: React.CSSProperties = {
+	color: "#e5c07b",
+	fontWeight: "bold",
+	fontSize: 14,
+	marginBottom: 12,
+};
 const runBtnStyle: React.CSSProperties = {
 	background: "#61afef",
 	color: "#282c34",
@@ -448,6 +620,27 @@ const runBtnStyle: React.CSSProperties = {
 	padding: "6px 16px",
 	cursor: "pointer",
 	fontSize: 13,
+	fontWeight: "bold",
+	fontFamily: "inherit",
+};
+const cancelBtnStyle: React.CSSProperties = {
+	background: "none",
+	color: "#5c6370",
+	border: "1px solid #4b5263",
+	borderRadius: 4,
+	padding: "4px 12px",
+	cursor: "pointer",
+	fontSize: 12,
+	fontFamily: "inherit",
+};
+const confirmBtnStyle: React.CSSProperties = {
+	background: "#61afef",
+	color: "#282c34",
+	border: "none",
+	borderRadius: 4,
+	padding: "4px 12px",
+	cursor: "pointer",
+	fontSize: 12,
 	fontWeight: "bold",
 	fontFamily: "inherit",
 };
