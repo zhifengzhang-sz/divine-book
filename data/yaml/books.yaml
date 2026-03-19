@@ -469,18 +469,14 @@ books:
       - type: base_attack
         hits: 1
         total: 1500
-        data_state:
-          - enlightenment=1
-          - fusion=51
+        data_state: enlightenment=1
       - type: self_buff
         attack_bonus: 70
         defense_bonus: 70
         hp_bonus: 70
         duration: 12
         name: 仙佑
-        data_state:
-          - enlightenment=1
-          - fusion=51
+        data_state: enlightenment=1
       - type: base_attack
         hits: 1
         total: 20310
