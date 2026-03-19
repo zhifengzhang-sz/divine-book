@@ -38,8 +38,8 @@ interface ChartConfig {
 
 function PlayerPanel({ label, book, snapshot }: { label: string; book: string; snapshot: PlayerSnapshot }) {
 	return (
-		<div style={{
-			flex: 1, padding: 16,
+		<div className="rpg-panel-ornate" style={{
+			flex: 1, padding: 20,
 			backgroundImage: `url('${ASSETS.panelBg}')`,
 			backgroundSize: "500px",
 			backgroundColor: T.bgPanel,
@@ -47,6 +47,8 @@ function PlayerPanel({ label, book, snapshot }: { label: string; book: string; s
 			boxShadow: `0 0 0 3px #2c3e50, 0 0 0 5px ${snapshot.alive ? T.goldDark : T.red}, 0 0 20px rgba(0,0,0,0.8), inset 0 0 40px rgba(0,0,0,0.7)`,
 			opacity: snapshot.alive ? 1 : 0.6,
 		}}>
+			<div className="rpg-corner-tr" />
+			<div className="rpg-corner-bl" />
 			<h2 style={{
 				margin: "0 0 8px", fontSize: 15,
 				fontFamily: T.heading,
@@ -77,14 +79,11 @@ function PlayerPanel({ label, book, snapshot }: { label: string; book: string; s
 			{snapshot.states.length > 0 && (
 				<div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
 					{snapshot.states.map((s, i) => (
-						<span key={`${s.name}-${i}`} style={{
-							display: "inline-block", padding: "2px 10px", borderRadius: 12, fontSize: 11,
-							background: `${KIND_COLORS[s.kind]}22`,
-							color: KIND_COLORS[s.kind],
-							border: `1px solid ${KIND_COLORS[s.kind]}55`,
-							boxShadow: T.glow(KIND_COLORS[s.kind], 6),
-							textShadow: "1px 1px 2px black",
-						}}>
+						<span
+							key={`${s.name}-${i}`}
+							className={`rpg-badge rpg-badge-${s.kind}`}
+							data-rpg-tooltip={`${s.kind}: ${s.name} (from ${s.source})`}
+						>
 							{s.kind === "buff" ? "+" : s.kind === "debuff" ? "−" : "◆"} {s.name}
 						</span>
 					))}
@@ -517,7 +516,7 @@ export function App() {
 
 	return (
 		<div style={{ fontFamily: T.body, backgroundImage: `url('${ASSETS.fantasyBg}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>
-			<h1 style={{ fontFamily: T.heading, color: T.goldLight, margin: "0 0 16px", fontSize: 22, textShadow: `2px 2px 4px #000, ${T.glow(T.goldDark, 12)}`, borderBottom: `2px solid ${T.goldDark}`, display: "inline-block", paddingBottom: 6 }}>Divine Book Combat Simulator</h1>
+			<h1 className="rpg-heading" style={{ margin: "0 0 16px", fontSize: 22 }}>Divine Book Combat Simulator</h1>
 			<Divider />
 			<ConfigPanel onRun={handleRun} />
 			{simError && <div style={{ color: T.red, fontSize: 12, padding: 12, background: "rgba(0,0,0,0.7)", border: `2px solid ${T.red}88`, borderRadius: 8, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: T.glow(T.red, 12), textShadow: "1px 1px 2px black" }}>{simError}</div>}

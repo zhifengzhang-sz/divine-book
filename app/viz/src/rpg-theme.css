@@ -1,0 +1,218 @@
+/* ── RPG Theme: scrollbars, ornate corners, badges, scroll areas ── */
+
+/* ── Custom Scrollbars ──────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #111;
+    border-radius: 4px;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #5c4033, #3a2818);
+    border-radius: 4px;
+    border: 1px solid #b8860b44;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #7a5a43, #5c4033);
+    border-color: #b8860b88;
+}
+
+::-webkit-scrollbar-corner {
+    background: #111;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #5c4033 #111;
+}
+
+/* ── Ornate Panel Corners ───────────────────────────────────────── */
+
+.rpg-panel-ornate {
+    position: relative;
+}
+
+.rpg-panel-ornate::before,
+.rpg-panel-ornate::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-image: url('/assets/ornate_border.png.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 3px rgba(184, 134, 11, 0.4));
+}
+
+.rpg-panel-ornate::before {
+    top: -4px;
+    left: -4px;
+}
+
+.rpg-panel-ornate::after {
+    bottom: -4px;
+    right: -4px;
+    transform: rotate(180deg);
+}
+
+/* Additional corners via wrapper children */
+.rpg-corner-tr,
+.rpg-corner-bl {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-image: url('/assets/ornate_border.png.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    opacity: 0.7;
+    filter: drop-shadow(0 0 3px rgba(184, 134, 11, 0.4));
+}
+
+.rpg-corner-tr {
+    top: -4px;
+    right: -4px;
+    transform: rotate(90deg);
+}
+
+.rpg-corner-bl {
+    bottom: -4px;
+    left: -4px;
+    transform: rotate(270deg);
+}
+
+/* ── State Badges ───────────────────────────────────────────────── */
+
+.rpg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    text-shadow: 1px 1px 2px black;
+    transition: all 0.2s;
+    cursor: default;
+}
+
+.rpg-badge-buff {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    box-shadow: 0 0 6px rgba(46, 204, 113, 0.2), inset 0 0 8px rgba(46, 204, 113, 0.05);
+}
+
+.rpg-badge-debuff {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.4);
+    box-shadow: 0 0 6px rgba(231, 76, 60, 0.2), inset 0 0 8px rgba(231, 76, 60, 0.05);
+}
+
+.rpg-badge-named {
+    background: rgba(52, 152, 219, 0.15);
+    color: #3498db;
+    border: 1px solid rgba(52, 152, 219, 0.4);
+    box-shadow: 0 0 6px rgba(52, 152, 219, 0.2), inset 0 0 8px rgba(52, 152, 219, 0.05);
+}
+
+.rpg-badge:hover {
+    filter: brightness(1.3);
+    box-shadow: 0 0 10px currentColor;
+}
+
+/* ── Scroll Area with Fade Edges ────────────────────────────────── */
+
+.rpg-scroll-area {
+    position: relative;
+    overflow: hidden;
+}
+
+.rpg-scroll-area > .rpg-scroll-content {
+    overflow-y: auto;
+    height: 100%;
+    /* Fade at top and bottom */
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 3%,
+        black 97%,
+        transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0%,
+        black 3%,
+        black 97%,
+        transparent 100%
+    );
+}
+
+/* ── Bar Pulse Animation ────────────────────────────────────────── */
+
+@keyframes bar-pulse {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+.rpg-bar-active {
+    animation: bar-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Gold Heading Underline ─────────────────────────────────────── */
+
+.rpg-heading {
+    font-family: 'Cinzel', serif;
+    color: #ffd700;
+    text-shadow: 2px 2px 4px #000;
+    border-bottom: 2px solid #b8860b;
+    padding-bottom: 6px;
+    display: inline-block;
+    position: relative;
+}
+
+.rpg-heading::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #ffd70066, transparent);
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────── */
+
+[data-rpg-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-rpg-tooltip]:hover::after {
+    content: attr(data-rpg-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    border: 1px solid #b8860b88;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #e0e0e0;
+    white-space: nowrap;
+    z-index: 200;
+    box-shadow: 0 0 10px rgba(0,0,0,0.8), 0 0 4px rgba(184, 134, 11, 0.2);
+    text-shadow: 1px 1px 2px black;
+    pointer-events: none;
+}
