@@ -84,6 +84,10 @@ books:
     skill:
       - type: base_attack
         hits: 5
+        total: 1500
+        data_state: enlightenment=0
+      - type: base_attack
+        hits: 5
         total: 22305
         data_state:
           - enlightenment=10
@@ -135,6 +139,10 @@ books:
         duration: 4
         max_stacks: 1
     skill:
+      - type: base_attack
+        hits: 10
+        total: 1500
+        data_state: enlightenment=0
       - type: base_attack
         hits: 10
         total: 22305
