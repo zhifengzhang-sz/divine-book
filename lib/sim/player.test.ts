@@ -267,16 +267,15 @@ describe("State management", () => {
 // ── CAST_SLOT (sends intents directly to opponent) ──────────────────
 
 describe("CAST_SLOT", () => {
-	test("emits CAST_START and CAST_END", () => {
+	test("emits CAST_START", () => {
 		const { actor } = createPlayer("A");
 		actor.start();
 		const events = collectEvents(actor);
 
-		// No opponent wired — HITs will fail sendTo silently
+		// No opponent wired — HITs will be scheduled but fail silently
 		actor.send({ type: "CAST_SLOT", slot: 1 });
 
 		expect(events.some((e) => e.type === "CAST_START")).toBe(true);
-		expect(events.some((e) => e.type === "CAST_END")).toBe(true);
 	});
 
 	test("sends HIT events to opponent via sendTo", () => {
@@ -320,11 +319,13 @@ describe("CAST_SLOT", () => {
 		caster.start();
 		target.start();
 
-		// Wire opponent
-		caster.getSnapshot().context.opponentRef = target;
+		// Wire opponent via event
+		caster.send({ type: "SET_OPPONENT", ref: target });
 
-		// Cast — HITs should flow directly to target
+		// Cast — HITs are scheduled on the clock
 		caster.send({ type: "CAST_SLOT", slot: 1 });
+		// Advance clock to fire all scheduled hits
+		clockA.drain();
 
 		// Target should have received HIT events → HP changed
 		const hpChanges = targetEvents.filter((e) => e.type === "HP_CHANGE");

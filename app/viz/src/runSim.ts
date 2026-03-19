@@ -145,9 +145,14 @@ export function runSimulation(config: SimConfig): SimulationData {
 	playerA.send({ type: "SET_OPPONENT", ref: playerB });
 	playerB.send({ type: "SET_OPPONENT", ref: playerA });
 
-	// Arena is just a clock — both players cast simultaneously, then check death
+	// Both players cast slot 1 (schedules hits on the clock)
 	playerA.send({ type: "CAST_SLOT", slot: 1 });
 	playerB.send({ type: "CAST_SLOT", slot: 1 });
+
+	// Advance clock through all scheduled events (hits spread over time)
+	clock.drain();
+
+	// Check death after all hits resolve
 	playerA.send({ type: "CHECK_DEATH" });
 	playerB.send({ type: "CHECK_DEATH" });
 

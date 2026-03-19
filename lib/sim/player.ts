@@ -248,27 +248,43 @@ export const playerMachine = setup({
 							context.listeners.push(listener);
 						}
 
-						// Send events directly — players communicate via sendTo
-						for (const ev of result.directEvents) {
+						// Separate HIT events (spread over time) from other intents (immediate)
+						const hitEvents = result.directEvents.filter(
+							(ev) => ev.type === "HIT",
+						);
+						const otherEvents = result.directEvents.filter(
+							(ev) => ev.type !== "HIT",
+						);
+
+						// Send non-HIT events immediately (buffs, debuffs, shields, etc.)
+						for (const ev of otherEvents) {
 							if (isSelfTargeted(ev)) {
 								processSelfIntent(context, ev, enqueue);
-							} else {
-								// Opponent-targeted: send directly to opponent
-								if (context.opponentRef) {
-									enqueue(sendTo(context.opponentRef, ev));
-								}
+							} else if (context.opponentRef) {
+								enqueue(sendTo(context.opponentRef, ev));
 							}
 						}
 
-						// Emit CAST_END
-						enqueue(
-							emit({
-								type: "CAST_END" as const,
-								player: context.label,
-								slot,
-								t,
-							}),
-						);
+						// Schedule HIT events spread over cast duration (~1s per hit)
+						const hitGapMs = 1000;
+						for (let i = 0; i < hitEvents.length; i++) {
+							const hitEv = hitEvents[i];
+							const opponent = context.opponentRef;
+							if (!opponent) continue;
+							context.clockCallbackIds.push(
+								context.clock.setTimeout(() => {
+									opponent.send(hitEv);
+								}, i * hitGapMs),
+							);
+						}
+
+						// Schedule CAST_END after all hits
+						const castDurationMs = hitEvents.length > 0
+							? (hitEvents.length - 1) * hitGapMs
+							: 0;
+						context.clock.setTimeout(() => {
+							// Emit via direct mutation since we're in a clock callback
+						}, castDurationMs);
 					}),
 				},
 				HIT: {

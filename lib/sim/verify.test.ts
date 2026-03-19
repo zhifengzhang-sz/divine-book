@@ -88,8 +88,9 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 
 	caster.start();
 	target.start();
-	caster.getSnapshot().context.opponentRef = target;
+	caster.send({ type: "SET_OPPONENT", ref: target });
 	caster.send({ type: "CAST_SLOT", slot: 1 });
+	clockA.drain(); // Fire all scheduled hits
 
 	const hpChanges = targetEvents.filter(
 		(e) => e.type === "HP_CHANGE",
