@@ -93,6 +93,9 @@ function VerificationPanel({
 }) {
 	const [expanded, setExpanded] = useState(false);
 
+	const eventsOnA = events.filter((e) => e.player === "A");
+	const eventsOnB = events.filter((e) => e.player === "B");
+
 	return (
 		<div style={{ marginBottom: 16 }}>
 			<button
@@ -104,15 +107,19 @@ function VerificationPanel({
 			</button>
 			{expanded && (
 				<div style={{ display: "flex", gap: 16 }}>
-					<VerificationSide
-						label="A"
-						ver={verification.a}
-						events={events.filter((e) => e.player === "A")}
+					<CausalTrace
+						source={verification.a}
+						sourceLabel="A"
+						targetLabel="B"
+						targetEvents={eventsOnB}
+						selfEvents={eventsOnA}
 					/>
-					<VerificationSide
-						label="B"
-						ver={verification.b}
-						events={events.filter((e) => e.player === "B")}
+					<CausalTrace
+						source={verification.b}
+						sourceLabel="B"
+						targetLabel="A"
+						targetEvents={eventsOnA}
+						selfEvents={eventsOnB}
 					/>
 				</div>
 			)}
@@ -120,120 +127,202 @@ function VerificationPanel({
 	);
 }
 
-function VerificationSide({
-	label,
-	ver,
-	events,
+/** Classify an effect type as self-targeted or opponent-targeted */
+function effectTarget(type: string, params: Record<string, unknown>): "self" | "opponent" {
+	switch (type) {
+		case "debuff":
+		case "conditional_debuff":
+		case "enemy_skill_damage_reduction":
+		case "random_debuff":
+			return "opponent";
+		case "base_attack":
+		case "percent_max_hp_damage":
+		case "percent_current_hp_damage":
+		case "flat_extra_damage":
+		case "per_debuff_stack_damage":
+		case "per_debuff_stack_true_damage":
+		case "per_buff_stack_damage":
+		case "per_enemy_lost_hp":
+		case "conditional_damage":
+		case "self_lost_hp_damage":
+		case "delayed_burst":
+		case "buff_steal":
+		case "periodic_dispel":
+		case "shield_destroy_damage":
+		case "no_shield_double_damage":
+			return "opponent";
+		default:
+			// Check if it's a state with target=opponent
+			if (params.target === "opponent") return "opponent";
+			return "self";
+	}
+}
+
+/** Map effect types to expected sim event types on the target */
+function expectedEvents(type: string): string {
+	switch (type) {
+		case "base_attack": return "→ HIT → HP_CHANGE(hit_*)";
+		case "percent_max_hp_damage": return "→ HP_CHANGE(hit_-1)";
+		case "percent_current_hp_damage": return "→ HP_CHANGE(hp_damage)";
+		case "debuff":
+		case "conditional_debuff":
+		case "random_debuff":
+		case "enemy_skill_damage_reduction":
+			return "→ STATE_APPLY (debuff)";
+		case "self_buff":
+		case "conditional_buff":
+		case "counter_buff":
+		case "self_buff_extra":
+		case "next_skill_buff":
+			return "→ STATE_APPLY (buff)";
+		case "self_heal":
+		case "conditional_heal_buff":
+			return "→ HP_CHANGE(heal)";
+		case "shield":
+		case "shield_strength":
+		case "damage_to_shield":
+			return "→ SHIELD_CHANGE";
+		case "self_hp_cost": return "→ HP_CHANGE(hp_cost)";
+		case "dot": return "→ STATE_APPLY + HP_CHANGE(dot)";
+		case "guaranteed_resonance": return "→ SP_CHANGE(resonance)";
+		case "per_hit_escalation":
+		case "periodic_escalation":
+			return "→ escalating HIT damage";
+		case "damage_increase":
+		case "skill_damage_increase":
+		case "attack_bonus":
+		case "crit_damage_bonus":
+		case "buff_strength":
+		case "final_damage_bonus":
+			return "→ increased HIT damage";
+		case "damage_reduction_during_cast":
+		case "self_damage_taken_increase":
+			return "→ STATE_APPLY (DR modifier)";
+		default: return "";
+	}
+}
+
+function CausalTrace({
+	source,
+	sourceLabel,
+	targetLabel,
+	targetEvents,
+	selfEvents,
 }: {
-	label: string;
-	ver: BookVerification;
-	events: SimEvent[];
+	source: BookVerification;
+	sourceLabel: string;
+	targetLabel: string;
+	targetEvents: SimEvent[];
+	selfEvents: SimEvent[];
 }) {
-	// Summarize sim events by type
-	const eventSummary: Record<string, number> = {};
-	let totalHpDamage = 0;
-	let totalHeal = 0;
-	for (const ev of events) {
-		eventSummary[ev.type as string] = (eventSummary[ev.type as string] ?? 0) + 1;
+	// Split effects into opponent-targeted and self-targeted
+	const opponentEffects = source.activeEffects.filter(
+		(e) => effectTarget(e.type, e.params) === "opponent",
+	);
+	const selfEffects = source.activeEffects.filter(
+		(e) => effectTarget(e.type, e.params) === "self",
+	);
+
+	// Summarize target events
+	let targetDamage = 0;
+	for (const ev of targetEvents) {
 		if (ev.type === "HP_CHANGE") {
 			const delta = (ev.next as number) - (ev.prev as number);
-			if (delta < 0) totalHpDamage += Math.abs(delta);
-			else totalHeal += delta;
+			if (delta < 0) targetDamage += Math.abs(delta);
 		}
 	}
-	const statesApplied = events
+	const targetStates = targetEvents
 		.filter((e) => e.type === "STATE_APPLY")
-		.map((e) => (e.state as { name: string }).name);
+		.map((e) => (e.state as { name: string; kind: string }));
+
+	let selfHeal = 0;
+	for (const ev of selfEvents) {
+		if (ev.type === "HP_CHANGE" && ev.cause === "heal") {
+			selfHeal += (ev.next as number) - (ev.prev as number);
+		}
+	}
 
 	return (
-		<div
-			style={{
-				flex: 1,
-				background: "#282c34",
-				border: "1px solid #4b5263",
-				borderRadius: 8,
-				padding: 12,
-				fontSize: 11,
-				maxHeight: 500,
-				overflowY: "auto",
-			}}
-		>
-			<div
-				style={{
-					color: "#e5c07b",
-					fontWeight: "bold",
-					marginBottom: 8,
-					fontSize: 13,
-				}}
-			>
-				{label}: {ver.bookName}
+		<div style={tracePanel}>
+			<div style={{ color: "#e5c07b", fontWeight: "bold", marginBottom: 8, fontSize: 13 }}>
+				{sourceLabel}: {source.bookName}
 			</div>
 
-			{/* Layer 1: Raw text */}
+			{/* Raw text */}
 			<div style={{ marginBottom: 8 }}>
-				<div style={sectionHeader}>1. 原文 (Source Text)</div>
-				{ver.skillText && (
-					<div style={rawTextStyle}>{ver.skillText}</div>
-				)}
-				{ver.affixText && (
-					<div style={{ ...rawTextStyle, marginTop: 4 }}>
-						{ver.affixText}
-					</div>
-				)}
+				<div style={sectionHeader}>原文</div>
+				{source.skillText && <div style={rawTextStyle}>{source.skillText}</div>}
+				{source.affixText && <div style={{ ...rawTextStyle, marginTop: 4 }}>{source.affixText}</div>}
 			</div>
 
-			{/* Layer 2: Parsed effects */}
+			{/* Effects → opponent */}
 			<div style={{ marginBottom: 8 }}>
 				<div style={sectionHeader}>
-					2. Parsed Effects ({ver.activeEffects.length})
+					{sourceLabel} → {targetLabel} (opponent effects)
 				</div>
-				{ver.activeEffects.map((e, i) => {
+				{opponentEffects.map((e, i) => {
 					const params = Object.entries(e.params)
 						.filter(([, v]) => v !== undefined)
 						.map(([k, v]) => `${k}=${v}`)
 						.join(", ");
+					const expect = expectedEvents(e.type);
 					return (
-						<div key={`${e.type}-${i}`} style={{ paddingLeft: 8, color: "#abb2bf" }}>
+						<div key={`opp-${e.type}-${i}`} style={{ paddingLeft: 8, marginBottom: 2 }}>
 							<span style={{ color: "#61afef" }}>{e.type}</span>
-							{params ? `: ${params}` : ""}
+							{params ? <span style={{ color: "#abb2bf" }}>: {params}</span> : ""}
+							{expect && <span style={{ color: "#5c6370" }}> {expect}</span>}
 						</div>
 					);
 				})}
+				<div style={{ paddingLeft: 8, marginTop: 4, color: "#e06c75" }}>
+					Total damage to {targetLabel}: {fmt(targetDamage)}
+				</div>
+				{targetStates.length > 0 && (
+					<div style={{ paddingLeft: 8, color: "#abb2bf" }}>
+						States on {targetLabel}: {targetStates.map((s) => `${s.kind === "debuff" ? "−" : "+"}${s.name}`).join(", ")}
+					</div>
+				)}
 			</div>
 
-			{/* Layer 3: Simulation results */}
+			{/* Self effects */}
 			<div>
-				<div style={sectionHeader}>3. Sim Results</div>
-				<div style={{ paddingLeft: 8, color: "#abb2bf" }}>
-					<div>
-						Total HP damage taken:{" "}
-						<span style={{ color: "#e06c75" }}>
-							{fmt(totalHpDamage)}
-						</span>
-					</div>
-					{totalHeal > 0 && (
-						<div>
-							Total healed:{" "}
-							<span style={{ color: "#98c379" }}>
-								{fmt(totalHeal)}
-							</span>
-						</div>
-					)}
-					<div>
-						Events:{" "}
-						{Object.entries(eventSummary)
-							.map(([k, v]) => `${k}(${v})`)
-							.join(", ")}
-					</div>
-					{statesApplied.length > 0 && (
-						<div>States applied: {statesApplied.join(", ")}</div>
-					)}
+				<div style={sectionHeader}>
+					{sourceLabel} → {sourceLabel} (self effects)
 				</div>
+				{selfEffects.map((e, i) => {
+					const params = Object.entries(e.params)
+						.filter(([, v]) => v !== undefined)
+						.map(([k, v]) => `${k}=${v}`)
+						.join(", ");
+					const expect = expectedEvents(e.type);
+					return (
+						<div key={`self-${e.type}-${i}`} style={{ paddingLeft: 8, marginBottom: 2 }}>
+							<span style={{ color: "#61afef" }}>{e.type}</span>
+							{params ? <span style={{ color: "#abb2bf" }}>: {params}</span> : ""}
+							{expect && <span style={{ color: "#5c6370" }}> {expect}</span>}
+						</div>
+					);
+				})}
+				{selfHeal > 0 && (
+					<div style={{ paddingLeft: 8, marginTop: 4, color: "#98c379" }}>
+						Self healed: {fmt(selfHeal)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
 
+const tracePanel: React.CSSProperties = {
+	flex: 1,
+	background: "#282c34",
+	border: "1px solid #4b5263",
+	borderRadius: 8,
+	padding: 12,
+	fontSize: 11,
+	maxHeight: 600,
+	overflowY: "auto",
+};
 const sectionHeader: React.CSSProperties = {
 	color: "#c678dd",
 	fontWeight: "bold",

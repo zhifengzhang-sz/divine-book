@@ -179,8 +179,8 @@ export const dialogStyle: React.CSSProperties = {
 	border: "1px solid #4b5263",
 	borderRadius: 8,
 	padding: 20,
-	minWidth: 320,
-	maxWidth: 400,
+	minWidth: 400,
+	maxWidth: 600,
 };
 
 export const dialogTitleStyle: React.CSSProperties = {
