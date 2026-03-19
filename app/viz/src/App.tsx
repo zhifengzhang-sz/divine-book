@@ -17,6 +17,7 @@ import {
 	theme as T,
 } from "./components.tsx";
 import { ConfigPanel } from "./ConfigPanel.tsx";
+import { Icon, getEffectIcon, getStateIcon } from "./rpg-icons.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
 import type {
 	BookVerification,
@@ -84,7 +85,8 @@ function PlayerPanel({ label, book, snapshot }: { label: string; book: string; s
 							className={`rpg-badge rpg-badge-${s.kind}`}
 							data-rpg-tooltip={`${s.kind}: ${s.name} (from ${s.source})`}
 						>
-							{s.kind === "buff" ? "+" : s.kind === "debuff" ? "−" : "◆"} {s.name}
+							{getStateIcon(s.kind) && <Icon name={getStateIcon(s.kind) as string} size={14} />}
+							{s.name}
 						</span>
 					))}
 				</div>
@@ -298,7 +300,8 @@ function CausalTrace({
 					const expect = expectedEvents(e.type);
 					return (
 						<div key={`opp-${e.type}-${i}`} style={{ paddingLeft: 8, marginBottom: 2 }}>
-							<span style={{ color: "#61afef" }}>{e.type}</span>
+							{getEffectIcon(e.type) && <Icon name={getEffectIcon(e.type) as string} size={14} />}
+							<span style={{ color: T.goldLight }}>{e.type}</span>
 							{params ? <span style={{ color: "#abb2bf" }}>: {params}</span> : ""}
 							{expect && <span style={{ color: "#5c6370" }}> {expect}</span>}
 						</div>
@@ -327,7 +330,8 @@ function CausalTrace({
 					const expect = expectedEvents(e.type);
 					return (
 						<div key={`self-${e.type}-${i}`} style={{ paddingLeft: 8, marginBottom: 2 }}>
-							<span style={{ color: "#61afef" }}>{e.type}</span>
+							{getEffectIcon(e.type) && <Icon name={getEffectIcon(e.type) as string} size={14} />}
+							<span style={{ color: T.goldLight }}>{e.type}</span>
 							{params ? <span style={{ color: "#abb2bf" }}>: {params}</span> : ""}
 							{expect && <span style={{ color: "#5c6370" }}> {expect}</span>}
 						</div>
