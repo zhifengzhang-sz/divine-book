@@ -149,12 +149,17 @@ export function runSimulation(config: SimConfig): SimulationData {
 	playerA.send({ type: "CAST_SLOT", slot: 1 });
 	playerB.send({ type: "CAST_SLOT", slot: 1 });
 
-	// Advance clock through all scheduled events (hits spread over time)
-	clock.drain();
-
-	// Check death after all hits resolve
-	playerA.send({ type: "CHECK_DEATH" });
-	playerB.send({ type: "CHECK_DEATH" });
+	// Advance clock second by second, checking death after each time step
+	// so both players' hits at the same time resolve before either dies
+	const maxTime = 36000; // 36s max fight
+	for (let t = 0; t <= maxTime; t += 1000) {
+		clock.advanceTo(t);
+		playerA.send({ type: "CHECK_DEATH" });
+		playerB.send({ type: "CHECK_DEATH" });
+		const aSnap = playerA.getSnapshot();
+		const bSnap = playerB.getSnapshot();
+		if (aSnap.status === "done" || bSnap.status === "done") break;
+	}
 
 	const aFinal = playerA.getSnapshot().context.state;
 	const bFinal = playerB.getSnapshot().context.state;
