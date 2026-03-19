@@ -1,5 +1,19 @@
 import { useState } from "react";
 import {
+	Pill,
+	StatInput,
+	cancelBtnStyle,
+	confirmBtnStyle,
+	dialogStyle,
+	dialogTitleStyle,
+	labelStyle,
+	linkStyle,
+	overlayStyle,
+	panelStyle,
+	runBtnStyle,
+	selectStyle,
+} from "./components.tsx";
+import {
 	combatConfig,
 	manifest,
 	type SimConfig,
@@ -270,26 +284,6 @@ interface PlayerPanelState {
 	sp: number;
 	def: number;
 	spRegen: number;
-}
-
-/** Compact pill showing a selection with a change button */
-function Pill({
-	label,
-	value,
-	onClick,
-}: {
-	label: string;
-	value: string;
-	onClick: () => void;
-}) {
-	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-			<span style={labelStyle}>{label}:</span>
-			<button type="button" onClick={onClick} style={pillStyle}>
-				{value || "(none)"}
-			</button>
-		</div>
-	);
 }
 
 // ── PlayerBox: reusable component with book spec row + stats row ────
@@ -622,143 +616,3 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	);
 }
 
-// ── Shared Components ───────────────────────────────────────────────
-
-function StatInput({
-	label,
-	value,
-	onChange,
-	width = 90,
-}: {
-	label: string;
-	value: number;
-	onChange: (v: number) => void;
-	width?: number;
-}) {
-	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-			<label style={labelStyle}>{label}:</label>
-			<input
-				type="text"
-				value={value}
-				onChange={(e) => {
-					const n = Number(e.target.value);
-					if (!Number.isNaN(n)) onChange(n);
-				}}
-				style={{ ...inputStyle, width }}
-			/>
-		</div>
-	);
-}
-
-// ── Styles ──────────────────────────────────────────────────────────
-
-const labelStyle: React.CSSProperties = {
-	fontSize: 11,
-	color: "#5c6370",
-};
-const selectStyle: React.CSSProperties = {
-	display: "block",
-	width: "100%",
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
-	borderRadius: 4,
-	padding: "4px 6px",
-	fontSize: 13,
-	fontFamily: "inherit",
-};
-const inputStyle: React.CSSProperties = {
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
-	borderRadius: 4,
-	padding: "4px 6px",
-	fontSize: 12,
-	fontFamily: "inherit",
-};
-const panelStyle: React.CSSProperties = {
-	flex: 1,
-	padding: 12,
-	background: "#282c34",
-	borderRadius: 8,
-	border: "1px solid #4b5263",
-};
-const pillStyle: React.CSSProperties = {
-	background: "#1e2127",
-	color: "#abb2bf",
-	border: "1px solid #4b5263",
-	borderRadius: 4,
-	padding: "3px 8px",
-	fontSize: 12,
-	fontFamily: "inherit",
-	cursor: "pointer",
-	textAlign: "left",
-};
-const overlayStyle: React.CSSProperties = {
-	position: "fixed",
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	background: "rgba(0,0,0,0.6)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	zIndex: 100,
-};
-const dialogStyle: React.CSSProperties = {
-	background: "#21252b",
-	border: "1px solid #4b5263",
-	borderRadius: 8,
-	padding: 20,
-	minWidth: 320,
-	maxWidth: 400,
-};
-const dialogTitleStyle: React.CSSProperties = {
-	color: "#e5c07b",
-	fontWeight: "bold",
-	fontSize: 14,
-	marginBottom: 12,
-};
-const runBtnStyle: React.CSSProperties = {
-	background: "#61afef",
-	color: "#282c34",
-	border: "none",
-	borderRadius: 4,
-	padding: "6px 16px",
-	cursor: "pointer",
-	fontSize: 13,
-	fontWeight: "bold",
-	fontFamily: "inherit",
-};
-const cancelBtnStyle: React.CSSProperties = {
-	background: "none",
-	color: "#5c6370",
-	border: "1px solid #4b5263",
-	borderRadius: 4,
-	padding: "4px 12px",
-	cursor: "pointer",
-	fontSize: 12,
-	fontFamily: "inherit",
-};
-const confirmBtnStyle: React.CSSProperties = {
-	background: "#61afef",
-	color: "#282c34",
-	border: "none",
-	borderRadius: 4,
-	padding: "4px 12px",
-	cursor: "pointer",
-	fontSize: 12,
-	fontWeight: "bold",
-	fontFamily: "inherit",
-};
-const linkStyle: React.CSSProperties = {
-	background: "none",
-	border: "none",
-	color: "#5c6370",
-	cursor: "pointer",
-	fontSize: 12,
-	fontFamily: "inherit",
-	padding: 0,
-};

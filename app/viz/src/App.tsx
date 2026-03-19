@@ -6,6 +6,7 @@ import {
 	buildTimeSeriesUpTo,
 } from "./buildTimeSeries.ts";
 import { Chart } from "./Chart.tsx";
+import { Bar, KIND_COLORS, btnStyle, chipStyle, fmt } from "./components.tsx";
 import { ConfigPanel } from "./ConfigPanel.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
 import type { PlayerSnapshot, SimulationData } from "./types.ts";
@@ -20,23 +21,6 @@ interface ChartConfig {
 }
 
 // ── Sub-components ──────────────────────────────────────────────────
-
-function Bar({ value, max, color, label }: { value: number; max: number; color: string; label: string }) {
-	const pct = Math.max(0, Math.min(100, (value / max) * 100));
-	return (
-		<div style={{ marginBottom: 4 }}>
-			<div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#abb2bf" }}>
-				<span>{label}</span>
-				<span>{value.toLocaleString(undefined, { maximumFractionDigits: 0 })} / {max.toLocaleString()}</span>
-			</div>
-			<div style={{ height: 20, background: "#2c313a", borderRadius: 4, overflow: "hidden", border: "1px solid #4b5263" }}>
-				<div style={{ width: `${pct}%`, height: "100%", background: color, transition: "width 0.1s ease" }} />
-			</div>
-		</div>
-	);
-}
-
-const KIND_COLORS = { buff: "#98c379", debuff: "#e06c75", named: "#61afef" } as const;
 
 function PlayerPanel({ label, book, snapshot }: { label: string; book: string; snapshot: PlayerSnapshot }) {
 	return (
@@ -234,15 +218,3 @@ export function App() {
 	);
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
-
-function fmt(n: number): string {
-	if (Math.abs(n) >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-	if (Math.abs(n) >= 1e3) return `${(n / 1e3).toFixed(0)}K`;
-	return n.toString();
-}
-
-// ── Styles ──────────────────────────────────────────────────────────
-
-const btnStyle: React.CSSProperties = { background: "#3e4451", color: "#abb2bf", border: "1px solid #4b5263", borderRadius: 4, padding: "6px 12px", cursor: "pointer", fontSize: 13, fontFamily: "inherit" };
-const chipStyle: React.CSSProperties = { background: "#2c313a", color: "#5c6370", border: "1px solid #4b5263", borderRadius: 12, padding: "2px 8px", cursor: "pointer", fontSize: 11, fontFamily: "inherit" };
