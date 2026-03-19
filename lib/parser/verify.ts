@@ -277,10 +277,10 @@ function verifyExclusiveAffixes(exclusiveMd: string): EntryReport[] {
 		const tierVars = lastTier?.vars ?? {};
 
 		// Parse through the actual exclusive pipeline
-		const stateRegistry: Record<string, unknown> = {};
+		const stateRegistry: Record<string, import("./states.js").StateDef> = {};
 		let effects: EffectRow[] = [];
 		try {
-			const result = parseExclusiveAffix(entry, stateRegistry as any);
+			const result = parseExclusiveAffix(entry, stateRegistry);
 			effects = result.effects;
 		} catch {
 			// parse error handled below

@@ -154,7 +154,11 @@ export function runSimulation(config: SimConfig): SimulationData {
 	const handlerErrors = events.filter((e) => e.type === "HANDLER_ERROR");
 	if (handlerErrors.length > 0) {
 		const msgs = handlerErrors.map((e) => {
-			const err = e as unknown as { player: string; slot: number; message: string };
+			const err = e as unknown as {
+				player: string;
+				slot: number;
+				message: string;
+			};
 			return `${err.player} slot ${err.slot}: ${err.message}`;
 		});
 		throw new Error(
@@ -193,8 +197,22 @@ export function runSimulation(config: SimConfig): SimulationData {
 					: !aFinal.alive && bFinal.alive
 						? "B"
 						: null,
-			aFinal: { hp: aFinal.hp, sp: aFinal.sp, shield: aFinal.shield, atk: aFinal.atk, def: aFinal.def, alive: aFinal.alive },
-			bFinal: { hp: bFinal.hp, sp: bFinal.sp, shield: bFinal.shield, atk: bFinal.atk, def: bFinal.def, alive: bFinal.alive },
+			aFinal: {
+				hp: aFinal.hp,
+				sp: aFinal.sp,
+				shield: aFinal.shield,
+				atk: aFinal.atk,
+				def: aFinal.def,
+				alive: aFinal.alive,
+			},
+			bFinal: {
+				hp: bFinal.hp,
+				sp: bFinal.sp,
+				shield: bFinal.shield,
+				atk: bFinal.atk,
+				def: bFinal.def,
+				alive: bFinal.alive,
+			},
 		},
 	};
 }

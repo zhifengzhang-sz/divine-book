@@ -37,6 +37,8 @@ export interface StateInstance {
 	dispellable: boolean;
 	trigger?: "on_cast" | "on_attacked" | "per_tick";
 	parent?: string;
+	tickInterval?: number; // seconds between ticks (per_tick states)
+	damagePerTick?: number; // damage per tick (DoT states)
 }
 
 export interface StateEffect {

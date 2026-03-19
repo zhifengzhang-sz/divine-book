@@ -8,7 +8,6 @@
 import { readFileSync } from "node:fs";
 import { parse as parseYaml } from "yaml";
 import type { BookData, EffectRow } from "../data/types.js";
-import { hasHandler } from "./handlers/index.js";
 import type { ArenaConfig, PlayerConfig, ProgressionConfig } from "./types.js";
 
 // ── YAML Loading ────────────────────────────────────────────────────
@@ -105,9 +104,9 @@ export function validatePlayerConfig(
 function validateHandlerCoverage(
 	slot: { platform: string; op1?: string; op2?: string },
 	bookData: BookData,
-	books: BooksYaml,
+	_books: BooksYaml,
 	affixes: AffixesYaml,
-	progression: ProgressionConfig,
+	_progression: ProgressionConfig,
 ): void {
 	const allEffects: EffectRow[] = [];
 	if (bookData.skill) allEffects.push(...bookData.skill);

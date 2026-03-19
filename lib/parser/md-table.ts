@@ -129,9 +129,10 @@ function parseTierLine(line: string): TierLine | null {
 	// Try to extract variables: look for x=1500 patterns
 	const varPattern = /([a-zA-Z]\w*)\s*=\s*(-?\d+(?:\.\d+)?)/g;
 	const vars: Record<string, number> = {};
-	let match: RegExpExecArray | null;
-	while ((match = varPattern.exec(line)) !== null) {
+	let match: RegExpExecArray | null = varPattern.exec(line);
+	while (match !== null) {
 		vars[match[1]] = Number(match[2]);
+		match = varPattern.exec(line);
 	}
 
 	if (Object.keys(vars).length === 0) return null;

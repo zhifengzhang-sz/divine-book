@@ -1,10 +1,9 @@
 /**
- * Player state machine — the only XState v5 machine in the simulator.
- *
- * Implements design §5.2 (Player as Event Processor) and
- * design.reactive.md §5 (The Player as Event Bus).
+ * Player state machine — implements design §5.2 (Player as Event Processor)
+ * and design.reactive.md §5 (The Player as Event Bus).
  *
  * The player:
+ *   - Spawns book actors (one per slot) on entry to alive state
  *   - Receives intent events (HIT, HEAL, APPLY_STATE, etc.)
  *   - Reacts by mutating its own state
  *   - Emits state-change events to subscribers (via `emit`)
@@ -22,11 +21,9 @@ import {
 	sendTo,
 	setup,
 } from "xstate";
-import type { BookData, EffectRow } from "../data/types.js";
-import { processBook } from "./book.js";
-import type { SimulationClock } from "./clock.js";
+import type { EffectRow } from "../data/types.js";
+import { bookMachine, extractHits } from "./book-machine.js";
 import type { AffixesYaml, BooksYaml } from "./config.js";
-import { selectTiers } from "./config.js";
 import type { SeededRNG } from "./rng.js";
 import type {
 	ApplyDotEvent,
@@ -79,8 +76,8 @@ interface PlayerContext {
 	chainDepth: number;
 	/** Reference to opponent player actor for sendTo */
 	opponentRef?: AnyActorRef;
-	/** Clock callback IDs for cleanup */
-	clockCallbackIds: number[];
+	/** Spawned book actor refs, keyed by slot number */
+	bookRefs: Record<number, AnyActorRef>;
 }
 
 // ── Player Machine Events ───────────────────────────────────────────
@@ -104,9 +101,18 @@ type PlayerMachineEvent =
 	| { type: "STATE_EXPIRE_INTERNAL"; name: string }
 	| { type: "CLOCK_TICK"; dt: number }
 	| { type: "CHECK_DEATH" }
-	| { type: "DELIVER_HIT"; hit: HitEvent };
+	| {
+			type: "REGISTER_LISTENERS";
+			listeners: ListenerRegistration[];
+	  }
+	| { type: "BOOK_CAST_ERROR"; errors: string[]; slot: number }
+	| { type: "DELIVER_HIT"; hit: HitEvent }
+	| { type: "BOOK_CAST_HITS"; hits: HitEvent[] };
 
 // ── Helpers ─────────────────────────────────────────────────────────
+
+// Need SimulationClock type import (used in context)
+import type { SimulationClock } from "./clock.js";
 
 function sumStatEffects(states: StateInstance[], stat: string): number {
 	let total = 0;
@@ -156,6 +162,22 @@ function resolveAffixEffects(
 	return effects;
 }
 
+function isSelfTargeted(ev: IntentEvent): boolean {
+	switch (ev.type) {
+		case "APPLY_STATE":
+			return ev.state.target === "self";
+		case "HEAL":
+		case "SHIELD":
+		case "HP_COST":
+		case "HP_FLOOR":
+		case "SELF_CLEANSE":
+		case "LIFESTEAL":
+			return true;
+		default:
+			return false;
+	}
+}
+
 // ── Player Machine Definition ───────────────────────────────────────
 
 export const playerMachine = setup({
@@ -184,11 +206,38 @@ export const playerMachine = setup({
 		maxChainDepth: input.maxChainDepth,
 		chainDepth: 0,
 		opponentRef: input.opponentRef,
-		clockCallbackIds: [],
+		bookRefs: {},
 	}),
 	initial: "alive",
 	states: {
 		alive: {
+			// Spawn book actors on entry
+			entry: assign(({ context, spawn, self }) => {
+				const bookRefs: Record<number, AnyActorRef> = {};
+				for (const slot of context.bookSlots) {
+					const bookData = context.booksYaml.books[slot.platform];
+					if (!bookData) continue;
+					const affixEffects = resolveAffixEffects(
+						slot,
+						context.booksYaml,
+						context.affixesYaml,
+					);
+					bookRefs[slot.slot] = spawn(bookMachine, {
+						input: {
+							bookData,
+							affixEffects,
+							bookSlot: slot,
+							progression: context.progression,
+							rng: context.rng,
+							clock: context.clock,
+							label: context.label,
+							ownerRef: self,
+							hits: extractHits(bookData, context.progression),
+						},
+					});
+				}
+				return { bookRefs };
+			}),
 			on: {
 				SET_OPPONENT: {
 					actions: assign(({ context, event }) => ({
@@ -197,143 +246,70 @@ export const playerMachine = setup({
 					})),
 				},
 				CAST_SLOT: {
-					actions: enqueueActions(({ context, event, enqueue, self }) => {
+					actions: enqueueActions(({ context, event, enqueue }) => {
 						const slot = event.slot;
+						const bookRef = context.bookRefs[slot];
+						if (!bookRef) return;
+
 						const bookSlot = context.bookSlots.find((b) => b.slot === slot);
-						if (!bookSlot) return;
+						const bookLabel = bookSlot
+							? [bookSlot.platform, bookSlot.op1, bookSlot.op2]
+									.filter(Boolean)
+									.join(" + ")
+							: `slot_${slot}`;
 
-						const bookData = context.booksYaml.books[bookSlot.platform];
-						if (!bookData) return;
-
-						const affixEffects = resolveAffixEffects(
-							bookSlot,
-							context.booksYaml,
-							context.affixesYaml,
-						);
-
-						const t = context.clock.now();
-						const bookLabel = [bookSlot.platform, bookSlot.op1, bookSlot.op2]
-							.filter(Boolean)
-							.join(" + ");
-
-						// Emit CAST_START with full divine book label
+						// Emit CAST_START
 						enqueue(
 							emit({
 								type: "CAST_START" as const,
 								player: context.label,
 								slot,
 								book: bookLabel,
-								t,
+								t: context.clock.now(),
 							}),
 						);
 
-						// Step 1: Run book function to get all events
-						const result = processBook(
-							bookData,
-							affixEffects,
-							{
-								sourcePlayer: context.state,
-								targetPlayer: context.state,
-								book: bookSlot.platform,
-								slot,
-								rng: context.rng,
-								atk: context.state.atk,
-								hits: extractHits(bookData, context.progression),
-							},
-							context.progression,
+						// Delegate to book actor
+						enqueue(
+							sendTo(bookRef, {
+								type: "CAST",
+								playerState: context.state,
+								opponentRef: context.opponentRef,
+							}),
 						);
-
-						// If any handler errors, emit them all and abort this cast.
-						// Unimplemented effects make the simulation unreliable.
-						if (result.errors.length > 0) {
-							for (const error of result.errors) {
-								enqueue(
-									emit({
-										type: "HANDLER_ERROR" as const,
-										player: context.label,
-										slot,
-										message: error,
-										t: context.clock.now(),
-									}),
-								);
-							}
-							// Don't send any HITs or other events — results would be wrong
-							return;
-						}
-
-						// Register reactive listeners
-						for (const listener of result.listeners) {
-							context.listeners.push(listener);
-						}
-
-						// Separate HIT events (spread over time) from other intents (immediate)
-						const hitEvents = result.directEvents.filter(
-							(ev) => ev.type === "HIT",
-						);
-						const otherEvents = result.directEvents.filter(
-							(ev) => ev.type !== "HIT",
-						);
-
-						// Send non-HIT events immediately (buffs, debuffs, shields, etc.)
-						for (const ev of otherEvents) {
-							if (isSelfTargeted(ev)) {
-								processSelfIntent(context, ev, enqueue);
-							} else if (context.opponentRef) {
-								enqueue(sendTo(context.opponentRef, ev));
-							}
-						}
-
-						// Schedule HIT events via XState's delayed sendTo (~1s per hit).
-						// XState uses the SimulationClock internally for delays.
-						const hitGapMs = 1000;
-						for (let i = 0; i < hitEvents.length; i++) {
-							const hitEv = hitEvents[i];
-							enqueue(
-								sendTo(self, { type: "DELIVER_HIT", hit: hitEv }, { delay: i * hitGapMs }),
-							);
-						}
-					}),
-				},
-				DELIVER_HIT: {
-					actions: enqueueActions(({ context, event, enqueue }) => {
-						// Forward the HIT to the opponent via sendTo
-						const hit = (event as { hit: HitEvent }).hit;
-						if (context.opponentRef) {
-							enqueue(sendTo(context.opponentRef, hit));
-						}
 					}),
 				},
 				HIT: {
-					actions: enqueueActions(({ context, event, enqueue }) => {
-						resolveHit(context, event as HitEvent, enqueue);
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						resolveHit(context, event as HitEvent, enqueue, self);
 					}),
 				},
 				HP_DAMAGE: {
-	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						resolveHpDamage(context, event as HpDamageEvent, enqueue);
 					}),
 				},
 				APPLY_STATE: {
-	
-					actions: enqueueActions(({ context, event, enqueue }) => {
-						applyState(context, (event as ApplyStateEvent).state, enqueue);
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						applyState(
+							context,
+							(event as ApplyStateEvent).state,
+							enqueue,
+							self,
+						);
 					}),
 				},
 				APPLY_DOT: {
-	
-					actions: enqueueActions(({ context, event, enqueue }) => {
-						applyDot(context, event as ApplyDotEvent, enqueue);
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						applyDot(context, event as ApplyDotEvent, enqueue, self);
 					}),
 				},
 				HEAL: {
-	
-					actions: enqueueActions(({ context, event, enqueue }) => {
-						resolveHeal(context, (event as HealEvent).value, enqueue);
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						resolveHeal(context, (event as HealEvent).value, enqueue, self);
 					}),
 				},
 				SHIELD: {
-	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const ev = event as ShieldEvent;
 						const prev = context.state.shield;
@@ -351,7 +327,6 @@ export const playerMachine = setup({
 					}),
 				},
 				HP_COST: {
-	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const ev = event as HpCostEvent;
 						const basis =
@@ -372,11 +347,82 @@ export const playerMachine = setup({
 						// Death is deferred to CHECK_DEATH
 					}),
 				},
-				STATE_TICK_INTERNAL: {
-	
+				LIFESTEAL: {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						const ev = event as {
+							percent: number;
+							damageDealt: number;
+						};
+						resolveHeal(
+							context,
+							(ev.percent / 100) * ev.damageDealt,
+							enqueue,
+							self,
+						);
+					}),
+				},
+				REGISTER_LISTENERS: {
+					actions: assign(({ context, event }) => {
+						const ev = event as {
+							listeners: ListenerRegistration[];
+						};
+						return {
+							...context,
+							listeners: [...context.listeners, ...ev.listeners],
+						};
+					}),
+				},
+				BOOK_CAST_ERROR: {
 					actions: enqueueActions(({ context, event, enqueue }) => {
+						const ev = event as {
+							errors: string[];
+							slot: number;
+						};
+						for (const error of ev.errors) {
+							enqueue(
+								emit({
+									type: "HANDLER_ERROR" as const,
+									player: context.label,
+									slot: ev.slot,
+									message: error,
+									t: context.clock.now(),
+								}),
+							);
+						}
+					}),
+				},
+				BOOK_CAST_HITS: {
+					actions: enqueueActions(({ event, enqueue, self }) => {
+						const { hits } = event as { hits: HitEvent[] };
+						// Schedule HITs with ~1s gap via delayed sendTo
+						const hitGapMs = 1000;
+						for (let i = 0; i < hits.length; i++) {
+							enqueue(
+								sendTo(
+									self,
+									{ type: "DELIVER_HIT", hit: hits[i] },
+									{ delay: i * hitGapMs },
+								),
+							);
+						}
+					}),
+				},
+				DELIVER_HIT: {
+					actions: enqueueActions(({ context, event, enqueue }) => {
+						const { hit } = event as { hit: HitEvent };
+						if (context.opponentRef) {
+							enqueue(sendTo(context.opponentRef, hit));
+						}
+					}),
+				},
+				STATE_TICK_INTERNAL: {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
 						const name = (event as { type: string; name: string }).name;
 						const t = context.clock.now();
+
+						const stateInst = context.state.states.find((s) => s.name === name);
+						// If state was already removed (expired/dispelled), no-op
+						if (!stateInst) return;
 
 						enqueue(
 							emit({
@@ -388,13 +434,43 @@ export const playerMachine = setup({
 						);
 
 						// Fire per_tick listeners for this state
-						fireListeners(context, name, "per_tick", enqueue);
+						fireListeners(context, name, "per_tick", enqueue, self);
+
+						// DoT damage (if damagePerTick exists on this state)
+						if (stateInst.damagePerTick && stateInst.damagePerTick > 0) {
+							const prev = context.state.hp;
+							context.state.hp = Math.max(
+								context.state.hp - stateInst.damagePerTick,
+								0,
+							);
+							enqueue(
+								emit({
+									type: "HP_CHANGE" as const,
+									player: context.label,
+									prev,
+									next: context.state.hp,
+									cause: "dot",
+									t,
+								}),
+							);
+						}
+
+						// Schedule next tick (self-scheduling pattern)
+						if (stateInst.tickInterval) {
+							enqueue(
+								sendTo(
+									self,
+									{ type: "STATE_TICK_INTERNAL", name },
+									{ delay: stateInst.tickInterval * 1000 },
+								),
+							);
+						}
 					}),
 				},
 				STATE_EXPIRE_INTERNAL: {
-					actions: enqueueActions(({ context, event, enqueue }) => {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
 						const name = (event as { type: string; name: string }).name;
-						removeState(context, name, "expired", enqueue);
+						removeState(context, name, "expired", enqueue, self);
 					}),
 				},
 				CLOCK_TICK: {
@@ -454,8 +530,15 @@ export const playerMachine = setup({
 
 // biome-ignore lint/suspicious/noExplicitAny: XState enqueue type is deeply nested and impractical to extract
 type Enqueue = any;
+// biome-ignore lint/suspicious/noExplicitAny: XState self type is deeply nested
+type Self = any;
 
-function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
+function resolveHit(
+	ctx: PlayerContext,
+	hit: HitEvent,
+	enqueue: Enqueue,
+	self: Self,
+): void {
 	const s = ctx.state;
 	const f = ctx.formulas;
 	const t = ctx.clock.now();
@@ -467,11 +550,8 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	const mitigated = hit.damage * (1 - totalDR);
 
 	// 2. SP → shield: "消耗灵力值产生护盾抵挡伤害"
-	// SP is CONSUMED to produce shield. 1 SP consumed → ratio points of shield.
-	// sp_consumed = min(currentSP, mitigated / ratio)
-	// shield = sp_consumed × ratio (absorbs that much damage)
-	// remaining damage after shield → HP
-	const spConsumed = s.sp > 0 ? Math.min(s.sp, mitigated / f.sp_shield_ratio) : 0;
+	const spConsumed =
+		s.sp > 0 ? Math.min(s.sp, mitigated / f.sp_shield_ratio) : 0;
 	const shieldAmount = spConsumed * f.sp_shield_ratio;
 	const afterShield = mitigated - shieldAmount;
 	if (spConsumed > 0) {
@@ -489,7 +569,7 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 		);
 	}
 
-	// 3. Skill-generated shield absorb (from 玄女护心, 煞影千幻, etc.)
+	// 3. Skill-generated shield absorb
 	const absorbed = Math.min(afterShield, s.shield);
 	if (absorbed > 0) {
 		const prevShield = s.shield;
@@ -511,20 +591,21 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	if (hpDamage > 0) {
 		const prevHp = s.hp;
 		s.hp = Math.max(s.hp - hpDamage, 0);
-		enqueue(
-			emit({
-				type: "HP_CHANGE" as const,
-				player: ctx.label,
-				prev: prevHp,
-				next: s.hp,
-				cause: `hit_${hit.hitIndex}`,
-				t,
-			}),
-		);
-		// Death is deferred to CHECK_DEATH — do not set alive=false here
+		if (s.hp !== prevHp) {
+			enqueue(
+				emit({
+					type: "HP_CHANGE" as const,
+					player: ctx.label,
+					prev: prevHp,
+					next: s.hp,
+					cause: `hit_${hit.hitIndex}`,
+					t,
+				}),
+			);
+		}
 	}
 
-	// 5. SP damage (resonance — 灵力 attack line)
+	// 5. SP damage (resonance)
 	if (hit.spDamage > 0) {
 		const prevSp = s.sp;
 		s.sp = Math.max(s.sp - hit.spDamage, 0);
@@ -544,15 +625,20 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	if (hit.perHitEffects) {
 		for (const effect of hit.perHitEffects) {
 			if (effect.type === "PERCENT_MAX_HP_HIT") {
-				// Resolve against TARGET's own maxHp, then apply DR
 				const rawDamage = (effect.percent / 100) * s.maxHp;
 				resolveHit(
 					ctx,
-					{ type: "HIT", hitIndex: -1, damage: rawDamage, spDamage: 0 },
+					{
+						type: "HIT",
+						hitIndex: -1,
+						damage: rawDamage,
+						spDamage: 0,
+					},
 					enqueue,
+					self,
 				);
 			} else if (effect.type === "HIT") {
-				resolveHit(ctx, effect, enqueue);
+				resolveHit(ctx, effect, enqueue, self);
 			} else if (effect.type === "HP_DAMAGE") {
 				resolveHpDamage(ctx, effect, enqueue);
 			}
@@ -562,7 +648,7 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	// 7. on_attacked triggers
 	if (ctx.chainDepth < ctx.maxChainDepth) {
 		ctx.chainDepth++;
-		fireListeners(ctx, null, "on_attacked", enqueue);
+		fireListeners(ctx, null, "on_attacked", enqueue, self);
 		ctx.chainDepth--;
 	}
 }
@@ -598,13 +684,13 @@ function resolveHpDamage(
 			t: ctx.clock.now(),
 		}),
 	);
-	// Death is deferred to CHECK_DEATH
 }
 
 function resolveHeal(
 	ctx: PlayerContext,
 	value: number,
 	enqueue: Enqueue,
+	_self: Self,
 ): void {
 	const s = ctx.state;
 	const healMult = 1 + sumStatEffects(s.states, "healing_received") / 100;
@@ -622,6 +708,19 @@ function resolveHeal(
 				t: ctx.clock.now(),
 			}),
 		);
+		// Fire heal echo listeners — results go to OPPONENT
+		for (const listener of ctx.listeners) {
+			if (listener.parent !== "__heal__") continue;
+			const events = listener.handler({
+				sourcePlayer: ctx.state,
+				targetPlayerRef: ctx.opponentRef ?? null,
+				rng: ctx.rng,
+				book: listener.parent,
+			});
+			for (const ev of events) {
+				if (ctx.opponentRef) enqueue(sendTo(ctx.opponentRef, ev));
+			}
+		}
 	}
 }
 
@@ -629,6 +728,7 @@ function applyState(
 	ctx: PlayerContext,
 	state: StateInstance,
 	enqueue: Enqueue,
+	self: Self,
 ): void {
 	// Check for existing state with same name (stacking)
 	const existing = ctx.state.states.find((s) => s.name === state.name);
@@ -661,20 +761,34 @@ function applyState(
 		state.remainingDuration > 0 &&
 		state.remainingDuration < Number.POSITIVE_INFINITY
 	) {
-		const id = ctx.clock.setTimeout(() => {
-			// This is a clock callback — we need to send an event to the actor
-			// The arena will handle this by sending STATE_EXPIRE_INTERNAL
-		}, state.remainingDuration * 1000);
-		ctx.clockCallbackIds.push(id);
+		enqueue(
+			sendTo(
+				self,
+				{
+					type: "STATE_EXPIRE_INTERNAL",
+					name: state.name,
+				} as PlayerMachineEvent,
+				{ delay: state.remainingDuration * 1000 },
+			),
+		);
 	}
 
-	// Schedule ticks if trigger is per_tick
-	if (state.trigger === "per_tick") {
-		// Ticks are scheduled by the arena/runner
+	// Schedule first tick if trigger is per_tick
+	if (state.trigger === "per_tick" && state.tickInterval) {
+		enqueue(
+			sendTo(
+				self,
+				{
+					type: "STATE_TICK_INTERNAL",
+					name: state.name,
+				} as PlayerMachineEvent,
+				{ delay: state.tickInterval * 1000 },
+			),
+		);
 	}
 
 	// Fire on_apply listeners
-	fireListeners(ctx, state.name, "on_apply", enqueue);
+	fireListeners(ctx, state.name, "on_apply", enqueue, self);
 
 	// Recalculate effective stats
 	recalcStats(ctx, enqueue);
@@ -684,6 +798,7 @@ function applyDot(
 	ctx: PlayerContext,
 	ev: ApplyDotEvent,
 	enqueue: Enqueue,
+	self: Self,
 ): void {
 	const dotState: StateInstance = {
 		name: ev.name,
@@ -696,16 +811,18 @@ function applyDot(
 		maxStacks: 1,
 		dispellable: true,
 		trigger: "per_tick",
+		tickInterval: ev.tickInterval,
+		damagePerTick: ev.damagePerTick,
 	};
-	applyState(ctx, dotState, enqueue);
-	// DoT ticks are scheduled by the arena/runner using the clock
+	applyState(ctx, dotState, enqueue, self);
 }
 
 function removeState(
 	ctx: PlayerContext,
 	name: string,
-	cause: string,
+	_cause: string,
 	enqueue: Enqueue,
+	self: Self,
 ): void {
 	const idx = ctx.state.states.findIndex((s) => s.name === name);
 	if (idx === -1) return;
@@ -723,11 +840,11 @@ function removeState(
 	// Remove children
 	const children = ctx.state.states.filter((s) => s.parent === name);
 	for (const child of children) {
-		removeState(ctx, child.name, "parent_expired", enqueue);
+		removeState(ctx, child.name, "parent_expired", enqueue, self);
 	}
 
 	// Fire on_expire listeners
-	fireListeners(ctx, name, "on_expire", enqueue);
+	fireListeners(ctx, name, "on_expire", enqueue, self);
 
 	// Recalculate effective stats
 	recalcStats(ctx, enqueue);
@@ -738,6 +855,7 @@ function fireListeners(
 	stateName: string | null,
 	trigger: string,
 	enqueue: Enqueue,
+	self: Self,
 ): void {
 	for (const listener of ctx.listeners) {
 		if (trigger !== listener.trigger) continue;
@@ -753,68 +871,20 @@ function fireListeners(
 
 		const events = listener.handler({
 			sourcePlayer: ctx.state,
-			targetPlayerRef: null, // filled by arena when needed
+			targetPlayerRef: ctx.opponentRef ?? null,
 			rng: ctx.rng,
 			book: listener.parent,
 		});
 
 		for (const ev of events) {
-			processSelfIntent(ctx, ev, enqueue);
+			// Self-targeted events go back to this player,
+			// opponent-targeted events go to opponent
+			if (isSelfTargeted(ev)) {
+				enqueue(sendTo(self, ev));
+			} else if (ctx.opponentRef) {
+				enqueue(sendTo(ctx.opponentRef, ev));
+			}
 		}
-	}
-}
-
-function processSelfIntent(
-	ctx: PlayerContext,
-	ev: IntentEvent,
-	enqueue: Enqueue,
-): void {
-	switch (ev.type) {
-		case "APPLY_STATE":
-			applyState(ctx, ev.state, enqueue);
-			break;
-		case "HEAL":
-			resolveHeal(ctx, ev.value, enqueue);
-			break;
-		case "SHIELD": {
-			const prev = ctx.state.shield;
-			ctx.state.shield += ev.value;
-			enqueue(
-				emit({
-					type: "SHIELD_CHANGE" as const,
-					player: ctx.label,
-					prev,
-					next: ctx.state.shield,
-					cause: "shield_applied",
-					t: ctx.clock.now(),
-				}),
-			);
-			break;
-		}
-		case "HP_COST": {
-			const basis = ev.basis === "current" ? ctx.state.hp : ctx.state.maxHp;
-			const cost = (ev.percent / 100) * basis;
-			const prev = ctx.state.hp;
-			ctx.state.hp = Math.max(ctx.state.hp - cost, 0);
-			enqueue(
-				emit({
-					type: "HP_CHANGE" as const,
-					player: ctx.label,
-					prev,
-					next: ctx.state.hp,
-					cause: "hp_cost",
-					t: ctx.clock.now(),
-				}),
-			);
-			// Death is deferred to CHECK_DEATH
-			break;
-		}
-		case "LIFESTEAL":
-			resolveHeal(ctx, (ev.percent / 100) * ev.damageDealt, enqueue);
-			break;
-		default:
-			// Other self-targeted intents can be added here
-			break;
 	}
 }
 
@@ -854,32 +924,6 @@ function recalcStats(ctx: PlayerContext, enqueue: Enqueue): void {
 				t,
 			}),
 		);
-	}
-}
-
-function extractHits(
-	bookData: BookData,
-	progression: ProgressionConfig,
-): number {
-	if (!bookData.skill) return 0;
-	const tiered = selectTiers(bookData.skill, progression);
-	const baseAttack = tiered.find((e) => e.type === "base_attack");
-	return (baseAttack?.hits as number) ?? 0;
-}
-
-function isSelfTargeted(ev: IntentEvent): boolean {
-	switch (ev.type) {
-		case "APPLY_STATE":
-			return ev.state.target === "self";
-		case "HEAL":
-		case "SHIELD":
-		case "HP_COST":
-		case "HP_FLOOR":
-		case "SELF_CLEANSE":
-		case "LIFESTEAL":
-			return true;
-		default:
-			return false;
 	}
 }
 

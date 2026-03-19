@@ -152,7 +152,7 @@ export function parseCommonAffixes(
 	// Parse school affixes
 	const schoolEntries = readSchoolAffixTable(schoolMd);
 	for (const entry of schoolEntries) {
-		const schoolName = entry.school!;
+		const schoolName = entry.school as string;
 		if (!school[schoolName]) {
 			school[schoolName] = {};
 		}

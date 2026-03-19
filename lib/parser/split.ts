@@ -253,14 +253,15 @@ function enrichWithNamedStates(
 	// Find all named state references in the text: 【name】：...
 	const stateSegments: { name: string; start: number; end: number }[] = [];
 	const re = /【(.+?)】[：:]/g;
-	let match: RegExpExecArray | null;
-	while ((match = re.exec(text)) !== null) {
+	let match: RegExpExecArray | null = re.exec(text);
+	while (match !== null) {
 		const name = match[1];
 		// Find the end: next 【 or end of text
 		const startAfter = match.index + match[0].length;
 		const nextBracket = text.indexOf("【", startAfter);
 		const end = nextBracket === -1 ? text.length : nextBracket;
 		stateSegments.push({ name, start: match.index, end });
+		match = re.exec(text);
 	}
 
 	if (stateSegments.length === 0) return;

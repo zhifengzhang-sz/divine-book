@@ -43,3 +43,59 @@ register("skill_damage_increase", (effect) => ({
 register("attack_bonus", (effect) => ({
 	zones: { S_coeff: (effect.value as number) / 100 },
 }));
+
+// crit_damage_bonus: { value }
+// Additive M_dmg zone bonus (crit damage modeled as damage increase).
+register("crit_damage_bonus", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// ignore_damage_reduction: {}
+// Ignores target's DR. Modeled as M_final bonus (approximate).
+register("ignore_damage_reduction", () => ({
+	zones: { M_final: 0.5 },
+}));
+
+// buff_strength: { value }
+// Increases buff effectiveness. Modeled as M_dmg zone.
+register("buff_strength", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// dot_damage_increase: { value }
+// Increases DoT damage. Modeled as M_dmg zone.
+register("dot_damage_increase", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// dot_frequency_increase: { value }
+// Increases DoT tick frequency. Modeled as M_dmg zone (more ticks ≈ more damage).
+register("dot_frequency_increase", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// dot_extra_per_tick: { value }
+// Extra damage per DoT tick. Modeled as flat extra.
+register("dot_extra_per_tick", (effect, ctx) => ({
+	flatExtra: ((effect.value as number) / 100) * ctx.atk,
+}));
+
+// enlightenment_bonus: { value, damage_increase }
+// Bonus based on enlightenment level. Treat as damage increase.
+register("enlightenment_bonus", (effect) => ({
+	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+}));
+
+// periodic_escalation: { every_n_hits, multiplier, max_stacks }
+// Damage escalation every N hits. Similar to per_hit_escalation.
+register("periodic_escalation", (effect) => {
+	const everyN = (effect.every_n_hits as number) ?? 2;
+	const mult = (effect.multiplier as number) ?? 1.4;
+	const maxStacks = (effect.max_stacks as number) ?? 10;
+	return {
+		perHitEscalation: (hitIndex: number) => {
+			const stacks = Math.min(Math.floor(hitIndex / everyN), maxStacks);
+			return { M_skill: stacks * (mult - 1) };
+		},
+	};
+});

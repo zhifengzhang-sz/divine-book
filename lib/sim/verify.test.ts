@@ -11,13 +11,7 @@ import { SimulationClock } from "./clock.js";
 import { loadAffixesYaml, loadBooksYaml } from "./config.js";
 import { playerMachine } from "./player.js";
 import { SeededRNG } from "./rng.js";
-import type {
-	HpChangeEvent,
-	PlayerState,
-	ShieldChangeEvent,
-	SpChangeEvent,
-	StateChangeEvent,
-} from "./types.js";
+import type { HpChangeEvent, PlayerState, StateChangeEvent } from "./types.js";
 
 const booksYaml = loadBooksYaml();
 const affixesYaml = loadAffixesYaml();
@@ -164,12 +158,14 @@ describe("SP shield (consumable pool)", () => {
 			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
 		) as { prev: number; next: number } | undefined;
 		expect(spChange).toBeDefined();
-		expect(spChange!.next).toBeLessThan(SP_AMOUNT);
-		expect(spChange!.next).toBeGreaterThan(0); // not fully depleted
+		expect(spChange?.next).toBeLessThan(SP_AMOUNT);
+		expect(spChange?.next).toBeGreaterThan(0); // not fully depleted
 	});
 
 	test("HP takes reduced damage (shield absorbed some)", () => {
-		const hpChange = events.find((e) => e.type === "HP_CHANGE") as { prev: number; next: number } | undefined;
+		const hpChange = events.find((e) => e.type === "HP_CHANGE") as
+			| { prev: number; next: number }
+			| undefined;
 		// With SP=10000 and ratio=10, total shield capacity = 100000
 		// mitigated ≈ 26316, which is < 100000, so shield covers it all → no HP damage
 		expect(hpChange).toBeUndefined();
@@ -182,9 +178,11 @@ describe("SP shield (consumable pool)", () => {
 		target.send({ type: "HIT", hitIndex: 1, damage: 5000000, spDamage: 0 });
 
 		// SP should be fully consumed
-		const spChange = events2.filter((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen").pop() as { next: number } | undefined;
+		const spChange = events2
+			.filter((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen")
+			.pop() as { next: number } | undefined;
 		expect(spChange).toBeDefined();
-		expect(spChange!.next).toBeCloseTo(0, 0);
+		expect(spChange?.next).toBeCloseTo(0, 0);
 
 		// HP should take the remainder
 		const hpChange = events2.find((e) => e.type === "HP_CHANGE");

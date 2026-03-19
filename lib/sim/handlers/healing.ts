@@ -2,7 +2,7 @@
  * Healing handlers: lifesteal, self_heal, heal_echo_damage
  */
 
-import type { IntentEvent, StateInstance } from "../types.js";
+import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
 
 // lifesteal: { value (percent), parent? }

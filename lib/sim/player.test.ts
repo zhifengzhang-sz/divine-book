@@ -4,7 +4,7 @@ import { SimulationClock } from "./clock.js";
 import { loadAffixesYaml, loadBooksYaml } from "./config.js";
 import { playerMachine } from "./player.js";
 import { SeededRNG } from "./rng.js";
-import type { PlayerState, StateChangeEvent, StateInstance } from "./types.js";
+import type { PlayerState, StateChangeEvent } from "./types.js";
 
 const booksYaml = loadBooksYaml();
 const affixesYaml = loadAffixesYaml();
@@ -89,7 +89,9 @@ describe("HIT resolution", () => {
 			events.some((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen"),
 		).toBe(true);
 		// SP should decrease
-		const spChange = events.find((e) => e.type === "SP_CHANGE" && e.cause === "shield_gen") as { prev: number; next: number };
+		const spChange = events.find(
+			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
+		) as { prev: number; next: number };
 		expect(spChange.next).toBeLessThan(spChange.prev);
 	});
 
@@ -176,12 +178,14 @@ describe("DEATH", () => {
 		actor.start();
 		const events = collectEvents(actor);
 
-		// Both hits resolve even though first one brings HP to 0
+		// Both hits resolve even though first one brings HP to 0.
+		// Second hit is accepted (not dropped) but HP_CHANGE is suppressed
+		// because HP is already 0 (prev === next).
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
 		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
 
 		const hpChanges = events.filter((e) => e.type === "HP_CHANGE");
-		expect(hpChanges).toHaveLength(2);
+		expect(hpChanges).toHaveLength(1);
 
 		actor.send({ type: "CHECK_DEATH" });
 		expect(events.some((e) => e.type === "DEATH")).toBe(true);

@@ -20,6 +20,7 @@ import "./cost.js";
 import "./escalation.js";
 import "./resonance.js";
 import "./multiplier.js";
+import "./misc.js";
 
 export class MissingHandlerError extends Error {
 	constructor(type: string) {
