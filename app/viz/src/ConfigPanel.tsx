@@ -1,4 +1,5 @@
 import { useState } from "react";
+import affixesData from "./affixes-data.json";
 import booksData from "./books-data.json";
 import {
 	Pill,
@@ -68,7 +69,14 @@ interface TierOption {
 	fusion: number;
 }
 
-const allBooksData = (booksData as { books: Record<string, { skill?: { type: string; data_state?: string | string[] }[] }> }).books;
+type EffectEntry = { type: string; data_state?: string | string[]; [k: string]: unknown };
+type BookEntry = {
+	school: string;
+	skill?: EffectEntry[];
+	primary_affix?: { name: string; effects: EffectEntry[] };
+	exclusive_affix?: { name: string; effects: EffectEntry[] };
+};
+const allBooksData = (booksData as { books: Record<string, BookEntry> }).books;
 
 function getTierOptions(platform: string): TierOption[] {
 	const book = allBooksData[platform];
@@ -92,6 +100,75 @@ function getTierOptions(platform: string): TierOption[] {
 		options.push({ label: `悟${e}/融${f}`, enlightenment: e, fusion: f });
 	}
 	return options;
+}
+
+/** Select highest matching tier per effect type (mirrors sim's selectTiers) */
+function filterEffectsForTier(
+	effects: EffectEntry[],
+	e: number,
+	f: number,
+): EffectEntry[] {
+	const byType = new Map<string, EffectEntry[]>();
+	for (const effect of effects) {
+		const group = byType.get(effect.type) ?? [];
+		group.push(effect);
+		byType.set(effect.type, group);
+	}
+	const result: EffectEntry[] = [];
+	for (const [, tiers] of byType) {
+		const usable = tiers.filter((t) => {
+			const ds = t.data_state;
+			if (!ds) return true;
+			if (ds === "locked") return false;
+			const entries = Array.isArray(ds) ? ds : [ds];
+			for (const s of entries) {
+				if (s.startsWith("enlightenment=") && e < Number(s.split("=")[1])) return false;
+				if (s.startsWith("fusion=") && f < Number(s.split("=")[1])) return false;
+			}
+			return true;
+		});
+		if (usable.length > 0) result.push(usable[usable.length - 1]);
+	}
+	return result;
+}
+
+/** Format an effect entry as a readable string */
+function formatEffect(effect: EffectEntry): string {
+	const skip = new Set(["type", "data_state"]);
+	const parts: string[] = [];
+	for (const [k, v] of Object.entries(effect)) {
+		if (skip.has(k)) continue;
+		if (v === undefined || v === null) continue;
+		if (typeof v === "number") {
+			parts.push(`${k}=${v}`);
+		} else if (typeof v === "boolean" && v) {
+			parts.push(k);
+		} else if (typeof v === "string") {
+			parts.push(`${k}=${v}`);
+		}
+	}
+	return parts.length > 0 ? `${effect.type}: ${parts.join(", ")}` : effect.type;
+}
+
+/** Preview panel showing effects at a given progression */
+function EffectPreview({
+	label,
+	effects,
+}: {
+	label: string;
+	effects: EffectEntry[];
+}) {
+	if (effects.length === 0) return null;
+	return (
+		<div style={{ marginBottom: 6 }}>
+			<div style={{ fontSize: 11, color: "#e5c07b", marginBottom: 2 }}>{label}</div>
+			{effects.map((e, i) => (
+				<div key={`${e.type}-${i}`} style={{ fontSize: 11, color: "#abb2bf", paddingLeft: 8 }}>
+					{formatEffect(e)}
+				</div>
+			))}
+		</div>
+	);
 }
 
 // ── Book Picker Dialog ──────────────────────────────────────────────
@@ -229,6 +306,39 @@ function BookPickerDialog({
 					</select>
 				</div>
 
+				{/* Effect preview at selected progression */}
+				{(() => {
+					const bookData = allBooksData[sel.platform];
+					if (!bookData) return null;
+					const skillEffects = bookData.skill
+						? filterEffectsForTier(bookData.skill, sel.enlightenment, sel.fusion)
+						: [];
+					const primaryEffects = bookData.primary_affix
+						? filterEffectsForTier(bookData.primary_affix.effects, sel.enlightenment, sel.fusion)
+						: [];
+					return (
+						<div
+							style={{
+								background: "#1e2127",
+								border: "1px solid #3e4451",
+								borderRadius: 4,
+								padding: 8,
+								marginBottom: 10,
+								maxHeight: 160,
+								overflowY: "auto",
+							}}
+						>
+							<EffectPreview label="Skill" effects={skillEffects} />
+							{bookData.primary_affix && (
+								<EffectPreview
+									label={`Primary Affix: ${bookData.primary_affix.name}`}
+									effects={primaryEffects}
+								/>
+							)}
+						</div>
+					);
+				})()}
+
 				<div
 					style={{
 						display: "flex",
@@ -263,6 +373,26 @@ interface AffixSelection {
 	name: string;
 	enlightenment: number;
 	fusion: number;
+}
+
+const allAffixesData = affixesData as {
+	universal: Record<string, { effects: EffectEntry[] }>;
+	school: Record<string, Record<string, { effects: EffectEntry[] }>>;
+};
+
+/** Look up an affix's effects from affixes-data.json or exclusive affixes in books-data */
+function lookupAffixEffects(name: string): EffectEntry[] | undefined {
+	// Universal
+	if (allAffixesData.universal[name]) return allAffixesData.universal[name].effects;
+	// School
+	for (const school of Object.values(allAffixesData.school)) {
+		if (school[name]) return school[name].effects;
+	}
+	// Exclusive (from books data)
+	for (const book of Object.values(allBooksData)) {
+		if (book.exclusive_affix?.name === name) return book.exclusive_affix.effects;
+	}
+	return undefined;
 }
 
 function getAffixesForCategory(
@@ -336,7 +466,7 @@ function AffixPickerDialog({
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+				<div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
 					<StatInput
 						label="悟境"
 						value={sel.enlightenment}
@@ -350,6 +480,28 @@ function AffixPickerDialog({
 						width={50}
 					/>
 				</div>
+
+				{/* Affix effect preview */}
+				{sel.name && (() => {
+					const raw = lookupAffixEffects(sel.name);
+					if (!raw || raw.length === 0) return null;
+					const filtered = filterEffectsForTier(raw, sel.enlightenment, sel.fusion);
+					return (
+						<div
+							style={{
+								background: "#1e2127",
+								border: "1px solid #3e4451",
+								borderRadius: 4,
+								padding: 8,
+								marginBottom: 10,
+								maxHeight: 120,
+								overflowY: "auto",
+							}}
+						>
+							<EffectPreview label="Effects" effects={filtered} />
+						</div>
+					);
+				})()}
 
 				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
 					<button type="button" onClick={onCancel} style={cancelBtnStyle}>
