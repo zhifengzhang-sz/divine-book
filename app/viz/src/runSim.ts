@@ -64,12 +64,14 @@ export function runSimulation(config: SimConfig): SimulationData {
 		platform: config.playerA.platform,
 		op1: config.playerA.op1 || undefined,
 		op2: config.playerA.op2 || undefined,
+		progression: progressionA,
 	};
 	const slotB = {
 		slot: 1,
 		platform: config.playerB.platform,
 		op1: config.playerB.op1 || undefined,
 		op2: config.playerB.op2 || undefined,
+		progression: progressionB,
 	};
 
 	const statsA = config.playerA.stats;
@@ -79,13 +81,11 @@ export function runSimulation(config: SimConfig): SimulationData {
 	const playerConfigA = {
 		entity: statsA,
 		formulas,
-		progression: progressionA,
 		books: [slotA],
 	};
 	const playerConfigB = {
 		entity: statsB,
 		formulas,
-		progression: progressionB,
 		books: [slotB],
 	};
 	validatePlayerConfig(playerConfigA, booksYaml, affixesYaml);
@@ -98,7 +98,6 @@ export function runSimulation(config: SimConfig): SimulationData {
 		label: string,
 		bookSlot: typeof slotA,
 		stats: typeof statsA,
-		progression: typeof progressionA,
 	) {
 		return createActor(playerMachine, {
 			input: {
@@ -118,7 +117,6 @@ export function runSimulation(config: SimConfig): SimulationData {
 					alive: true,
 				} as PlayerState,
 				formulas,
-				progression,
 				bookSlots: [bookSlot],
 				booksYaml,
 				affixesYaml,
@@ -130,8 +128,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 		});
 	}
 
-	const playerA = makePlayer("A", slotA, statsA, progressionA);
-	const playerB = makePlayer("B", slotB, statsB, progressionB);
+	const playerA = makePlayer("A", slotA, statsA);
+	const playerB = makePlayer("B", slotB, statsB);
 
 	const events: StateChangeEvent[] = [];
 	playerA.on("*", (ev: StateChangeEvent) =>

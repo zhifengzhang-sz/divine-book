@@ -99,11 +99,11 @@ const sp = Number(getArg("sp") ?? "5000");
 const playerConfig = {
 	entity: { hp, atk, sp, def, spRegen: 100 },
 	formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
-	progression: { enlightenment: 10, fusion: 51 },
 };
 
-const slotA = { slot: 1, ...bookA };
-const slotB = { slot: 1, ...bookB };
+const progression = { enlightenment: 10, fusion: 51 };
+const slotA = { slot: 1, ...bookA, progression };
+const slotB = { slot: 1, ...bookB, progression };
 
 // Validate
 try {
@@ -146,7 +146,6 @@ function makePlayer(label: string, bookSlot: typeof slotA) {
 				alive: true,
 			} as PlayerState,
 			formulas: playerConfig.formulas,
-			progression: playerConfig.progression,
 			bookSlots: [bookSlot],
 			booksYaml,
 			affixesYaml,

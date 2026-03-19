@@ -30,7 +30,13 @@ function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
 function createPlayer(
 	label: string,
 	overrides?: Partial<PlayerState>,
-	bookSlots = [{ slot: 1, platform: "千锋聚灵剑" }],
+	bookSlots = [
+		{
+			slot: 1,
+			platform: "千锋聚灵剑",
+			progression: { enlightenment: 10, fusion: 51 },
+		},
+	],
 ) {
 	const clock = new SimulationClock();
 	const actor = createActor(playerMachine, {
@@ -38,7 +44,6 @@ function createPlayer(
 			label,
 			initialState: makePlayerState(overrides),
 			formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
-			progression: { enlightenment: 10, fusion: 51 },
 			bookSlots,
 			booksYaml,
 			affixesYaml,
@@ -291,8 +296,13 @@ describe("CAST_SLOT", () => {
 				label: "A",
 				initialState: makePlayerState(),
 				formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
-				progression: { enlightenment: 10, fusion: 51 },
-				bookSlots: [{ slot: 1, platform: "千锋聚灵剑" }],
+				bookSlots: [
+					{
+						slot: 1,
+						platform: "千锋聚灵剑",
+						progression: { enlightenment: 10, fusion: 51 },
+					},
+				],
 				booksYaml,
 				affixesYaml,
 				clock: clockA,
@@ -306,7 +316,6 @@ describe("CAST_SLOT", () => {
 				label: "B",
 				initialState: makePlayerState({ sp: 0, shield: 0 }),
 				formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
-				progression: { enlightenment: 10, fusion: 51 },
 				bookSlots: [],
 				booksYaml,
 				affixesYaml,

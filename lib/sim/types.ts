@@ -320,12 +320,12 @@ export interface BookSlot {
 	platform: string;
 	op1?: string;
 	op2?: string;
+	progression: ProgressionConfig;
 }
 
 export interface PlayerConfig {
 	entity: EntityConfig;
 	formulas: FormulasConfig;
-	progression: ProgressionConfig;
 	books: BookSlot[];
 }
 

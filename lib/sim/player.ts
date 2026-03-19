@@ -37,7 +37,6 @@ import type {
 	IntentEvent,
 	ListenerRegistration,
 	PlayerState,
-	ProgressionConfig,
 	ShieldEvent,
 	StateChangeEvent,
 	StateInstance,
@@ -49,7 +48,6 @@ export interface PlayerInput {
 	label: string;
 	initialState: PlayerState;
 	formulas: FormulasConfig;
-	progression: ProgressionConfig;
 	bookSlots: BookSlot[];
 	booksYaml: BooksYaml;
 	affixesYaml: AffixesYaml;
@@ -65,7 +63,6 @@ interface PlayerContext {
 	label: string;
 	state: PlayerState;
 	formulas: FormulasConfig;
-	progression: ProgressionConfig;
 	bookSlots: BookSlot[];
 	booksYaml: BooksYaml;
 	affixesYaml: AffixesYaml;
@@ -196,7 +193,6 @@ export const playerMachine = setup({
 		label: input.label,
 		state: { ...input.initialState },
 		formulas: input.formulas,
-		progression: input.progression,
 		bookSlots: input.bookSlots,
 		booksYaml: input.booksYaml,
 		affixesYaml: input.affixesYaml,
@@ -227,12 +223,12 @@ export const playerMachine = setup({
 							bookData,
 							affixEffects,
 							bookSlot: slot,
-							progression: context.progression,
+							progression: slot.progression,
 							rng: context.rng,
 							clock: context.clock,
 							label: context.label,
 							ownerRef: self,
-							hits: extractHits(bookData, context.progression),
+							hits: extractHits(bookData, slot.progression),
 						},
 					});
 				}

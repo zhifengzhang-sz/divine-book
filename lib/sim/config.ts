@@ -52,7 +52,7 @@ export function validatePlayerConfig(
 	books: BooksYaml,
 	affixes: AffixesYaml,
 ): void {
-	const { entity, progression } = config;
+	const { entity } = config;
 
 	// Validate entity stats are positive
 	for (const [key, val] of Object.entries(entity)) {
@@ -88,16 +88,16 @@ export function validatePlayerConfig(
 		// At least one usable tier
 		const bookData = books.books[slot.platform];
 		if (bookData.skill) {
-			const usable = selectTiers(bookData.skill, progression);
+			const usable = selectTiers(bookData.skill, slot.progression);
 			if (usable.length === 0) {
 				throw new ConfigValidationError(
-					`Book "${slot.platform}" has no usable skill tiers at enlightenment=${progression.enlightenment}, fusion=${progression.fusion}`,
+					`Book "${slot.platform}" has no usable skill tiers at enlightenment=${slot.progression.enlightenment}, fusion=${slot.progression.fusion}`,
 				);
 			}
 		}
 
 		// All effects must have handlers — no faking
-		validateHandlerCoverage(slot, bookData, books, affixes, progression);
+		validateHandlerCoverage(slot, bookData, books, affixes, slot.progression);
 	}
 }
 

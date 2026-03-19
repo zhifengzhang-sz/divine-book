@@ -112,8 +112,13 @@ describe("validatePlayerConfig", () => {
 	const validConfig: PlayerConfig = {
 		entity: { hp: 1e8, atk: 1000, sp: 5000, def: 9e5, spRegen: 100 },
 		formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
-		progression: { enlightenment: 10, fusion: 51 },
-		books: [{ slot: 1, platform: "千锋聚灵剑" }],
+		books: [
+			{
+				slot: 1,
+				platform: "千锋聚灵剑",
+				progression: { enlightenment: 10, fusion: 51 },
+			},
+		],
 	};
 
 	test("accepts valid config", () => {
@@ -125,7 +130,13 @@ describe("validatePlayerConfig", () => {
 	test("rejects unknown book", () => {
 		const config = {
 			...validConfig,
-			books: [{ slot: 1, platform: "不存在的书" }],
+			books: [
+				{
+					slot: 1,
+					platform: "不存在的书",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
 			ConfigValidationError,
@@ -136,8 +147,16 @@ describe("validatePlayerConfig", () => {
 		const config = {
 			...validConfig,
 			books: [
-				{ slot: 1, platform: "千锋聚灵剑" },
-				{ slot: 2, platform: "千锋聚灵剑" },
+				{
+					slot: 1,
+					platform: "千锋聚灵剑",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+				{
+					slot: 2,
+					platform: "千锋聚灵剑",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
 			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
@@ -148,8 +167,13 @@ describe("validatePlayerConfig", () => {
 	test("rejects locked tiers", () => {
 		const config = {
 			...validConfig,
-			progression: { enlightenment: 0, fusion: 0 },
-			books: [{ slot: 1, platform: "甲元仙符" }],
+			books: [
+				{
+					slot: 1,
+					platform: "甲元仙符",
+					progression: { enlightenment: 0, fusion: 0 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
 			"no usable skill tiers",
@@ -159,7 +183,14 @@ describe("validatePlayerConfig", () => {
 	test("rejects unknown affix", () => {
 		const config = {
 			...validConfig,
-			books: [{ slot: 1, platform: "千锋聚灵剑", op1: "不存在的词缀" }],
+			books: [
+				{
+					slot: 1,
+					platform: "千锋聚灵剑",
+					op1: "不存在的词缀",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).toThrow(
 			"not found",
@@ -169,7 +200,14 @@ describe("validatePlayerConfig", () => {
 	test("accepts known exclusive affix", () => {
 		const config = {
 			...validConfig,
-			books: [{ slot: 1, platform: "千锋聚灵剑", op1: "天哀灵涸" }],
+			books: [
+				{
+					slot: 1,
+					platform: "千锋聚灵剑",
+					op1: "天哀灵涸",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
@@ -177,7 +215,14 @@ describe("validatePlayerConfig", () => {
 	test("accepts known universal affix", () => {
 		const config = {
 			...validConfig,
-			books: [{ slot: 1, platform: "千锋聚灵剑", op1: "通明" }],
+			books: [
+				{
+					slot: 1,
+					platform: "千锋聚灵剑",
+					op1: "通明",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
@@ -187,7 +232,13 @@ describe("validatePlayerConfig", () => {
 		// blocks — missing handlers are reported as HANDLER_ERROR events at sim time.
 		const config = {
 			...validConfig,
-			books: [{ slot: 1, platform: "周天星元" }],
+			books: [
+				{
+					slot: 1,
+					platform: "周天星元",
+					progression: { enlightenment: 10, fusion: 51 },
+				},
+			],
 		};
 		expect(() => validatePlayerConfig(config, books, affixes)).not.toThrow();
 	});
