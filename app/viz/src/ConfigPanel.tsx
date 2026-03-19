@@ -44,10 +44,16 @@ interface ConfigPanelProps {
 	onRun: (config: SimConfig) => void;
 }
 
+const schools = Object.keys(books);
+const affixCategories = ["通用", ...Object.keys(affixes.school), "专属"] as const;
+
 interface PlayerPanelState {
+	school: string;
 	platform: string;
 	op1: string;
 	op2: string;
+	op1Category: string;
+	op2Category: string;
 	hp: number;
 	atk: number;
 	sp: number;
@@ -55,67 +61,23 @@ interface PlayerPanelState {
 	spRegen: number;
 }
 
-/** Book selector with optgroups by school */
-function BookSelect({
-	value,
-	onChange,
-}: { value: string; onChange: (v: string) => void }) {
-	return (
-		<select
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			style={selectStyle}
-		>
-			{Object.entries(books).map(([school, names]) => (
-				<optgroup key={school} label={school}>
-					{names.map((b) => (
-						<option key={b} value={b}>
-							{b}
-						</option>
-					))}
-				</optgroup>
-			))}
-		</select>
-	);
-}
-
-/** Affix selector with optgroups: (none), universal, school by 修为, exclusive by book */
-function AffixSelect({
-	value,
-	onChange,
-}: { value: string; onChange: (v: string) => void }) {
-	return (
-		<select
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			style={selectStyle}
-		>
-			<option value="">(none)</option>
-			<optgroup label="通用词缀">
-				{affixes.universal.map((a) => (
-					<option key={a} value={a}>
-						{a}
-					</option>
-				))}
-			</optgroup>
-			{Object.entries(affixes.school).map(([school, names]) => (
-				<optgroup key={school} label={`修为·${school}`}>
-					{names.map((a) => (
-						<option key={a} value={a}>
-							{a}
-						</option>
-					))}
-				</optgroup>
-			))}
-			<optgroup label="专属词缀">
-				{Object.entries(affixes.exclusive).map(([book, affix]) => (
-					<option key={affix} value={affix}>
-						{affix} ({book})
-					</option>
-				))}
-			</optgroup>
-		</select>
-	);
+/** Get affix list for a given category */
+function getAffixesForCategory(category: string): { value: string; label: string }[] {
+	if (category === "通用") {
+		return affixes.universal.map((a) => ({ value: a, label: a }));
+	}
+	if (category === "专属") {
+		return Object.entries(affixes.exclusive).map(([book, affix]) => ({
+			value: affix,
+			label: `${affix} (${book})`,
+		}));
+	}
+	// School affix
+	const schoolAffixes = affixes.school[category];
+	if (schoolAffixes) {
+		return schoolAffixes.map((a) => ({ value: a, label: a }));
+	}
+	return [];
 }
 
 function PlayerConfigPanel({
@@ -129,6 +91,10 @@ function PlayerConfigPanel({
 }) {
 	const set = (key: keyof PlayerPanelState, value: string | number) =>
 		onChange({ ...state, [key]: value });
+
+	const schoolBooks = books[state.school] ?? [];
+	const op1Affixes = getAffixesForCategory(state.op1Category);
+	const op2Affixes = getAffixesForCategory(state.op2Category);
 
 	return (
 		<div
@@ -146,27 +112,90 @@ function PlayerConfigPanel({
 				{label}
 			</div>
 
-			{/* Book selector */}
+			{/* School → Book chained selectors */}
 			<div style={{ marginBottom: 6 }}>
-				<label style={labelStyle}>Platform (main book)</label>
-				<BookSelect
+				<label style={labelStyle}>修为 (school)</label>
+				<select
+					value={state.school}
+					onChange={(e) => {
+						const newSchool = e.target.value;
+						const newBooks = books[newSchool] ?? [];
+						onChange({ ...state, school: newSchool, platform: newBooks[0] ?? "" });
+					}}
+					style={selectStyle}
+				>
+					{schools.map((s) => (
+						<option key={s} value={s}>{s}</option>
+					))}
+				</select>
+			</div>
+			<div style={{ marginBottom: 6 }}>
+				<label style={labelStyle}>功法書 (skill book)</label>
+				<select
 					value={state.platform}
-					onChange={(v) => set("platform", v)}
-				/>
+					onChange={(e) => set("platform", e.target.value)}
+					style={selectStyle}
+				>
+					{schoolBooks.map((b) => (
+						<option key={b} value={b}>{b}</option>
+					))}
+				</select>
 			</div>
-			<div style={{ marginBottom: 6 }}>
-				<label style={labelStyle}>Aux Affix 1</label>
-				<AffixSelect
-					value={state.op1}
-					onChange={(v) => set("op1", v)}
-				/>
+
+			{/* Affix category → Affix chained selectors */}
+			<div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+				<div style={{ flex: "0 0 80px" }}>
+					<label style={labelStyle}>词缀1 类别</label>
+					<select
+						value={state.op1Category}
+						onChange={(e) => onChange({ ...state, op1Category: e.target.value, op1: "" })}
+						style={selectStyle}
+					>
+						{affixCategories.map((c) => (
+							<option key={c} value={c}>{c}</option>
+						))}
+					</select>
+				</div>
+				<div style={{ flex: 1 }}>
+					<label style={labelStyle}>词缀1</label>
+					<select
+						value={state.op1}
+						onChange={(e) => set("op1", e.target.value)}
+						style={selectStyle}
+					>
+						<option value="">(none)</option>
+						{op1Affixes.map((a) => (
+							<option key={a.value} value={a.value}>{a.label}</option>
+						))}
+					</select>
+				</div>
 			</div>
-			<div style={{ marginBottom: 8 }}>
-				<label style={labelStyle}>Aux Affix 2</label>
-				<AffixSelect
-					value={state.op2}
-					onChange={(v) => set("op2", v)}
-				/>
+			<div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+				<div style={{ flex: "0 0 80px" }}>
+					<label style={labelStyle}>词缀2 类别</label>
+					<select
+						value={state.op2Category}
+						onChange={(e) => onChange({ ...state, op2Category: e.target.value, op2: "" })}
+						style={selectStyle}
+					>
+						{affixCategories.map((c) => (
+							<option key={c} value={c}>{c}</option>
+						))}
+					</select>
+				</div>
+				<div style={{ flex: 1 }}>
+					<label style={labelStyle}>词缀2</label>
+					<select
+						value={state.op2}
+						onChange={(e) => set("op2", e.target.value)}
+						style={selectStyle}
+					>
+						<option value="">(none)</option>
+						{op2Affixes.map((a) => (
+							<option key={a.value} value={a.value}>{a.label}</option>
+						))}
+					</select>
+				</div>
 			</div>
 
 			{/* Per-player stats */}
@@ -206,15 +235,21 @@ function PlayerConfigPanel({
 
 export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	const [playerA, setPlayerA] = useState<PlayerPanelState>({
+		school: schools[0],
 		platform: firstBook,
 		op1: "",
 		op2: "",
+		op1Category: "通用",
+		op2Category: "通用",
 		...defaultStats,
 	});
 	const [playerB, setPlayerB] = useState<PlayerPanelState>({
+		school: schools[0],
 		platform: secondBook,
 		op1: "",
 		op2: "",
+		op1Category: "通用",
+		op2Category: "通用",
 		...defaultStats,
 	});
 	const [seed, setSeed] = useState(42);
