@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fantasy RPG UI Pack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "phaser": "https://esm.sh/phaser@3.70.0",
+          "tone": "https://esm.sh/tone@14.7.77"
+        }
+      }
+    </script>
+    <style>
+      html, body { margin: 0; padding: 0; background-color: black; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="game-container"></div>
+    
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        <div class="rpg-panel">
+            <h1>Character Status</h1>
+            
+            <div class="status-section">
+                <!-- Health -->
+                <div class="status-row">
+                    <div class="icon-container">
+                        <img src="assets/health_orb.png.webp" alt="Health">
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-header">
+                            <span class="bar-label">Health</span>
+                            <span class="bar-value" id="hp-text">100/100</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill hp-fill" id="hp-bar" style="width: 100%;"></div>
+                            <div class="bar-shine"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mana -->
+                <div class="status-row">
+                    <div class="icon-container">
+                        <img src="assets/mana_orb.png.webp" alt="Mana">
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-header">
+                            <span class="bar-label">Mana</span>
+                            <span class="bar-value" id="mana-text">50/50</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill mana-fill" id="mana-bar" style="width: 100%;"></div>
+                            <div class="bar-shine"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- XP -->
+                <div class="status-row">
+                    <div class="icon-container xp-icon">
+                        <span>XP</span>
+                    </div>
+                    <div class="bar-wrapper">
+                        <div class="bar-header">
+                            <span class="bar-label">Experience</span>
+                            <span class="bar-value" id="xp-text">LVL 1</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill xp-fill" id="xp-bar" style="width: 45%;"></div>
+                            <div class="bar-shine"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h2>Settings</h2>
+            <div class="slider-section">
+                <div class="slider-row">
+                    <label>Music Volume</label>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="70" class="rpg-slider" id="music-slider">
+                    </div>
+                </div>
+                <div class="slider-row">
+                    <label>SFX Volume</label>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="85" class="rpg-slider" id="sfx-slider">
+                    </div>
+                </div>
+                <div class="slider-row">
+                    <label>Brightness</label>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="50" class="rpg-slider" id="brightness-slider">
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="controls-section">
+                <button class="rpg-btn damage" id="btn-damage">Take Damage</button>
+                <button class="rpg-btn heal" id="btn-heal">Heal</button>
+                <button class="rpg-btn mana" id="btn-cast">Cast Spell</button>
+                <button class="rpg-btn xp" id="btn-xp">Gain XP</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+    <script src="https://storage.googleapis.com/rosebud_staticfiles/ChatManager.js"></script>
+    <script src="https://storage.googleapis.com/rosebud_staticfiles/ImageGenerator.js"></script>
+    <script src="https://storage.googleapis.com/rosebud_staticfiles/ProgressLogger.js"></script>
+    <script src="https://storage.googleapis.com/rosebud_staticfiles/OGP.js"></script>
+  </body>
+</html>

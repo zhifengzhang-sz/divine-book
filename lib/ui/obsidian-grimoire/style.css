@@ -1,0 +1,348 @@
+:root {
+    --gold-dark: #b8860b;
+    --gold-light: #ffd700;
+    --border-color: #5c4033;
+    --bg-dark: rgba(0, 0, 0, 0.85);
+    --text-main: #e0e0e0;
+    --hp-color: #e74c3c;
+    --hp-dark: #c0392b;
+    --mana-color: #3498db;
+    --mana-dark: #2980b9;
+    --xp-color: #9b59b6;
+    --xp-dark: #8e44ad;
+}
+
+body {
+    font-family: 'MedievalSharp', cursive;
+    color: var(--text-main);
+    background-image: url('assets/fantasy_bg.png.webp');
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* UI Container */
+#ui-layer {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+    pointer-events: none; /* Allow clicks to pass through to game */
+}
+
+.rpg-panel {
+    pointer-events: auto; /* Re-enable clicks on the panel */
+    background-image: url('assets/ui_panel_bg.png.webp');
+    background-size: 500px; /* Tile the texture */
+    background-color: #1a1a1a; /* Fallback */
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 
+        0 0 0 4px #2c3e50, 
+        0 0 0 6px var(--gold-dark),
+        0 0 30px rgba(0,0,0,0.9),
+        inset 0 0 50px rgba(0,0,0,0.8);
+    width: 500px;
+    max-width: 90%;
+    text-align: center;
+    position: relative;
+}
+
+/* Decorative Corners (using pseudo-elements for simplicity) */
+.rpg-panel::before, .rpg-panel::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    border: 2px solid rgba(255, 215, 0, 0.2);
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+h1, h2 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold-light);
+    text-shadow: 2px 2px 4px #000;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--gold-dark);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin-top: 10px;
+    border-bottom: 1px solid var(--gold-dark);
+}
+
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+    margin: 20px 0;
+    opacity: 0.5;
+}
+
+/* Status Bars */
+.status-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.icon-container {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+}
+
+.icon-container img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.xp-icon {
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: var(--xp-color);
+    border: 2px solid var(--xp-dark);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    width: 46px;
+    height: 46px;
+    box-shadow: 0 0 10px var(--xp-dark);
+}
+
+.bar-wrapper {
+    flex-grow: 1;
+}
+
+.bar-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #ccc;
+    text-shadow: 1px 1px 2px black;
+}
+
+.bar-track {
+    height: 20px;
+    background: #111;
+    border: 2px solid #444;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+}
+
+.bar-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.3s ease-out;
+    position: relative;
+    border-radius: 8px 0 0 8px; /* Slightly less than parent for inset look */
+}
+
+/* Specific Bar Colors */
+.hp-fill {
+    background: linear-gradient(180deg, #ff6b6b, #c0392b);
+    box-shadow: 0 0 10px rgba(192, 57, 43, 0.5);
+}
+
+.mana-fill {
+    background: linear-gradient(180deg, #5dade2, #2980b9);
+    box-shadow: 0 0 10px rgba(41, 128, 185, 0.5);
+}
+
+.xp-fill {
+    background: linear-gradient(180deg, #af7ac5, #8e44ad);
+    box-shadow: 0 0 10px rgba(142, 68, 173, 0.5);
+}
+
+/* Shine effect on bars */
+.bar-shine {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+    pointer-events: none;
+}
+
+/* Sliders */
+.slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.slider-row label {
+    flex: 0 0 120px;
+    text-align: left;
+    font-size: 1rem;
+    text-shadow: 1px 1px 2px black;
+}
+
+.slider-container {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Custom Range Input */
+input[type=range] {
+    -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+    width: 100%; /* Specific width is required for Firefox. */
+    background: transparent; /* Otherwise white in Chrome */
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+}
+
+input[type=range]:focus {
+    outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+}
+
+input[type=range]::-ms-track {
+    width: 100%;
+    cursor: pointer;
+
+    /* Hides the slider so custom styles can be added */
+    background: transparent; 
+    border-color: transparent;
+    color: transparent;
+}
+
+/* Thumb Styling */
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 36px;
+    width: 36px;
+    background: url('assets/slider_handle.png.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    margin-top: -14px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    transition: transform 0.1s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* Firefox Thumb */
+input[type=range]::-moz-range-thumb {
+    height: 36px;
+    width: 36px;
+    background: url('assets/slider_handle.png.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    border: none;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    transition: transform 0.1s;
+}
+input[type=range]::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+/* Track Styling */
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #111;
+    border-radius: 4px;
+    border: 1px solid #444;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+}
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    cursor: pointer;
+    background: #111;
+    border-radius: 4px;
+    border: 1px solid #444;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+}
+
+
+/* Controls */
+.controls-section {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rpg-btn {
+    background: linear-gradient(180deg, #444, #222);
+    border: 2px solid var(--border-color);
+    color: var(--gold-light);
+    font-family: 'Cinzel', serif;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #111;
+    text-shadow: 1px 1px 2px black;
+}
+
+.rpg-btn:active {
+    box-shadow: 0 1px 0 #111;
+    transform: translateY(3px);
+}
+
+.rpg-btn:hover {
+    border-color: var(--gold-light);
+    box-shadow: 0 4px 0 #111, 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.rpg-btn.damage:hover { border-color: #ff6b6b; box-shadow: 0 4px 0 #111, 0 0 10px rgba(255, 0, 0, 0.3); }
+.rpg-btn.heal:hover { border-color: #2ecc71; box-shadow: 0 4px 0 #111, 0 0 10px rgba(46, 204, 113, 0.3); }
+.rpg-btn.mana:hover { border-color: #3498db; box-shadow: 0 4px 0 #111, 0 0 10px rgba(52, 152, 219, 0.3); }
+.rpg-btn.xp:hover { border-color: #9b59b6; box-shadow: 0 4px 0 #111, 0 0 10px rgba(155, 89, 182, 0.3); }
+
+/* Responsive */
+@media (max-width: 600px) {
+    .rpg-panel {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .slider-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .slider-row label {
+        margin-bottom: 5px;
+    }
+    
+    .slider-container {
+        width: 100%;
+    }
+}
