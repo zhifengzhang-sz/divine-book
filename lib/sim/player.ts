@@ -126,20 +126,32 @@ function resolveAffixEffects(
 	const effects: EffectRow[] = [];
 	for (const opName of [slot.op1, slot.op2]) {
 		if (!opName) continue;
+		let found = false;
 		// Check universal affixes
 		if (affixesYaml.universal[opName]) {
 			effects.push(...affixesYaml.universal[opName].effects);
-			continue;
+			found = true;
 		}
 		// Check school affixes
-		for (const school of Object.values(affixesYaml.school)) {
-			if (school[opName]) {
-				effects.push(...school[opName].effects);
-				break;
+		if (!found) {
+			for (const school of Object.values(affixesYaml.school)) {
+				if (school[opName]) {
+					effects.push(...school[opName].effects);
+					found = true;
+					break;
+				}
 			}
 		}
-		// Exclusive affixes are already on the book's exclusive_affix
-		// (handled by processBook reading bookData.exclusive_affix)
+		// Check exclusive affixes (look up by affix name across all books)
+		if (!found) {
+			for (const book of Object.values(booksYaml.books)) {
+				if (book.exclusive_affix?.name === opName) {
+					effects.push(...book.exclusive_affix.effects);
+					found = true;
+					break;
+				}
+			}
+		}
 	}
 	return effects;
 }
@@ -231,17 +243,22 @@ export const playerMachine = setup({
 							context.progression,
 						);
 
-						// Emit handler errors as events
-						for (const error of result.errors) {
-							enqueue(
-								emit({
-									type: "HANDLER_ERROR" as const,
-									player: context.label,
-									slot,
-									message: error,
-									t: context.clock.now(),
-								}),
-							);
+						// If any handler errors, emit them all and abort this cast.
+						// Unimplemented effects make the simulation unreliable.
+						if (result.errors.length > 0) {
+							for (const error of result.errors) {
+								enqueue(
+									emit({
+										type: "HANDLER_ERROR" as const,
+										player: context.label,
+										slot,
+										message: error,
+										t: context.clock.now(),
+									}),
+								);
+							}
+							// Don't send any HITs or other events — results would be wrong
+							return;
 						}
 
 						// Register reactive listeners

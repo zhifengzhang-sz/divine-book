@@ -6,11 +6,21 @@ import {
 	type SimConfig,
 } from "./runSim.ts";
 
-const allAffixes = [
-	"(none)",
-	...manifest.affixes.universal,
-	...Object.values(manifest.affixes.school).flat(),
-];
+// ── Manifest types ──────────────────────────────────────────────────
+
+type ManifestBooks = Record<string, string[]>;
+type ManifestAffixes = {
+	universal: string[];
+	school: Record<string, string[]>;
+	exclusive: Record<string, string>;
+};
+
+const books = manifest.books as ManifestBooks;
+const affixes = manifest.affixes as ManifestAffixes;
+
+const allBookNames = Object.values(books).flat();
+const firstBook = allBookNames[0] ?? "";
+const secondBook = allBookNames[1] ?? firstBook;
 
 const defaultStats = {
 	hp: combatConfig.player.entity.hp,
@@ -28,6 +38,8 @@ const defaults = {
 	tGap: combatConfig.t_gap,
 };
 
+// ── Sub-components ──────────────────────────────────────────────────
+
 interface ConfigPanelProps {
 	onRun: (config: SimConfig) => void;
 }
@@ -41,6 +53,69 @@ interface PlayerPanelState {
 	sp: number;
 	def: number;
 	spRegen: number;
+}
+
+/** Book selector with optgroups by school */
+function BookSelect({
+	value,
+	onChange,
+}: { value: string; onChange: (v: string) => void }) {
+	return (
+		<select
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			style={selectStyle}
+		>
+			{Object.entries(books).map(([school, names]) => (
+				<optgroup key={school} label={school}>
+					{names.map((b) => (
+						<option key={b} value={b}>
+							{b}
+						</option>
+					))}
+				</optgroup>
+			))}
+		</select>
+	);
+}
+
+/** Affix selector with optgroups: (none), universal, school by 修为, exclusive by book */
+function AffixSelect({
+	value,
+	onChange,
+}: { value: string; onChange: (v: string) => void }) {
+	return (
+		<select
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			style={selectStyle}
+		>
+			<option value="">(none)</option>
+			<optgroup label="通用词缀">
+				{affixes.universal.map((a) => (
+					<option key={a} value={a}>
+						{a}
+					</option>
+				))}
+			</optgroup>
+			{Object.entries(affixes.school).map(([school, names]) => (
+				<optgroup key={school} label={`修为·${school}`}>
+					{names.map((a) => (
+						<option key={a} value={a}>
+							{a}
+						</option>
+					))}
+				</optgroup>
+			))}
+			<optgroup label="专属词缀">
+				{Object.entries(affixes.exclusive).map(([book, affix]) => (
+					<option key={affix} value={affix}>
+						{affix} ({book})
+					</option>
+				))}
+			</optgroup>
+		</select>
+	);
 }
 
 function PlayerConfigPanel({
@@ -71,48 +146,27 @@ function PlayerConfigPanel({
 				{label}
 			</div>
 
-			{/* Book selectors */}
+			{/* Book selector */}
 			<div style={{ marginBottom: 6 }}>
 				<label style={labelStyle}>Platform (main book)</label>
-				<select
+				<BookSelect
 					value={state.platform}
-					onChange={(e) => set("platform", e.target.value)}
-					style={selectStyle}
-				>
-					{manifest.books.map((b) => (
-						<option key={b} value={b}>
-							{b}
-						</option>
-					))}
-				</select>
+					onChange={(v) => set("platform", v)}
+				/>
 			</div>
 			<div style={{ marginBottom: 6 }}>
 				<label style={labelStyle}>Aux Affix 1</label>
-				<select
+				<AffixSelect
 					value={state.op1}
-					onChange={(e) => set("op1", e.target.value)}
-					style={selectStyle}
-				>
-					{allAffixes.map((a) => (
-						<option key={a} value={a === "(none)" ? "" : a}>
-							{a}
-						</option>
-					))}
-				</select>
+					onChange={(v) => set("op1", v)}
+				/>
 			</div>
 			<div style={{ marginBottom: 8 }}>
 				<label style={labelStyle}>Aux Affix 2</label>
-				<select
+				<AffixSelect
 					value={state.op2}
-					onChange={(e) => set("op2", e.target.value)}
-					style={selectStyle}
-				>
-					{allAffixes.map((a) => (
-						<option key={a} value={a === "(none)" ? "" : a}>
-							{a}
-						</option>
-					))}
-				</select>
+					onChange={(v) => set("op2", v)}
+				/>
 			</div>
 
 			{/* Per-player stats */}
@@ -148,15 +202,17 @@ function PlayerConfigPanel({
 	);
 }
 
+// ── Main ConfigPanel ────────────────────────────────────────────────
+
 export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	const [playerA, setPlayerA] = useState<PlayerPanelState>({
-		platform: manifest.books[0] ?? "",
+		platform: firstBook,
 		op1: "",
 		op2: "",
 		...defaultStats,
 	});
 	const [playerB, setPlayerB] = useState<PlayerPanelState>({
-		platform: manifest.books[1] ?? manifest.books[0] ?? "",
+		platform: secondBook,
 		op1: "",
 		op2: "",
 		...defaultStats,
@@ -283,6 +339,8 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 	);
 }
 
+// ── Helpers ─────────────────────────────────────────────────────────
+
 function StatInput({
 	label,
 	value,
@@ -309,6 +367,8 @@ function StatInput({
 		</div>
 	);
 }
+
+// ── Styles ──────────────────────────────────────────────────────────
 
 const labelStyle: React.CSSProperties = {
 	fontSize: 11,

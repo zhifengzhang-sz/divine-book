@@ -228,7 +228,7 @@ export function App() {
 		<div style={{ fontFamily: 'Menlo, "Fira Code", monospace', background: "#1e2127", color: "#abb2bf", minHeight: "100vh", padding: 24 }}>
 			<h1 style={{ color: "#e5c07b", margin: "0 0 16px", fontSize: 20 }}>Divine Book Combat Simulator</h1>
 			<ConfigPanel onRun={handleRun} />
-			{simError && <div style={{ color: "#e06c75", fontSize: 12, padding: 8, background: "#2c313a", borderRadius: 4, marginBottom: 16 }}>{simError}</div>}
+			{simError && <div style={{ color: "#e06c75", fontSize: 12, padding: 8, background: "#2c313a", borderRadius: 4, marginBottom: 16, whiteSpace: "pre-wrap" }}>{simError}</div>}
 			{simData && <SimView key={runCount} data={simData} />}
 		</div>
 	);

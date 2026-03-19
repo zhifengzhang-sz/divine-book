@@ -149,6 +149,19 @@ export function runSimulation(config: SimConfig): SimulationData {
 	playerA.send({ type: "CAST_SLOT", slot: 1 });
 	playerB.send({ type: "CAST_SLOT", slot: 1 });
 
+	// Check for handler errors — if any effect type is unimplemented,
+	// report the specific errors and stop (partial results are unreliable)
+	const handlerErrors = events.filter((e) => e.type === "HANDLER_ERROR");
+	if (handlerErrors.length > 0) {
+		const msgs = handlerErrors.map((e) => {
+			const err = e as unknown as { player: string; slot: number; message: string };
+			return `${err.player} slot ${err.slot}: ${err.message}`;
+		});
+		throw new Error(
+			`Simulation aborted — unimplemented effect types:\n${msgs.join("\n")}`,
+		);
+	}
+
 	// Advance clock second by second, checking death after each time step
 	// so both players' hits at the same time resolve before either dies
 	const maxTime = 36000; // 36s max fight
