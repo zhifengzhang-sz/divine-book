@@ -103,7 +103,8 @@ type PlayerMachineEvent =
 	| { type: "STATE_TICK_INTERNAL"; name: string }
 	| { type: "STATE_EXPIRE_INTERNAL"; name: string }
 	| { type: "CLOCK_TICK"; dt: number }
-	| { type: "CHECK_DEATH" };
+	| { type: "CHECK_DEATH" }
+	| { type: "DELIVER_HIT"; hit: HitEvent };
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ export const playerMachine = setup({
 					})),
 				},
 				CAST_SLOT: {
-					actions: enqueueActions(({ context, event, enqueue }) => {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
 						const slot = event.slot;
 						const bookSlot = context.bookSlots.find((b) => b.slot === slot);
 						if (!bookSlot) return;
@@ -265,30 +266,32 @@ export const playerMachine = setup({
 							}
 						}
 
-						// Schedule HIT events spread over cast duration (~1s per hit)
+						// Schedule HIT events on the clock (~1s per hit).
+						// Each callback sends DELIVER_HIT to self, which then
+						// forwards the HIT to the opponent via sendTo — keeping
+						// all event routing inside the XState action system.
 						const hitGapMs = 1000;
+						const selfRef = self;
 						for (let i = 0; i < hitEvents.length; i++) {
 							const hitEv = hitEvents[i];
-							const opponent = context.opponentRef;
-							if (!opponent) continue;
 							context.clockCallbackIds.push(
 								context.clock.setTimeout(() => {
-									opponent.send(hitEv);
+									selfRef.send({ type: "DELIVER_HIT", hit: hitEv });
 								}, i * hitGapMs),
 							);
 						}
-
-						// Schedule CAST_END after all hits
-						const castDurationMs = hitEvents.length > 0
-							? (hitEvents.length - 1) * hitGapMs
-							: 0;
-						context.clock.setTimeout(() => {
-							// Emit via direct mutation since we're in a clock callback
-						}, castDurationMs);
+					}),
+				},
+				DELIVER_HIT: {
+					actions: enqueueActions(({ context, event, enqueue }) => {
+						// Forward the HIT to the opponent via sendTo
+						const hit = (event as { hit: HitEvent }).hit;
+						if (context.opponentRef) {
+							enqueue(sendTo(context.opponentRef, hit));
+						}
 					}),
 				},
 				HIT: {
-	
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						resolveHit(context, event as HitEvent, enqueue);
 					}),
