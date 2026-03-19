@@ -1,6 +1,5 @@
 import { useState } from "react";
 import affixesData from "./affixes-data.json";
-import bookDescriptions from "./book-descriptions.json";
 import booksData from "./books-data.json";
 import {
 	Pill,
@@ -73,6 +72,8 @@ interface TierOption {
 type EffectEntry = { type: string; data_state?: string | string[]; [k: string]: unknown };
 type BookEntry = {
 	school: string;
+	skill_text?: string;
+	affix_text?: string;
 	skill?: EffectEntry[];
 	primary_affix?: { name: string; effects: EffectEntry[] };
 	exclusive_affix?: { name: string; effects: EffectEntry[] };
@@ -310,7 +311,6 @@ function BookPickerDialog({
 				{/* Book preview: raw text + parsed effects */}
 				{(() => {
 					const bookData = allBooksData[sel.platform];
-					const desc = (bookDescriptions as Record<string, { skillText: string; affixText: string }>)[sel.platform];
 					if (!bookData) return null;
 					const skillEffects = bookData.skill
 						? filterEffectsForTier(bookData.skill, sel.enlightenment, sel.fusion)
@@ -331,20 +331,20 @@ function BookPickerDialog({
 								fontSize: 11,
 							}}
 						>
-							{desc && (
+							{bookData.skill_text && (
 								<>
 									<div style={{ color: "#e5c07b", marginBottom: 2 }}>原文 — Skill</div>
 									<div style={{ color: "#7f848e", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #3e4451" }}>
-										{desc.skillText}
+										{bookData.skill_text}
 									</div>
 								</>
 							)}
 							<EffectPreview label="→ Parsed Effects" effects={skillEffects} />
-							{desc?.affixText && (
+							{bookData.affix_text && (
 								<>
 									<div style={{ color: "#e5c07b", marginBottom: 2, marginTop: 6 }}>原文 — Primary Affix</div>
 									<div style={{ color: "#7f848e", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #3e4451" }}>
-										{desc.affixText}
+										{bookData.affix_text}
 									</div>
 								</>
 							)}

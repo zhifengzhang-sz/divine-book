@@ -28,6 +28,9 @@ export function emitBooks(
 			school: parsed.school,
 		};
 
+		if (parsed.skillText) book.skill_text = parsed.skillText;
+		if (parsed.affixText) book.affix_text = parsed.affixText;
+
 		if (parsed.states && Object.keys(parsed.states).length > 0) {
 			book.states = parsed.states;
 		}
@@ -84,6 +87,19 @@ export function formatYaml(books: Record<string, BookData>): string {
 	for (const [name, book] of Object.entries(books)) {
 		lines.push(`  ${name}:`);
 		lines.push(`    school: ${book.school}`);
+
+		if (book.skill_text) {
+			lines.push(`    skill_text: |`);
+			for (const line of book.skill_text.split("\n")) {
+				lines.push(`      ${line}`);
+			}
+		}
+		if (book.affix_text) {
+			lines.push(`    affix_text: |`);
+			for (const line of book.affix_text.split("\n")) {
+				lines.push(`      ${line}`);
+			}
+		}
 
 		if (book.states && Object.keys(book.states).length > 0) {
 			lines.push("    states:");

@@ -21,6 +21,8 @@ import { buildDataState, resolveFields } from "./tiers.js";
 
 export interface ParsedBook {
 	school: string;
+	skillText?: string;
+	affixText?: string;
 	states?: StateRegistry;
 	skill: EffectRow[];
 	primaryAffix?: { name: string; effects: EffectRow[] };

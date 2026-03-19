@@ -32,6 +32,10 @@ export interface StateDef {
 /** Per-book parsed data — one entry in books.yaml */
 export interface BookData {
 	school: string;
+	/** Raw skill description from source prose */
+	skill_text?: string;
+	/** Raw primary affix description from source prose */
+	affix_text?: string;
 	states?: Record<string, StateDef>;
 	skill?: EffectRow[];
 	primary_affix?: AffixSection;

@@ -61,6 +61,10 @@ export function parseMainSkills(
 				affixCell,
 			);
 
+			// Attach raw text from source
+			parsed.skillText = entry.skillText.replace(/<br\s*\/?>/gi, "\n");
+			parsed.affixText = entry.affixText.replace(/<br\s*\/?>/gi, "\n");
+
 			// Validate: must have at least base_attack
 			const hasBaseAttack = parsed.skill.some((e) => e.type === "base_attack");
 			if (!hasBaseAttack && parsed.skill.length > 0) {
@@ -146,6 +150,10 @@ export function parseSingleBook(
 		skillCell,
 		affixCell,
 	);
+
+	// Attach raw text from source
+	parsed.skillText = entry.skillText.replace(/<br\s*\/?>/gi, "\n");
+	parsed.affixText = entry.affixText.replace(/<br\s*\/?>/gi, "\n");
 
 	// Merge exclusive affix if provided
 	if (exclusiveMarkdown) {
