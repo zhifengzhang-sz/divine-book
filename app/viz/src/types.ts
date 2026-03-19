@@ -20,6 +20,8 @@ export interface SimulationData {
 		playerA: {
 			label: string;
 			book: string;
+			enlightenment: number;
+			fusion: number;
 			hp: number;
 			atk: number;
 			sp: number;
@@ -29,6 +31,8 @@ export interface SimulationData {
 		playerB: {
 			label: string;
 			book: string;
+			enlightenment: number;
+			fusion: number;
 			hp: number;
 			atk: number;
 			sp: number;

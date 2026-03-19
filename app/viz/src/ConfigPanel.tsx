@@ -80,28 +80,46 @@ type BookEntry = {
 };
 const allBooksData = (booksData as { books: Record<string, BookEntry> }).books;
 
-function getTierOptions(platform: string): TierOption[] {
-	const book = allBooksData[platform];
-	if (!book?.skill) return [];
+/** Extract unique tier options from a list of effects */
+function getTierOptionsFromEffects(
+	effects: EffectEntry[],
+): TierOption[] {
 	const seen = new Set<string>();
 	const options: TierOption[] = [];
-	for (const effect of book.skill) {
-		if (effect.type !== "base_attack") continue;
+	for (const effect of effects) {
 		const ds = effect.data_state;
 		if (!ds || ds === "locked") continue;
 		const entries = Array.isArray(ds) ? ds : [ds];
 		let e = 0;
 		let f = 0;
 		for (const s of entries) {
-			if (s.startsWith("enlightenment=")) e = Number(s.split("=")[1]);
+			if (typeof s !== "string") continue;
+			if (s.startsWith("enlightenment="))
+				e = Number(s.split("=")[1]);
 			if (s.startsWith("fusion=")) f = Number(s.split("=")[1]);
 		}
 		const key = `${e}/${f}`;
 		if (seen.has(key)) continue;
 		seen.add(key);
-		options.push({ label: `悟${e}/融${f}`, enlightenment: e, fusion: f });
+		options.push({
+			label: `悟${e}/融${f}`,
+			enlightenment: e,
+			fusion: f,
+		});
 	}
 	return options;
+}
+
+function getTierOptions(platform: string): TierOption[] {
+	const book = allBooksData[platform];
+	if (!book?.skill) return [];
+	return getTierOptionsFromEffects(book.skill);
+}
+
+function getAffixTierOptions(affixName: string): TierOption[] {
+	const effects = lookupAffixEffects(affixName);
+	if (!effects || effects.length === 0) return [];
+	return getTierOptionsFromEffects(effects);
 }
 
 /** Select highest matching tier per effect type (mirrors sim's selectTiers) */
@@ -489,20 +507,37 @@ function AffixPickerDialog({
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
-					<StatInput
-						label="悟境"
-						value={sel.enlightenment}
-						onChange={(v) => setSel({ ...sel, enlightenment: v })}
-						width={50}
-					/>
-					<StatInput
-						label="融合"
-						value={sel.fusion}
-						onChange={(v) => setSel({ ...sel, fusion: v })}
-						width={50}
-					/>
-				</div>
+				{/* Progression dropdown (same as book dialog) */}
+				{(() => {
+					const tierOpts = sel.name ? getAffixTierOptions(sel.name) : [];
+					if (tierOpts.length === 0) return null;
+					return (
+						<div style={{ marginBottom: 10 }}>
+							<label style={labelStyle}>Progression</label>
+							<select
+								value={`${sel.enlightenment}/${sel.fusion}`}
+								onChange={(e) => {
+									const [eStr, fStr] = e.target.value.split("/");
+									setSel({
+										...sel,
+										enlightenment: Number(eStr),
+										fusion: Number(fStr),
+									});
+								}}
+								style={selectStyle}
+							>
+								{tierOpts.map((t) => (
+									<option
+										key={t.label}
+										value={`${t.enlightenment}/${t.fusion}`}
+									>
+										{t.label}
+									</option>
+								))}
+							</select>
+						</div>
+					);
+				})()}
 
 				{/* Affix effect preview */}
 				{sel.name && (() => {

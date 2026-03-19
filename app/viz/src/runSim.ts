@@ -295,8 +295,20 @@ export function runSimulation(config: SimConfig): SimulationData {
 	return {
 		verification: verA && verB ? { a: verA, b: verB } : undefined,
 		config: {
-			playerA: { label: "A", book: formatBook(config.playerA), ...statsA },
-			playerB: { label: "B", book: formatBook(config.playerB), ...statsB },
+			playerA: {
+				label: "A",
+				book: formatBook(config.playerA),
+				enlightenment: progressionA.enlightenment,
+				fusion: progressionA.fusion,
+				...statsA,
+			},
+			playerB: {
+				label: "B",
+				book: formatBook(config.playerB),
+				enlightenment: progressionB.enlightenment,
+				fusion: progressionB.fusion,
+				...statsB,
+			},
 			formulas,
 			seed,
 		},
