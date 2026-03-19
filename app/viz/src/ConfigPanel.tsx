@@ -1,8 +1,10 @@
 import { useState } from "react";
+import booksData from "./books-data.json";
 import {
 	Pill,
 	StatInput,
 	cancelBtnStyle,
+	chipStyle,
 	confirmBtnStyle,
 	dialogStyle,
 	dialogTitleStyle,
@@ -58,6 +60,40 @@ const affixCategories = [
 	"专属",
 ] as const;
 
+// ── Tier helpers ────────────────────────────────────────────────────
+
+interface TierOption {
+	label: string;
+	enlightenment: number;
+	fusion: number;
+}
+
+const allBooksData = (booksData as { books: Record<string, { skill?: { type: string; data_state?: string | string[] }[] }> }).books;
+
+function getTierOptions(platform: string): TierOption[] {
+	const book = allBooksData[platform];
+	if (!book?.skill) return [];
+	const seen = new Set<string>();
+	const options: TierOption[] = [];
+	for (const effect of book.skill) {
+		if (effect.type !== "base_attack") continue;
+		const ds = effect.data_state;
+		if (!ds || ds === "locked") continue;
+		const entries = Array.isArray(ds) ? ds : [ds];
+		let e = 0;
+		let f = 0;
+		for (const s of entries) {
+			if (s.startsWith("enlightenment=")) e = Number(s.split("=")[1]);
+			if (s.startsWith("fusion=")) f = Number(s.split("=")[1]);
+		}
+		const key = `${e}/${f}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		options.push({ label: `悟${e}/融${f}`, enlightenment: e, fusion: f });
+	}
+	return options;
+}
+
 // ── Book Picker Dialog ──────────────────────────────────────────────
 
 interface BookSelection {
@@ -78,6 +114,7 @@ function BookPickerDialog({
 }) {
 	const [sel, setSel] = useState<BookSelection>({ ...current });
 	const schoolBooks = books[sel.school] ?? [];
+	const tierOptions = getTierOptions(sel.platform);
 
 	return (
 		<div style={overlayStyle} onClick={onCancel}>
@@ -91,7 +128,16 @@ function BookPickerDialog({
 						onChange={(e) => {
 							const s = e.target.value;
 							const sb = books[s] ?? [];
-							setSel({ ...sel, school: s, platform: sb[0] ?? "" });
+							const newPlatform = sb[0] ?? "";
+							const newTiers = getTierOptions(newPlatform);
+							const top = newTiers[newTiers.length - 1];
+							setSel({
+								...sel,
+								school: s,
+								platform: newPlatform,
+								enlightenment: top?.enlightenment ?? sel.enlightenment,
+								fusion: top?.fusion ?? sel.fusion,
+							});
 						}}
 						style={selectStyle}
 					>
@@ -107,9 +153,17 @@ function BookPickerDialog({
 					<label style={labelStyle}>功法書 (book)</label>
 					<select
 						value={sel.platform}
-						onChange={(e) =>
-							setSel({ ...sel, platform: e.target.value })
-						}
+						onChange={(e) => {
+							const newPlatform = e.target.value;
+							const newTiers = getTierOptions(newPlatform);
+							const top = newTiers[newTiers.length - 1];
+							setSel({
+								...sel,
+								platform: newPlatform,
+								enlightenment: top?.enlightenment ?? sel.enlightenment,
+								fusion: top?.fusion ?? sel.fusion,
+							});
+						}}
 						style={selectStyle}
 					>
 						{schoolBooks.map((b) => (
@@ -120,23 +174,59 @@ function BookPickerDialog({
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-					<StatInput
-						label="悟境"
-						value={sel.enlightenment}
-						onChange={(v) => setSel({ ...sel, enlightenment: v })}
-						width={50}
-					/>
-					<StatInput
-						label="融合"
-						value={sel.fusion}
-						onChange={(v) => setSel({ ...sel, fusion: v })}
-						width={50}
-					/>
+				<div style={{ marginBottom: 10 }}>
+					<label style={labelStyle}>Progression</label>
+					<div
+						style={{
+							display: "flex",
+							gap: 4,
+							flexWrap: "wrap",
+							marginTop: 4,
+						}}
+					>
+						{tierOptions.map((t) => {
+							const active =
+								sel.enlightenment === t.enlightenment &&
+								sel.fusion === t.fusion;
+							return (
+								<button
+									key={t.label}
+									type="button"
+									onClick={() =>
+										setSel({
+											...sel,
+											enlightenment: t.enlightenment,
+											fusion: t.fusion,
+										})
+									}
+									style={{
+										...chipStyle,
+										background: active ? "#61afef" : "#2c313a",
+										color: active ? "#282c34" : "#5c6370",
+										borderColor: active
+											? "transparent"
+											: "#4b5263",
+									}}
+								>
+									{t.label}
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
-				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-					<button type="button" onClick={onCancel} style={cancelBtnStyle}>
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						justifyContent: "flex-end",
+					}}
+				>
+					<button
+						type="button"
+						onClick={onCancel}
+						style={cancelBtnStyle}
+					>
 						Cancel
 					</button>
 					<button
