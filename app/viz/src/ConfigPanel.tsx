@@ -176,43 +176,27 @@ function BookPickerDialog({
 
 				<div style={{ marginBottom: 10 }}>
 					<label style={labelStyle}>Progression</label>
-					<div
-						style={{
-							display: "flex",
-							gap: 4,
-							flexWrap: "wrap",
-							marginTop: 4,
+					<select
+						value={`${sel.enlightenment}/${sel.fusion}`}
+						onChange={(e) => {
+							const [eStr, fStr] = e.target.value.split("/");
+							setSel({
+								...sel,
+								enlightenment: Number(eStr),
+								fusion: Number(fStr),
+							});
 						}}
+						style={selectStyle}
 					>
-						{tierOptions.map((t) => {
-							const active =
-								sel.enlightenment === t.enlightenment &&
-								sel.fusion === t.fusion;
-							return (
-								<button
-									key={t.label}
-									type="button"
-									onClick={() =>
-										setSel({
-											...sel,
-											enlightenment: t.enlightenment,
-											fusion: t.fusion,
-										})
-									}
-									style={{
-										...chipStyle,
-										background: active ? "#61afef" : "#2c313a",
-										color: active ? "#282c34" : "#5c6370",
-										borderColor: active
-											? "transparent"
-											: "#4b5263",
-									}}
-								>
-									{t.label}
-								</button>
-							);
-						})}
-					</div>
+						{tierOptions.map((t) => (
+							<option
+								key={t.label}
+								value={`${t.enlightenment}/${t.fusion}`}
+							>
+								{t.label}
+							</option>
+						))}
+					</select>
 				</div>
 
 				<div
