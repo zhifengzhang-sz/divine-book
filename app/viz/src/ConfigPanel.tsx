@@ -292,17 +292,21 @@ function Pill({
 	);
 }
 
-function PlayerConfigPanel({
+// ── PlayerBox: reusable component with book spec row + stats row ────
+
+function PlayerBox({
 	label,
 	state,
 	onChange,
+	onOpenBookDialog,
+	onOpenAffixDialog,
 }: {
 	label: string;
 	state: PlayerPanelState;
 	onChange: (s: PlayerPanelState) => void;
+	onOpenBookDialog: () => void;
+	onOpenAffixDialog: (slot: 1 | 2) => void;
 }) {
-	const [bookDialog, setBookDialog] = useState(false);
-	const [affixDialog, setAffixDialog] = useState<1 | 2 | null>(null);
 	const set = (key: keyof PlayerPanelState, value: string | number) =>
 		onChange({ ...state, [key]: value });
 
@@ -314,30 +318,84 @@ function PlayerConfigPanel({
 				{label}
 			</div>
 
-			{/* Book + Affixes in one row */}
+			{/* Row 1: Book + Affixes */}
 			<div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-				<Pill label="Book" value={bookLabel} onClick={() => setBookDialog(true)} />
+				<Pill label="Book" value={bookLabel} onClick={onOpenBookDialog} />
 				<Pill
 					label="词缀1"
-					value={state.op1 ? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})` : ""}
-					onClick={() => setAffixDialog(1)}
+					value={
+						state.op1
+							? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})`
+							: ""
+					}
+					onClick={() => onOpenAffixDialog(1)}
 				/>
 				<Pill
 					label="词缀2"
-					value={state.op2 ? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})` : ""}
-					onClick={() => setAffixDialog(2)}
+					value={
+						state.op2
+							? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})`
+							: ""
+					}
+					onClick={() => onOpenAffixDialog(2)}
 				/>
 			</div>
 
-			{/* Stats in one row */}
-			<div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-				<StatInput label="HP" value={state.hp} onChange={(v) => set("hp", v)} width={70} />
-				<StatInput label="ATK" value={state.atk} onChange={(v) => set("atk", v)} width={70} />
-				<StatInput label="SP" value={state.sp} onChange={(v) => set("sp", v)} width={70} />
-				<StatInput label="DEF" value={state.def} onChange={(v) => set("def", v)} width={70} />
+			{/* Row 2: Stats */}
+			<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+				<StatInput
+					label="HP"
+					value={state.hp}
+					onChange={(v) => set("hp", v)}
+					width={70}
+				/>
+				<StatInput
+					label="ATK"
+					value={state.atk}
+					onChange={(v) => set("atk", v)}
+					width={70}
+				/>
+				<StatInput
+					label="SP"
+					value={state.sp}
+					onChange={(v) => set("sp", v)}
+					width={70}
+				/>
+				<StatInput
+					label="DEF"
+					value={state.def}
+					onChange={(v) => set("def", v)}
+					width={70}
+				/>
 			</div>
+		</div>
+	);
+}
 
-			{/* Dialogs */}
+// ── PlayerConfigPanel: wraps PlayerBox + manages dialogs ────────────
+
+function PlayerConfigPanel({
+	label,
+	state,
+	onChange,
+}: {
+	label: string;
+	state: PlayerPanelState;
+	onChange: (s: PlayerPanelState) => void;
+}) {
+	const [bookDialog, setBookDialog] = useState(false);
+	const [affixDialog, setAffixDialog] = useState<1 | 2 | null>(null);
+
+	return (
+		<>
+			<PlayerBox
+				label={label}
+				state={state}
+				onChange={onChange}
+				onOpenBookDialog={() => setBookDialog(true)}
+				onOpenAffixDialog={setAffixDialog}
+			/>
+
 			{bookDialog && (
 				<BookPickerDialog
 					current={{
@@ -359,6 +417,7 @@ function PlayerConfigPanel({
 					onCancel={() => setBookDialog(false)}
 				/>
 			)}
+
 			{affixDialog !== null && (
 				<AffixPickerDialog
 					current={{
@@ -395,7 +454,7 @@ function PlayerConfigPanel({
 					onCancel={() => setAffixDialog(null)}
 				/>
 			)}
-		</div>
+		</>
 	);
 }
 
