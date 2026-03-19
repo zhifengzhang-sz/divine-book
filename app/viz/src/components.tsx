@@ -21,6 +21,7 @@ const T = {
 	green: "#2ecc71",
 	red: "#e74c3c",
 	heading: "'Cinzel', serif",
+	headingCn: "'ZCOOL XiaoWei', 'Cinzel', serif",
 	body: "'Menlo', 'Fira Code', monospace",
 	glow: (color: string, size = 10) => `0 0 ${size}px ${color}88`,
 };
