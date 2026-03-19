@@ -262,12 +262,14 @@ describe("千锋聚灵剑 (G2, multi-tier)", () => {
 describe("春黎剑阵 (G2, summon)", () => {
 	const parsed = parseSingleBook(markdown, "春黎剑阵")!;
 
-	it("has base_attack + summon", () => {
-		expect(parsed.skill.length).toBe(2);
+	it("has base_attack (base + high tier) + summon", () => {
+		expect(parsed.skill.length).toBe(3);
 		expect(parsed.skill[0].type).toBe("base_attack");
-		expect(parsed.skill[0].hits).toBe(5);
-		expect(parsed.skill[1].type).toBe("summon");
-		expect(parsed.skill[1].duration).toBe(16);
+		expect(parsed.skill[0].total).toBe(1500);
+		expect(parsed.skill[1].type).toBe("base_attack");
+		expect(parsed.skill[1].hits).toBe(5);
+		expect(parsed.skill[2].type).toBe("summon");
+		expect(parsed.skill[2].duration).toBe(16);
 	});
 
 	it("has summon_buff affix", () => {

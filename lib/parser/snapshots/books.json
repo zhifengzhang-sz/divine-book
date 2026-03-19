@@ -121,6 +121,12 @@
       {
         "type": "base_attack",
         "hits": 5,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "base_attack",
+        "hits": 5,
         "total": 22305,
         "data_state": [
           "enlightenment=10",
@@ -198,6 +204,12 @@
       {
         "type": "base_attack",
         "hits": 10,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "base_attack",
+        "hits": 10,
         "total": 22305,
         "data_state": [
           "enlightenment=10",
@@ -262,6 +274,12 @@
           "enlightenment=10",
           "fusion=50"
         ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 8,
+        "total": 1500,
+        "data_state": "enlightenment=0"
       },
       {
         "type": "base_attack",
@@ -536,11 +554,7 @@
       {
         "type": "base_attack",
         "hits": 5,
-        "total": 1500,
-        "data_state": [
-          "enlightenment=1",
-          "fusion=20"
-        ]
+        "total": 1500
       },
       {
         "type": "self_heal",
@@ -690,10 +704,7 @@
         "type": "base_attack",
         "hits": 1,
         "total": 1500,
-        "data_state": [
-          "enlightenment=1",
-          "fusion=51"
-        ]
+        "data_state": "enlightenment=1"
       },
       {
         "type": "self_buff",
@@ -1200,11 +1211,7 @@
       {
         "type": "base_attack",
         "hits": 5,
-        "total": 1500,
-        "data_state": [
-          "enlightenment=0",
-          "fusion=20"
-        ]
+        "total": 1500
       },
       {
         "type": "counter_debuff",
@@ -1464,6 +1471,12 @@
       }
     },
     "skill": [
+      {
+        "type": "base_attack",
+        "hits": 4,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
       {
         "type": "base_attack",
         "hits": 4,

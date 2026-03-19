@@ -363,13 +363,6 @@ books:
       - type: base_attack
         hits: 5
         total: 1500
-        data_state: enlightenment=0
-      - type: base_attack
-        hits: 5
-        total: 1500
-        data_state:
-          - enlightenment=1
-          - fusion=20
       - type: self_heal
         value: 20
         data_state:
@@ -476,7 +469,9 @@ books:
         hp_bonus: 70
         duration: 12
         name: 仙佑
-        data_state: enlightenment=1
+        data_state:
+          - enlightenment=1
+          - fusion=51
       - type: base_attack
         hits: 1
         total: 20310
@@ -802,13 +797,6 @@ books:
       - type: base_attack
         hits: 5
         total: 1500
-        data_state: enlightenment=0
-      - type: base_attack
-        hits: 5
-        total: 1500
-        data_state:
-          - enlightenment=0
-          - fusion=20
       - type: counter_debuff
         on_attacked_chance: 30
         name: 罗天魔咒

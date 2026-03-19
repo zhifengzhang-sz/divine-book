@@ -237,7 +237,92 @@ function genericSkillParse(
 		}
 	}
 
+	// Synthesize a base tier if all base_attack entries require fusion.
+	// Every book has a base skill damage of 1500 (school default) that should
+	// be available without a fusion gate. The raw source only lists snapshots
+	// at specific progression levels — the base is implicit.
+	ensureBaseTier(effects, extracted);
+
 	return effects;
+}
+
+const BASE_SKILL_TOTAL = 1500;
+
+/**
+ * Ensure effects include a base_attack tier usable without a fusion gate.
+ *
+ * The raw source lists tier snapshots at specific progression levels, but
+ * every book implicitly has base skill damage of 1500. If the parser only
+ * captured high-tier snapshots, we synthesize an accessible base tier.
+ *
+ * Rules:
+ * - If there's already a base_attack with no data_state, or with only
+ *   enlightenment=0 — nothing to do.
+ * - If all base_attack entries require fusion — insert a base tier before
+ *   the first non-locked one. The base tier keeps the same hits count,
+ *   sets total=1500, and uses the minimum enlightenment requirement
+ *   (respecting locked tiers: if e=0 is locked, use e=1).
+ * - If the lowest non-locked base_attack already has total=1500, just
+ *   strip the fusion requirement from its data_state instead of adding
+ *   a duplicate.
+ */
+function ensureBaseTier(
+	effects: EffectRow[],
+	extracted: { effect: ExtractedEffect; order: number }[],
+): void {
+	const baseAttacks = effects.filter((e) => e.type === "base_attack");
+	if (baseAttacks.length === 0) return;
+
+	// Check if any base_attack is already usable without fusion
+	const hasAccessibleBase = baseAttacks.some((e) => {
+		const ds = e.data_state;
+		if (!ds) return true;
+		if (ds === "locked") return false;
+		const entries = Array.isArray(ds) ? ds : [ds];
+		// Accessible if no fusion requirement
+		return !entries.some(
+			(s) => typeof s === "string" && s.startsWith("fusion="),
+		);
+	});
+	if (hasAccessibleBase) return;
+
+	// Find the first non-locked base_attack
+	const firstReal = baseAttacks.find((e) => e.data_state !== "locked");
+	if (!firstReal) return;
+
+	// Determine minimum enlightenment (0 unless locked at 0)
+	const hasLockedTier = baseAttacks.some((e) => e.data_state === "locked");
+	const minEnlightenment = hasLockedTier ? 1 : 0;
+
+	// Get hits from the extracted base_attack pattern
+	const baseExtracted = extracted.find((e) => e.effect.type === "base_attack");
+	const hits =
+		(firstReal.hits as number) ??
+		(baseExtracted?.effect.fields.hits as number) ??
+		1;
+
+	// If the first real tier already has total=1500, just strip fusion
+	if ((firstReal.total as number) === BASE_SKILL_TOTAL) {
+		firstReal.data_state =
+			minEnlightenment > 0 ? `enlightenment=${minEnlightenment}` : undefined;
+		return;
+	}
+
+	// Synthesize a new base tier and insert before the first real one
+	const baseTier: EffectRow = {
+		type: "base_attack",
+		hits,
+		total: BASE_SKILL_TOTAL,
+	};
+	if (minEnlightenment > 0) {
+		baseTier.data_state = `enlightenment=${minEnlightenment}`;
+	} else {
+		baseTier.data_state = "enlightenment=0";
+	}
+
+	// Insert before the first non-locked base_attack
+	const insertIdx = effects.indexOf(firstReal);
+	effects.splice(insertIdx, 0, baseTier);
 }
 
 /**
