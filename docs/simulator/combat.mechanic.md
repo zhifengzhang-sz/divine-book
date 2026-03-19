@@ -425,11 +425,14 @@ The existence of separate "吸收力" (absorption power) and "额外吸收量" (
 **[FACT]** From 灵界 equipment update [^4]: the system "大幅提升仙品装备的灵力加成" and converts 攻击 attributes to 灵力 attributes proportionally, confirming that 灵力 is treated as equally important as 攻击力.
 
 **[ASSUMPTION]** Working model — **reactive per-hit absorption with conversion ratio:**
-1. On each hit, after DR, shield absorbs the full mitigated damage
-2. SP consumed = `mitigated_damage / sp_shield_ratio`
-3. `sp_shield_ratio` depends on 灵根 grade (unknown exact values; simulator parameter)
-4. When SP is depleted, no shield is generated — damage goes directly to HP
-5. SP regenerates at a rate determined by 灵力恢复 (进阶属性.md)
+1. On each hit, after DR, SP is consumed to produce shield that absorbs damage
+2. SP consumed per hit = `min(current_SP, mitigated_damage / sp_shield_ratio)`
+3. Shield produced = `SP_consumed × sp_shield_ratio` — absorbs that much damage
+4. Remaining damage (`mitigated - shield`) goes to HP
+5. `sp_shield_ratio` depends on 灵根 grade (unknown exact values; simulator parameter)
+6. When SP is depleted, no shield is generated — all post-DR damage goes to HP
+7. SP regenerates at a rate determined by 灵力恢复 (进阶属性.md)
+8. Resonance (会心/破灵) drains SP directly, reducing shield capacity for subsequent hits
 
 **[DERIVED]** For the simulator, `sp_shield_ratio` is the critical calibration parameter. At ratio=1, SP provides negligible defense (3.5% absorption at SP=5M vs 140M damage). Based on the evidence that 灵力 ≈ 攻击力 in importance and 灵根 grade amplifies the ratio, the simulator uses a configurable ratio (default: high enough to make SP last through multiple skill casts).
 
