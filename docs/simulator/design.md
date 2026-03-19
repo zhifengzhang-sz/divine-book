@@ -113,12 +113,12 @@ Characters have two resource pools:
 
 **Shield generation** (reactive, on taking damage):
 
-1. `shieldGenerated = min(sp, mitigatedDamage) × sp_shield_ratio`
-2. `sp -= shieldGenerated / sp_shield_ratio`
-3. `shield += shieldGenerated`
-4. Resolve remaining damage against shield, then HP
+1. `spConsumed = min(sp, mitigatedDamage / sp_shield_ratio)`
+2. `shield = spConsumed × sp_shield_ratio`
+3. `sp -= spConsumed`
+4. `hpDamage = mitigatedDamage - shield`
 
-When SP reaches zero, no shield is generated. All subsequent damage hits HP directly.
+When SP reaches zero, no shield is generated. All post-DR damage hits HP directly.
 
 **SP recovery:** `sp += spRegen × dt` per second, capped at maxSp.
 
