@@ -227,8 +227,11 @@ function BookPickerDialog({
 
 	return (
 		<div style={overlayStyle} onClick={onCancel}>
-			<div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
-				<div style={dialogTitleStyle}>Select Skill Book</div>
+			<div
+				style={{ ...dialogStyle, maxHeight: "80vh", overflowY: "auto" }}
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div style={dialogTitleStyle}>Select 主位 (Skill Book)</div>
 
 				<div style={{ marginBottom: 10 }}>
 					<label style={labelStyle}>修为 (school)</label>
@@ -326,8 +329,6 @@ function BookPickerDialog({
 								borderRadius: 4,
 								padding: 8,
 								marginBottom: 10,
-								maxHeight: 240,
-								overflowY: "auto",
 								fontSize: 11,
 							}}
 						>
@@ -447,8 +448,11 @@ function AffixPickerDialog({
 
 	return (
 		<div style={overlayStyle} onClick={onCancel}>
-			<div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
-				<div style={dialogTitleStyle}>Select Affix</div>
+			<div
+				style={{ ...dialogStyle, maxHeight: "80vh", overflowY: "auto" }}
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div style={dialogTitleStyle}>Select 辅位 (Affix)</div>
 
 				<div style={{ marginBottom: 10 }}>
 					<label style={labelStyle}>类别 (category)</label>
@@ -513,8 +517,6 @@ function AffixPickerDialog({
 								borderRadius: 4,
 								padding: 8,
 								marginBottom: 10,
-								maxHeight: 120,
-								overflowY: "auto",
 							}}
 						>
 							<EffectPreview label="Effects" effects={filtered} />
@@ -587,11 +589,11 @@ function PlayerBox({
 				{label}
 			</div>
 
-			{/* Row 1: Book + Affixes */}
+			{/* Row 1: 主位 + 辅位1 + 辅位2 */}
 			<div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-				<Pill label="Book" value={bookLabel} onClick={onOpenBookDialog} />
+				<Pill label="主位" value={bookLabel} onClick={onOpenBookDialog} />
 				<Pill
-					label="词缀1"
+					label="辅位1"
 					value={
 						state.op1
 							? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})`
@@ -600,7 +602,7 @@ function PlayerBox({
 					onClick={() => onOpenAffixDialog(1)}
 				/>
 				<Pill
-					label="词缀2"
+					label="辅位2"
 					value={
 						state.op2
 							? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})`
