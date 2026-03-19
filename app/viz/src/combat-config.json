@@ -30,7 +30,7 @@
   },
   "formulas": {
     "dr_constant": 1000000,
-    "sp_shield_ratio": 100
+    "sp_shield_ratio": 5000000
   },
   "t_gap": 6
 }

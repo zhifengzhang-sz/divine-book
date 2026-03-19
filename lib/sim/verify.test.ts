@@ -128,15 +128,17 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 
 // ── SP Shield Generation ────────────────────────────────────────────
 
-describe("SP shield generation", () => {
+describe("SP shield (divisive DR layer)", () => {
 	const clock = new SimulationClock();
 	const SP_AMOUNT = 10000;
+	// sp_shield_ratio = K_sp in SP/(SP+K_sp). At SP=K_sp, reduction = 50%.
+	const K_SP = SP_AMOUNT; // 50% reduction
 
 	const target = createActor(playerMachine, {
 		input: {
 			label: "B",
 			initialState: makeState({ sp: SP_AMOUNT, shield: 0 }),
-			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: 1.0 },
+			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: K_SP },
 			progression: { enlightenment: 10, fusion: 51 },
 			bookSlots: [],
 			booksYaml,
@@ -153,26 +155,29 @@ describe("SP shield generation", () => {
 	target.on("*", (ev: StateChangeEvent) => events.push(ev));
 	target.send({ type: "HIT", hitIndex: 0, damage: 50000, spDamage: 0 });
 
-	test("SP consumed for shield generation", () => {
-		const spGen = events.find(
+	test("SP NOT consumed by shield (only resonance drains SP)", () => {
+		const spChange = events.find(
 			(e) => e.type === "SP_CHANGE" && e.cause === "shield_gen",
-		) as SpChangeEvent | undefined;
-		expect(spGen).toBeDefined();
-		expect(spGen?.next).toBeCloseTo(0, 0);
+		);
+		expect(spChange).toBeUndefined();
 	});
 
-	test("shield generated", () => {
-		const shieldGen = events.find(
-			(e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen",
-		) as ShieldChangeEvent | undefined;
-		expect(shieldGen).toBeDefined();
-		expect(shieldGen?.next).toBeCloseTo(SP_AMOUNT, 0);
-	});
-
-	test("shield absorbs damage", () => {
+	test("shield absorbs portion of damage", () => {
+		expect(
+			events.some((e) => e.type === "SHIELD_CHANGE" && e.cause === "shield_gen"),
+		).toBe(true);
 		expect(
 			events.some((e) => e.type === "SHIELD_CHANGE" && e.cause === "absorb"),
 		).toBe(true);
+	});
+
+	test("HP takes partial damage (not full)", () => {
+		const hpChange = events.find((e) => e.type === "HP_CHANGE") as { prev: number; next: number } | undefined;
+		expect(hpChange).toBeDefined();
+		// With DR from DEF + 50% SP reduction, HP damage < mitigated damage
+		const hpDamage = (hpChange?.prev ?? 0) - (hpChange?.next ?? 0);
+		expect(hpDamage).toBeGreaterThan(0);
+		expect(hpDamage).toBeLessThan(50000); // less than raw damage
 	});
 });
 

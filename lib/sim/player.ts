@@ -435,26 +435,17 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	const totalDR = Math.min(Math.max(baseDR + buffDR, 0), 1);
 	const mitigated = hit.damage * (1 - totalDR);
 
-	// 2. SP → shield generation
-	// Shield generated = min(SP × ratio, mitigated damage)
-	// SP consumed = shieldGen / ratio
-	const maxShield = s.sp * f.sp_shield_ratio;
-	const shieldGen = Math.min(maxShield, mitigated);
-	if (shieldGen > 0) {
-		const prevSp = s.sp;
-		s.sp -= shieldGen / f.sp_shield_ratio;
-		enqueue(
-			emit({
-				type: "SP_CHANGE" as const,
-				player: ctx.label,
-				prev: prevSp,
-				next: s.sp,
-				cause: "shield_gen",
-				t,
-			}),
-		);
+	// 2. SP → shield (divisive DR layer)
+	// SP provides damage reduction: sp_reduction = SP / (SP + sp_shield_ratio)
+	// Higher SP = more reduction; as SP drains (resonance), reduction weakens
+	// SP is NOT consumed by shield generation — only by resonance
+	const spReduction = s.sp > 0 ? s.sp / (s.sp + f.sp_shield_ratio) : 0;
+	const shieldAbsorbed = mitigated * spReduction;
+	const afterShield = mitigated - shieldAbsorbed;
+	if (shieldAbsorbed > 0) {
 		const prevShield = s.shield;
-		s.shield += shieldGen;
+		// Track shield absorption for display (shield is transient, not a pool)
+		s.shield = shieldAbsorbed;
 		enqueue(
 			emit({
 				type: "SHIELD_CHANGE" as const,
@@ -465,10 +456,21 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 				t,
 			}),
 		);
+		s.shield = 0;
+		enqueue(
+			emit({
+				type: "SHIELD_CHANGE" as const,
+				player: ctx.label,
+				prev: shieldAbsorbed,
+				next: 0,
+				cause: "absorb",
+				t,
+			}),
+		);
 	}
 
-	// 3. Shield absorb
-	const absorbed = Math.min(mitigated, s.shield);
+	// 3. Skill-generated shield absorb (from 玄女护心, 煞影千幻, etc.)
+	const absorbed = Math.min(afterShield, s.shield);
 	if (absorbed > 0) {
 		const prevShield = s.shield;
 		s.shield -= absorbed;
@@ -485,7 +487,7 @@ function resolveHit(ctx: PlayerContext, hit: HitEvent, enqueue: Enqueue): void {
 	}
 
 	// 4. HP
-	const hpDamage = mitigated - absorbed;
+	const hpDamage = afterShield - absorbed;
 	if (hpDamage > 0) {
 		const prevHp = s.hp;
 		s.hp = Math.max(s.hp - hpDamage, 0);
