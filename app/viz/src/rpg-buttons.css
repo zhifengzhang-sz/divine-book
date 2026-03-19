@@ -1,0 +1,163 @@
+/* RPG 3D button styles — hover/active/focus states */
+
+.rpg-btn {
+    background: linear-gradient(180deg, #555 0%, #3a3a3a 40%, #2a2a2a 60%, #1a1a1a 100%);
+    border: 2px solid #5c4033;
+    border-top-color: #7a6050;
+    border-bottom-color: #3a2a1a;
+    color: #ffd700;
+    font-family: 'Cinzel', serif;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 13px;
+    box-shadow:
+        0 4px 0 #0a0a0a,
+        0 5px 4px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 2px black, 0 0 6px rgba(255, 215, 0, 0.2);
+    transition: all 0.15s ease;
+    position: relative;
+    letter-spacing: 0.3px;
+}
+
+.rpg-btn:hover {
+    background: linear-gradient(180deg, #666 0%, #4a4a4a 40%, #3a3a3a 60%, #2a2a2a 100%);
+    border-color: #ffd700;
+    box-shadow:
+        0 4px 0 #0a0a0a,
+        0 5px 6px rgba(0,0,0,0.6),
+        0 0 12px rgba(255, 215, 0, 0.25),
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 2px black, 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.rpg-btn:active {
+    background: linear-gradient(180deg, #333 0%, #2a2a2a 40%, #222 60%, #1a1a1a 100%);
+    box-shadow:
+        0 1px 0 #0a0a0a,
+        0 1px 2px rgba(0,0,0,0.5),
+        inset 0 2px 4px rgba(0,0,0,0.4);
+    transform: translateY(3px);
+    border-color: #5c4033;
+}
+
+/* Primary / Run button — gold accent */
+.rpg-btn-primary {
+    background: linear-gradient(180deg, #6a5a2a 0%, #554a20 40%, #443a18 60%, #332a10 100%);
+    border: 2px solid #b8860b;
+    border-top-color: #d4a020;
+    border-bottom-color: #8a6508;
+    box-shadow:
+        0 5px 0 #1a1200,
+        0 6px 6px rgba(0,0,0,0.6),
+        0 0 8px rgba(184, 134, 11, 0.3),
+        inset 0 1px 0 rgba(255,215,0,0.15),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: 14px;
+    padding: 8px 22px;
+}
+
+.rpg-btn-primary:hover {
+    background: linear-gradient(180deg, #7a6a30 0%, #655828 40%, #544820 60%, #433818 100%);
+    border-color: #ffd700;
+    box-shadow:
+        0 5px 0 #1a1200,
+        0 6px 8px rgba(0,0,0,0.7),
+        0 0 16px rgba(255, 215, 0, 0.4),
+        inset 0 1px 0 rgba(255,215,0,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+}
+
+.rpg-btn-primary:active {
+    background: linear-gradient(180deg, #4a3a15 0%, #3a2a10 40%, #2a2008 60%, #1a1505 100%);
+    box-shadow:
+        0 1px 0 #1a1200,
+        0 1px 2px rgba(0,0,0,0.5),
+        inset 0 2px 4px rgba(0,0,0,0.5);
+    transform: translateY(4px);
+}
+
+/* Pill button — smaller, more subtle 3D */
+.rpg-pill {
+    background: linear-gradient(180deg, #4a4a4a 0%, #333 50%, #222 100%);
+    border: 2px solid #5c4033;
+    border-top-color: #6a5040;
+    border-bottom-color: #3a2818;
+    color: #ffd700;
+    padding: 4px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 12px;
+    text-align: left;
+    box-shadow:
+        0 2px 0 #0a0a0a,
+        0 3px 3px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    text-shadow: 1px 1px 2px black;
+    transition: all 0.15s ease;
+}
+
+.rpg-pill:hover {
+    background: linear-gradient(180deg, #555 0%, #3e3e3e 50%, #2a2a2a 100%);
+    border-color: #b8860b;
+    box-shadow:
+        0 2px 0 #0a0a0a,
+        0 3px 4px rgba(0,0,0,0.5),
+        0 0 8px rgba(184, 134, 11, 0.2),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.rpg-pill:active {
+    background: linear-gradient(180deg, #2a2a2a 0%, #222 50%, #1a1a1a 100%);
+    box-shadow:
+        0 0 0 #0a0a0a,
+        inset 0 1px 3px rgba(0,0,0,0.4);
+    transform: translateY(2px);
+}
+
+/* Cancel button — muted */
+.rpg-btn-cancel {
+    background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 50%, #1a1a1a 100%);
+    border: 2px solid #444;
+    border-top-color: #555;
+    border-bottom-color: #333;
+    color: #888;
+    box-shadow:
+        0 3px 0 #0a0a0a,
+        0 4px 3px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.rpg-btn-cancel:hover {
+    color: #bbb;
+    border-color: #666;
+}
+
+.rpg-btn-cancel:active {
+    box-shadow:
+        0 1px 0 #0a0a0a,
+        inset 0 1px 3px rgba(0,0,0,0.4);
+    transform: translateY(2px);
+}
+
+/* Link-style toggle */
+.rpg-link {
+    background: none;
+    border: none;
+    color: #b8860b;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    text-shadow: 1px 1px 2px black;
+    transition: color 0.15s;
+}
+
+.rpg-link:hover {
+    color: #ffd700;
+    text-shadow: 1px 1px 2px black, 0 0 6px rgba(255, 215, 0, 0.3);
+}

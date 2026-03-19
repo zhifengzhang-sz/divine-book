@@ -369,14 +369,14 @@ function BookPickerDialog({
 					<button
 						type="button"
 						onClick={onCancel}
-						style={cancelBtnStyle}
+						className={cancelBtnStyle}
 					>
 						Cancel
 					</button>
 					<button
 						type="button"
 						onClick={() => onConfirm(sel)}
-						style={confirmBtnStyle}
+						className={confirmBtnStyle}
 					>
 						OK
 					</button>
@@ -525,13 +525,13 @@ function AffixPickerDialog({
 				})()}
 
 				<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-					<button type="button" onClick={onCancel} style={cancelBtnStyle}>
+					<button type="button" onClick={onCancel} className={cancelBtnStyle}>
 						Cancel
 					</button>
 					<button
 						type="button"
 						onClick={() => onConfirm(sel)}
-						style={confirmBtnStyle}
+						className={confirmBtnStyle}
 					>
 						OK
 					</button>
@@ -854,13 +854,13 @@ export function ConfigPanel({ onRun }: ConfigPanelProps) {
 				}}
 			>
 				<StatInput label="Seed" value={seed} onChange={setSeed} width={60} />
-				<button type="button" onClick={handleRun} style={runBtnStyle}>
+				<button type="button" onClick={handleRun} className={runBtnStyle}>
 					Run Simulation
 				</button>
 				<button
 					type="button"
 					onClick={() => setShowAdvanced(!showAdvanced)}
-					style={linkStyle}
+					className={linkStyle}
 				>
 					{showAdvanced ? "▾ Less" : "▸ More"}
 				</button>

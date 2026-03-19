@@ -87,7 +87,12 @@ export function Pill({
 	return (
 		<div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 			<span style={labelStyle}>{label}:</span>
-			<button type="button" onClick={onClick} style={pillStyle}>
+			<button
+				type="button"
+				onClick={onClick}
+				className="rpg-pill"
+				style={{ fontFamily: T.body }}
+			>
 				{value || "(none)"}
 			</button>
 		</div>
@@ -330,73 +335,13 @@ const barShine: React.CSSProperties = {
 	borderRadius: "inherit",
 };
 
-export const btnStyle: React.CSSProperties = {
-	background: "linear-gradient(180deg, #444, #222)",
-	border: `2px solid ${T.border}`,
-	color: T.goldLight,
-	fontFamily: T.heading,
-	padding: "8px 16px",
-	cursor: "pointer",
-	borderRadius: 5,
-	fontSize: 13,
-	boxShadow: "0 4px 0 #111",
-	textShadow: "1px 1px 2px black",
-	transition: "all 0.2s",
-};
-
-export const runBtnStyle: React.CSSProperties = {
-	background: "linear-gradient(180deg, #555, #333)",
-	border: `2px solid ${T.goldDark}`,
-	color: T.goldLight,
-	fontFamily: T.heading,
-	padding: "8px 20px",
-	cursor: "pointer",
-	borderRadius: 5,
-	fontSize: 14,
-	fontWeight: "bold",
-	boxShadow: `0 4px 0 #111, ${T.glow(T.goldDark, 8)}`,
-	textShadow: "2px 2px 4px #000",
-	letterSpacing: 1,
-	transition: "all 0.2s",
-};
-
-export const cancelBtnStyle: React.CSSProperties = {
-	background: "linear-gradient(180deg, #333, #1a1a1a)",
-	color: T.textMuted,
-	border: "2px solid #444",
-	borderRadius: 5,
-	padding: "5px 14px",
-	cursor: "pointer",
-	fontSize: 12,
-	fontFamily: T.heading,
-	boxShadow: "0 3px 0 #111",
-	textShadow: "1px 1px 2px black",
-};
-
-export const confirmBtnStyle: React.CSSProperties = {
-	background: "linear-gradient(180deg, #555, #333)",
-	color: T.goldLight,
-	border: `2px solid ${T.goldDark}`,
-	borderRadius: 5,
-	padding: "5px 14px",
-	cursor: "pointer",
-	fontSize: 12,
-	fontWeight: "bold",
-	fontFamily: T.heading,
-	boxShadow: `0 3px 0 #111, ${T.glow(T.goldDark, 6)}`,
-	textShadow: "1px 1px 2px black",
-};
-
-export const linkStyle: React.CSSProperties = {
-	background: "none",
-	border: "none",
-	color: T.goldDark,
-	cursor: "pointer",
-	fontSize: 12,
-	fontFamily: T.body,
-	padding: 0,
-	textShadow: "1px 1px 2px black",
-};
+// Button styles use CSS classes from rpg-buttons.css for :hover/:active states.
+// These are kept as thin wrappers for backward compat with components that use style props.
+export const btnStyle = "rpg-btn";
+export const runBtnStyle = "rpg-btn rpg-btn-primary";
+export const cancelBtnStyle = "rpg-btn rpg-btn-cancel";
+export const confirmBtnStyle = "rpg-btn rpg-btn-primary";
+export const linkStyle = "rpg-link";
 
 export const chipStyle: React.CSSProperties = {
 	background: "#222",

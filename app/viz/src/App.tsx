@@ -132,7 +132,7 @@ function VerificationPanel({
 			<button
 				type="button"
 				onClick={() => setExpanded(!expanded)}
-				style={{ ...btnStyle, marginBottom: 8 }}
+				className={btnStyle} style={{ marginBottom: 8 }}
 			>
 				{expanded ? "▾ Hide" : "▸ Show"} Verification
 			</button>
@@ -416,17 +416,17 @@ function SimView({ data }: { data: SimulationData }) {
 			{/* Controls */}
 			<div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
 				{!replay.playing ? (
-					<button type="button" onClick={replay.play} disabled={replay.finished} style={btnStyle}>
+					<button type="button" onClick={replay.play} disabled={replay.finished} className={btnStyle}>
 						{replay.finished ? "Finished" : "▶ Play"}
 					</button>
 				) : (
-					<button type="button" onClick={replay.pause} style={btnStyle}>⏸ Pause</button>
+					<button type="button" onClick={replay.pause} className={btnStyle}>⏸ Pause</button>
 				)}
-				<button type="button" onClick={replay.reset} style={btnStyle}>↺ Reset</button>
-				<button type="button" onClick={replay.skipToEnd} style={btnStyle}>⏭ Skip</button>
+				<button type="button" onClick={replay.reset} className={btnStyle}>↺ Reset</button>
+				<button type="button" onClick={replay.skipToEnd} className={btnStyle}>⏭ Skip</button>
 				<span style={{ marginLeft: 12, fontSize: 13 }}>Speed:</span>
 				{[0.5, 1, 2, 5, 10].map((s) => (
-					<button type="button" key={s} onClick={() => setSpeed(s)} style={{ ...btnStyle, background: speed === s ? "#61afef" : "#3e4451", color: speed === s ? "#282c34" : "#abb2bf" }}>
+					<button type="button" key={s} onClick={() => setSpeed(s)} className={btnStyle} style={{ background: speed === s ? "#b8860b" : undefined, color: speed === s ? "#000" : undefined }}>
 						{s}x
 					</button>
 				))}
@@ -463,7 +463,7 @@ function SimView({ data }: { data: SimulationData }) {
 					</div>
 				);
 			})}
-			<button type="button" onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])} style={{ ...btnStyle, marginBottom: 16 }}>+ Add Chart</button>
+			<button type="button" onClick={() => setCharts((prev) => [...prev, { id: nextChartId++, selections: [] }])} className={btnStyle} style={{ marginBottom: 16 }}>+ Add Chart</button>
 
 			{/* Event log */}
 			<div style={{ backgroundImage: `url('${ASSETS.panelBg}')`, backgroundSize: "500px", backgroundColor: T.bgPanel, borderRadius: 12, padding: 14, height: 400, overflowY: "auto", fontSize: 12, lineHeight: 1.6, boxShadow: `0 0 0 2px #2c3e50, 0 0 0 4px ${T.goldDark}88, 0 0 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.6)` }} ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}>
