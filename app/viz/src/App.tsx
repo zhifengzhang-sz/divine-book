@@ -17,6 +17,7 @@ import {
 	theme as T,
 } from "./components.tsx";
 import { ConfigPanel } from "./ConfigPanel.tsx";
+import { AffixBrowser } from "./AffixBrowser.tsx";
 import { Icon, getEffectIcon, getStateIcon } from "./rpg-icons.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
 import type {
@@ -503,6 +504,7 @@ function SimView({ data }: { data: SimulationData }) {
 
 export function App() {
 	const [simData, setSimData] = useState<SimulationData | null>(null);
+	const [showAffixBrowser, setShowAffixBrowser] = useState(false);
 	const [simError, setSimError] = useState("");
 	const [runCount, setRunCount] = useState(0);
 
@@ -520,7 +522,13 @@ export function App() {
 
 	return (
 		<div style={{ fontFamily: T.body, backgroundImage: `url('${ASSETS.fantasyBg}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>
-			<h1 className="rpg-heading" style={{ margin: "0 0 16px", fontSize: 22 }}>Divine Book Combat Simulator</h1>
+			<div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+				<h1 className="rpg-heading" style={{ margin: 0, fontSize: 22 }}>Divine Book Combat Simulator</h1>
+				<button type="button" className={btnStyle} onClick={() => setShowAffixBrowser(true)}>
+					Affix Browser
+				</button>
+			</div>
+			{showAffixBrowser && <AffixBrowser onClose={() => setShowAffixBrowser(false)} />}
 			<Divider />
 			<ConfigPanel onRun={handleRun} />
 			{simError && <div style={{ color: T.red, fontSize: 12, padding: 12, background: "rgba(0,0,0,0.7)", border: `2px solid ${T.red}88`, borderRadius: 8, marginBottom: 16, whiteSpace: "pre-wrap", boxShadow: T.glow(T.red, 12), textShadow: "1px 1px 2px black" }}>{simError}</div>}
