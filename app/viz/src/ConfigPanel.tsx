@@ -283,7 +283,7 @@ function Pill({
 	onClick: () => void;
 }) {
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+		<div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 			<span style={labelStyle}>{label}:</span>
 			<button type="button" onClick={onClick} style={pillStyle}>
 				{value || "(none)"}
@@ -314,18 +314,20 @@ function PlayerConfigPanel({
 				{label}
 			</div>
 
-			{/* Book + Affixes as compact pills */}
-			<Pill label="Book" value={bookLabel} onClick={() => setBookDialog(true)} />
-			<Pill
-				label="词缀1"
-				value={state.op1 ? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})` : ""}
-				onClick={() => setAffixDialog(1)}
-			/>
-			<Pill
-				label="词缀2"
-				value={state.op2 ? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})` : ""}
-				onClick={() => setAffixDialog(2)}
-			/>
+			{/* Book + Affixes in one row */}
+			<div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+				<Pill label="Book" value={bookLabel} onClick={() => setBookDialog(true)} />
+				<Pill
+					label="词缀1"
+					value={state.op1 ? `${state.op1} (悟${state.op1Enlightenment}/融${state.op1Fusion})` : ""}
+					onClick={() => setAffixDialog(1)}
+				/>
+				<Pill
+					label="词缀2"
+					value={state.op2 ? `${state.op2} (悟${state.op2Enlightenment}/融${state.op2Fusion})` : ""}
+					onClick={() => setAffixDialog(2)}
+				/>
+			</div>
 
 			{/* Stats grid */}
 			<div
