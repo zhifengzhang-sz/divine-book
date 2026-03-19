@@ -414,8 +414,8 @@ interface AffixSelection {
 }
 
 const allAffixesData = affixesData as {
-	universal: Record<string, { effects: EffectEntry[] }>;
-	school: Record<string, Record<string, { effects: EffectEntry[] }>>;
+	universal: Record<string, { text?: string; effects: EffectEntry[] }>;
+	school: Record<string, Record<string, { text?: string; effects: EffectEntry[] }>>;
 };
 
 /** Look up an affix's effects from affixes-data.json or exclusive affixes in books-data */
@@ -429,6 +429,21 @@ function lookupAffixEffects(name: string): EffectEntry[] | undefined {
 	// Exclusive (from books data)
 	for (const book of Object.values(allBooksData)) {
 		if (book.exclusive_affix?.name === name) return book.exclusive_affix.effects;
+	}
+	return undefined;
+}
+
+/** Look up an affix's raw text */
+function lookupAffixText(name: string): string | undefined {
+	// Universal
+	if (allAffixesData.universal[name]?.text) return allAffixesData.universal[name].text;
+	// School
+	for (const school of Object.values(allAffixesData.school)) {
+		if (school[name]?.text) return school[name].text;
+	}
+	// Exclusive — raw text is in the book's affix_text
+	for (const book of Object.values(allBooksData)) {
+		if (book.exclusive_affix?.name === name) return book.affix_text;
 	}
 	return undefined;
 }
@@ -539,22 +554,37 @@ function AffixPickerDialog({
 					);
 				})()}
 
-				{/* Affix effect preview */}
+				{/* Affix preview: raw text + parsed effects */}
 				{sel.name && (() => {
-					const raw = lookupAffixEffects(sel.name);
-					if (!raw || raw.length === 0) return null;
-					const filtered = filterEffectsForTier(raw, sel.enlightenment, sel.fusion);
+					const rawEffects = lookupAffixEffects(sel.name);
+					const rawText = lookupAffixText(sel.name);
+					if ((!rawEffects || rawEffects.length === 0) && !rawText) return null;
+					const filtered = rawEffects ? filterEffectsForTier(rawEffects, sel.enlightenment, sel.fusion) : [];
 					return (
 						<div
 							style={{
-								background: "#1e2127",
-								border: "1px solid #3e4451",
+								background: "#111",
+								border: "1px solid #444",
 								borderRadius: 4,
 								padding: 8,
 								marginBottom: 10,
+								fontSize: 11,
+								maxHeight: 200,
+								overflowY: "auto",
+								boxShadow: "inset 0 2px 5px rgba(0,0,0,0.5)",
 							}}
 						>
-							<EffectPreview label="Effects" effects={filtered} />
+							{rawText && (
+								<>
+									<div style={{ color: "#ffd700", marginBottom: 2 }}>原文</div>
+									<div style={{ color: "#888", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #b8860b44" }}>
+										{rawText}
+									</div>
+								</>
+							)}
+							{filtered.length > 0 && (
+								<EffectPreview label="→ Parsed Effects" effects={filtered} />
+							)}
 						</div>
 					);
 				})()}

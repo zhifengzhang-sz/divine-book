@@ -14,6 +14,7 @@ import { genericAffixParse } from "./split.js";
 export interface AffixEntry {
 	name: string;
 	school?: string; // undefined for universal, "Sword"/"Spell"/etc for school
+	rawText: string;
 	cell: SplitCell;
 }
 
@@ -62,6 +63,7 @@ export function readSchoolAffixTable(markdown: string): AffixEntry[] {
 					entries.push({
 						name,
 						school: currentSchool,
+						rawText: effectText.replace(/<br\s*\/?>/gi, "\n"),
 						cell: splitCell(stripBackticks(effectText)),
 					});
 				}
@@ -102,6 +104,7 @@ function readTwoColumnTable(markdown: string): AffixEntry[] {
 				if (name && effectText) {
 					entries.push({
 						name,
+						rawText: effectText.replace(/<br\s*\/?>/gi, "\n"),
 						cell: splitCell(stripBackticks(effectText)),
 					});
 				}
@@ -119,6 +122,7 @@ function stripBackticks(text: string): string {
 }
 
 export interface AffixData {
+	text?: string;
 	effects: EffectRow[];
 }
 
@@ -146,7 +150,10 @@ export function parseCommonAffixes(
 		if (effects.length === 0) {
 			warnings.push(`Universal affix ${entry.name}: no effects extracted`);
 		}
-		universal[entry.name] = { effects: cleanEffects(effects) };
+		universal[entry.name] = {
+			text: entry.rawText,
+			effects: cleanEffects(effects),
+		};
 	}
 
 	// Parse school affixes
@@ -163,7 +170,10 @@ export function parseCommonAffixes(
 				`School affix ${entry.name} (${schoolName}): no effects extracted`,
 			);
 		}
-		school[schoolName][entry.name] = { effects: cleanEffects(effects) };
+		school[schoolName][entry.name] = {
+			text: entry.rawText,
+			effects: cleanEffects(effects),
+		};
 	}
 
 	return { universal, school, warnings };
@@ -182,6 +192,12 @@ export function formatAffixesYaml(result: CommonAffixResult): string {
 
 	for (const [name, data] of Object.entries(result.universal)) {
 		lines.push(`  ${name}:`);
+		if (data.text) {
+			lines.push("    text: |");
+			for (const line of data.text.split("\n")) {
+				lines.push(`      ${line}`);
+			}
+		}
 		lines.push("    effects:");
 		for (const effect of data.effects) {
 			lines.push(...formatEffect(effect, 6));
@@ -194,6 +210,12 @@ export function formatAffixesYaml(result: CommonAffixResult): string {
 		lines.push(`  ${schoolName}:`);
 		for (const [name, data] of Object.entries(affixes)) {
 			lines.push(`    ${name}:`);
+			if (data.text) {
+				lines.push("      text: |");
+				for (const line of data.text.split("\n")) {
+					lines.push(`        ${line}`);
+				}
+			}
 			lines.push("      effects:");
 			for (const effect of data.effects) {
 				lines.push(...formatEffect(effect, 8));
