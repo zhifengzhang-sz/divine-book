@@ -145,3 +145,126 @@ register("shield_destroy_dot", (effect, ctx) => ({
 // hp_cost_avoid_chance: { value, parent }
 // Chance to avoid HP cost. No-op in simplified model.
 register("hp_cost_avoid_chance", () => ({}));
+
+// ── Affix-only effect types ─────────────────────────────────────────
+
+// debuff_strength: { value }
+// Increases debuff effectiveness. Modeled as M_dmg zone.
+register("debuff_strength", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// execute_conditional: { hp_threshold, damage_increase, crit_rate_increase }
+// Bonus damage when target HP below threshold. Assume active.
+register("execute_conditional", (effect) => ({
+	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+}));
+
+// random_buff: { attack, crit_damage, damage }
+// Randomly grants one of three buffs. Use average (pick one).
+register("random_buff", (effect) => ({
+	zones: { S_coeff: ((effect.attack as number) ?? 0) / 100 },
+}));
+
+// shield_value_increase: { value }
+// Increases shield value. Modeled as M_dmg zone (indirect survivability).
+register("shield_value_increase", () => ({}));
+
+// triple_bonus: { attack_bonus, damage_increase, crit_damage_increase }
+// Grants all three bonuses simultaneously.
+register("triple_bonus", (effect) => ({
+	zones: {
+		S_coeff: ((effect.attack_bonus as number) ?? 0) / 100,
+		M_dmg:
+			((effect.damage_increase as number) ?? 0) / 100 +
+			((effect.crit_damage_increase as number) ?? 0) / 100,
+	},
+}));
+
+// healing_increase: { value }
+// Increases healing received. Applied as self buff.
+register("healing_increase", (effect) => ({
+	intents: [
+		{
+			type: "APPLY_STATE" as const,
+			state: {
+				name: "healing_increase",
+				kind: "buff" as const,
+				source: "",
+				target: "self" as const,
+				effects: [
+					{
+						stat: "healing_bonus",
+						value: effect.value as number,
+					},
+				],
+				remainingDuration: Number.POSITIVE_INFINITY,
+				stacks: 1,
+				maxStacks: 1,
+				dispellable: false,
+			},
+		},
+	],
+}));
+
+// final_damage_bonus: { value }
+// Additive M_final zone contribution.
+register("final_damage_bonus", (effect) => ({
+	zones: { M_final: (effect.value as number) / 100 },
+}));
+
+// probability_to_certain: { damage_increase }
+// Makes probability-based effects certain. Also grants damage bonus.
+register("probability_to_certain", (effect) => ({
+	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+}));
+
+// healing_to_damage: { value }
+// Converts healing to damage. Modeled as M_dmg zone.
+register("healing_to_damage", (effect) => ({
+	zones: { M_dmg: (effect.value as number) / 100 },
+}));
+
+// damage_to_shield: { value, duration }
+// Converts portion of damage dealt to shield. Modeled as shield grant.
+register("damage_to_shield", (effect, ctx) => ({
+	intents: [
+		{
+			type: "SHIELD" as const,
+			value: ((effect.value as number) / 100) * ctx.atk,
+			duration: (effect.duration as number) ?? 8,
+		},
+	],
+}));
+
+// random_debuff: { attack, crit_rate, crit_damage }
+// Randomly applies one of three debuffs. Apply attack reduction.
+register("random_debuff", (effect) => ({
+	intents: [
+		{
+			type: "APPLY_STATE" as const,
+			state: {
+				name: "random_debuff",
+				kind: "debuff" as const,
+				source: "",
+				target: "opponent" as const,
+				effects: [
+					{
+						stat: "attack_bonus",
+						value: -(effect.attack as number),
+					},
+				],
+				remainingDuration: 8,
+				stacks: 1,
+				maxStacks: 1,
+				dispellable: true,
+			},
+		},
+	],
+}));
+
+// min_lost_hp_threshold: { min_percent, damage_increase }
+// Ensures minimum lost HP% for damage scaling. Grants damage bonus.
+register("min_lost_hp_threshold", (effect) => ({
+	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+}));
