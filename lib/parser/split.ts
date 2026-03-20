@@ -438,14 +438,32 @@ function enrichWithNamedStates(
  */
 export function genericAffixParse(
 	cell: SplitCell,
-	_states: StateRegistry,
+	states: StateRegistry,
 	options?: { lastTierOnly?: boolean; defaultParent?: string },
 ): EffectRow[] {
-	let text = cell.description.join("，");
+	const rawText = cell.description.join("，");
 	const tiers = cell.tiers;
 
 	// Strip leading 【affixName】： prefix so extractors see clean text
-	text = text.replace(/^【.+?】[：:]/, "");
+	const text = rawText.replace(/^【.+?】[：:]/, "");
+
+	// Detect referenced state names from 【name】 in the affix text (after the affix name)
+	// These are states from the platform skill that this affix modifies
+	const stateRefs: string[] = [];
+	const stateRefRe = /【(.+?)】/g;
+	// Skip the first match (affix name itself), collect the rest
+	let first = true;
+	let refMatch = stateRefRe.exec(rawText);
+	while (refMatch) {
+		if (first) {
+			first = false;
+		} else {
+			stateRefs.push(refMatch[1]);
+		}
+		refMatch = stateRefRe.exec(rawText);
+	}
+	// The referenced parent state: use the first state ref that exists in the registry
+	const referencedParent = stateRefs.find((s) => states[s]) ?? stateRefs[0];
 
 	// Run all registered affix extractors
 	const extracted: { effect: ExtractedEffect; order: number }[] = [];
@@ -464,8 +482,8 @@ export function genericAffixParse(
 	// Detect "（数据为没有悟境的情况）" annotation → data_state: "enlightenment=0"
 	const noEnlightenment = /数据为没有悟境/.test(text);
 
-	// Effect types that use buff_name instead of parent
-	const NO_PARENT_TYPES = new Set(["self_buff_extra", "self_buff_extend"]);
+	// Effect types that use buff_name — these get parent from state reference
+	const BUFF_NAME_TYPES = new Set(["self_buff_extra", "self_buff_extend"]);
 
 	// Helper: resolve one set of effects from a tier
 	const resolveEffects = (
@@ -481,13 +499,16 @@ export function genericAffixParse(
 					extra[k] = v;
 				}
 			}
-			// Apply defaultParent unless effect already has parent or is a NO_PARENT type
-			if (
-				options?.defaultParent &&
-				!extra.parent &&
-				!NO_PARENT_TYPES.has(effect.type)
-			) {
-				extra.parent = options.defaultParent;
+			// Apply parent:
+			// 1. If effect already has parent from extractor, keep it
+			// 2. If effect is buff_name type AND text references a state → use that state
+			// 3. Otherwise use defaultParent (typically "this")
+			if (!extra.parent) {
+				if (BUFF_NAME_TYPES.has(effect.type) && referencedParent) {
+					extra.parent = referencedParent;
+				} else if (options?.defaultParent) {
+					extra.parent = options.defaultParent;
+				}
 			}
 			if (noEnlightenment) extra.data_state = "enlightenment=0";
 			else if (ds !== undefined) extra.data_state = ds;

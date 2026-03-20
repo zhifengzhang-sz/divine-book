@@ -426,6 +426,7 @@ books:
         - type: self_buff_extra
           attack_bonus: 7
           buff_name: 天狼之啸
+          parent: 天狼之啸
     exclusive_affix:
       name: 真极穿空
       effects:
@@ -623,18 +624,21 @@ books:
         - type: self_buff_extra
           healing_bonus: 70
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=1
             - fusion=51
         - type: self_buff_extra
           healing_bonus: 170
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=7
             - fusion=51
         - type: self_buff_extra
           healing_bonus: 190
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=8
             - fusion=51
@@ -1313,6 +1317,7 @@ books:
         - type: self_buff_extend
           value: 3.5
           buff_name: 怒灵降世
+          parent: 怒灵降世
         - type: periodic_cleanse
           chance: 30
           interval: 1

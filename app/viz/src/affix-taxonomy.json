@@ -228,27 +228,6 @@
       ]
     },
     {
-      "name": "天狼战意",
-      "source": "元磁神光",
-      "source_type": "primary",
-      "category": 1,
-      "effect_types": [
-        "self_buff_extra"
-      ]
-    },
-    {
-      "name": "天光虹露",
-      "source": "甲元仙符",
-      "source_type": "primary",
-      "category": 1,
-      "effect_types": [
-        "self_buff_extra",
-        "self_buff_extra",
-        "self_buff_extra",
-        "self_buff_extra"
-      ]
-    },
-    {
       "name": "天人合一",
       "source": "玉书天戈符",
       "source_type": "exclusive",
@@ -301,16 +280,6 @@
       "category": 1,
       "effect_types": [
         "percent_max_hp_damage"
-      ]
-    },
-    {
-      "name": "星猿弃天",
-      "source": "十方真魄",
-      "source_type": "primary",
-      "category": 1,
-      "effect_types": [
-        "self_buff_extend",
-        "periodic_cleanse"
       ]
     },
     {
@@ -829,6 +798,27 @@
       ]
     },
     {
+      "name": "天狼战意",
+      "source": "元磁神光",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "self_buff_extra"
+      ]
+    },
+    {
+      "name": "天光虹露",
+      "source": "甲元仙符",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "self_buff_extra",
+        "self_buff_extra",
+        "self_buff_extra",
+        "self_buff_extra"
+      ]
+    },
+    {
       "name": "灭劫魔威",
       "source": "无相魔劫咒",
       "source_type": "primary",
@@ -844,6 +834,16 @@
       "category": 7,
       "effect_types": [
         "self_lost_hp_damage"
+      ]
+    },
+    {
+      "name": "星猿弃天",
+      "source": "十方真魄",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "self_buff_extend",
+        "periodic_cleanse"
       ]
     }
   ]
