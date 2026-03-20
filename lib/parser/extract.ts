@@ -110,7 +110,9 @@ export function extractPercentHpDamage(text: string): ExtractedEffect | null {
 // ─────────────────────────────────────────────────────────
 
 export function extractSelfHpCost(text: string): ExtractedEffect | null {
-	const m = text.match(/消耗自身(\w+)%(?:的)?当前气血值/);
+	// Skip if per-hit HP cost: "每段攻击会消耗" or "消耗自身z%当前气血值" with per-hit context
+	if (/每段攻击.*?消耗(?:自身)?(\w+)%(?:的)?当前气血值/.test(text)) return null;
+	const m = text.match(/消耗(?:自身)?(\w+)%(?:的)?当前气血值/);
 	if (m) {
 		return {
 			type: "self_hp_cost",
@@ -149,9 +151,15 @@ export function extractSelfBuffStats(
 	const healMatch = text.match(/(\w+)%(?:的)?治疗加成/);
 	if (healMatch) stats.healing_bonus = healMatch[1];
 
-	// 伤害加深
-	const dmgIncMatch = text.match(/(\w+)%(?:的)?(?:伤害加深|神通伤害加深)/);
-	if (dmgIncMatch) stats.skill_damage_increase = dmgIncMatch[1];
+	// 神通伤害加深 (M_skill zone) — must check before 伤害加深
+	const skillDmgMatch = text.match(/(\w+)%(?:的)?神通伤害加深/);
+	if (skillDmgMatch) {
+		stats.skill_damage_increase = skillDmgMatch[1];
+	} else {
+		// 伤害加深 (M_dmg zone) — without 神通 prefix
+		const dmgIncMatch = text.match(/(\w+)%(?:的)?伤害加深/);
+		if (dmgIncMatch) stats.damage_increase = dmgIncMatch[1];
+	}
 
 	// 最终伤害加成/加深
 	const finalMatch = text.match(/(\w+)%(?:的)?最终伤害(?:加成|加深)/);
@@ -2255,7 +2263,6 @@ export const SKILL_EXTRACTORS: ExtractorDef[] = [
 		name: "self_hp_cost",
 		fn: extractSelfHpCost,
 		order: 0,
-		grammars: ["G4", "G5"],
 	},
 	{ name: "untargetable", fn: extractUntargetable, order: 1 },
 	{

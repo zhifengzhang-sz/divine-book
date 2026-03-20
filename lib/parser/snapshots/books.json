@@ -583,7 +583,7 @@
       },
       {
         "type": "self_buff",
-        "skill_damage_increase": 8,
+        "damage_increase": 8,
         "duration": 12,
         "name": "天狼之啸"
       }
@@ -1301,7 +1301,6 @@
       "罗天魔咒": {
         "target": "self",
         "duration": 8,
-        "max_stacks": 5,
         "trigger": "on_attacked",
         "chance": 30,
         "children": [
@@ -1312,7 +1311,6 @@
       "噬心之咒": {
         "target": "opponent",
         "duration": 4,
-        "max_stacks": 5,
         "trigger": "on_attacked",
         "children": [
           "断魂之咒"
@@ -1321,7 +1319,6 @@
       "断魂之咒": {
         "target": "opponent",
         "duration": 4,
-        "max_stacks": 5,
         "trigger": "on_attacked",
         "children": [
           "噬心之咒"
@@ -1347,11 +1344,10 @@
       {
         "type": "dot",
         "tick_interval": 0.5,
-        "percent_current_hp": 7,
+        "percent_current_hp": 2,
         "duration": 4,
         "name": "噬心之咒",
         "parent": "罗天魔咒",
-        "max_stacks": 5,
         "data_state": [
           "enlightenment=0",
           "fusion=20"
@@ -1360,11 +1356,10 @@
       {
         "type": "dot",
         "tick_interval": 0.5,
-        "percent_lost_hp": 7,
+        "percent_lost_hp": 2,
         "duration": 4,
         "name": "断魂之咒",
         "parent": "罗天魔咒",
-        "max_stacks": 5,
         "data_state": [
           "enlightenment=0",
           "fusion=20"
@@ -1396,7 +1391,6 @@
         "duration": 4,
         "name": "噬心之咒",
         "parent": "罗天魔咒",
-        "max_stacks": 5,
         "data_state": [
           "enlightenment=10",
           "fusion=50"
@@ -1409,7 +1403,6 @@
         "duration": 4,
         "name": "断魂之咒",
         "parent": "罗天魔咒",
-        "max_stacks": 5,
         "data_state": [
           "enlightenment=10",
           "fusion=50"
@@ -1989,6 +1982,10 @@
       }
     },
     "skill": [
+      {
+        "type": "self_hp_cost",
+        "value": 20
+      },
       {
         "type": "base_attack",
         "hits": 5,

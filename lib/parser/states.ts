@@ -149,6 +149,9 @@ function extractStateDef(name: string, lines: string[]): StateDef {
 		if (!line.includes(name)) continue;
 		const stackMatch = line.match(/最多叠加(\w+)层/);
 		if (stackMatch) {
+			// "各自最多叠加" means stacking applies to children, not this state
+			const beforeMatch = line.slice(0, stackMatch.index);
+			if (/各自$/.test(beforeMatch.trim())) continue;
 			const val = Number(stackMatch[1]);
 			if (!Number.isNaN(val)) {
 				max_stacks = val;

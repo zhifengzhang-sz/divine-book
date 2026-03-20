@@ -147,21 +147,8 @@ function genericSkillParse(
 			// Try extracting dot from child definition
 			const dot = extractDot(childText);
 			if (dot) {
-				// Resolve child DoT fields against the parent skill's tier vars
-				if (tiers.length > 0) {
-					const lastTier = tiers[tiers.length - 1];
-					if (lastTier && !lastTier.locked) {
-						dot.fields = Object.fromEntries(
-							Object.entries(dot.fields).map(([k, v]) => {
-								if (typeof v === "string" && lastTier.vars[v] !== undefined) {
-									return [k, lastTier.vars[v]];
-								}
-								return [k, v];
-							}),
-						) as Record<string, string | number>;
-					}
-				}
-
+				// Keep variable references (e.g., "y") unresolved —
+				// the per-tier loop resolves them via resolveFields()
 				extracted.push({
 					effect: { ...dot, meta: extra },
 					order: 30,
