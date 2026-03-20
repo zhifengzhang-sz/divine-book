@@ -86,6 +86,7 @@ function buildAffixIndex(): TaxonomyEntry[] {
 	const allBooks = (booksData as { books: Record<string, {
 		school: string;
 		affix_text?: string;
+		exclusive_affix_text?: string;
 		primary_affix?: { name: string; effects: { type: string; [k: string]: unknown }[] };
 		exclusive_affix?: { name: string; effects: { type: string; [k: string]: unknown }[] };
 	}> }).books;
@@ -121,7 +122,7 @@ function buildAffixIndex(): TaxonomyEntry[] {
 				name: book.exclusive_affix.name,
 				source: `${bookName} (专属)`,
 				category: classifyAffix(book.exclusive_affix.effects),
-				text: book.affix_text,
+				text: book.exclusive_affix_text,
 				effects: book.exclusive_affix.effects,
 			});
 		}
@@ -130,6 +131,7 @@ function buildAffixIndex(): TaxonomyEntry[] {
 				name: book.primary_affix.name,
 				source: `${bookName} (主词缀)`,
 				category: classifyAffix(book.primary_affix.effects),
+				text: book.affix_text,
 				effects: book.primary_affix.effects,
 			});
 		}

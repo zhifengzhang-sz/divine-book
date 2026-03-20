@@ -30,6 +30,8 @@ export function emitBooks(
 
 		if (parsed.skillText) book.skill_text = parsed.skillText;
 		if (parsed.affixText) book.affix_text = parsed.affixText;
+		if (parsed.exclusiveAffixText)
+			book.exclusive_affix_text = parsed.exclusiveAffixText;
 
 		if (parsed.states && Object.keys(parsed.states).length > 0) {
 			book.states = parsed.states;
@@ -97,6 +99,12 @@ export function formatYaml(books: Record<string, BookData>): string {
 		if (book.affix_text) {
 			lines.push(`    affix_text: |`);
 			for (const line of book.affix_text.split("\n")) {
+				lines.push(`      ${line}`);
+			}
+		}
+		if (book.exclusive_affix_text) {
+			lines.push(`    exclusive_affix_text: |`);
+			for (const line of book.exclusive_affix_text.split("\n")) {
 				lines.push(`      ${line}`);
 			}
 		}

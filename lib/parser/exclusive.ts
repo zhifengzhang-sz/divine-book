@@ -20,6 +20,7 @@ export interface ExclusiveAffixEntry {
 	bookName: string;
 	school: string;
 	affixName: string;
+	rawText: string;
 	cell: SplitCell;
 }
 
@@ -72,6 +73,7 @@ export function readExclusiveAffixTable(
 						bookName: NAME_NORMALIZE[bookName] ?? bookName,
 						school: currentSchool,
 						affixName,
+						rawText: effectText.replace(/<br\s*\/?>/gi, "\n"),
 						cell: splitCell(effectText),
 					});
 				}

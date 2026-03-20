@@ -93,6 +93,7 @@ export function parseMainSkills(
 				const states = parsed.states ?? {};
 				const exclusive = parseExclusiveAffix(entry, states);
 				parsed.exclusiveAffix = exclusive;
+				parsed.exclusiveAffixText = entry.rawText;
 				// Update states if new ones were added
 				if (Object.keys(states).length > 0) {
 					parsed.states = states;
@@ -164,6 +165,7 @@ export function parseSingleBook(
 		if (exclusiveEntry) {
 			const states = parsed.states ?? {};
 			parsed.exclusiveAffix = parseExclusiveAffix(exclusiveEntry, states);
+			parsed.exclusiveAffixText = exclusiveEntry.rawText;
 			if (Object.keys(states).length > 0) {
 				parsed.states = states;
 			}

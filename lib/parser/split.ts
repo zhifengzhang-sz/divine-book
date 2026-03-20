@@ -23,6 +23,7 @@ export interface ParsedBook {
 	school: string;
 	skillText?: string;
 	affixText?: string;
+	exclusiveAffixText?: string;
 	states?: StateRegistry;
 	skill: EffectRow[];
 	primaryAffix?: { name: string; effects: EffectRow[] };

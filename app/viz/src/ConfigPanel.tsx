@@ -74,6 +74,7 @@ type BookEntry = {
 	school: string;
 	skill_text?: string;
 	affix_text?: string;
+	exclusive_affix_text?: string;
 	skill?: EffectEntry[];
 	primary_affix?: { name: string; effects: EffectEntry[] };
 	exclusive_affix?: { name: string; effects: EffectEntry[] };
@@ -373,6 +374,20 @@ function BookPickerDialog({
 									effects={primaryEffects}
 								/>
 							)}
+							{bookData.exclusive_affix_text && (
+								<>
+									<div style={{ color: "#e5c07b", marginBottom: 2, marginTop: 6 }}>原文 — Exclusive Affix ({bookData.exclusive_affix?.name})</div>
+									<div style={{ color: "#7f848e", whiteSpace: "pre-wrap", marginBottom: 6, paddingLeft: 8, borderLeft: "2px solid #3e4451" }}>
+										{bookData.exclusive_affix_text}
+									</div>
+								</>
+							)}
+							{bookData.exclusive_affix && (
+								<EffectPreview
+									label={`→ Parsed: ${bookData.exclusive_affix.name}`}
+									effects={filterEffectsForTier(bookData.exclusive_affix.effects, sel.enlightenment, sel.fusion)}
+								/>
+							)}
 						</div>
 					);
 				})()}
@@ -441,9 +456,9 @@ function lookupAffixText(name: string): string | undefined {
 	for (const school of Object.values(allAffixesData.school)) {
 		if (school[name]?.text) return school[name].text;
 	}
-	// Exclusive — raw text is in the book's affix_text
+	// Exclusive — raw text is in the book's exclusive_affix_text
 	for (const book of Object.values(allBooksData)) {
-		if (book.exclusive_affix?.name === name) return book.affix_text;
+		if (book.exclusive_affix?.name === name) return book.exclusive_affix_text ?? book.affix_text;
 	}
 	return undefined;
 }

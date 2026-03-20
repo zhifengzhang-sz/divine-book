@@ -34,8 +34,10 @@ export interface BookData {
 	school: string;
 	/** Raw skill description from source prose */
 	skill_text?: string;
-	/** Raw primary affix description from source prose */
+	/** Raw primary affix description from source prose (主书.md) */
 	affix_text?: string;
+	/** Raw exclusive affix description from source prose (专属词缀.md) */
+	exclusive_affix_text?: string;
 	states?: Record<string, StateDef>;
 	skill?: EffectRow[];
 	primary_affix?: AffixSection;
