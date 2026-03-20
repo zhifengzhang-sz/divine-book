@@ -29,7 +29,7 @@ interface TaxonomyAffix {
 	name: string;
 	source: string;
 	source_type: "universal" | "school" | "primary" | "exclusive";
-	category: number;
+	categories: number[];
 	effect_types: string[];
 }
 
@@ -91,7 +91,7 @@ export function AffixBrowser({ onClose }: { onClose: () => void }) {
 
 	const filtered = selectedCategory === 0
 		? DISPLAY_INDEX
-		: DISPLAY_INDEX.filter((a) => a.category === selectedCategory);
+		: DISPLAY_INDEX.filter((a) => a.categories.includes(selectedCategory));
 
 	return (
 		<div style={overlayStyle} onClick={onClose}>
@@ -110,7 +110,7 @@ export function AffixBrowser({ onClose }: { onClose: () => void }) {
 					>
 						<option value={0}>All ({DISPLAY_INDEX.length})</option>
 						{Object.entries(CATEGORIES).map(([id, c]) => {
-							const count = DISPLAY_INDEX.filter((a) => a.category === Number(id)).length;
+							const count = DISPLAY_INDEX.filter((a) => a.categories.includes(Number(id))).length;
 							return (
 								<option key={id} value={id}>
 									{id}. {c.cn} — {c.name} ({count})
@@ -168,7 +168,8 @@ export function AffixBrowser({ onClose }: { onClose: () => void }) {
 								</div>
 								<div style={{ fontSize: 11, color: T.textMuted, marginBottom: 8 }}>
 									Source: {selectedAffix.source} ({selectedAffix.source_type})
-									{" | "}Category {selectedAffix.category}: {CATEGORIES[selectedAffix.category]?.cn}
+									{" | "}
+									{selectedAffix.categories.map((c) => `${c}.${CATEGORIES[c]?.cn}`).join(" + ")}
 								</div>
 
 								{selectedAffix.text && (

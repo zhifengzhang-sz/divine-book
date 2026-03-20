@@ -104,17 +104,20 @@ const CATEGORIES: Record<number, { name: string; cn: string; desc: string }> = {
 function classifyAffix(
 	effects: { type: string; [k: string]: unknown }[],
 	sourceType: "universal" | "school" | "primary" | "exclusive",
-): number {
+): number[] {
 	const types = new Set(effects.map((e) => e.type));
 	const hasParent = effects.some((e) => e.parent && e.parent !== "this");
 	const hasTrigger = effects.some(
 		(e) => e.trigger === "on_attacked" || e.trigger === "per_tick",
 	);
 
-	// Primary affixes with parent= are state-referencing by definition —
-	// they modify the platform skill's named state behavior.
-	// Check this FIRST for primary affixes.
-	if (sourceType === "primary" && hasParent) return 7;
+	const cats: Set<number> = new Set();
+
+	// Primary affixes always get cat 7 — they modify the platform skill
+	if (sourceType === "primary") cats.add(7);
+
+	// Category 7: state-referencing (non-primary with parent)
+	if (hasParent) cats.add(7);
 
 	// Category 6: reactive triggers
 	if (
@@ -128,12 +131,12 @@ function classifyAffix(
 		types.has("crit_damage_reduction") ||
 		types.has("crit_rate_reduction")
 	)
-		return 6;
+		cats.add(6);
 
 	// Category 5: cross-skill
-	if (types.has("next_skill_buff")) return 5;
+	if (types.has("next_skill_buff")) cats.add(5);
 
-	// Category 4: state-creating (for non-primary affixes that create states)
+	// Category 4: state-creating
 	if (
 		types.has("dot") ||
 		types.has("debuff") ||
@@ -147,10 +150,7 @@ function classifyAffix(
 		types.has("lifesteal") ||
 		types.has("on_dispel")
 	)
-		return 4;
-
-	// Category 7: state-referencing (non-primary with parent)
-	if (hasParent) return 7;
+		cats.add(4);
 
 	// Category 3: flat damage
 	if (
@@ -159,7 +159,7 @@ function classifyAffix(
 		types.has("on_buff_debuff_shield_trigger") ||
 		types.has("conditional_damage")
 	)
-		return 3;
+		cats.add(3);
 
 	// Category 2: conditional multipliers
 	if (
@@ -175,10 +175,50 @@ function classifyAffix(
 		types.has("enemy_skill_damage_reduction") ||
 		types.has("probability_to_certain")
 	)
-		return 2;
+		cats.add(2);
 
-	// Category 1: passive multipliers (default)
-	return 1;
+	// Category 1: passive multipliers — everything that modifies output
+	// unconditionally (and isn't already in another category)
+	if (
+		types.has("damage_increase") ||
+		types.has("skill_damage_increase") ||
+		types.has("attack_bonus") ||
+		types.has("crit_damage_bonus") ||
+		types.has("buff_strength") ||
+		types.has("debuff_strength") ||
+		types.has("dot_damage_increase") ||
+		types.has("dot_frequency_increase") ||
+		types.has("dot_extra_per_tick") ||
+		types.has("final_damage_bonus") ||
+		types.has("healing_increase") ||
+		types.has("shield_value_increase") ||
+		types.has("shield_strength") ||
+		types.has("summon_buff") ||
+		types.has("extended_dot") ||
+		types.has("all_state_duration") ||
+		types.has("buff_duration") ||
+		types.has("buff_stack_increase") ||
+		types.has("probability_multiplier") ||
+		types.has("triple_bonus") ||
+		types.has("healing_to_damage") ||
+		types.has("probability_to_certain") ||
+		types.has("self_buff_extra") ||
+		types.has("self_buff_extend") ||
+		types.has("periodic_cleanse") ||
+		types.has("periodic_dispel") ||
+		types.has("self_hp_floor") ||
+		types.has("hp_cost_avoid_chance") ||
+		types.has("delayed_burst_increase") ||
+		types.has("self_lost_hp_damage") ||
+		types.has("percent_max_hp_damage") ||
+		types.has("shield_destroy_dot")
+	)
+		cats.add(1);
+
+	// Default: if nothing matched, it's passive
+	if (cats.size === 0) cats.add(1);
+
+	return [...cats].sort();
 }
 
 // ── Build taxonomy ──────────────────────────────────────────────────
@@ -187,7 +227,7 @@ interface TaxonomyEntry {
 	name: string;
 	source: string;
 	source_type: "universal" | "school" | "primary" | "exclusive";
-	category: number;
+	categories: number[];
 	effect_types: string[];
 }
 
@@ -199,7 +239,7 @@ for (const [name, data] of Object.entries(affixes.universal)) {
 		name,
 		source: "通用",
 		source_type: "universal",
-		category: classifyAffix(data.effects, "universal"),
+		categories: classifyAffix(data.effects, "universal"),
 		effect_types: data.effects.map((e) => e.type),
 	});
 }
@@ -211,7 +251,7 @@ for (const [school, schoolAffixes] of Object.entries(affixes.school)) {
 			name,
 			source: school,
 			source_type: "school",
-			category: classifyAffix(data.effects, "school"),
+			categories: classifyAffix(data.effects, "school"),
 			effect_types: data.effects.map((e) => e.type),
 		});
 	}
@@ -224,7 +264,7 @@ for (const [bookName, book] of Object.entries(books.books)) {
 			name: book.primary_affix.name,
 			source: bookName,
 			source_type: "primary",
-			category: classifyAffix(book.primary_affix.effects, "primary"),
+			categories: classifyAffix(book.primary_affix.effects, "primary"),
 			effect_types: book.primary_affix.effects.map((e) => e.type),
 		});
 	}
@@ -233,7 +273,7 @@ for (const [bookName, book] of Object.entries(books.books)) {
 			name: book.exclusive_affix.name,
 			source: bookName,
 			source_type: "exclusive",
-			category: classifyAffix(book.exclusive_affix.effects, "exclusive"),
+			categories: classifyAffix(book.exclusive_affix.effects, "exclusive"),
 			effect_types: book.exclusive_affix.effects.map((e) => e.type),
 		});
 	}
@@ -259,18 +299,23 @@ for (const [id, cat] of Object.entries(CATEGORIES)) {
 lines.push("");
 lines.push("affixes:");
 
-// Group by category
-for (let cat = 1; cat <= 7; cat++) {
-	const catEntries = entries.filter((e) => e.category === cat);
-	if (catEntries.length === 0) continue;
-	lines.push(`  # ── ${CATEGORIES[cat].cn} (${CATEGORIES[cat].name}) ──`);
-	for (const entry of catEntries) {
-		lines.push(`  - name: ${entry.name}`);
-		lines.push(`    source: ${entry.source}`);
-		lines.push(`    source_type: ${entry.source_type}`);
-		lines.push(`    category: ${entry.category}`);
-		lines.push(`    effect_types: [${entry.effect_types.join(", ")}]`);
+// Output all entries (sorted by first category, then name)
+const sorted = [...entries].sort(
+	(a, b) => a.categories[0] - b.categories[0] || a.name.localeCompare(b.name),
+);
+let lastCat = 0;
+for (const entry of sorted) {
+	if (entry.categories[0] !== lastCat) {
+		lastCat = entry.categories[0];
+		lines.push(
+			`  # ── ${CATEGORIES[lastCat].cn} (${CATEGORIES[lastCat].name}) ──`,
+		);
 	}
+	lines.push(`  - name: ${entry.name}`);
+	lines.push(`    source: ${entry.source}`);
+	lines.push(`    source_type: ${entry.source_type}`);
+	lines.push(`    categories: [${entry.categories.join(", ")}]`);
+	lines.push(`    effect_types: [${entry.effect_types.join(", ")}]`);
 }
 
 const yaml = `${lines.join("\n")}\n`;
@@ -279,7 +324,7 @@ const yaml = `${lines.join("\n")}\n`;
 const counts = Object.fromEntries(
 	Object.keys(CATEGORIES).map((id) => [
 		id,
-		entries.filter((e) => e.category === Number(id)).length,
+		entries.filter((e) => e.categories.includes(Number(id))).length,
 	]),
 );
 console.error(
