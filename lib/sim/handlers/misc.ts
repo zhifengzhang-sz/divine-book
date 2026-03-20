@@ -161,10 +161,17 @@ register("execute_conditional", (effect) => ({
 }));
 
 // random_buff: { attack, crit_damage, damage }
-// Randomly grants one of three buffs. Use average (pick one).
-register("random_buff", (effect) => ({
-	zones: { S_coeff: ((effect.attack as number) ?? 0) / 100 },
-}));
+// Randomly grants one of three buffs.
+register("random_buff", (effect, ctx) => {
+	const options = [
+		{ stat: "S_coeff", value: ((effect.attack as number) ?? 0) / 100 },
+		{ stat: "M_dmg", value: ((effect.crit_damage as number) ?? 0) / 100 },
+		{ stat: "M_dmg", value: ((effect.damage as number) ?? 0) / 100 },
+	].filter((o) => o.value > 0);
+	if (options.length === 0) return {};
+	const pick = options[Math.floor(ctx.rng.next() * options.length)];
+	return { zones: { [pick.stat]: pick.value } };
+});
 
 // shield_value_increase: { value }
 // Increases shield value. Modeled as M_dmg zone (indirect survivability).
@@ -240,30 +247,46 @@ register("damage_to_shield", (effect, ctx) => ({
 }));
 
 // random_debuff: { attack, crit_rate, crit_damage }
-// Randomly applies one of three debuffs. Apply attack reduction.
-register("random_debuff", (effect) => ({
-	intents: [
+// Randomly applies one of three debuffs.
+register("random_debuff", (effect, ctx) => {
+	const options = [
 		{
-			type: "APPLY_STATE" as const,
-			state: {
-				name: "random_debuff",
-				kind: "debuff" as const,
-				source: "",
-				target: "opponent" as const,
-				effects: [
-					{
-						stat: "attack_bonus",
-						value: -(effect.attack as number),
-					},
-				],
-				remainingDuration: 8,
-				stacks: 1,
-				maxStacks: 1,
-				dispellable: true,
-			},
+			name: "random_debuff_atk",
+			stat: "attack_bonus",
+			value: -(effect.attack as number),
 		},
-	],
-}));
+		{
+			name: "random_debuff_crit_rate",
+			stat: "damage_reduction",
+			value: effect.crit_rate as number,
+		},
+		{
+			name: "random_debuff_crit_dmg",
+			stat: "damage_reduction",
+			value: effect.crit_damage as number,
+		},
+	].filter((o) => o.value !== 0 && o.value !== undefined);
+	if (options.length === 0) return {};
+	const pick = options[Math.floor(ctx.rng.next() * options.length)];
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: pick.name,
+					kind: "debuff" as const,
+					source: "",
+					target: "opponent" as const,
+					effects: [{ stat: pick.stat, value: pick.value }],
+					remainingDuration: 8,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: true,
+				},
+			},
+		],
+	};
+});
 
 // min_lost_hp_threshold: { min_percent, damage_increase }
 // Ensures minimum lost HP% for damage scaling. Grants damage bonus.

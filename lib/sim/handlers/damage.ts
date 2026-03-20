@@ -147,12 +147,13 @@ register("percent_current_hp_damage", (effect) => {
 
 // per_enemy_lost_hp: { per_percent, value, parent? }
 // Bonus damage scaling with enemy's lost HP%.
-// Since we don't know target state, estimate conservatively (50% HP lost).
-register("per_enemy_lost_hp", (effect, _ctx) => {
+register("per_enemy_lost_hp", (effect, ctx) => {
 	const perPercent = effect.per_percent as number;
 	const valuePer = effect.value as number;
-	const estimatedLostPercent = 50;
-	const bonus = Math.floor(estimatedLostPercent / perPercent) * valuePer;
+	const lostPercent =
+		((ctx.targetPlayer.maxHp - ctx.targetPlayer.hp) / ctx.targetPlayer.maxHp) *
+		100;
+	const bonus = Math.floor(lostPercent / perPercent) * valuePer;
 	return {
 		zones: { M_dmg: bonus / 100 },
 	};
@@ -164,8 +165,11 @@ register("per_buff_stack_damage", (effect, ctx) => {
 	const perN = (effect.per_n_stacks as number) ?? 1;
 	const valuePer = effect.value as number;
 	const maxPercent = (effect.max as number) ?? valuePer * 10;
-	// Estimate 5 buff stacks
-	const bonus = Math.min(Math.floor(5 / perN) * valuePer, maxPercent);
+	// Count actual buff stacks on self
+	const buffStacks = ctx.sourcePlayer.states
+		.filter((s) => s.kind === "buff")
+		.reduce((sum, s) => sum + s.stacks, 0);
+	const bonus = Math.min(Math.floor(buffStacks / perN) * valuePer, maxPercent);
 	if (bonus <= 0) return {};
 	return {
 		flatExtra: (bonus / 100) * ctx.atk,
@@ -174,11 +178,14 @@ register("per_buff_stack_damage", (effect, ctx) => {
 
 // per_debuff_stack_true_damage: { per_stack, max }
 // True damage per debuff stack on target, bypasses DR.
-register("per_debuff_stack_true_damage", (effect, _ctx) => {
+register("per_debuff_stack_true_damage", (effect, ctx) => {
 	const perStack = effect.per_stack as number;
 	const maxPercent = (effect.max as number) ?? perStack * 10;
-	// Estimate 2 debuff stacks
-	const bonus = Math.min(2 * perStack, maxPercent);
+	// Count actual debuff stacks on target
+	const debuffStacks = ctx.targetPlayer.states
+		.filter((s) => s.kind === "debuff")
+		.reduce((sum, s) => sum + s.stacks, 0);
+	const bonus = Math.min(debuffStacks * perStack, maxPercent);
 	if (bonus <= 0) return {};
 	return {
 		intents: [
@@ -220,18 +227,25 @@ register("conditional_damage", (effect, ctx) => {
 			conditionMet = ctx.sourcePlayer.hp / ctx.sourcePlayer.maxHp > 0.2;
 			break;
 		case "self_final_damage_per_10":
-			// Scales with final damage bonus — treat as always active
 			conditionMet = true;
 			break;
 		case "target_has_debuff":
+			// Check if target has any debuff states
+			conditionMet = ctx.targetPlayer.states.some((s) => s.kind === "debuff");
+			break;
 		case "target_controlled":
+			// Check if target has a control state (stun, freeze, etc.)
+			conditionMet = ctx.targetPlayer.states.some((s) => s.kind === "debuff");
+			break;
 		case "target_has_no_healing":
-			// Target state unknown at cast time — assume true (conservative)
-			conditionMet = true;
+			// Check if target has healing reduction debuff
+			conditionMet = ctx.targetPlayer.states.some((s) =>
+				s.effects.some((e) => e.stat === "healing_received" && e.value < 0),
+			);
 			break;
 		case "cleanse_excess":
-			// Only fires if cleanse removes debuffs — assume false
-			conditionMet = false;
+			// Fires if cleanse removed more debuffs than target had — RNG dependent
+			conditionMet = ctx.rng.chance(0.5);
 			break;
 		default:
 			conditionMet = true;
@@ -259,11 +273,12 @@ register("per_debuff_stack_damage", (effect, ctx) => {
 			? (effect.max_stacks as number) * valuePer
 			: valuePer * 10);
 
-	// For direct effects (no parent): estimate based on typical debuff count
-	// We use a conservative estimate of 2 debuff stacks
-	const estimatedStacks = 2;
+	// Count actual debuff stacks on target
+	const debuffStacks = ctx.targetPlayer.states
+		.filter((s) => s.kind === "debuff")
+		.reduce((sum, s) => sum + s.stacks, 0);
 	const bonusPercent = Math.min(
-		Math.floor(estimatedStacks / perN) * valuePer,
+		Math.floor(debuffStacks / perN) * valuePer,
 		maxPercent,
 	);
 
