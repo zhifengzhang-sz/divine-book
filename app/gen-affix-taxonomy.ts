@@ -103,6 +103,7 @@ const CATEGORIES: Record<number, { name: string; cn: string; desc: string }> = {
 
 function classifyAffix(
 	effects: { type: string; [k: string]: unknown }[],
+	sourceType: "universal" | "school" | "primary" | "exclusive",
 ): number {
 	const types = new Set(effects.map((e) => e.type));
 	const hasParent = effects.some((e) => e.parent && e.parent !== "this");
@@ -110,7 +111,12 @@ function classifyAffix(
 		(e) => e.trigger === "on_attacked" || e.trigger === "per_tick",
 	);
 
-	// Category 6: reactive triggers (before state-referencing)
+	// Primary affixes with parent= are state-referencing by definition —
+	// they modify the platform skill's named state behavior.
+	// Check this FIRST for primary affixes.
+	if (sourceType === "primary" && hasParent) return 7;
+
+	// Category 6: reactive triggers
 	if (
 		hasTrigger ||
 		types.has("counter_buff") ||
@@ -127,8 +133,7 @@ function classifyAffix(
 	// Category 5: cross-skill
 	if (types.has("next_skill_buff")) return 5;
 
-	// Category 4: state-creating (before state-referencing since
-	// state-creating effects often reference a parent state)
+	// Category 4: state-creating (for non-primary affixes that create states)
 	if (
 		types.has("dot") ||
 		types.has("debuff") ||
@@ -144,7 +149,7 @@ function classifyAffix(
 	)
 		return 4;
 
-	// Category 7: state-referencing (only pure state-ref, not already classified)
+	// Category 7: state-referencing (non-primary with parent)
 	if (hasParent) return 7;
 
 	// Category 3: flat damage
@@ -194,7 +199,7 @@ for (const [name, data] of Object.entries(affixes.universal)) {
 		name,
 		source: "通用",
 		source_type: "universal",
-		category: classifyAffix(data.effects),
+		category: classifyAffix(data.effects, "universal"),
 		effect_types: data.effects.map((e) => e.type),
 	});
 }
@@ -206,7 +211,7 @@ for (const [school, schoolAffixes] of Object.entries(affixes.school)) {
 			name,
 			source: school,
 			source_type: "school",
-			category: classifyAffix(data.effects),
+			category: classifyAffix(data.effects, "school"),
 			effect_types: data.effects.map((e) => e.type),
 		});
 	}
@@ -219,7 +224,7 @@ for (const [bookName, book] of Object.entries(books.books)) {
 			name: book.primary_affix.name,
 			source: bookName,
 			source_type: "primary",
-			category: classifyAffix(book.primary_affix.effects),
+			category: classifyAffix(book.primary_affix.effects, "primary"),
 			effect_types: book.primary_affix.effects.map((e) => e.type),
 		});
 	}
@@ -228,7 +233,7 @@ for (const [bookName, book] of Object.entries(books.books)) {
 			name: book.exclusive_affix.name,
 			source: bookName,
 			source_type: "exclusive",
-			category: classifyAffix(book.exclusive_affix.effects),
+			category: classifyAffix(book.exclusive_affix.effects, "exclusive"),
 			effect_types: book.exclusive_affix.effects.map((e) => e.type),
 		});
 	}

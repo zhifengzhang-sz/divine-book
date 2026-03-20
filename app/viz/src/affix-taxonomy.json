@@ -649,31 +649,12 @@
       ]
     },
     {
-      "name": "天龙轮转",
-      "source": "星元化岳",
-      "source_type": "primary",
-      "category": 4,
-      "effect_types": [
-        "lifesteal"
-      ]
-    },
-    {
       "name": "仙灵汲元",
       "source": "星元化岳",
       "source_type": "exclusive",
       "category": 4,
       "effect_types": [
         "lifesteal"
-      ]
-    },
-    {
-      "name": "魔念生息",
-      "source": "天魔降临咒",
-      "source_type": "primary",
-      "category": 4,
-      "effect_types": [
-        "dot",
-        "per_debuff_stack_damage"
       ]
     },
     {
@@ -696,15 +677,6 @@
       ]
     },
     {
-      "name": "魔心焚尽",
-      "source": "梵圣真魔咒",
-      "source_type": "primary",
-      "category": 4,
-      "effect_types": [
-        "dot"
-      ]
-    },
-    {
       "name": "无相魔威",
       "source": "无相魔劫咒",
       "source_type": "exclusive",
@@ -712,15 +684,6 @@
       "effect_types": [
         "debuff",
         "conditional_damage"
-      ]
-    },
-    {
-      "name": "星猿复灵",
-      "source": "疾风九变",
-      "source_type": "primary",
-      "category": 4,
-      "effect_types": [
-        "lifesteal"
       ]
     },
     {
@@ -741,42 +704,6 @@
         "next_skill_buff",
         "next_skill_buff",
         "next_skill_buff"
-      ]
-    },
-    {
-      "name": "天书灵盾",
-      "source": "周天星元",
-      "source_type": "primary",
-      "category": 6,
-      "effect_types": [
-        "shield",
-        "shield"
-      ]
-    },
-    {
-      "name": "魔妄吞天",
-      "source": "天刹真魔",
-      "source_type": "primary",
-      "category": 6,
-      "effect_types": [
-        "counter_debuff",
-        "lethal_rate_reduction",
-        "crit_damage_reduction",
-        "crit_rate_reduction",
-        "attack_reduction",
-        "debuff"
-      ]
-    },
-    {
-      "name": "魔魂咒界",
-      "source": "大罗幻诀",
-      "source_type": "primary",
-      "category": 6,
-      "effect_types": [
-        "counter_debuff_upgrade",
-        "cross_slot_debuff",
-        "counter_debuff_upgrade",
-        "cross_slot_debuff"
       ]
     },
     {
@@ -807,6 +734,16 @@
       ]
     },
     {
+      "name": "天书灵盾",
+      "source": "周天星元",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "shield",
+        "shield"
+      ]
+    },
+    {
       "name": "天光虹露",
       "source": "甲元仙符",
       "source_type": "primary",
@@ -816,6 +753,60 @@
         "self_buff_extra",
         "self_buff_extra",
         "self_buff_extra"
+      ]
+    },
+    {
+      "name": "天龙轮转",
+      "source": "星元化岳",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "lifesteal"
+      ]
+    },
+    {
+      "name": "魔念生息",
+      "source": "天魔降临咒",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "dot",
+        "per_debuff_stack_damage"
+      ]
+    },
+    {
+      "name": "魔妄吞天",
+      "source": "天刹真魔",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "counter_debuff",
+        "lethal_rate_reduction",
+        "crit_damage_reduction",
+        "crit_rate_reduction",
+        "attack_reduction",
+        "debuff"
+      ]
+    },
+    {
+      "name": "魔魂咒界",
+      "source": "大罗幻诀",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "counter_debuff_upgrade",
+        "cross_slot_debuff",
+        "counter_debuff_upgrade",
+        "cross_slot_debuff"
+      ]
+    },
+    {
+      "name": "魔心焚尽",
+      "source": "梵圣真魔咒",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "dot"
       ]
     },
     {
@@ -844,6 +835,15 @@
       "effect_types": [
         "self_buff_extend",
         "periodic_cleanse"
+      ]
+    },
+    {
+      "name": "星猿复灵",
+      "source": "疾风九变",
+      "source_type": "primary",
+      "category": 7,
+      "effect_types": [
+        "lifesteal"
       ]
     }
   ]
