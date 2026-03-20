@@ -44,11 +44,15 @@ function classifyAffix(effects: { type: string; [k: string]: unknown }[]): numbe
 	const hasParent = effects.some((e) => e.parent && e.parent !== "this");
 	const hasTrigger = effects.some((e) => e.trigger === "on_attacked" || e.trigger === "per_tick");
 
+	// Category 6: reactive triggers (check BEFORE state-referencing since
+	// reactive effects often reference a parent state)
+	if (hasTrigger || types.has("counter_buff") || types.has("counter_debuff") ||
+		types.has("counter_debuff_upgrade") || types.has("cross_slot_debuff") ||
+		types.has("attack_reduction") || types.has("lethal_rate_reduction") ||
+		types.has("crit_damage_reduction") || types.has("crit_rate_reduction")) return 6;
+
 	// Category 7: state-referencing (has parent= reference to a named state)
 	if (hasParent) return 7;
-
-	// Category 6: reactive triggers
-	if (hasTrigger || types.has("counter_buff") || types.has("counter_debuff")) return 6;
 
 	// Category 5: cross-skill
 	if (types.has("next_skill_buff")) return 5;
