@@ -1,0 +1,472 @@
+# Affix Taxonomy — auto-generated behavioral classification
+# Regenerate with: bun app/gen-affix-taxonomy.ts -o data/yaml/affix-taxonomy.yaml
+# Categories from docs/model/affix-taxonomy.md
+
+categories:
+  1:
+    name: Passive Multipliers
+    cn: 被动加成
+    desc: Always active when equipped
+  2:
+    name: Conditional Multipliers
+    cn: 条件加成
+    desc: Scale with HP%, states, debuff count
+  3:
+    name: Flat Damage Additions
+    cn: 固定伤害
+    desc: Extra damage per hit or cast
+  4:
+    name: State-Creating Effects
+    cn: 状态创建
+    desc: Create buffs, debuffs, DoTs, shields
+  5:
+    name: Cross-Skill Effects
+    cn: 跨技能
+    desc: Affect the next skill cast
+  6:
+    name: Reactive Triggers
+    cn: 被动触发
+    desc: Fire on being attacked or per-tick
+  7:
+    name: State-Referencing
+    cn: 状态联动
+    desc: Behavior depends on a named state
+
+affixes:
+  # ── 被动加成 (Passive Multipliers) ──
+  - name: 咒书
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [debuff_strength]
+  - name: 清灵
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [buff_strength]
+  - name: 业焰
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [all_state_duration]
+  - name: 金汤
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [damage_reduction_during_cast]
+  - name: 鬼印
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [dot_extra_per_tick]
+  - name: 灵盾
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [shield_value_increase]
+  - name: 摧山
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [attack_bonus]
+  - name: 通明
+    source: 通用
+    source_type: universal
+    category: 1
+    effect_types: [guaranteed_resonance]
+  - name: 摧云折月
+    source: Sword
+    source_type: school
+    category: 1
+    effect_types: [attack_bonus]
+  - name: 灵犀九重
+    source: Sword
+    source_type: school
+    category: 1
+    effect_types: [guaranteed_resonance]
+  - name: 破碎无双
+    source: Sword
+    source_type: school
+    category: 1
+    effect_types: [triple_bonus]
+  - name: 长生天则
+    source: Spell
+    source_type: school
+    category: 1
+    effect_types: [healing_increase]
+  - name: 明王之路
+    source: Spell
+    source_type: school
+    category: 1
+    effect_types: [final_damage_bonus]
+  - name: 瑶光却邪
+    source: Demon
+    source_type: school
+    category: 1
+    effect_types: [healing_to_damage]
+  - name: 金刚护体
+    source: Body
+    source_type: school
+    category: 1
+    effect_types: [damage_reduction_during_cast]
+  - name: 青云灵盾
+    source: Body
+    source_type: school
+    category: 1
+    effect_types: [shield_value_increase]
+  - name: 幻象剑灵
+    source: 春黎剑阵
+    source_type: primary
+    category: 1
+    effect_types: [summon_buff]
+  - name: 追神真诀
+    source: 皓月剑诀
+    source_type: exclusive
+    category: 1
+    effect_types: [dot_extra_per_tick, conditional_buff]
+  - name: 雷阵剑影
+    source: 念剑诀
+    source_type: primary
+    category: 1
+    effect_types: [extended_dot]
+  - name: 仙露护元
+    source: 念剑诀
+    source_type: exclusive
+    category: 1
+    effect_types: [buff_duration]
+  - name: 龙象护身
+    source: 浩然星灵诀
+    source_type: exclusive
+    category: 1
+    effect_types: [buff_strength]
+  - name: 天狼战意
+    source: 元磁神光
+    source_type: primary
+    category: 1
+    effect_types: [self_buff_extra]
+  - name: 天光虹露
+    source: 甲元仙符
+    source_type: primary
+    category: 1
+    effect_types: [self_buff_extra, self_buff_extra, self_buff_extra, self_buff_extra]
+  - name: 天人合一
+    source: 玉书天戈符
+    source_type: exclusive
+    category: 1
+    effect_types: [enlightenment_bonus]
+  - name: 魔神降世
+    source: 解体化形
+    source_type: primary
+    category: 1
+    effect_types: [attack_bonus]
+  - name: 心逐神随
+    source: 解体化形
+    source_type: exclusive
+    category: 1
+    effect_types: [probability_multiplier, probability_multiplier]
+  - name: 古魔之魂
+    source: 大罗幻诀
+    source_type: exclusive
+    category: 1
+    effect_types: [dot_damage_increase]
+  - name: 天魔真解
+    source: 梵圣真魔咒
+    source_type: exclusive
+    category: 1
+    effect_types: [dot_frequency_increase]
+  - name: 星猿幻杀
+    source: 惊蜇化龙
+    source_type: primary
+    category: 1
+    effect_types: [percent_max_hp_damage]
+  - name: 星猿弃天
+    source: 十方真魄
+    source_type: primary
+    category: 1
+    effect_types: [self_buff_extend, periodic_cleanse]
+  - name: 真言不灭
+    source: 疾风九变
+    source_type: exclusive
+    category: 1
+    effect_types: [all_state_duration]
+  - name: 星猿援护
+    source: 煞影千幻
+    source_type: primary
+    category: 1
+    effect_types: [shield_strength, hp_cost_avoid_chance]
+  - name: 星猿永生
+    source: 九重天凤诀
+    source_type: primary
+    category: 1
+    effect_types: [periodic_dispel, self_hp_floor]
+  - name: 玉石俱焚
+    source: 九重天凤诀
+    source_type: exclusive
+    category: 1
+    effect_types: [on_shield_expire]
+  - name: 天煞破虚
+    source: 天煞破虚诀
+    source_type: exclusive
+    category: 1
+    effect_types: [periodic_dispel]
+  # ── 条件加成 (Conditional Multipliers) ──
+  - name: 怒目
+    source: 通用
+    source_type: universal
+    category: 2
+    effect_types: [execute_conditional]
+  - name: 战意
+    source: 通用
+    source_type: universal
+    category: 2
+    effect_types: [per_self_lost_hp]
+  - name: 吞海
+    source: 通用
+    source_type: universal
+    category: 2
+    effect_types: [per_enemy_lost_hp]
+  - name: 天命有归
+    source: Spell
+    source_type: school
+    category: 2
+    effect_types: [probability_to_certain]
+  - name: 溃魂击瑕
+    source: Demon
+    source_type: school
+    category: 2
+    effect_types: [execute_conditional]
+  - name: 贪狼吞星
+    source: Body
+    source_type: school
+    category: 2
+    effect_types: [per_enemy_lost_hp]
+  - name: 意坠深渊
+    source: Body
+    source_type: school
+    category: 2
+    effect_types: [min_lost_hp_threshold]
+  - name: 焚心剑芒
+    source: 通天剑诀
+    source_type: primary
+    category: 2
+    effect_types: [per_enemy_lost_hp]
+  - name: 神威冲云
+    source: 通天剑诀
+    source_type: exclusive
+    category: 2
+    effect_types: [ignore_damage_reduction, damage_increase]
+  - name: 无极剑阵
+    source: 无极御剑诀
+    source_type: exclusive
+    category: 2
+    effect_types: [skill_damage_increase, enemy_skill_damage_reduction]
+  - name: 真极穿空
+    source: 元磁神光
+    source_type: exclusive
+    category: 2
+    effect_types: [buff_stack_increase, per_buff_stack_damage]
+  - name: 心魔惑言
+    source: 天轮魔经
+    source_type: exclusive
+    category: 2
+    effect_types: [debuff_stack_increase, per_debuff_stack_damage]
+  - name: 怒血战意
+    source: 玄煞灵影诀
+    source_type: exclusive
+    category: 2
+    effect_types: [per_self_lost_hp]
+  - name: 索心真诀
+    source: 惊蜇化龙
+    source_type: exclusive
+    category: 2
+    effect_types: [per_debuff_stack_true_damage, conditional_buff]
+  - name: 破釜沉舟
+    source: 十方真魄
+    source_type: exclusive
+    category: 2
+    effect_types: [damage_increase, self_damage_taken_increase]
+  # ── 固定伤害 (Flat Damage Additions) ──
+  - name: 击瑕
+    source: 通用
+    source_type: universal
+    category: 3
+    effect_types: [conditional_damage]
+  - name: 破竹
+    source: 通用
+    source_type: universal
+    category: 3
+    effect_types: [per_hit_escalation]
+  - name: 斩岳
+    source: 通用
+    source_type: universal
+    category: 3
+    effect_types: [flat_extra_damage]
+  - name: 心火淬锋
+    source: Sword
+    source_type: school
+    category: 3
+    effect_types: [per_hit_escalation]
+  - name: 破灭天光
+    source: Body
+    source_type: school
+    category: 3
+    effect_types: [flat_extra_damage]
+  - name: 惊神剑光
+    source: 千锋聚灵剑
+    source_type: primary
+    category: 3
+    effect_types: [per_hit_escalation, per_hit_escalation]
+  - name: 天灵怒威
+    source: 玉书天戈符
+    source_type: primary
+    category: 3
+    effect_types: [conditional_damage]
+  - name: 九雷真解
+    source: 九天真雷诀
+    source_type: exclusive
+    category: 3
+    effect_types: [on_buff_debuff_shield_trigger]
+  - name: 引灵摘魂
+    source: 天魔降临咒
+    source_type: exclusive
+    category: 3
+    effect_types: [conditional_damage]
+  - name: 乘胜逐北
+    source: 煞影千幻
+    source_type: exclusive
+    category: 3
+    effect_types: [conditional_damage]
+  # ── 状态创建 (State-Creating Effects) ──
+  - name: 福荫
+    source: 通用
+    source_type: universal
+    category: 4
+    effect_types: [random_buff]
+  - name: 景星天佑
+    source: Spell
+    source_type: school
+    category: 4
+    effect_types: [random_buff]
+  - name: 玄女护心
+    source: Demon
+    source_type: school
+    category: 4
+    effect_types: [damage_to_shield]
+  - name: 祸星无妄
+    source: Demon
+    source_type: school
+    category: 4
+    effect_types: [random_debuff]
+  - name: 天哀灵涸
+    source: 千锋聚灵剑
+    source_type: exclusive
+    category: 4
+    effect_types: [debuff]
+  - name: 追命剑阵
+    source: 新-青元剑诀
+    source_type: primary
+    category: 4
+    effect_types: [debuff]
+  - name: 奇能诡道
+    source: 周天星元
+    source_type: exclusive
+    category: 4
+    effect_types: [debuff_stack_chance, conditional_debuff, debuff_stack_chance, conditional_debuff]
+  - name: 天倾灵枯
+    source: 甲元仙符
+    source_type: exclusive
+    category: 4
+    effect_types: [debuff]
+  - name: 仙灵汲元
+    source: 星元化岳
+    source_type: exclusive
+    category: 4
+    effect_types: [lifesteal]
+  - name: 魔意震慑
+    source: 天轮魔经
+    source_type: primary
+    category: 4
+    effect_types: [debuff]
+  - name: 魔骨明心
+    source: 天刹真魔
+    source_type: exclusive
+    category: 4
+    effect_types: [conditional_heal_buff, conditional_debuff]
+  # ── 跨技能 (Cross-Skill Effects) ──
+  - name: 灵威
+    source: 通用
+    source_type: universal
+    category: 5
+    effect_types: [next_skill_buff]
+  - name: 天威煌煌
+    source: 新-青元剑诀
+    source_type: exclusive
+    category: 5
+    effect_types: [next_skill_buff, next_skill_buff, next_skill_buff]
+  # ── 被动触发 (Reactive Triggers) ──
+  - name: 天书灵盾
+    source: 周天星元
+    source_type: primary
+    category: 6
+    effect_types: [shield, shield]
+  - name: 魔妄吞天
+    source: 天刹真魔
+    source_type: primary
+    category: 6
+    effect_types: [counter_debuff, lethal_rate_reduction, crit_damage_reduction, crit_rate_reduction, attack_reduction, debuff]
+  - name: 魔魂咒界
+    source: 大罗幻诀
+    source_type: primary
+    category: 6
+    effect_types: [counter_debuff_upgrade, cross_slot_debuff, counter_debuff_upgrade, cross_slot_debuff]
+  # ── 状态联动 (State-Referencing) ──
+  - name: 玄心剑魄
+    source: 春黎剑阵
+    source_type: exclusive
+    category: 7
+    effect_types: [dot, on_dispel, dot, on_dispel]
+  - name: 碎魂剑意
+    source: 皓月剑诀
+    source_type: primary
+    category: 7
+    effect_types: [shield_destroy_dot]
+  - name: 天鹤祈瑞
+    source: 浩然星灵诀
+    source_type: primary
+    category: 7
+    effect_types: [conditional_damage]
+  - name: 天龙轮转
+    source: 星元化岳
+    source_type: primary
+    category: 7
+    effect_types: [lifesteal]
+  - name: 魔念生息
+    source: 天魔降临咒
+    source_type: primary
+    category: 7
+    effect_types: [dot, per_debuff_stack_damage]
+  - name: 魔心焚尽
+    source: 梵圣真魔咒
+    source_type: primary
+    category: 7
+    effect_types: [dot]
+  - name: 灭劫魔威
+    source: 无相魔劫咒
+    source_type: primary
+    category: 7
+    effect_types: [delayed_burst_increase]
+  - name: 无相魔威
+    source: 无相魔劫咒
+    source_type: exclusive
+    category: 7
+    effect_types: [debuff, conditional_damage]
+  - name: 星猿之怒
+    source: 玄煞灵影诀
+    source_type: primary
+    category: 7
+    effect_types: [self_lost_hp_damage]
+  - name: 星猿复灵
+    source: 疾风九变
+    source_type: primary
+    category: 7
+    effect_types: [lifesteal]
