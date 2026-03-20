@@ -8,13 +8,23 @@
 
 // ── Player State (design §3.1) ──────────────────────────────────────
 
+export interface ShieldInstance {
+	name: string;
+	source: string;
+	value: number;
+	maxValue: number;
+	remainingDuration: number; // Infinity = permanent (SP-generated)
+}
+
 export interface PlayerState {
 	hp: number;
 	maxHp: number;
 	sp: number;
 	maxSp: number;
 	spRegen: number;
-	shield: number;
+	shield: number; // sum of shields[].value — kept for backwards compat
+	shields: ShieldInstance[]; // tracked shield instances
+	destroyedShieldsTotal: number; // accumulated count for shield destroy DoT
 	atk: number;
 	baseAtk: number;
 	def: number;
@@ -83,7 +93,9 @@ export type IntentEvent =
 	| DelayedBurstEvent
 	| LifestealEvent
 	| SelfCleanseEvent
-	| HpFloorEvent;
+	| HpFloorEvent
+	| ShieldDestroyEvent
+	| NoShieldDoubleEvent;
 
 export interface HitEvent {
 	type: "HIT";
@@ -127,6 +139,8 @@ export interface ShieldEvent {
 	type: "SHIELD";
 	value: number;
 	duration: number;
+	name?: string; // shield identity for tracking
+	source?: string; // book that created it
 }
 
 export interface HpCostEvent {
@@ -165,6 +179,16 @@ export interface SelfCleanseEvent {
 export interface HpFloorEvent {
 	type: "HP_FLOOR";
 	minPercent: number;
+}
+
+export interface ShieldDestroyEvent {
+	type: "SHIELD_DESTROY";
+	count: number;
+	bonusPercentMaxHp?: number;
+}
+
+export interface NoShieldDoubleEvent {
+	type: "NO_SHIELD_DOUBLE";
 }
 
 // ── State-Change Events (design §4.1, emitted via emit) ────────────
@@ -293,6 +317,7 @@ export type PlayerEvent =
 	| IntentEvent
 	| { type: "STATE_TICK_INTERNAL"; name: string }
 	| { type: "STATE_EXPIRE_INTERNAL"; name: string }
+	| { type: "SHIELD_EXPIRE_INTERNAL"; name: string }
 	| { type: "CLOCK_TICK"; dt: number };
 
 // ── Configuration (design §10) ──────────────────────────────────────

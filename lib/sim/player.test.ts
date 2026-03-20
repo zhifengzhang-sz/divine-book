@@ -17,6 +17,8 @@ function makePlayerState(overrides?: Partial<PlayerState>): PlayerState {
 		maxSp: 5000,
 		spRegen: 100,
 		shield: 0,
+		shields: [],
+		destroyedShieldsTotal: 0,
 		atk: 1000,
 		baseAtk: 1000,
 		def: 9e5,

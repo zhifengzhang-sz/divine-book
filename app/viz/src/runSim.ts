@@ -215,6 +215,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 					maxSp: stats.sp,
 					spRegen: stats.spRegen,
 					shield: 0,
+					shields: [],
+					destroyedShieldsTotal: 0,
 					atk: stats.atk,
 					baseAtk: stats.atk,
 					def: stats.def,

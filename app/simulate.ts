@@ -138,6 +138,8 @@ function makePlayer(label: string, bookSlot: typeof slotA) {
 				maxSp: sp,
 				spRegen: 100,
 				shield: 0,
+				shields: [],
+				destroyedShieldsTotal: 0,
 				atk,
 				baseAtk: atk,
 				def,

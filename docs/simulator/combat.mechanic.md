@@ -1,3 +1,8 @@
+---
+initial date: 2026-03-18
+dates of modification: [2026-03-18]
+---
+
 <style>
 body {
   max-width: none !important;
@@ -88,11 +93,6 @@ strong {
   color: #e5c07b !important;
 }
 </style>
-
----
-initial date: 2026-03-18
-dates of modification: [2026-03-18]
----
 
 # Combat Mechanics
 

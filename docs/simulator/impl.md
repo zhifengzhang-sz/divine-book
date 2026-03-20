@@ -1,3 +1,8 @@
+---
+initial date: 2026-03-16
+dates of modification: [2026-03-16, 2026-03-17]
+---
+
 <style>
 body {
   max-width: none !important;
@@ -88,11 +93,6 @@ strong {
   color: #e5c07b !important;
 }
 </style>
-
----
-initial date: 2026-03-16
-dates of modification: [2026-03-16, 2026-03-17]
----
 
 # Implementation Guide — XState v5
 

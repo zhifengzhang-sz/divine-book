@@ -35,10 +35,12 @@ import type {
 	HpCostEvent,
 	HpDamageEvent,
 	IntentEvent,
+	ListenerContext,
 	ListenerRegistration,
 	PlayerState,
 	ProgressionConfig,
 	ShieldEvent,
+	ShieldInstance,
 	StateChangeEvent,
 	StateInstance,
 } from "./types.js";
@@ -97,6 +99,7 @@ type PlayerMachineEvent =
 	| { type: "HP_FLOOR"; minPercent: number }
 	| { type: "STATE_TICK_INTERNAL"; name: string }
 	| { type: "STATE_EXPIRE_INTERNAL"; name: string }
+	| { type: "SHIELD_EXPIRE_INTERNAL"; name: string }
 	| { type: "CLOCK_TICK"; dt: number }
 	| { type: "CHECK_DEATH" }
 	| {
@@ -316,9 +319,20 @@ export const playerMachine = setup({
 					}),
 				},
 				SHIELD: {
-					actions: enqueueActions(({ context, event, enqueue }) => {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
 						const ev = event as ShieldEvent;
 						const prev = context.state.shield;
+						const shieldName =
+							ev.name ?? `shield_${context.state.shields.length}`;
+						const shieldSource = ev.source ?? "";
+						// Track shield instance
+						context.state.shields.push({
+							name: shieldName,
+							source: shieldSource,
+							value: ev.value,
+							maxValue: ev.value,
+							remainingDuration: ev.duration,
+						});
 						context.state.shield += ev.value;
 						enqueue(
 							emit({
@@ -330,6 +344,19 @@ export const playerMachine = setup({
 								t: context.clock.now(),
 							}),
 						);
+						// Schedule shield expiry if finite duration
+						if (ev.duration > 0 && ev.duration < Number.POSITIVE_INFINITY) {
+							enqueue(
+								sendTo(
+									self,
+									{
+										type: "SHIELD_EXPIRE_INTERNAL",
+										name: shieldName,
+									} as PlayerMachineEvent,
+									{ delay: ev.duration * 1000 },
+								),
+							);
+						}
 					}),
 				},
 				HP_COST: {
@@ -398,7 +425,7 @@ export const playerMachine = setup({
 					}),
 				},
 				BOOK_CAST_HITS: {
-					actions: enqueueActions(({ event, enqueue, self }) => {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
 						const { hits } = event as { hits: HitEvent[] };
 						// Schedule HITs with ~1s gap via delayed sendTo
 						const hitGapMs = 1000;
@@ -410,6 +437,39 @@ export const playerMachine = setup({
 									{ delay: i * hitGapMs },
 								),
 							);
+						}
+						// Summon echo: if 分身 state is active, echo total damage
+						const summonState = context.state.states.find(
+							(s) => s.name === "分身",
+						);
+						if (summonState && context.opponentRef) {
+							const inheritPct = sumStatEffects([summonState], "summon_echo");
+							const dmgIncrease = sumStatEffects(
+								context.state.states,
+								"summon_damage_increase",
+							);
+							const echoMult = (inheritPct / 100) * (1 + dmgIncrease / 100);
+							const totalDmg = hits.reduce((sum, h) => sum + h.damage, 0);
+							const echoDmg = totalDmg * echoMult;
+							if (echoDmg > 0) {
+								enqueue(
+									sendTo(
+										self,
+										{
+											type: "DELIVER_HIT",
+											hit: {
+												type: "HIT" as const,
+												hitIndex: -1,
+												damage: echoDmg,
+												spDamage: 0,
+											},
+										},
+										{
+											delay: hits.length * hitGapMs + 500,
+										},
+									),
+								);
+							}
 						}
 					}),
 				},
@@ -479,6 +539,42 @@ export const playerMachine = setup({
 						removeState(context, name, "expired", enqueue, self);
 					}),
 				},
+				SHIELD_EXPIRE_INTERNAL: {
+					actions: enqueueActions(({ context, event, enqueue, self }) => {
+						const name = (event as { type: string; name: string }).name;
+						const idx = context.state.shields.findIndex(
+							(si) => si.name === name,
+						);
+						if (idx === -1) return; // Already consumed
+						const expired = context.state.shields[idx];
+						const prev = context.state.shield;
+						context.state.shields.splice(idx, 1);
+						context.state.shield = context.state.shields.reduce(
+							(sum, si) => sum + si.value,
+							0,
+						);
+						if (context.state.shield !== prev) {
+							enqueue(
+								emit({
+									type: "SHIELD_CHANGE" as const,
+									player: context.label,
+									prev,
+									next: context.state.shield,
+									cause: "shield_expired",
+									t: context.clock.now(),
+								}),
+							);
+						}
+						// Fire shield expiry listeners
+						fireShieldExpireListeners(
+							context,
+							expired.name,
+							expired.maxValue,
+							enqueue,
+							self,
+						);
+					}),
+				},
 				CLOCK_TICK: {
 					actions: enqueueActions(({ context, event, enqueue }) => {
 						const dt = (event as { type: string; dt: number }).dt / 1000;
@@ -545,6 +641,9 @@ function resolveHit(
 	enqueue: Enqueue,
 	self: Self,
 ): void {
+	// Untargetable: discard hit entirely — no DR, no SP, no triggers
+	if (ctx.state.states.some((s) => s.name === "untargetable")) return;
+
 	const s = ctx.state;
 	const f = ctx.formulas;
 	const t = ctx.clock.now();
@@ -575,11 +674,36 @@ function resolveHit(
 		);
 	}
 
-	// 3. Skill-generated shield absorb
-	const absorbed = Math.min(afterShield, s.shield);
+	// 3. Skill-generated shield absorb (iterate tracked instances oldest-first)
+	let remaining = afterShield;
+	const prevShield = s.shield;
+	const expiredShields: ShieldInstance[] = [];
+	for (let i = 0; i < s.shields.length && remaining > 0; i++) {
+		const si = s.shields[i];
+		const absorb = Math.min(remaining, si.value);
+		si.value -= absorb;
+		remaining -= absorb;
+		if (si.value <= 0) {
+			expiredShields.push({ ...si, value: 0 });
+		}
+	}
+	// Remove depleted shields and emit expiry events
+	for (const expired of expiredShields) {
+		const idx = s.shields.findIndex((si) => si.name === expired.name);
+		if (idx !== -1) s.shields.splice(idx, 1);
+		// Fire shield expiry listeners
+		fireShieldExpireListeners(
+			ctx,
+			expired.name,
+			expired.maxValue,
+			enqueue,
+			self,
+		);
+	}
+	// Sync aggregate shield value
+	s.shield = s.shields.reduce((sum, si) => sum + si.value, 0);
+	const absorbed = prevShield - s.shield;
 	if (absorbed > 0) {
-		const prevShield = s.shield;
-		s.shield -= absorbed;
 		enqueue(
 			emit({
 				type: "SHIELD_CHANGE" as const,
@@ -647,6 +771,45 @@ function resolveHit(
 				resolveHit(ctx, effect, enqueue, self);
 			} else if (effect.type === "HP_DAMAGE") {
 				resolveHpDamage(ctx, effect, enqueue);
+			} else if (effect.type === "SHIELD_DESTROY") {
+				// Destroy enemy shields and deal bonus %maxHP damage
+				const count = effect.count ?? 1;
+				for (let d = 0; d < count && s.shields.length > 0; d++) {
+					const removed = s.shields.pop();
+					if (removed) {
+						s.shield = s.shields.reduce((sum, si) => sum + si.value, 0);
+						s.destroyedShieldsTotal++;
+					}
+				}
+				if (effect.bonusPercentMaxHp) {
+					const rawDamage = (effect.bonusPercentMaxHp / 100) * s.maxHp;
+					resolveHit(
+						ctx,
+						{
+							type: "HIT",
+							hitIndex: -1,
+							damage: rawDamage,
+							spDamage: 0,
+						},
+						enqueue,
+						self,
+					);
+				}
+			} else if (effect.type === "NO_SHIELD_DOUBLE") {
+				// Double damage if target has no shields
+				if (s.shields.length === 0) {
+					resolveHit(
+						ctx,
+						{
+							type: "HIT",
+							hitIndex: -1,
+							damage: hit.damage,
+							spDamage: 0,
+						},
+						enqueue,
+						self,
+					);
+				}
 			}
 		}
 	}
@@ -930,6 +1093,29 @@ function recalcStats(ctx: PlayerContext, enqueue: Enqueue): void {
 				t,
 			}),
 		);
+	}
+}
+
+function fireShieldExpireListeners(
+	ctx: PlayerContext,
+	shieldName: string,
+	shieldValue: number,
+	enqueue: Enqueue,
+	_self: Self,
+): void {
+	for (const listener of ctx.listeners) {
+		if (listener.parent !== "__shield__") continue;
+		if (listener.trigger !== "on_expire") continue;
+		const events = listener.handler({
+			sourcePlayer: ctx.state,
+			targetPlayerRef: ctx.opponentRef ?? null,
+			rng: ctx.rng,
+			book: shieldName,
+			shieldValue,
+		} as ListenerContext & { shieldValue: number });
+		for (const ev of events) {
+			if (ctx.opponentRef) enqueue(sendTo(ctx.opponentRef, ev));
+		}
 	}
 }
 

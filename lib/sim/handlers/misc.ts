@@ -61,22 +61,106 @@ register("periodic_dispel", (effect) => {
 });
 
 // periodic_cleanse: { chance, interval, cooldown, max_triggers, parent }
-// Periodic self-cleanse. Simplified as immediate cleanse.
-register("periodic_cleanse", () => ({
-	intents: [{ type: "SELF_CLEANSE" as const, count: 1 }],
-}));
+// Per-tick RNG roll to cleanse all control states, capped at max_triggers.
+register("periodic_cleanse", (effect) => {
+	const chance = (effect.chance as number) ?? 30;
+	const interval = (effect.interval as number) ?? 1;
+	const maxTriggers = (effect.max_triggers as number) ?? 1;
+	const parent = (effect.parent as string) ?? "periodic_cleanse";
+
+	let triggerCount = 0;
+
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "periodic_cleanse",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [],
+					remainingDuration: Number.POSITIVE_INFINITY,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: false,
+					trigger: "per_tick" as const,
+					tickInterval: interval,
+					parent,
+				},
+			},
+		],
+		listeners: [
+			{
+				parent: "periodic_cleanse",
+				trigger: "per_tick" as const,
+				handler: (ctx) => {
+					if (triggerCount >= maxTriggers) return [];
+					if (!ctx.rng.chance(chance / 100)) return [];
+					triggerCount++;
+					// Cleanse all control states
+					return [{ type: "SELF_CLEANSE" as const, count: 999 }];
+				},
+			},
+		],
+	};
+});
 
 // summon: { duration, inherit_stats, damage_taken_multiplier, trigger }
-// Summons a pet/entity. Simplified as a damage increase buff.
-register("summon", (effect) => ({
-	zones: { M_dmg: ((effect.inherit_stats as number) ?? 50) / 100 },
-}));
+// Creates a summon as a named state. Damage echo is computed in player machine
+// when BOOK_CAST_HITS fires while 分身 state is active.
+register("summon", (effect) => {
+	const duration = (effect.duration as number) ?? 16;
+	const inheritStats = (effect.inherit_stats as number) ?? 50;
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "分身",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [{ stat: "summon_echo", value: inheritStats }],
+					remainingDuration: duration,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: true,
+				},
+			},
+		],
+	};
+});
 
 // summon_buff: { damage_taken_reduction_to, damage_increase, parent }
-// Buffs the summoned entity. Simplified as damage increase.
-register("summon_buff", (effect) => ({
-	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
-}));
+// Buffs the summon's damage output. Stored as state for player machine to read.
+register("summon_buff", (effect) => {
+	const damageIncrease = (effect.damage_increase as number) ?? 0;
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "分身_buff",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [
+						{
+							stat: "summon_damage_increase",
+							value: damageIncrease,
+						},
+					],
+					remainingDuration: Number.POSITIVE_INFINITY,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: false,
+					parent: "分身",
+				},
+			},
+		],
+	};
+});
 
 // on_dispel: { damage, stun?, parent }
 // Triggers burst damage when a state is dispelled.
@@ -103,19 +187,29 @@ register("on_dispel", (effect, _ctx) => {
 });
 
 // on_shield_expire: { damage_percent_of_shield }
-// Deals damage when shield expires. Shield expiry not fully tracked —
-// approximate by adding a flat damage based on typical shield value.
-register("on_shield_expire", (effect, ctx) => {
+// Deals damage when shield expires or is consumed. Fires via shield lifecycle.
+register("on_shield_expire", (effect) => {
 	const pct = (effect.damage_percent_of_shield as number) ?? 100;
-	// Estimate shield value as 10% of maxHP
-	const estimatedShield = ctx.sourcePlayer.maxHp * 0.1;
 	return {
-		intents: [
+		listeners: [
 			{
-				type: "HIT" as const,
-				hitIndex: -1,
-				damage: (pct / 100) * estimatedShield,
-				spDamage: 0,
+				parent: "__shield__",
+				trigger: "on_expire" as const,
+				handler: (listenerCtx) => {
+					// shieldValue is injected by fireShieldExpireListeners
+					const shieldValue =
+						(listenerCtx as unknown as { shieldValue: number }).shieldValue ??
+						0;
+					if (shieldValue <= 0) return [];
+					return [
+						{
+							type: "HIT" as const,
+							hitIndex: -1,
+							damage: (pct / 100) * shieldValue,
+							spDamage: 0,
+						},
+					];
+				},
 			},
 		],
 	};
@@ -138,17 +232,17 @@ register("on_buff_debuff_shield_trigger", (effect) => {
 });
 
 // untargetable_state: { duration }
-// Makes player untargetable. Simplified as damage reduction buff.
+// Makes player untargetable — hits are discarded entirely in resolveHit.
 register("untargetable_state", (effect) => ({
 	intents: [
 		{
 			type: "APPLY_STATE" as const,
 			state: {
 				name: "untargetable",
-				kind: "buff" as const,
+				kind: "named" as const,
 				source: "",
 				target: "self" as const,
-				effects: [{ stat: "damage_reduction", value: 100 }],
+				effects: [], // No stat effects — enforced in resolveHit
 				remainingDuration: (effect.duration as number) ?? 4,
 				stacks: 1,
 				maxStacks: 1,
@@ -170,38 +264,44 @@ register("extended_dot", (effect) => {
 });
 
 // shield_destroy_damage: { shields_per_hit, percent_max_hp }
-// Destroys shields and deals %maxHP damage. Simplified as per-hit effect.
+// Per hit: destroy enemy shields + deal %maxHP bonus damage.
 register("shield_destroy_damage", (effect) => ({
 	perHitEffects: () => [
 		{
-			type: "PERCENT_MAX_HP_HIT" as const,
-			percent: (effect.percent_max_hp as number) ?? 12,
+			type: "SHIELD_DESTROY" as const,
+			count: (effect.shields_per_hit as number) ?? 1,
+			bonusPercentMaxHp: (effect.percent_max_hp as number) ?? 12,
 		},
 	],
 }));
 
 // no_shield_double_damage: { no_shield_double }
-// Doubles damage when target has no shield. Modeled as M_dmg bonus.
+// Doubles damage when target has no shield. Resolved at target in resolveHit.
 register("no_shield_double_damage", () => ({
-	zones: { M_dmg: 1.0 },
+	perHitEffects: () => [
+		{
+			type: "NO_SHIELD_DOUBLE" as const,
+		},
+	],
 }));
 
-// shield_destroy_dot: { tick_interval, per_shield_damage, parent }
 // shield_destroy_dot: { tick_interval, per_shield_damage, no_shield_assumed, parent }
-// DoT that deals damage per shield destroyed. Registers a per_tick listener.
+// DoT that deals damage per shield destroyed. Reads actual destroyedShieldsTotal.
 register("shield_destroy_dot", (effect, _ctx) => {
 	const parent = (effect.parent as string) ?? "shield_destroy_dot";
 	const perShield = (effect.per_shield_damage as number) ?? 600;
-	const noShieldCount = (effect.no_shield_assumed as number) ?? 2;
+	const noShieldAssumed = (effect.no_shield_assumed as number) ?? 2;
 	return {
 		listeners: [
 			{
 				parent,
 				trigger: "per_tick" as const,
 				handler: (listenerCtx) => {
-					// Estimate shields destroyed = no_shield_assumed if no shield tracked
+					// Use actual destroyed shield count, fallback to no_shield_assumed
+					const count = listenerCtx.sourcePlayer.destroyedShieldsTotal || 0;
+					const effectiveCount = count > 0 ? count : noShieldAssumed;
 					const damage =
-						(perShield / 100) * listenerCtx.sourcePlayer.atk * noShieldCount;
+						(perShield / 100) * listenerCtx.sourcePlayer.atk * effectiveCount;
 					return [
 						{
 							type: "HIT" as const,
