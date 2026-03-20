@@ -362,6 +362,11 @@ affixes:
     source_type: exclusive
     category: 4
     effect_types: [debuff]
+  - name: 玄心剑魄
+    source: 春黎剑阵
+    source_type: exclusive
+    category: 4
+    effect_types: [dot, on_dispel, dot, on_dispel]
   - name: 追命剑阵
     source: 新-青元剑诀
     source_type: primary
@@ -377,11 +382,21 @@ affixes:
     source_type: exclusive
     category: 4
     effect_types: [debuff]
+  - name: 天龙轮转
+    source: 星元化岳
+    source_type: primary
+    category: 4
+    effect_types: [lifesteal]
   - name: 仙灵汲元
     source: 星元化岳
     source_type: exclusive
     category: 4
     effect_types: [lifesteal]
+  - name: 魔念生息
+    source: 天魔降临咒
+    source_type: primary
+    category: 4
+    effect_types: [dot, per_debuff_stack_damage]
   - name: 魔意震慑
     source: 天轮魔经
     source_type: primary
@@ -392,6 +407,21 @@ affixes:
     source_type: exclusive
     category: 4
     effect_types: [conditional_heal_buff, conditional_debuff]
+  - name: 魔心焚尽
+    source: 梵圣真魔咒
+    source_type: primary
+    category: 4
+    effect_types: [dot]
+  - name: 无相魔威
+    source: 无相魔劫咒
+    source_type: exclusive
+    category: 4
+    effect_types: [debuff, conditional_damage]
+  - name: 星猿复灵
+    source: 疾风九变
+    source_type: primary
+    category: 4
+    effect_types: [lifesteal]
   # ── 跨技能 (Cross-Skill Effects) ──
   - name: 灵威
     source: 通用
@@ -420,11 +450,6 @@ affixes:
     category: 6
     effect_types: [counter_debuff_upgrade, cross_slot_debuff, counter_debuff_upgrade, cross_slot_debuff]
   # ── 状态联动 (State-Referencing) ──
-  - name: 玄心剑魄
-    source: 春黎剑阵
-    source_type: exclusive
-    category: 7
-    effect_types: [dot, on_dispel, dot, on_dispel]
   - name: 碎魂剑意
     source: 皓月剑诀
     source_type: primary
@@ -435,38 +460,13 @@ affixes:
     source_type: primary
     category: 7
     effect_types: [conditional_damage]
-  - name: 天龙轮转
-    source: 星元化岳
-    source_type: primary
-    category: 7
-    effect_types: [lifesteal]
-  - name: 魔念生息
-    source: 天魔降临咒
-    source_type: primary
-    category: 7
-    effect_types: [dot, per_debuff_stack_damage]
-  - name: 魔心焚尽
-    source: 梵圣真魔咒
-    source_type: primary
-    category: 7
-    effect_types: [dot]
   - name: 灭劫魔威
     source: 无相魔劫咒
     source_type: primary
     category: 7
     effect_types: [delayed_burst_increase]
-  - name: 无相魔威
-    source: 无相魔劫咒
-    source_type: exclusive
-    category: 7
-    effect_types: [debuff, conditional_damage]
   - name: 星猿之怒
     source: 玄煞灵影诀
     source_type: primary
     category: 7
     effect_types: [self_lost_hp_damage]
-  - name: 星猿复灵
-    source: 疾风九变
-    source_type: primary
-    category: 7
-    effect_types: [lifesteal]

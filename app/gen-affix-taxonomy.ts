@@ -124,13 +124,11 @@ function classifyAffix(
 	)
 		return 6;
 
-	// Category 7: state-referencing
-	if (hasParent) return 7;
-
 	// Category 5: cross-skill
 	if (types.has("next_skill_buff")) return 5;
 
-	// Category 4: state-creating
+	// Category 4: state-creating (before state-referencing since
+	// state-creating effects often reference a parent state)
 	if (
 		types.has("dot") ||
 		types.has("debuff") ||
@@ -141,9 +139,13 @@ function classifyAffix(
 		types.has("self_buff") ||
 		types.has("random_buff") ||
 		types.has("heal_echo_damage") ||
-		types.has("lifesteal")
+		types.has("lifesteal") ||
+		types.has("on_dispel")
 	)
 		return 4;
+
+	// Category 7: state-referencing (only pure state-ref, not already classified)
+	if (hasParent) return 7;
 
 	// Category 3: flat damage
 	if (
