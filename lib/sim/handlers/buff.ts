@@ -93,7 +93,9 @@ register("conditional_buff", (effect) => {
 	if (effects.length === 0) return {};
 
 	const state: StateInstance = {
-		name: (effect.name as string) ?? "conditional_buff",
+		name:
+			(effect.name as string) ??
+			(effect.condition ? `buff_${effect.condition}` : "conditional_buff"),
 		kind: "buff",
 		source: "",
 		target: "self",

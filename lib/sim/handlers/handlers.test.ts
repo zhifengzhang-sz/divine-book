@@ -132,7 +132,8 @@ describe("dot", () => {
 		expect(intent?.type).toBe("APPLY_DOT");
 		if (intent?.type === "APPLY_DOT") {
 			expect(intent.name).toBe("噬心");
-			expect(intent.damagePerTick).toBe(550);
+			// 550% ATK = (550/100) * 1000(atk) = 5500
+			expect(intent.damagePerTick).toBe(5500);
 			expect(intent.tickInterval).toBe(1);
 		}
 	});
