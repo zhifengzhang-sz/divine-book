@@ -1543,7 +1543,7 @@ export function extractPerBuffStackDamage(
 	return null;
 }
 
-/** 每5层减益状态提升y%伤害 */
+/** 每5层减益状态提升y%伤害（持续伤害效果受一半伤害加成） */
 export function extractPerDebuffStackDamageAffix(
 	text: string,
 ): ExtractedEffect | null {
@@ -1551,9 +1551,18 @@ export function extractPerDebuffStackDamageAffix(
 		/每(?:有)?(\d+)层减益状态.*?伤害提升(\w+)%.*?最大.*?(\w+)%/,
 	);
 	if (m) {
+		const fields: Record<string, string | number> = {
+			per_n_stacks: Number(m[1]),
+			value: m[2],
+			max: m[3],
+		};
+		// 持续伤害效果受一半伤害加成
+		if (/持续伤害效果受一半伤害加成/.test(text)) {
+			fields.dot_bonus_ratio = 0.5;
+		}
 		return {
 			type: "per_debuff_stack_damage",
-			fields: { per_n_stacks: Number(m[1]), value: m[2], max: m[3] },
+			fields,
 		};
 	}
 	return null;
