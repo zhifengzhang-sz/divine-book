@@ -146,7 +146,9 @@ export function parseCommonAffixes(
 	// Parse universal affixes
 	const universalEntries = readUniversalAffixTable(universalMd);
 	for (const entry of universalEntries) {
-		const effects = genericAffixParse(entry.cell, {}, { lastTierOnly: true });
+		// Parse with tiers preserved so the UI can show progression dropdown.
+		// Universal/school affixes typically have one snapshot (e.g., "融合50重：x=20").
+		const effects = genericAffixParse(entry.cell, {});
 		if (effects.length === 0) {
 			warnings.push(`Universal affix ${entry.name}: no effects extracted`);
 		}
@@ -164,7 +166,7 @@ export function parseCommonAffixes(
 			school[schoolName] = {};
 		}
 
-		const effects = genericAffixParse(entry.cell, {}, { lastTierOnly: true });
+		const effects = genericAffixParse(entry.cell, {});
 		if (effects.length === 0) {
 			warnings.push(
 				`School affix ${entry.name} (${schoolName}): no effects extracted`,

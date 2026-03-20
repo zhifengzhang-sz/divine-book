@@ -5,7 +5,8 @@
       "effects": [
         {
           "type": "debuff_strength",
-          "value": 20
+          "value": 20,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -14,7 +15,8 @@
       "effects": [
         {
           "type": "buff_strength",
-          "value": 20
+          "value": 20,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -23,7 +25,8 @@
       "effects": [
         {
           "type": "all_state_duration",
-          "value": 69
+          "value": 69,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -33,7 +36,8 @@
         {
           "type": "conditional_damage",
           "value": 40,
-          "condition": "target_controlled"
+          "condition": "target_controlled",
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -44,7 +48,8 @@
           "type": "per_hit_escalation",
           "value": 1,
           "max": 10,
-          "stat": "remaining_hits"
+          "stat": "remaining_hits",
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -53,7 +58,8 @@
       "effects": [
         {
           "type": "damage_reduction_during_cast",
-          "value": 10
+          "value": 10,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -64,7 +70,8 @@
           "type": "execute_conditional",
           "hp_threshold": 30,
           "damage_increase": 20,
-          "crit_rate_increase": 30
+          "crit_rate_increase": 30,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -73,7 +80,8 @@
       "effects": [
         {
           "type": "dot_extra_per_tick",
-          "value": 2
+          "value": 2,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -84,7 +92,8 @@
           "type": "random_buff",
           "attack": 20,
           "crit_damage": 20,
-          "damage": 20
+          "damage": 20,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -93,7 +102,8 @@
       "effects": [
         {
           "type": "per_self_lost_hp",
-          "per_percent": 2.95
+          "per_percent": 2.95,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -102,7 +112,8 @@
       "effects": [
         {
           "type": "flat_extra_damage",
-          "value": 2000
+          "value": 2000,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -112,7 +123,8 @@
         {
           "type": "per_enemy_lost_hp",
           "per_percent": 1,
-          "value": 0.4
+          "value": 0.4,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -121,7 +133,8 @@
       "effects": [
         {
           "type": "shield_value_increase",
-          "value": 20
+          "value": 20,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -131,7 +144,8 @@
         {
           "type": "next_skill_buff",
           "value": 118,
-          "stat": "skill_damage_increase"
+          "stat": "skill_damage_increase",
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -140,7 +154,8 @@
       "effects": [
         {
           "type": "attack_bonus",
-          "value": 20
+          "value": 20,
+          "data_state": "fusion=50"
         }
       ]
     },
@@ -151,7 +166,8 @@
           "type": "guaranteed_resonance",
           "base_multiplier": 1.2,
           "chance": 25,
-          "upgraded_multiplier": 1.5
+          "upgraded_multiplier": 1.5,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -163,7 +179,8 @@
         "effects": [
           {
             "type": "attack_bonus",
-            "value": 300
+            "value": 300,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -174,7 +191,8 @@
             "type": "guaranteed_resonance",
             "base_multiplier": 2.97,
             "chance": 25,
-            "upgraded_multiplier": 3.97
+            "upgraded_multiplier": 3.97,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -185,7 +203,8 @@
             "type": "triple_bonus",
             "attack_bonus": 15,
             "damage_increase": 15,
-            "crit_damage_increase": 15
+            "crit_damage_increase": 15,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -196,7 +215,8 @@
             "type": "per_hit_escalation",
             "value": 5,
             "max": 50,
-            "stat": "remaining_hits"
+            "stat": "remaining_hits",
+            "data_state": "fusion=50"
           }
         ]
       }
@@ -207,7 +227,8 @@
         "effects": [
           {
             "type": "healing_increase",
-            "value": 50
+            "value": 50,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -216,7 +237,8 @@
         "effects": [
           {
             "type": "final_damage_bonus",
-            "value": 50
+            "value": 50,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -225,7 +247,8 @@
         "effects": [
           {
             "type": "probability_to_certain",
-            "damage_increase": 50
+            "damage_increase": 50,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -236,7 +259,8 @@
             "type": "random_buff",
             "attack": 55,
             "crit_damage": 55,
-            "damage": 55
+            "damage": 55,
+            "data_state": "fusion=50"
           }
         ]
       }
@@ -247,7 +271,8 @@
         "effects": [
           {
             "type": "healing_to_damage",
-            "value": 50
+            "value": 50,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -258,7 +283,8 @@
             "type": "execute_conditional",
             "hp_threshold": 30,
             "damage_increase": 100,
-            "guaranteed_crit": 1
+            "guaranteed_crit": 1,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -268,7 +294,8 @@
           {
             "type": "damage_to_shield",
             "value": 50,
-            "duration": 8
+            "duration": 8,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -279,7 +306,8 @@
             "type": "random_debuff",
             "attack": 20,
             "crit_rate": 20,
-            "crit_damage": 50
+            "crit_damage": 50,
+            "data_state": "fusion=50"
           }
         ]
       }
@@ -290,7 +318,8 @@
         "effects": [
           {
             "type": "damage_reduction_during_cast",
-            "value": 55
+            "value": 55,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -299,7 +328,8 @@
         "effects": [
           {
             "type": "flat_extra_damage",
-            "value": 2500
+            "value": 2500,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -308,7 +338,8 @@
         "effects": [
           {
             "type": "shield_value_increase",
-            "value": 50
+            "value": 50,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -318,7 +349,8 @@
           {
             "type": "per_enemy_lost_hp",
             "per_percent": 1,
-            "value": 1
+            "value": 1,
+            "data_state": "fusion=50"
           }
         ]
       },
@@ -328,7 +360,8 @@
           {
             "type": "min_lost_hp_threshold",
             "min_percent": 11,
-            "damage_increase": 50
+            "damage_increase": 50,
+            "data_state": "fusion=50"
           }
         ]
       }
