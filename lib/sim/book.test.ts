@@ -79,7 +79,7 @@ describe("processBook", () => {
 				atk: 1000,
 				hits: 6,
 			},
-			{ enlightenment: 10, fusion: 51 },
+			{ enlightenment: 12, fusion: 52 },
 		);
 
 		const applyStates = result.directEvents.filter(

@@ -302,7 +302,7 @@ describe("CAST_SLOT", () => {
 					{
 						slot: 1,
 						platform: "千锋聚灵剑",
-						progression: { enlightenment: 10, fusion: 51 },
+						progression: { enlightenment: 12, fusion: 52 },
 					},
 				],
 				booksYaml,
@@ -346,7 +346,7 @@ describe("CAST_SLOT", () => {
 		const hpChanges = targetEvents.filter((e) => e.type === "HP_CHANGE");
 		expect(hpChanges.length).toBeGreaterThan(0);
 
-		// Target should also have received debuff (灵涸)
+		// Target should also have received debuff (灵涸) — requires enlightenment=12, fusion=52
 		const stateApply = targetEvents.filter((e) => e.type === "STATE_APPLY");
 		expect(stateApply.length).toBeGreaterThan(0);
 	});

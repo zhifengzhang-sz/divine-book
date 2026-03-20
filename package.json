@@ -5,6 +5,9 @@
   "scripts": {
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test",
+    "parse": "bun app/parse-main-skills.ts -o data/yaml/books.yaml && bun app/parse-affixes.ts -o data/yaml/affixes.yaml",
+    "parse:books": "bun app/parse-main-skills.ts -o data/yaml/books.yaml",
+    "parse:affixes": "bun app/parse-affixes.ts -o data/yaml/affixes.yaml",
     "viz": "bun app/viz/serve.ts"
   },
   "dependencies": {

@@ -88,6 +88,9 @@ books:
           duration: 8
           dispellable: false
           name: 灵涸
+          data_state:
+            - enlightenment=12
+            - fusion=52
   春黎剑阵:
     school: Sword
     skill_text: |
@@ -98,8 +101,8 @@ books:
       融合重数>=50: x=120, y=200
     exclusive_affix_text: |
       本神通施放后，会对敌方添加持续w秒的【噬心】：每秒受到x%攻击力的伤害，若被驱散，立即受到y%攻击力的伤害，并眩晕z秒
-      融合50重：w=8, x=550, y=3300, z=2
-      w=18,x=3000,y=18000,z=3
+      悟0境，融合50重：w=8, x=550, y=3300, z=2
+      悟10境，融合83重：w=16,x=3000,y=18000,z=3
     states:
       噬心:
         target: opponent
@@ -139,21 +142,31 @@ books:
           duration: 8
           tick_interval: 1
           damage_per_tick: 550
-          data_state: fusion=50
+          data_state:
+            - enlightenment=0
+            - fusion=50
         - type: on_dispel
           damage: 3300
           stun: 2
           parent: 噬心
-          data_state: fusion=50
+          data_state:
+            - enlightenment=0
+            - fusion=50
         - type: dot
           name: 噬心
-          duration: 18
+          duration: 16
           tick_interval: 1
           damage_per_tick: 3000
+          data_state:
+            - enlightenment=10
+            - fusion=83
         - type: on_dispel
           damage: 18000
           stun: 3
           parent: 噬心
+          data_state:
+            - enlightenment=10
+            - fusion=83
   皓月剑诀:
     school: Sword
     skill_text: |
@@ -163,8 +176,9 @@ books:
       【碎魂剑意】：【寂灭剑心】每0.5秒对目标造成`湮灭护盾`的总个数\*600%攻击力的伤害（若触发`湮灭护盾`效果时敌方无护盾加持，则计算湮灭2个护盾）
     exclusive_affix_text: |
       1. 本神通所添加的持续伤害触发时，额外造成目标x%已损失气血值的伤害
-       2. 在`神通悟境`（悟10境）的条件下：本神通附加目标最大气血的伤害提高y%，并且造成的伤害提升z%
-      融合50重：x=26.5, y=50, z=300
+       2. 本神通附加目标最大气血的伤害提高y%，并且造成的伤害提升z%
+      悟0境, 融合50重：x=26.5, y=0, z=0
+      悟10境，融合50重：x=26.5, y=50, z=300
     states:
       寂灭剑心:
         target: self
@@ -207,10 +221,28 @@ books:
       effects:
         - type: dot_extra_per_tick
           value: 26.5
+          data_state:
+            - enlightenment=0
+            - fusion=50
+        - type: conditional_buff
+          condition: enlightenment_10
+          percent_max_hp_increase: 0
+          damage_increase: 0
+          data_state:
+            - enlightenment=0
+            - fusion=50
+        - type: dot_extra_per_tick
+          value: 26.5
+          data_state:
+            - enlightenment=10
+            - fusion=50
         - type: conditional_buff
           condition: enlightenment_10
           percent_max_hp_increase: 50
           damage_increase: 300
+          data_state:
+            - enlightenment=10
+            - fusion=50
   念剑诀:
     school: Sword
     skill_text: |
@@ -258,6 +290,7 @@ books:
       effects:
         - type: buff_duration
           value: 300
+          data_state: fusion=50
   通天剑诀:
     school: Sword
     skill_text: |
@@ -289,8 +322,10 @@ books:
       name: 神威冲云
       effects:
         - type: ignore_damage_reduction
+          data_state: fusion=50
         - type: damage_increase
           value: 36
+          data_state: fusion=50
   新-青元剑诀:
     school: Sword
     skill_text: |
@@ -358,8 +393,10 @@ books:
       effects:
         - type: skill_damage_increase
           value: 555
+          data_state: fusion=50
         - type: enemy_skill_damage_reduction
           value: 350
+          data_state: fusion=50
   浩然星灵诀:
     school: Spell
     skill_text: |
@@ -395,6 +432,7 @@ books:
       effects:
         - type: buff_strength
           value: 300
+          data_state: fusion=52
   元磁神光:
     school: Spell
     skill_text: |
@@ -432,10 +470,12 @@ books:
       effects:
         - type: buff_stack_increase
           value: 100
+          data_state: fusion=50
         - type: per_buff_stack_damage
           per_n_stacks: 5
           value: 5.5
           max: 27.5
+          data_state: fusion=50
   周天星元:
     school: Spell
     skill_text: |
@@ -652,6 +692,7 @@ books:
           conditional_value: -51
           name: 灵枯
           condition: target_hp_below_30
+          data_state: fusion=50
   星元化岳:
     school: Spell
     skill_text: |
@@ -683,6 +724,7 @@ books:
       effects:
         - type: lifesteal
           value: 55
+          data_state: fusion=50
   玉书天戈符:
     school: Spell
     skill_text: |
@@ -715,6 +757,7 @@ books:
         - type: enlightenment_bonus
           value: 1
           damage_increase: 5
+          data_state: fusion=50
   九天真雷诀:
     school: Spell
     skill_text: |
@@ -738,6 +781,7 @@ books:
       effects:
         - type: on_buff_debuff_shield_trigger
           damage_percent: 50.8
+          data_state: fusion=50
   天魔降临咒:
     school: Demon
     skill_text: |
@@ -793,6 +837,7 @@ books:
         - type: conditional_damage
           value: 104
           condition: target_has_debuff
+          data_state: fusion=50
   天轮魔经:
     school: Demon
     skill_text: |
@@ -828,10 +873,12 @@ books:
       effects:
         - type: debuff_stack_increase
           value: 100
+          data_state: fusion=50
         - type: per_debuff_stack_damage
           per_n_stacks: 5
           value: 5.5
           max: 27.5
+          data_state: fusion=50
   天刹真魔:
     school: Demon
     skill_text: |
@@ -901,12 +948,14 @@ books:
           condition: target_has_debuff
           value: 90
           duration: 8
+          data_state: fusion=50
         - type: conditional_debuff
           condition: enlightenment
           name: 魔骨明心
           target: final_damage_reduction
           value: -20
           duration: 1
+          data_state: fusion=50
   解体化形:
     school: Demon
     skill_text: |
@@ -1092,6 +1141,7 @@ books:
       effects:
         - type: dot_damage_increase
           value: 104
+          data_state: fusion=50
   梵圣真魔咒:
     school: Demon
     skill_text: |
@@ -1132,6 +1182,7 @@ books:
       effects:
         - type: dot_frequency_increase
           value: 50.5
+          data_state: fusion=50
   无相魔劫咒:
     school: Demon
     skill_text: |
@@ -1176,11 +1227,13 @@ books:
           target: healing_received
           value: -40.8
           duration: 8
+          data_state: fusion=50
         - type: conditional_damage
           value: 105
           condition: target_has_no_healing
           escalated_value: 205
           parent: 魔劫
+          data_state: fusion=50
   玄煞灵影诀:
     school: Body
     skill_text: |
@@ -1241,6 +1294,7 @@ books:
       effects:
         - type: per_self_lost_hp
           per_percent: 2
+          data_state: fusion=50
   惊蜇化龙:
     school: Body
     skill_text: |
@@ -1278,10 +1332,12 @@ books:
         - type: per_debuff_stack_true_damage
           per_stack: 2.1
           max: 21
+          data_state: fusion=50
         - type: conditional_buff
           condition: enlightenment_max
           percent_lost_hp_increase: 50
           damage_increase: 75
+          data_state: fusion=50
   十方真魄:
     school: Body
     skill_text: |
@@ -1329,9 +1385,11 @@ books:
       effects:
         - type: damage_increase
           value: 380
+          data_state: fusion=50
         - type: self_damage_taken_increase
           value: 50
           duration: during_cast
+          data_state: fusion=50
   疾风九变:
     school: Body
     skill_text: |
@@ -1367,6 +1425,7 @@ books:
       effects:
         - type: all_state_duration
           value: 55
+          data_state: fusion=50
   煞影千幻:
     school: Body
     skill_text: |
@@ -1418,6 +1477,7 @@ books:
         - type: conditional_damage
           value: 100
           condition: target_controlled
+          data_state: fusion=50
   九重天凤诀:
     school: Body
     skill_text: |
@@ -1463,6 +1523,7 @@ books:
       effects:
         - type: on_shield_expire
           damage_percent_of_shield: 100
+          data_state: fusion=50
   天煞破虚诀:
     school: Body
     skill_text: |
@@ -1492,3 +1553,4 @@ books:
           duration: 10
           damage_percent_of_skill: 25.5
           no_buff_double: true
+          data_state: fusion=50

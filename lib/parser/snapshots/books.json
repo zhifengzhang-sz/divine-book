@@ -107,7 +107,11 @@
           "value": -80,
           "duration": 8,
           "dispellable": false,
-          "name": "灵涸"
+          "name": "灵涸",
+          "data_state": [
+            "enlightenment=12",
+            "fusion=52"
+          ]
         }
       ]
     }
@@ -116,7 +120,7 @@
     "school": "Sword",
     "skill_text": "剑化万千，破空位移向前，对范围内目标造成五段共计x%攻击力的灵法伤害，并创建一个持续存在16秒的分身，继承自身y%的属性。主角释放神通后分身会攻击敌方，分身受到的伤害为自身的z%\n悟10境，融合83重： x=22305, y=54, z=400",
     "affix_text": "【幻象剑灵】：分身受到伤害降低至自身的x%， 造成的伤害增加y%\n融合重数>=50: x=120, y=200",
-    "exclusive_affix_text": "本神通施放后，会对敌方添加持续w秒的【噬心】：每秒受到x%攻击力的伤害，若被驱散，立即受到y%攻击力的伤害，并眩晕z秒\n融合50重：w=8, x=550, y=3300, z=2\nw=18,x=3000,y=18000,z=3",
+    "exclusive_affix_text": "本神通施放后，会对敌方添加持续w秒的【噬心】：每秒受到x%攻击力的伤害，若被驱散，立即受到y%攻击力的伤害，并眩晕z秒\n悟0境，融合50重：w=8, x=550, y=3300, z=2\n悟10境，融合83重：w=16,x=3000,y=18000,z=3",
     "states": {
       "噬心": {
         "target": "opponent",
@@ -172,27 +176,41 @@
           "duration": 8,
           "tick_interval": 1,
           "damage_per_tick": 550,
-          "data_state": "fusion=50"
+          "data_state": [
+            "enlightenment=0",
+            "fusion=50"
+          ]
         },
         {
           "type": "on_dispel",
           "damage": 3300,
           "stun": 2,
           "parent": "噬心",
-          "data_state": "fusion=50"
+          "data_state": [
+            "enlightenment=0",
+            "fusion=50"
+          ]
         },
         {
           "type": "dot",
           "name": "噬心",
-          "duration": 18,
+          "duration": 16,
           "tick_interval": 1,
-          "damage_per_tick": 3000
+          "damage_per_tick": 3000,
+          "data_state": [
+            "enlightenment=10",
+            "fusion=83"
+          ]
         },
         {
           "type": "on_dispel",
           "damage": 18000,
           "stun": 3,
-          "parent": "噬心"
+          "parent": "噬心",
+          "data_state": [
+            "enlightenment=10",
+            "fusion=83"
+          ]
         }
       ]
     }
@@ -201,7 +219,7 @@
     "school": "Sword",
     "skill_text": "剑墓既出，天地低昂，一剑出，诸天寂灭。对范围内目标造成十段共计x%攻击力的灵法伤害，神通释放时自身获得增益状态【寂灭剑心】：每段伤害命中时湮灭敌方1个护盾，并额外造成y%敌方最大气血值的伤害（对怪物最多造成z%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成w%攻击力的伤害）；【寂灭剑心】上限1层，持续4秒\n悟10境，融合57重： x=22305, y=12, z=2400, w=4800",
     "affix_text": "【碎魂剑意】：【寂灭剑心】每0.5秒对目标造成`湮灭护盾`的总个数\\*600%攻击力的伤害（若触发`湮灭护盾`效果时敌方无护盾加持，则计算湮灭2个护盾）",
-    "exclusive_affix_text": "1. 本神通所添加的持续伤害触发时，额外造成目标x%已损失气血值的伤害\n 2. 在`神通悟境`（悟10境）的条件下：本神通附加目标最大气血的伤害提高y%，并且造成的伤害提升z%\n融合50重：x=26.5, y=50, z=300",
+    "exclusive_affix_text": "1. 本神通所添加的持续伤害触发时，额外造成目标x%已损失气血值的伤害\n 2. 本神通附加目标最大气血的伤害提高y%，并且造成的伤害提升z%\n悟0境, 融合50重：x=26.5, y=0, z=0\n悟10境，融合50重：x=26.5, y=50, z=300",
     "states": {
       "寂灭剑心": {
         "target": "self",
@@ -262,13 +280,39 @@
       "effects": [
         {
           "type": "dot_extra_per_tick",
-          "value": 26.5
+          "value": 26.5,
+          "data_state": [
+            "enlightenment=0",
+            "fusion=50"
+          ]
+        },
+        {
+          "type": "conditional_buff",
+          "condition": "enlightenment_10",
+          "percent_max_hp_increase": 0,
+          "damage_increase": 0,
+          "data_state": [
+            "enlightenment=0",
+            "fusion=50"
+          ]
+        },
+        {
+          "type": "dot_extra_per_tick",
+          "value": 26.5,
+          "data_state": [
+            "enlightenment=10",
+            "fusion=50"
+          ]
         },
         {
           "type": "conditional_buff",
           "condition": "enlightenment_10",
           "percent_max_hp_increase": 50,
-          "damage_increase": 300
+          "damage_increase": 300,
+          "data_state": [
+            "enlightenment=10",
+            "fusion=50"
+          ]
         }
       ]
     }
@@ -330,7 +374,8 @@
       "effects": [
         {
           "type": "buff_duration",
-          "value": 300
+          "value": 300,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -371,11 +416,13 @@
       "name": "神威冲云",
       "effects": [
         {
-          "type": "ignore_damage_reduction"
+          "type": "ignore_damage_reduction",
+          "data_state": "fusion=50"
         },
         {
           "type": "damage_increase",
-          "value": 36
+          "value": 36,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -458,11 +505,13 @@
       "effects": [
         {
           "type": "skill_damage_increase",
-          "value": 555
+          "value": 555,
+          "data_state": "fusion=50"
         },
         {
           "type": "enemy_skill_damage_reduction",
-          "value": 350
+          "value": 350,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -507,7 +556,8 @@
       "effects": [
         {
           "type": "buff_strength",
-          "value": 300
+          "value": 300,
+          "data_state": "fusion=52"
         }
       ]
     }
@@ -554,13 +604,15 @@
       "effects": [
         {
           "type": "buff_stack_increase",
-          "value": 100
+          "value": 100,
+          "data_state": "fusion=50"
         },
         {
           "type": "per_buff_stack_damage",
           "per_n_stacks": 5,
           "value": 5.5,
-          "max": 27.5
+          "max": 27.5,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -843,7 +895,8 @@
           "duration": 20,
           "conditional_value": -51,
           "name": "灵枯",
-          "condition": "target_hp_below_30"
+          "condition": "target_hp_below_30",
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -882,7 +935,8 @@
       "effects": [
         {
           "type": "lifesteal",
-          "value": 55
+          "value": 55,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -922,7 +976,8 @@
         {
           "type": "enlightenment_bonus",
           "value": 1,
-          "damage_increase": 5
+          "damage_increase": 5,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -953,7 +1008,8 @@
       "effects": [
         {
           "type": "on_buff_debuff_shield_trigger",
-          "damage_percent": 50.8
+          "damage_percent": 50.8,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1023,7 +1079,8 @@
         {
           "type": "conditional_damage",
           "value": 104,
-          "condition": "target_has_debuff"
+          "condition": "target_has_debuff",
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1067,13 +1124,15 @@
       "effects": [
         {
           "type": "debuff_stack_increase",
-          "value": 100
+          "value": 100,
+          "data_state": "fusion=50"
         },
         {
           "type": "per_debuff_stack_damage",
           "per_n_stacks": 5,
           "value": 5.5,
-          "max": 27.5
+          "max": 27.5,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1160,7 +1219,8 @@
           "type": "conditional_heal_buff",
           "condition": "target_has_debuff",
           "value": 90,
-          "duration": 8
+          "duration": 8,
+          "data_state": "fusion=50"
         },
         {
           "type": "conditional_debuff",
@@ -1168,7 +1228,8 @@
           "name": "魔骨明心",
           "target": "final_damage_reduction",
           "value": -20,
-          "duration": 1
+          "duration": 1,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1408,7 +1469,8 @@
       "effects": [
         {
           "type": "dot_damage_increase",
-          "value": 104
+          "value": 104,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1458,7 +1520,8 @@
       "effects": [
         {
           "type": "dot_frequency_increase",
-          "value": 50.5
+          "value": 50.5,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1514,14 +1577,16 @@
           "name": "魔劫",
           "target": "healing_received",
           "value": -40.8,
-          "duration": 8
+          "duration": 8,
+          "data_state": "fusion=50"
         },
         {
           "type": "conditional_damage",
           "value": 105,
           "condition": "target_has_no_healing",
           "escalated_value": 205,
-          "parent": "魔劫"
+          "parent": "魔劫",
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1599,7 +1664,8 @@
       "effects": [
         {
           "type": "per_self_lost_hp",
-          "per_percent": 2
+          "per_percent": 2,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1646,13 +1712,15 @@
         {
           "type": "per_debuff_stack_true_damage",
           "per_stack": 2.1,
-          "max": 21
+          "max": 21,
+          "data_state": "fusion=50"
         },
         {
           "type": "conditional_buff",
           "condition": "enlightenment_max",
           "percent_lost_hp_increase": 50,
-          "damage_increase": 75
+          "damage_increase": 75,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1715,12 +1783,14 @@
       "effects": [
         {
           "type": "damage_increase",
-          "value": 380
+          "value": 380,
+          "data_state": "fusion=50"
         },
         {
           "type": "self_damage_taken_increase",
           "value": 50,
-          "duration": "during_cast"
+          "duration": "during_cast",
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1769,7 +1839,8 @@
       "effects": [
         {
           "type": "all_state_duration",
-          "value": 55
+          "value": 55,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1838,7 +1909,8 @@
         {
           "type": "conditional_damage",
           "value": 100,
-          "condition": "target_controlled"
+          "condition": "target_controlled",
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1899,7 +1971,8 @@
       "effects": [
         {
           "type": "on_shield_expire",
-          "damage_percent_of_shield": 100
+          "damage_percent_of_shield": 100,
+          "data_state": "fusion=50"
         }
       ]
     }
@@ -1936,7 +2009,8 @@
           "interval": 1,
           "duration": 10,
           "damage_percent_of_skill": 25.5,
-          "no_buff_double": true
+          "no_buff_double": true,
+          "data_state": "fusion=50"
         }
       ]
     }

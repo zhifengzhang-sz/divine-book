@@ -104,169 +104,188 @@ export function parseExclusiveAffix(
 		}
 	}
 
-	// Book-specific parser takes priority
-	const parser = EXCLUSIVE_PARSERS[entry.bookName];
-	if (parser) {
-		const effects = parser(entry.cell);
+	const parser = EXCLUSIVE_PARSER_TABLE[entry.bookName];
+	if (!parser) {
+		throw new Error(
+			`No parser assigned for exclusive affix "${entry.affixName}" ` +
+				`(book: ${entry.bookName}). Add an entry to EXCLUSIVE_PARSER_TABLE.`,
+		);
+	}
+
+	if (parser === "generic") {
+		const effects = genericAffixParse(entry.cell, stateRegistry);
 		return { name: entry.affixName, effects };
 	}
 
-	// Generic affix parse as fallback
-	// For exclusive affixes with a single tier, use last-tier-only mode
-	// (use variable values without data_state — matches legacy behavior)
-	const effects = genericAffixParse(entry.cell, stateRegistry, {
-		lastTierOnly: true,
-	});
+	const effects = parser(entry.cell);
 	return { name: entry.affixName, effects };
 }
 
 type ExclusiveParser = (cell: SplitCell) => EffectRow[];
 
-// ─── Per-book exclusive affix parsers ───────────────────────────
+// ─── Exclusive affix parser table ───────────────────────────────
 //
-// Each parser extracts typed effects from the exclusive affix prose.
-// Consistent with AFFIX_PARSERS in split.ts:
-// - Effects use `parent` to scope modifications
-// - Named states get lifecycle from the state registry
-// - Tier variables are resolved from cell.tiers
+// Every book with an exclusive affix must have an explicit entry.
+// "generic" = use the generic affix parser (single-effect affixes).
+// ── Custom parsers for compound effects ─────────────────────────
+//
+// Used when the generic parser can't handle multi-effect compounds.
+// Each emits all tiers with data_state via buildDataState().
 
-const EXCLUSIVE_PARSERS: Record<string, ExclusiveParser> = {
-	// ── Compound parsers that can't be genericized ──────────
+/** Helper: iterate tiers, emit effects with data_state per tier */
+function multiTierEffects(
+	cell: SplitCell,
+	emitTier: (
+		vars: Record<string, number>,
+		ds: ReturnType<typeof buildDataState>,
+	) => EffectRow[],
+): EffectRow[] {
+	const effects: EffectRow[] = [];
+	for (const tier of cell.tiers) {
+		effects.push(...emitTier(tier.vars, buildDataState(tier)));
+	}
+	return effects;
+}
 
-	// 千锋聚灵剑: handled by generic pipeline (extractHealReductionDebuff, negated value)
+function ds(v: ReturnType<typeof buildDataState>): Record<string, unknown> {
+	return v ? { data_state: v } : {};
+}
 
-	春黎剑阵: (cell) => {
-		// 【噬心】: dot + on_dispel compound (multi-tier)
-		const tiers = cell.tiers;
-		const effects: EffectRow[] = [];
-		for (const tier of tiers) {
-			const ds = buildDataState(tier);
-			effects.push({
-				type: "dot",
-				name: "噬心",
-				duration: tier.vars.w,
-				tick_interval: 1,
-				damage_per_tick: tier.vars.x,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-			effects.push({
-				type: "on_dispel",
-				damage: tier.vars.y,
-				stun: tier.vars.z,
-				parent: "噬心",
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
+const compound_春黎剑阵: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{
+			type: "dot",
+			name: "噬心",
+			duration: v.w,
+			tick_interval: 1,
+			damage_per_tick: v.x,
+			...ds(d),
+		} as EffectRow,
+		{
+			type: "on_dispel",
+			damage: v.y,
+			stun: v.z,
+			parent: "噬心",
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	皓月剑诀: (cell) => {
-		// dot_extra_per_tick + conditional_buff compound
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "dot_extra_per_tick",
-				value: tier.vars.x,
-			} as EffectRow,
-			{
-				type: "conditional_buff",
-				condition: "enlightenment_10",
-				percent_max_hp_increase: tier.vars.y,
-				damage_increase: tier.vars.z,
-			} as EffectRow,
-		];
-	},
+const compound_皓月剑诀: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{ type: "dot_extra_per_tick", value: v.x, ...ds(d) } as EffectRow,
+		{
+			type: "conditional_buff",
+			condition: "enlightenment_10",
+			percent_max_hp_increase: v.y,
+			damage_increase: v.z,
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	周天星元: (cell) => {
-		// debuff_stack_chance + conditional_debuff (multi-tier)
-		const tiers = cell.tiers;
-		const effects: EffectRow[] = [];
-		for (const tier of tiers) {
-			const ds = buildDataState(tier);
-			effects.push({
-				type: "debuff_stack_chance",
-				value: tier.vars.x,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-			effects.push({
-				type: "conditional_debuff",
-				name: "逆转阴阳",
-				multiplier: tier.vars.y,
-				...(ds ? { data_state: ds } : {}),
-			} as EffectRow);
-		}
-		return effects;
-	},
+const compound_周天星元: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{ type: "debuff_stack_chance", value: v.x, ...ds(d) } as EffectRow,
+		{
+			type: "conditional_debuff",
+			name: "逆转阴阳",
+			multiplier: v.y,
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	// 甲元仙符: handled by generic pipeline (extractHealReductionDebuff with conditional)
+const compound_天刹真魔: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{
+			type: "conditional_heal_buff",
+			condition: "target_has_debuff",
+			value: v.x,
+			duration: 8,
+			...ds(d),
+		} as EffectRow,
+		{
+			type: "conditional_debuff",
+			condition: "enlightenment",
+			name: "魔骨明心",
+			target: "final_damage_reduction",
+			value: -v.y,
+			duration: 1,
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	天刹真魔: (cell) => {
-		// conditional_heal_buff + conditional_debuff compound
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "conditional_heal_buff",
-				condition: "target_has_debuff",
-				value: tier.vars.x,
-				duration: 8,
-			} as EffectRow,
-			{
-				type: "conditional_debuff",
-				condition: "enlightenment",
-				name: "魔骨明心",
-				target: "final_damage_reduction",
-				value: -tier.vars.y,
-				duration: 1,
-			} as EffectRow,
-		];
-	},
+const compound_无相魔劫咒: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{
+			type: "debuff",
+			name: "魔劫",
+			target: "healing_received",
+			value: -v.x,
+			duration: 8,
+			...ds(d),
+		} as EffectRow,
+		{
+			type: "conditional_damage",
+			value: v.y,
+			condition: "target_has_no_healing",
+			escalated_value: v.z,
+			parent: "魔劫",
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	无相魔劫咒: (cell) => {
-		// debuff + conditional_damage with parent linking
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "debuff",
-				name: "魔劫",
-				target: "healing_received",
-				value: -tier.vars.x,
-				duration: 8,
-			} as EffectRow,
-			{
-				type: "conditional_damage",
-				value: tier.vars.y,
-				condition: "target_has_no_healing",
-				escalated_value: tier.vars.z,
-				parent: "魔劫",
-			} as EffectRow,
-		];
-	},
+const compound_惊蜇化龙: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{
+			type: "per_debuff_stack_true_damage",
+			per_stack: v.x,
+			max: v.y,
+			...ds(d),
+		} as EffectRow,
+		{
+			type: "conditional_buff",
+			condition: "enlightenment_max",
+			percent_lost_hp_increase: v.z,
+			damage_increase: v.w,
+			...ds(d),
+		} as EffectRow,
+	]);
 
-	惊蜇化龙: (cell) => {
-		// per_debuff_stack_true_damage + conditional_buff compound
-		const tier = cell.tiers[cell.tiers.length - 1];
-		if (!tier) return [];
-		return [
-			{
-				type: "per_debuff_stack_true_damage",
-				per_stack: tier.vars.x,
-				max: tier.vars.y,
-			} as EffectRow,
-			{
-				type: "conditional_buff",
-				condition: "enlightenment_max",
-				percent_lost_hp_increase: tier.vars.z,
-				damage_increase: tier.vars.w,
-			} as EffectRow,
-		];
-	},
+// ── Parser assignment table ────────────────────────────────────
+//
+// Every book must have an explicit entry.
+// "generic" = standard generic parser. Function = custom compound parser.
 
-	// Generic pipeline handles the rest:
-	// 念剑诀, 通天剑诀, 新-青元剑诀, 无極御剑诀,
-	// 浩然星灵诀, 元磁神光, 星元化岳, 玉書天戈符, 九天真雷诀,
-	// 天魔降临咒, 天轮魔经, 解体化形, 大罗幻诀, 梵圣/焚圣真魔咒,
-	// 玄煞灵影诀, 十方真魄, 疾風九变, 煞影千幻, 九重天凤诀, 天煞破虚诀
+const EXCLUSIVE_PARSER_TABLE: Record<string, "generic" | ExclusiveParser> = {
+	// 剑修
+	千锋聚灵剑: "generic",
+	春黎剑阵: compound_春黎剑阵,
+	皓月剑诀: compound_皓月剑诀,
+	念剑诀: "generic",
+	通天剑诀: "generic",
+	"新-青元剑诀": "generic",
+	无极御剑诀: "generic",
+	// 法修
+	浩然星灵诀: "generic",
+	元磁神光: "generic",
+	周天星元: compound_周天星元,
+	甲元仙符: "generic",
+	星元化岳: "generic",
+	玉书天戈符: "generic",
+	九天真雷诀: "generic",
+	// 魔修
+	天魔降临咒: "generic",
+	天轮魔经: "generic",
+	天刹真魔: compound_天刹真魔,
+	解体化形: "generic",
+	大罗幻诀: "generic",
+	梵圣真魔咒: "generic",
+	无相魔劫咒: compound_无相魔劫咒,
+	// 体修
+	玄煞灵影诀: "generic",
+	惊蜇化龙: compound_惊蜇化龙,
+	十方真魄: "generic",
+	疾风九变: "generic",
+	煞影千幻: "generic",
+	九重天凤诀: "generic",
+	天煞破虚诀: "generic",
 };

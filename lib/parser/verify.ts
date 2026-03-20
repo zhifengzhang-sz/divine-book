@@ -182,7 +182,7 @@ function verifyAffixEntries(
 		}
 
 		// Get final parsed effects
-		const effects = genericAffixParse(entry.cell, {}, { lastTierOnly: true });
+		const effects = genericAffixParse(entry.cell, {});
 
 		const issues: VerifyIssue[] = [];
 

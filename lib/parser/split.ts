@@ -429,17 +429,13 @@ function enrichWithNamedStates(
 
 /**
  * Generic affix parser — runs AFFIX_EXTRACTORS against the text.
- * Used for both primary and exclusive affixes as a fallback
- * when no book-specific parser exists.
- *
- * Options:
- * - lastTierOnly: For single-tier affixes, use the last tier's values
- *   without data_state. Multi-tier affixes still emit per-tier data_state.
+ * Used for both primary and exclusive affixes when no book-specific
+ * compound parser exists. Always emits data_state per tier.
  */
 export function genericAffixParse(
 	cell: SplitCell,
 	states: StateRegistry,
-	options?: { lastTierOnly?: boolean; defaultParent?: string },
+	options?: { defaultParent?: string },
 ): EffectRow[] {
 	const rawText = cell.description.join("，");
 	const tiers = cell.tiers;
@@ -522,13 +518,7 @@ export function genericAffixParse(
 		return resolveEffects({});
 	}
 
-	// lastTierOnly mode: use last tier's values, no data_state (single-tier)
-	if (options?.lastTierOnly && tiers.length === 1) {
-		const tier = tiers[tiers.length - 1];
-		return resolveEffects(tier.vars);
-	}
-
-	// Multi-tier: expand per-tier with data_state
+	// Expand per-tier with data_state
 	const effects: EffectRow[] = [];
 	for (const tier of tiers) {
 		if (tier.locked) {

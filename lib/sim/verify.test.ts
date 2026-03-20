@@ -57,7 +57,7 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 				{
 					slot: 1,
 					platform: "千锋聚灵剑",
-					progression: { enlightenment: 10, fusion: 51 },
+					progression: { enlightenment: 12, fusion: 52 },
 				},
 			],
 			booksYaml,
