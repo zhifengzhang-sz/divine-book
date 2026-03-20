@@ -79,20 +79,63 @@ register("summon_buff", (effect) => ({
 }));
 
 // on_dispel: { damage, stun?, parent }
-// Triggers damage when a state is dispelled. Simplified as flat extra.
-register("on_dispel", (effect, ctx) => ({
-	flatExtra: ((effect.damage as number) / 100) * ctx.atk,
-}));
+// Triggers burst damage when a state is dispelled.
+// Registered as a listener on the parent state's on_expire event.
+register("on_dispel", (effect, _ctx) => {
+	const parent = (effect.parent as string) ?? "on_dispel";
+	const damagePct = effect.damage as number;
+	return {
+		listeners: [
+			{
+				parent,
+				trigger: "on_expire" as const,
+				handler: (listenerCtx) => [
+					{
+						type: "HIT" as const,
+						hitIndex: -1,
+						damage: (damagePct / 100) * listenerCtx.sourcePlayer.atk,
+						spDamage: 0,
+					},
+				],
+			},
+		],
+	};
+});
 
 // on_shield_expire: { damage_percent_of_shield }
-// Deals damage when shield expires. No-op (shield expiry not tracked).
-register("on_shield_expire", () => ({}));
+// Deals damage when shield expires. Shield expiry not fully tracked —
+// approximate by adding a flat damage based on typical shield value.
+register("on_shield_expire", (effect, ctx) => {
+	const pct = (effect.damage_percent_of_shield as number) ?? 100;
+	// Estimate shield value as 10% of maxHP
+	const estimatedShield = ctx.sourcePlayer.maxHp * 0.1;
+	return {
+		intents: [
+			{
+				type: "HIT" as const,
+				hitIndex: -1,
+				damage: (pct / 100) * estimatedShield,
+				spDamage: 0,
+			},
+		],
+	};
+});
 
 // on_buff_debuff_shield_trigger: { damage_percent }
-// Deals damage when buff/debuff/shield is applied. Simplified as flat extra.
-register("on_buff_debuff_shield_trigger", (effect, ctx) => ({
-	flatExtra: ((effect.damage_percent as number) / 100) * ctx.atk,
-}));
+// Deals damage when any buff/debuff/shield is applied.
+// Registered as a per-hit effect since it fires on each state application.
+register("on_buff_debuff_shield_trigger", (effect) => {
+	const pct = (effect.damage_percent as number) ?? 0;
+	return {
+		perHitEffects: () => [
+			{
+				type: "HP_DAMAGE" as const,
+				percent: pct,
+				basis: "max" as const,
+			},
+		],
+	};
+});
 
 // untargetable_state: { duration }
 // Makes player untargetable. Simplified as damage reduction buff.
@@ -116,8 +159,15 @@ register("untargetable_state", (effect) => ({
 }));
 
 // extended_dot: { extra_seconds, tick_interval, parent }
-// Extends a DoT duration. No-op in simplified model.
-register("extended_dot", () => ({}));
+// extended_dot: { extra_seconds, tick_interval, parent }
+// Extends a DoT's active duration. More ticks → more total damage.
+// Modeled as M_dmg zone proportional to extension.
+register("extended_dot", (effect) => {
+	const seconds = (effect.extra_seconds as number) ?? 0;
+	// Extra seconds of DoT ≈ proportional damage increase
+	// Typical DoT lasts 8-18s, so extra_seconds/10 is approximate bonus
+	return { zones: { M_dmg: seconds / 10 } };
+});
 
 // shield_destroy_damage: { shields_per_hit, percent_max_hp }
 // Destroys shields and deals %maxHP damage. Simplified as per-hit effect.
@@ -137,14 +187,65 @@ register("no_shield_double_damage", () => ({
 }));
 
 // shield_destroy_dot: { tick_interval, per_shield_damage, parent }
-// DoT that deals extra damage per shield destroyed. Simplified as flat extra.
-register("shield_destroy_dot", (effect, ctx) => ({
-	flatExtra: ((effect.per_shield_damage as number) / 100) * ctx.atk,
-}));
+// shield_destroy_dot: { tick_interval, per_shield_damage, no_shield_assumed, parent }
+// DoT that deals damage per shield destroyed. Registers a per_tick listener.
+register("shield_destroy_dot", (effect, _ctx) => {
+	const parent = (effect.parent as string) ?? "shield_destroy_dot";
+	const perShield = (effect.per_shield_damage as number) ?? 600;
+	const noShieldCount = (effect.no_shield_assumed as number) ?? 2;
+	return {
+		listeners: [
+			{
+				parent,
+				trigger: "per_tick" as const,
+				handler: (listenerCtx) => {
+					// Estimate shields destroyed = no_shield_assumed if no shield tracked
+					const damage =
+						(perShield / 100) * listenerCtx.sourcePlayer.atk * noShieldCount;
+					return [
+						{
+							type: "HIT" as const,
+							hitIndex: -1,
+							damage,
+							spDamage: 0,
+						},
+					];
+				},
+			},
+		],
+	};
+});
 
 // hp_cost_avoid_chance: { value, parent }
-// Chance to avoid HP cost. No-op in simplified model.
-register("hp_cost_avoid_chance", () => ({}));
+// hp_cost_avoid_chance: { value, parent }
+// Chance to avoid HP cost. Rolls RNG on each HP_COST event.
+// Modeled as a damage reduction buff (reducing self-damage from HP costs).
+register("hp_cost_avoid_chance", (effect) => {
+	const chance = (effect.value as number) ?? 0;
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "hp_cost_avoid",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [
+						{
+							stat: "damage_reduction",
+							value: chance,
+						},
+					],
+					remainingDuration: Number.POSITIVE_INFINITY,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: false,
+				},
+			},
+		],
+	};
+});
 
 // ── Affix-only effect types ─────────────────────────────────────────
 

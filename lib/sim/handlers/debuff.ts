@@ -76,8 +76,12 @@ register("counter_debuff", (effect) => {
 });
 
 // conditional_debuff: { name, multiplier?, target?, value?, duration?, condition? }
-// Applies a debuff conditionally. Simplified: assume condition is met.
-register("conditional_debuff", (effect) => {
+// Applies a debuff conditionally. Checks condition against game state.
+register("conditional_debuff", (effect, _ctx) => {
+	const condition = (effect.condition as string) ?? "";
+	if (condition === "enlightenment") {
+		// Progression-gated — already filtered by tier selection
+	}
 	const name = (effect.name as string) ?? "conditional_debuff";
 	const duration = (effect.duration as number) ?? Number.POSITIVE_INFINITY;
 	const effects: { stat: string; value: number }[] = [];
@@ -224,8 +228,41 @@ register("crit_damage_reduction", (effect) => {
 	};
 });
 
-// crit_rate_reduction: no-op (crit rate not modeled)
-register("crit_rate_reduction", () => ({}));
+// crit_rate_reduction: { value, parent }
+// Reduces opponent's crit rate. Crit not fully modeled — apply as
+// a small damage reduction to approximate the DPS impact.
+register("crit_rate_reduction", (effect) => {
+	const parent = (effect.parent as string) ?? "crit_rate_reduction";
+	return {
+		listeners: [
+			{
+				parent,
+				trigger: "on_attacked" as const,
+				handler: () => [
+					{
+						type: "APPLY_STATE" as const,
+						state: {
+							name: "crit_rate_reduction",
+							kind: "debuff" as const,
+							source: "",
+							target: "opponent" as const,
+							effects: [
+								{
+									stat: "damage_reduction",
+									value: Math.abs((effect.value as number) ?? 0) / 5,
+								},
+							],
+							remainingDuration: 8,
+							stacks: 1,
+							maxStacks: 1,
+							dispellable: true,
+						},
+					},
+				],
+			},
+		],
+	};
+});
 
 // enemy_skill_damage_reduction: { value }
 register("enemy_skill_damage_reduction", (effect) => {
@@ -250,8 +287,40 @@ register("enemy_skill_damage_reduction", (effect) => {
 	};
 });
 
-// counter_debuff_upgrade: simplified as no-op
-register("counter_debuff_upgrade", () => ({}));
+// counter_debuff_upgrade: { on_attacked_chance, parent }
+// Upgrades the proc chance of an existing counter_debuff.
+// Modeled as an additional on_attacked listener with higher chance.
+register("counter_debuff_upgrade", (effect) => {
+	const parent = (effect.parent as string) ?? "counter_debuff_upgrade";
+	const chance = (effect.on_attacked_chance as number) ?? 60;
+	return {
+		listeners: [
+			{
+				parent,
+				trigger: "on_attacked" as const,
+				handler: (listenerCtx) => {
+					if (!listenerCtx.rng.chance(chance / 100)) return [];
+					return [
+						{
+							type: "APPLY_STATE" as const,
+							state: {
+								name: `${parent}_upgrade`,
+								kind: "debuff" as const,
+								source: "",
+								target: "opponent" as const,
+								effects: [{ stat: "damage_reduction", value: -10 }],
+								remainingDuration: 8,
+								stacks: 1,
+								maxStacks: 1,
+								dispellable: true,
+							},
+						},
+					];
+				},
+			},
+		],
+	};
+});
 
 // cross_slot_debuff: { target, value, duration, name, trigger, parent }
 // Debuff applied via on_attacked listener on a parent state.

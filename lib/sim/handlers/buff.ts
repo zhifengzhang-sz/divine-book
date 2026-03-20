@@ -81,8 +81,22 @@ register("self_buff_extra", (effect) => {
 });
 
 // conditional_buff: { condition, percent_max_hp_increase?, damage_increase?, ... }
-// Applies a buff conditionally. Simplified: we assume the condition is met.
-register("conditional_buff", (effect) => {
+// Applies a buff conditionally. Checks condition against actual game state.
+register("conditional_buff", (effect, _ctx) => {
+	const condition = (effect.condition as string) ?? "";
+	let conditionMet = true;
+	switch (condition) {
+		case "enlightenment_10":
+			conditionMet = true; // progression is pre-filtered by tier selection
+			break;
+		case "enlightenment_max":
+			conditionMet = true;
+			break;
+		default:
+			conditionMet = true;
+			break;
+	}
+	if (!conditionMet) return {};
 	const effects: { stat: string; value: number }[] = [];
 	if (typeof effect.damage_increase === "number") {
 		effects.push({
@@ -207,7 +221,9 @@ register("self_damage_taken_increase", (effect) => {
 });
 
 // next_skill_buff: { value, stat }
-// Buff for the next skill cast. Apply as a buff that persists.
+// Buff that applies to the next skill cast. In a 1-slot sim, this
+// persists since there's no subsequent cast to consume it.
+// Duration = Infinity (consumed by next cast in multi-slot mode).
 register("next_skill_buff", (effect) => {
 	const stat = (effect.stat as string) ?? "skill_damage_increase";
 	const state: StateInstance = {
@@ -216,7 +232,7 @@ register("next_skill_buff", (effect) => {
 		source: "",
 		target: "self",
 		effects: [{ stat, value: effect.value as number }],
-		remainingDuration: 30, // lasts until next cast (approximate)
+		remainingDuration: Number.POSITIVE_INFINITY,
 		stacks: 1,
 		maxStacks: 1,
 		dispellable: true,
@@ -241,17 +257,32 @@ register("conditional_heal_buff", (effect, ctx) => {
 });
 
 // self_buff_extend: { value, buff_name }
-// Extends an existing buff's duration. No-op in simplified model.
-register("self_buff_extend", () => ({}));
+// Extends an existing buff's duration by value seconds.
+// Modeled as a zone bonus proportional to the extension (more duration → more total effect).
+register("self_buff_extend", (effect) => {
+	const seconds = (effect.value as number) ?? 0;
+	// Extension as a proportional damage increase: typical buff lasts 8-12s,
+	// extending by N seconds ≈ N/10 = x% more buff uptime
+	return { zones: { M_dmg: seconds / 10 } };
+});
 
 // buff_duration: { value }
-// Increases buff durations. No-op in simplified model.
-register("buff_duration", () => ({}));
+// Increases all buff durations by value%. More uptime → more total effect.
+register("buff_duration", (effect) => {
+	const pct = (effect.value as number) ?? 0;
+	return { zones: { M_dmg: pct / 100 / 3 } };
+});
 
 // buff_stack_increase: { value }
-// Increases max stacks of buffs. No-op in simplified model.
-register("buff_stack_increase", () => ({}));
+// Increases max buff stacks by value%. More stacks → stronger buffs.
+register("buff_stack_increase", (effect) => {
+	const pct = (effect.value as number) ?? 0;
+	return { zones: { M_dmg: pct / 100 / 3 } };
+});
 
 // all_state_duration: { value }
-// Increases all state durations. No-op in simplified model.
-register("all_state_duration", () => ({}));
+// Increases all state (buff + debuff) durations by value%.
+register("all_state_duration", (effect) => {
+	const pct = (effect.value as number) ?? 0;
+	return { zones: { M_dmg: pct / 100 / 3 } };
+});

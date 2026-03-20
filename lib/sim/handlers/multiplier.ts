@@ -51,9 +51,12 @@ register("crit_damage_bonus", (effect) => ({
 }));
 
 // ignore_damage_reduction: {}
-// Ignores target's DR. Modeled as M_final bonus (approximate).
+// Ignores target's DR. The target's DEF-based DR is bypassed.
+// Modeled by adding M_final to compensate for the DR that would
+// normally reduce damage. At typical DR (47%), M_final ≈ 0.9 restores
+// the full pre-DR damage: damage × (1-0.47) × (1+0.9) ≈ damage × 1.0.
 register("ignore_damage_reduction", () => ({
-	zones: { M_final: 0.5 },
+	zones: { M_final: 0.9 },
 }));
 
 // buff_strength: { value }
