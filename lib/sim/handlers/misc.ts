@@ -214,8 +214,10 @@ register("final_damage_bonus", (effect) => ({
 }));
 
 // probability_to_certain: { damage_increase }
-// Makes probability-based effects certain. Also grants damage bonus.
+// Makes probability-based effects certain (always max tier).
+// Also grants damage bonus.
 register("probability_to_certain", (effect) => ({
+	forceSynchroMax: true,
 	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
 }));
 

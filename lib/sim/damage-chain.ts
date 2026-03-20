@@ -22,12 +22,14 @@ export function buildHitEvents(
 	const escalationFns: ((k: number) => { M_skill?: number; M_dmg?: number })[] =
 		[];
 	let perHitEffectsFn: ((k: number) => IntentEvent[]) | undefined;
+	let forceSynchroMax = false;
 
 	for (const r of results) {
 		if (r.basePercent !== undefined) basePercent = r.basePercent;
 		if (r.hitsOverride !== undefined) hits = r.hitsOverride;
 		if (r.flatExtra !== undefined) flatExtra += r.flatExtra;
 		if (r.spDamage !== undefined) spDamage += r.spDamage;
+		if (r.forceSynchroMax) forceSynchroMax = true;
 		if (r.zones) {
 			zones.S_coeff += r.zones.S_coeff ?? 0;
 			zones.M_dmg += r.zones.M_dmg ?? 0;
@@ -39,6 +41,11 @@ export function buildHitEvents(
 		}
 		if (r.perHitEscalation) escalationFns.push(r.perHitEscalation);
 		if (r.perHitEffects) perHitEffectsFn = r.perHitEffects;
+	}
+
+	// probability_to_certain: override M_synchro to max tier (4x)
+	if (forceSynchroMax && zones.M_synchro > 1) {
+		zones.M_synchro = 4;
 	}
 
 	if (basePercent === 0 || hits === 0) return [];

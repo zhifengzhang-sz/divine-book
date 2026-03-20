@@ -43,6 +43,8 @@ export interface HandlerResult {
 	perHitEscalation?: (hitIndex: number) => { M_skill?: number; M_dmg?: number };
 	/** Per-hit effects: hitIndex → additional events per hit (e.g., %maxHP damage) */
 	perHitEffects?: (hitIndex: number) => IntentEvent[];
+	/** Force M_synchro to max (probability_to_certain makes rolls guaranteed) */
+	forceSynchroMax?: boolean;
 	/** Resonance 灵力 damage (total across all hits) */
 	spDamage?: number;
 	/** Non-damage intent events (buffs, debuffs, heal, shield, etc.) */
