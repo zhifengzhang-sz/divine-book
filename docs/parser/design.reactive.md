@@ -98,7 +98,7 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-> This document proposes replacing the imperative extractor-based parser with a reactive event-sourcing architecture. The reader emits pattern events; listeners produce structured effects. Same paradigm as the simulator's XState event model.
+> This document proposes replacing the imperative extractor-based parser with a three-stage reactive pipeline: Reader (linguistic) → Context Listener (structural) → Parser (semantic). Each stage has one job. Same event-driven paradigm as the simulator's XState model.
 
 ---
 
@@ -165,206 +165,227 @@ The third responsibility is the source of all bugs. It requires every extractor 
 
 ### §2.1 Overview
 
-Separate recognition from production using an event-sourcing model:
+Three-stage pipeline where each stage has exactly one job:
 
 ```
 Raw Chinese text
   ↓
-Scanner (reader)                     ← one component, scans once
-  ↓ emits
-PatternEvent[]                       ← what was recognized, with context
-  ↓ dispatched to
-Listeners (handlers)                 ← one per mechanic concept
-  ↓ produce
+Stage 1: Reader (linguistic)         ← scans text, emits flat token events
+  ↓
+TokenEvent[]                         ← "I see these Chinese terms"
+  ↓
+Stage 2: Context Listener (structural) ← groups related tokens by context
+  ↓
+GroupEvent[]                         ← "These tokens belong together"
+  ↓
+Stage 3: Parser (semantic)           ← maps groups to typed effects
+  ↓
 EffectRow[]  →  YAML
 ```
 
-Three distinct components with single responsibilities:
+| Stage | Responsibility | Knows about | Does NOT know about |
+|:------|:--------------|:------------|:-------------------|
+| **Reader** | Recognize Chinese terms, emit tokens | Chinese regex patterns | Effect types, grouping |
+| **Context Listener** | Group related tokens by structural context | Token adjacency, named states, modifiers | Effect types, field names |
+| **Parser** | Map groups to typed effects | Effect type taxonomy, field schemas | Chinese text, regex |
 
-| Component | Responsibility | Knows about |
-|:----------|:--------------|:------------|
-| **Scanner** | Tokenize Chinese text into pattern events | Chinese patterns only |
-| **PatternEvent** | Carry recognized pattern + positional context | Nothing (data) |
-| **Listener** | Produce typed effects from pattern events | One mechanic concept |
+### §2.2 Stage 1: Reader
 
-### §2.2 Scanner
-
-The scanner reads the text once and emits events for every recognized Chinese pattern. It does NOT know about effect types — it only knows Chinese game terminology.
+The reader scans text and emits one token per recognized Chinese term. Each token matches exactly one Chinese term — no abstract categories.
 
 ```typescript
-interface PatternEvent {
-  /** What Chinese pattern was recognized */
-  pattern: PatternType;
+interface TokenEvent {
+  /** The Chinese term recognized (specific, not abstract) */
+  term: string;
   /** Raw matched text */
   raw: string;
   /** Extracted captures (variable refs or literal values) */
   captures: Record<string, string>;
-  /** Position in the text */
+  /** Position in the source text */
   position: number;
-  /** Full text line this pattern appeared in */
-  line: string;
-  /** Named state context: is this inside a 【name】：definition? */
-  parentState?: string;
-  /** Preceding patterns on the same line (for context) */
-  preceding: PatternType[];
+  /** Line number in the source */
+  line: number;
 }
 ```
 
-Pattern types correspond to Chinese game terms, NOT effect types:
+The reader's pattern table maps Chinese terms to token events. Each regex matches one specific term — no overlap, no disambiguation needed:
 
 ```typescript
-type PatternType =
+const READER_PATTERNS = [
   // Damage
-  | "ATTACK"              // 造成x段共计y%攻击力的灵法伤害
-  | "PERCENT_MAX_HP"      // 造成目标y%最大气血值的伤害
-  | "PERCENT_CURRENT_HP"  // 造成目标y%当前气血值的伤害
-  | "PERCENT_LOST_HP"     // 造成自身/目标y%已损失气血值的伤害
-  | "FLAT_EXTRA_DAMAGE"   // 额外造成x%攻击力的伤害
+  { term: "base_attack",         regex: /造成(\w+)段共(?:计)?(\w+)%攻击力/,           captures: ["hits", "total"] },
+  { term: "percent_max_hp",      regex: /造成(?:目标)?(\w+)%最大气血值的伤害/,          captures: ["value"] },
+  { term: "percent_current_hp",  regex: /造成(?:目标)?(\w+)%当前气血值的伤害/,          captures: ["value"] },
+  { term: "percent_lost_hp",     regex: /造成(?:自身|目标)?(\w+)%已损(?:失)?气血值的伤害/, captures: ["value"] },
+  { term: "flat_extra_damage",   regex: /额外造成(\w+)%攻击力的伤害/,                   captures: ["value"] },
+
   // Cost
-  | "HP_COST"             // 消耗(自身)x%当前气血值
-  // Buff/Debuff
-  | "STAT_INCREASE"       // 提升y%攻击力/伤害加深/神通伤害加深/...
-  | "STAT_DECREASE"       // 降低x%治疗量/攻击力/...
-  | "NAMED_STATE"         // 添加【name】：...
-  // Healing
-  | "HEAL"                // 恢复x%攻击力的气血
-  | "LIFESTEAL"           // 吸血效果x%
-  // Shield
-  | "SHIELD"              // 为自身添加x%最大气血值的护盾
-  | "SHIELD_DESTROY"      // 湮灭敌方1个护盾
-  // Modifiers
-  | "DURATION"            // 持续x秒
-  | "PER_HIT"             // 每段攻击
-  | "PER_TICK"            // 每秒/每0.5秒
-  | "PER_STACK"           // 每叠加N层
-  | "MAX_STACKS"          // 最多叠加x层
-  | "CHANCE"              // x%概率
-  | "ON_ATTACKED"         // 受到伤害时/攻击时
-  | "ON_DISPEL"           // 若被驱散
-  | "UNDISPELLABLE"       // 无法被驱散
-  | "PERMANENT"           // 战斗状态内永久生效
-  // Conditionals
-  | "CONDITION"           // 敌方处于控制效果/气血值低于x%/...
-  | "SELF_HEAL_ECHO"      // 等额恢复自身气血
-  ;
+  { term: "hp_cost",             regex: /消耗(?:自身)?(\w+)%(?:的)?当前气血值/,         captures: ["value"] },
+
+  // Stat modifiers (each Chinese term = distinct token, no abstract STAT_INCREASE)
+  { term: "atk_increase",        regex: /提升(?:自身)?(\w+)%(?:的)?攻击力/,             captures: ["value"] },
+  { term: "damage_increase",     regex: /(?<!神通)伤害(?:提升|加深)(\w+)%/,             captures: ["value"] },
+  { term: "skill_dmg_increase",  regex: /神通伤害加深(\w+)%/,                          captures: ["value"] },
+  { term: "dr_increase",         regex: /(\w+)%(?:的)?伤害减免/,                       captures: ["value"] },
+  { term: "final_dmg_increase",  regex: /(\w+)%(?:的)?最终伤害(?:加成|加深)/,           captures: ["value"] },
+  { term: "heal_reduction",      regex: /治疗量降低(\w+)%/,                            captures: ["value"] },
+
+  // Structure
+  { term: "named_state",         regex: /【(.+?)】[：:]/,                              captures: ["name"] },
+  { term: "duration",            regex: /持续(\w+)秒/,                                captures: ["value"] },
+  { term: "per_hit",             regex: /每段攻击/,                                    captures: [] },
+  { term: "per_tick",            regex: /每(\d+(?:\.\d+)?)秒/,                         captures: ["interval"] },
+  { term: "max_stacks",          regex: /(各自)?最多叠加(\w+)层/,                       captures: ["qualifier", "value"] },
+  { term: "chance",              regex: /(\w+)%(?:的)?概率/,                            captures: ["value"] },
+  { term: "on_attacked",         regex: /受到(?:伤害|攻击)时/,                          captures: [] },
+  { term: "on_dispel",           regex: /若被驱散/,                                    captures: [] },
+  { term: "undispellable",       regex: /无法被驱散/,                                  captures: [] },
+  { term: "permanent",           regex: /战斗状态内永久生效/,                            captures: [] },
+
+  // Healing / Shield
+  { term: "heal",                regex: /恢复(?:自身)?(\w+)%攻击力的气血/,              captures: ["value"] },
+  { term: "lifesteal",           regex: /吸血效果(\w+)%/,                              captures: ["value"] },
+  { term: "shield",              regex: /(\w+)%(?:最大气血值)?的?护盾/,                 captures: ["value"] },
+  { term: "shield_destroy",      regex: /湮灭(?:敌方)?(\w+)个护盾/,                    captures: ["count"] },
+
+  // ... etc
+];
 ```
 
-Key property: **pattern types are about Chinese terms, not game mechanics.** The scanner's job is linguistic, not semantic.
+Key property: each Chinese term has a unique surface form. The reader matches them left-to-right through the text and emits every match. No ordering logic, no deconfliction — the Chinese language already disambiguates.
 
-### §2.3 PatternEvent Context
+### §2.3 Stage 2: Context Listener
 
-The critical difference from the current architecture: each event carries **positional context** — what came before it, what named state it's inside, where in the line it appeared.
-
-This eliminates the need for negative lookaheads. Instead of:
+The context listener receives the flat token stream and groups related tokens by structural context. It knows about text structure (what's a modifier of what) but NOT about game mechanics.
 
 ```typescript
-// Current: extractSelfHpCost must exclude per-hit patterns
-if (/每段攻击.*消耗/.test(text)) return null;
-```
-
-The listener receives:
-
-```typescript
-// Reactive: HP_COST event has preceding context
-event = {
-  pattern: "HP_COST",
-  captures: { value: "z" },
-  preceding: ["PER_HIT"],   // ← 每段攻击 was recognized before this
-}
-// Listener checks context, not the raw text
-if (event.preceding.includes("PER_HIT")) {
-  return { type: "self_hp_cost", value: captures.value, per_hit: true };
-} else {
-  return { type: "self_hp_cost", value: captures.value };
+interface GroupEvent {
+  /** The primary token in this group */
+  primary: TokenEvent;
+  /** Modifier tokens that belong to this primary */
+  modifiers: TokenEvent[];
+  /** Named state this group is inside (if any) */
+  parentState?: string;
+  /** Scope: is this a skill effect, buff stat, state definition? */
+  scope: "skill" | "state_def" | "buff_stat" | "modifier";
 }
 ```
 
-### §2.4 Listeners
+Grouping rules are structural, not semantic:
 
-Each listener handles **one mechanic concept**. It receives pattern events and produces EffectRows.
+1. **Named state scoping** — Tokens after `【name】：` until the next `【name】：` or line break belong to that state's definition.
+
+2. **Modifier attachment** — Modifier tokens (`per_hit`, `per_tick`, `duration`, `max_stacks`, `chance`, `on_attacked`, `undispellable`, `permanent`) attach to the nearest preceding primary token (a damage, cost, heal, buff, or state token).
+
+3. **Qualifier propagation** — `各自` on `max_stacks` marks it as applying to children of the current state, not the state itself.
+
+Example — 大罗幻诀's text produces this token stream:
+
+```
+Tokens:
+  base_attack { hits: "x", total: "x" }
+  named_state { name: "罗天魔咒" }
+  on_attacked { }
+  chance { value: "30" }
+  named_state { name: "噬心之咒" }          ← child state def
+  per_tick { interval: "0.5" }
+  percent_current_hp { value: "y" }
+  duration { value: "4" }
+  named_state { name: "断魂之咒" }          ← child state def
+  per_tick { interval: "0.5" }
+  percent_lost_hp { value: "y" }
+  duration { value: "4" }
+  max_stacks { qualifier: "各自", value: "5" }
+
+Context listener groups:
+  GROUP 1: { primary: base_attack, modifiers: [], scope: "skill" }
+  GROUP 2: { primary: named_state(罗天魔咒), modifiers: [on_attacked, chance(30)], scope: "state_def" }
+  GROUP 3: { primary: percent_current_hp(y), modifiers: [per_tick(0.5), duration(4)],
+             parentState: "噬心之咒", scope: "state_def" }
+  GROUP 4: { primary: percent_lost_hp(y), modifiers: [per_tick(0.5), duration(4)],
+             parentState: "断魂之咒", scope: "state_def" }
+  GROUP 5: { primary: max_stacks(5), modifiers: [], scope: "modifier",
+             qualifier: "各自" → applies to children }
+```
+
+Another example — 九重天凤诀's HP cost:
+
+```
+Tokens:
+  base_attack { hits: "x", total: "x" }
+  per_hit { }
+  percent_lost_hp { value: "y" }
+  per_hit { }                                ← second per_hit
+  hp_cost { value: "z" }
+  per_hit { }                                ← third per_hit, modifies hp_cost
+  named_state { name: "蛮神" }
+
+Context listener groups:
+  GROUP 1: { primary: base_attack, modifiers: [], scope: "skill" }
+  GROUP 2: { primary: percent_lost_hp(y), modifiers: [per_hit], scope: "skill" }
+  GROUP 3: { primary: hp_cost(z), modifiers: [per_hit], scope: "skill" }
+  GROUP 4: { primary: named_state(蛮神), modifiers: [...], scope: "state_def" }
+```
+
+The context listener knows that `per_hit` modifies the nearest preceding primary. It doesn't know what `per_hit` + `hp_cost` means as a game mechanic — that's the parser's job.
+
+### §2.4 Stage 3: Parser
+
+The parser receives group events and maps them to typed `EffectRow[]`. It knows the effect type taxonomy but never touches Chinese text or regex.
 
 ```typescript
-interface Listener {
-  /** Which pattern(s) this listener responds to */
-  on: PatternType | PatternType[];
-  /** Produce effects from the pattern event + accumulated context */
-  handle: (event: PatternEvent, ctx: ListenerContext) => EffectRow | null;
-}
-
-interface ListenerContext {
-  /** All events emitted so far (for cross-referencing) */
-  events: PatternEvent[];
-  /** Current tier variables */
-  tierVars: Record<string, number>;
-  /** Named states recognized in this text */
-  states: Record<string, StateDef>;
-  /** Book name */
-  book: string;
+interface GroupHandler {
+  /** Which primary term(s) this handler processes */
+  handles: string | string[];
+  /** Map a group event to an effect */
+  parse: (group: GroupEvent) => EffectRow | null;
 }
 ```
 
-Example listeners:
+Example handlers:
 
 ```typescript
-// ONE listener for all HP cost variants
-const hpCostListener: Listener = {
-  on: "HP_COST",
-  handle: (event, ctx) => {
+const hpCostHandler: GroupHandler = {
+  handles: "hp_cost",
+  parse: (group) => {
     const fields: Record<string, unknown> = {
-      value: event.captures.value,
+      value: group.primary.captures.value,
     };
-    // Context-based variant detection
-    if (event.preceding.includes("PER_HIT")) {
+    if (group.modifiers.some(m => m.term === "per_hit")) {
       fields.per_hit = true;
     }
-    if (event.preceding.includes("PER_TICK")) {
-      fields.tick_interval = 1; // or from captures
+    if (group.modifiers.some(m => m.term === "per_tick")) {
+      const tick = group.modifiers.find(m => m.term === "per_tick");
+      fields.tick_interval = tick?.captures.interval ?? 1;
     }
     return { type: "self_hp_cost", ...fields } as EffectRow;
   },
 };
 
-// ONE listener for all damage modifier variants
-const statIncreaseListener: Listener = {
-  on: "STAT_INCREASE",
-  handle: (event, ctx) => {
-    const raw = event.raw;
-    // The scanner already captured the TERM — listener just maps it
-    if (/神通伤害加深/.test(raw)) {
-      return { type: "self_buff", skill_damage_increase: event.captures.value } as EffectRow;
-    }
-    if (/伤害加深/.test(raw)) {
-      return { type: "self_buff", damage_increase: event.captures.value } as EffectRow;
-    }
-    if (/攻击力/.test(raw)) {
-      return { type: "self_buff", attack_bonus: event.captures.value } as EffectRow;
-    }
-    // ... etc
-    return null;
+const maxStacksHandler: GroupHandler = {
+  handles: "max_stacks",
+  parse: (group) => {
+    // "各自" qualifier → applies to children, not current state
+    // The parser returns metadata that the state builder uses
+    return {
+      type: "__max_stacks__",
+      value: group.primary.captures.value,
+      target: group.primary.captures.qualifier === "各自" ? "children" : "self",
+    } as EffectRow;
   },
 };
 ```
 
-### §2.5 Composition via Event Stream
+### §2.5 Why Three Stages
 
-Compound effects (e.g., 大罗幻诀's counter-debuff with child DoTs) emerge naturally from the event stream. The scanner emits:
+Two stages (reader → parser) fails because the parser would need to re-derive context from the flat token stream — reimplementing the grouping logic inside every handler.
 
-```
-NAMED_STATE { name: "罗天魔咒", parentState: null }
-ON_ATTACKED { }
-CHANCE { value: "30" }
-NAMED_STATE { name: "噬心之咒", parentState: "罗天魔咒" }
-PER_TICK { interval: "0.5" }
-PERCENT_CURRENT_HP { value: "y" }
-DURATION { value: "4" }
-NAMED_STATE { name: "断魂之咒", parentState: "罗天魔咒" }
-PER_TICK { interval: "0.5" }
-PERCENT_LOST_HP { value: "y" }
-DURATION { value: "4" }
-MAX_STACKS { value: "5", qualifier: "各自" }
-```
+Four stages would over-separate — the context listener's grouping rules are simple enough that adding another stage (e.g., separate modifier-attachment from state-scoping) would add indirection without reducing complexity.
 
-The `MAX_STACKS` event carries `qualifier: "各自"` — the listener for max_stacks can use this to assign stacking to the children, not the parent. No regex hack needed.
+Three stages is the natural decomposition:
+- **Linguistic** (reader) — what Chinese terms are present?
+- **Structural** (context listener) — which terms modify which?
+- **Semantic** (parser) — what game effects do these produce?
 
 ---
 
@@ -372,10 +393,10 @@ The `MAX_STACKS` event carries `qualifier: "各自"` — the listener for max_st
 
 ### §3.1 Parallel Architecture
 
-The reactive parser can be built alongside the existing one. Both produce `EffectRow[]` — the output format doesn't change. This enables:
+The three-stage pipeline can be built alongside the existing extractors. Both produce `EffectRow[]` — the output format doesn't change. This enables:
 
-1. Build scanner + listeners for one mechanic at a time
-2. Compare output against existing extractors
+1. Build reader + context listener + parser handlers for one mechanic at a time
+2. Compare output against existing extractors for the same books
 3. Switch over per-mechanic, not all-at-once
 4. Delete old extractors only after reactive equivalents are verified
 
@@ -383,127 +404,122 @@ The reactive parser can be built alongside the existing one. Both produce `Effec
 
 Start with mechanics that have the most extractor variants (highest bug surface):
 
-| Phase | Mechanic | Current extractors to replace | Events |
-|:------|:---------|:------------------------------|:-------|
-| 1 | HP cost | `extractSelfHpCost`, `extractSelfHpCostPerHit`, `extractSelfHpCostDot` | `HP_COST`, `PER_HIT`, `PER_TICK` |
-| 2 | Self buff stats | `extractSelfBuffStats`, `extractSelfBuff`, `extractSelfBuffSkillDamageIncrease` | `STAT_INCREASE`, `NAMED_STATE`, `DURATION` |
-| 3 | DoT | `extractDot`, `extractDotPermanentMaxHp`, `extractDotPerNStacks`, `extractAtkDot` | `PER_TICK`, `PERCENT_*`, `DURATION` |
-| 4 | Damage modifiers | `extractDamageIncrease`, `extractSkillDamageIncrease`, `extractConditionalDamage*` | `STAT_INCREASE`, `CONDITION` |
-| 5 | Remaining | All other extractors | Remaining events |
+| Phase | Mechanic | Current extractors to replace | Reader terms | Grouping rule |
+|:------|:---------|:------------------------------|:-------------|:-------------|
+| 1 | HP cost | `extractSelfHpCost`, `extractSelfHpCostPerHit`, `extractSelfHpCostDot` | `hp_cost`, `per_hit`, `per_tick` | Modifier attachment |
+| 2 | Stat buffs | `extractSelfBuffStats`, `extractSelfBuff`, `extractSelfBuffSkillDamageIncrease` | `atk_increase`, `damage_increase`, `skill_dmg_increase`, `dr_increase`, `named_state`, `duration` | Named state scoping |
+| 3 | DoT | `extractDot`, `extractDotPermanentMaxHp`, `extractDotPerNStacks`, `extractAtkDot` | `percent_*_hp`, `per_tick`, `duration` | Named state scoping + modifier attachment |
+| 4 | Damage modifiers | `extractDamageIncrease`, `extractSkillDamageIncrease`, `extractConditionalDamage*` | `damage_increase`, `skill_dmg_increase`, condition terms | Modifier attachment |
+| 5 | Remaining | All other extractors | Remaining terms | — |
 
-### §3.3 Scanner Implementation Strategy
-
-The scanner can be built incrementally:
-
-```typescript
-function scan(text: string): PatternEvent[] {
-  const events: PatternEvent[] = [];
-  const lines = splitIntoLines(text);
-
-  for (const line of lines) {
-    const preceding: PatternType[] = [];
-
-    // Try each pattern against the remaining text in the line
-    // Patterns are ordered by position in the line, not by priority
-    for (const match of matchAllPatterns(line)) {
-      events.push({
-        pattern: match.type,
-        raw: match.raw,
-        captures: match.captures,
-        position: match.index,
-        line,
-        parentState: detectParentState(line, match.index),
-        preceding: [...preceding],
-      });
-      preceding.push(match.type);
-    }
-  }
-
-  return events;
-}
-```
-
-The `matchAllPatterns` function applies a **pattern table** (declarative) — not individual extractor functions:
-
-```typescript
-const PATTERNS: { type: PatternType; regex: RegExp; captures: string[] }[] = [
-  { type: "HP_COST",         regex: /消耗(?:自身)?(\w+)%(?:的)?当前气血值/,    captures: ["value"] },
-  { type: "PER_HIT",         regex: /每段攻击/,                                captures: [] },
-  { type: "PER_TICK",        regex: /每(\d+(?:\.\d+)?)秒/,                     captures: ["interval"] },
-  { type: "ATTACK",          regex: /造成(\w+)段共(?:计)?(\w+)%攻击力/,         captures: ["hits", "total"] },
-  { type: "STAT_INCREASE",   regex: /提升(?:自身)?(\w+)%(?:的)?(.*?)(?=[，,。])/,captures: ["value", "stat"] },
-  { type: "NAMED_STATE",     regex: /【(.+?)】[：:]/,                           captures: ["name"] },
-  { type: "DURATION",        regex: /持续(\w+)秒/,                             captures: ["value"] },
-  { type: "MAX_STACKS",      regex: /(各自)?最多叠加(\w+)层/,                   captures: ["qualifier", "value"] },
-  { type: "CHANCE",          regex: /(\w+)%(?:的)?概率/,                        captures: ["value"] },
-  { type: "ON_ATTACKED",     regex: /受到(?:伤害|攻击)时/,                      captures: [] },
-  // ... etc
-];
-```
-
-### §3.4 What Doesn't Change
+### §3.3 What Doesn't Change
 
 - **EffectRow type** — output format stays the same
-- **Tier resolution** — `buildDataState` + per-tier expansion stays the same
+- **Tier resolution** — `buildDataState` + per-tier expansion stays the same (becomes a post-processing step after Stage 3)
 - **YAML generation** — `formatBooksYaml` stays the same
 - **Simulator handlers** — consume EffectRows, unaffected by parser internals
-- **Custom compound parsers** (EXCLUSIVE_PARSER_TABLE) — can migrate last or remain as listeners
+
+### §3.4 What Goes Away
+
+- **Grammar types** (G2/G3/G4/G5/G6) — the context listener handles structure uniformly
+- **SKILL_EXTRACTORS / AFFIX_EXTRACTORS** arrays — replaced by reader pattern table
+- **Ordering / grammar gates / negative lookaheads** — replaced by grouping rules
+- **EXCLUSIVE_PARSER_TABLE** — compound effects are just groups with multiple primaries
+- **`extract.ts`** (2500 lines) — replaced by `reader.ts` (~100 lines) + `context.ts` (~200 lines) + `handlers.ts` (~300 lines)
 
 ---
 
 ## §4 Comparison
 
-| Aspect | Current (imperative) | Proposed (reactive) |
-|:-------|:--------------------|:-------------------|
-| Pattern recognition | 86 independent functions | 1 scanner with pattern table |
-| Effect production | Same 86 functions | ~30 listeners (one per concept) |
-| Deconfliction | Grammar gates + order + lookaheads | Positional context on events |
-| Adding a new pattern | Write function, find correct order/grammar, add lookaheads to neighbors | Add pattern to table, write listener |
-| Debugging | Which of 86 extractors matched? In what order? | Print event stream, see exact match sequence |
-| Testing | Test each extractor in isolation (misses interactions) | Test event stream for a text, test listener for an event |
-| Variant handling | Separate extractors per variant | One listener checks context |
+| Aspect | Current (imperative) | Proposed (three-stage) |
+|:-------|:--------------------|:----------------------|
+| Pattern recognition | 86 independent functions | Reader: ~40 pattern table entries |
+| Context resolution | Implicit (grammar gates, ordering) | Context listener: explicit grouping rules |
+| Effect production | Same 86 functions | Parser: ~25 group handlers |
+| Deconfliction | Grammar gates + order + lookaheads | Not needed — grouping is unambiguous |
+| Adding a new pattern | Write function, find order/grammar, add lookaheads | Add term to reader table, add handler |
+| Debugging | Which of 86 extractors matched? In what order? | Print tokens → groups → effects at each stage |
+| Testing | Test extractors in isolation (misses interactions) | Test each stage independently: tokens for a text, groups for tokens, effects for groups |
+| Variant handling | Separate extractors per variant | One handler checks group modifiers |
 
 ### §4.1 Quantitative Reduction
 
-Current: **86 extractor functions** across 2500 lines in `extract.ts`.
+Current: **86 extractor functions** across 2500 lines in `extract.ts`, plus grammar logic in `split.ts` (~250 lines), plus compound parsers in `exclusive.ts` (~150 lines). Total: **~2900 lines**.
 
 Proposed:
-- **~40 pattern entries** in the scanner table (declarative data, ~100 lines)
-- **~30 listeners** (one per mechanic concept, ~500 lines)
-- Total: **~600 lines** replacing ~2500 lines
+- **Reader**: ~40 pattern entries (declarative data, ~100 lines)
+- **Context listener**: grouping rules (~200 lines)
+- **Parser handlers**: ~25 handlers (~300 lines)
+- Total: **~600 lines** replacing ~2900 lines
 
-The reduction comes from eliminating:
+The 5× reduction comes from eliminating:
 - Duplicate extractors for variants of the same mechanic
 - Deconfliction logic (grammar gates, ordering, lookaheads)
 - Redundant regex parsing (each extractor re-scans the full text)
+- Grammar type system (G2/G3/G4/G5/G6)
 
 ---
 
 ## §5 Architectural Alignment
 
-The reactive parser mirrors the simulator's XState architecture:
+The three-stage parser mirrors the simulator's architecture:
 
 | Simulator | Parser |
 |:----------|:-------|
-| Book actor casts → emits intent events | Scanner reads text → emits pattern events |
-| Player machine receives intents → resolves state changes | Listeners receive patterns → produce effects |
-| Handlers are pure: event in → state change out | Listeners are pure: pattern event in → EffectRow out |
-| No handler knows about other handlers | No listener knows about other listeners |
-| Context available via `PlayerState` | Context available via `PatternEvent.preceding` |
+| Book actor processes effects → emits intent events | Reader scans text → emits token events |
+| Player machine receives intents with context | Context listener groups tokens with context |
+| Handlers resolve intents → state changes | Parser handlers resolve groups → EffectRows |
+| No handler knows about other handlers | No parser handler knows about other handlers |
+| Context available via `PlayerState` | Context available via `GroupEvent.modifiers` |
 
 Same event-driven, single-responsibility model across both layers.
 
 ---
 
-## §6 Open Questions
+## §6 Resolved Questions
 
-1. **Pattern overlap** — Two patterns can match the same text span (e.g., `提升y%伤害加深` matches both `STAT_INCREASE` and a potential `DAMAGE_MODIFIER`). The scanner needs a resolution strategy: longest match? most specific? positional?
+### §6.1 Pattern Overlap (Resolved)
 
-2. **Cross-line context** — Some mechanics span multiple lines (e.g., 大罗幻诀's 罗天魔咒 definition spans 3 lines). The scanner needs a line-grouping strategy.
+**Resolution: match Chinese terms at the right granularity.**
 
-3. **Tier variable resolution** — Currently tier variables (x, y, z) are resolved in `genericSkillParse`. In the reactive model, listeners produce EffectRows with variable references, and a separate resolution step substitutes tier values. This is cleaner but needs explicit design.
+The abstract `STAT_INCREASE` pattern was too coarse — it matched multiple Chinese terms (攻击力, 伤害加深, 神通伤害加深) and forced the listener to re-parse. The fix: each Chinese term gets its own reader pattern entry. No overlap because the terms have unique surface forms:
 
-4. **Exclusive affix compound parsers** — The 6 custom parsers in `EXCLUSIVE_PARSER_TABLE` handle compound effects that the generic pipeline can't. In the reactive model, these become listeners that respond to sequences of events. The event stream for compound effects may need a "transaction" concept (group events that belong to the same compound).
+- `神通伤害加深` — unique prefix `神通`
+- `伤害加深` — no `神通` prefix
+- `最终伤害加深` — unique prefix `最终`
+- `攻击力` — completely different term
+
+The reader matches the full term, not a partial abstraction. No disambiguation strategy needed.
+
+### §6.2 Cross-Line Context (Resolved)
+
+**Resolution: the context listener handles this via named state scoping.**
+
+When the reader encounters `【name】：` it opens a scope. All subsequent tokens on the same line (and continuation lines until the next `【name】：` or line break) belong to that scope. The context listener tracks the open scope and assigns `parentState` to each group.
+
+This is exactly what `splitCell` + `buildStateRegistry` do today — the context listener subsumes both.
+
+### §6.3 Tier Variable Resolution
+
+**Resolution: separate post-processing step after Stage 3.**
+
+The parser produces EffectRows with variable references (e.g., `value: "y"`). A tier resolution step then expands per tier:
+
+```
+Parser output:     { type: "self_hp_cost", value: "y" }
+Tier resolution:   tier 0 (y=2) → { type: "self_hp_cost", value: 2, data_state: ... }
+                   tier 1 (y=7) → { type: "self_hp_cost", value: 7, data_state: ... }
+```
+
+This is cleaner than the current approach where child DoT variables were eagerly resolved using the last tier's values (the bug that caused 大罗幻诀's DoT to use y=7 for both tiers).
+
+### §6.4 Compound Effects
+
+**Resolution: compound effects are just groups with multiple primaries.**
+
+The context listener can produce multi-primary groups when it recognizes compound patterns (e.g., 玄心剑魄's `dot + on_dispel`). The parser handler for compound groups produces multiple EffectRows from a single group.
+
+No special `EXCLUSIVE_PARSER_TABLE` needed — compound effects are handled by the same pipeline as simple effects, just with richer groups.
 
 ---
 
@@ -511,4 +527,5 @@ Same event-driven, single-responsibility model across both layers.
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2026-03-20 | Initial design proposal |
+| 1.0 | 2026-03-20 | Initial design proposal (two-stage: scanner → listeners) |
+| 2.0 | 2026-03-20 | **Redesigned to three-stage pipeline**: Reader → Context Listener → Parser. Resolved all open questions. Reader patterns match Chinese terms at full granularity (no abstract categories). Context listener groups tokens by structure. Parser maps groups to effects. |
