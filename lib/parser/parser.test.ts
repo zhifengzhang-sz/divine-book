@@ -1024,3 +1024,32 @@ describe("parseCommonAffixes", () => {
 		expect(e[0].value).toBe(1);
 	});
 });
+
+// ─── Pattern map completeness ────────────────────────────
+
+describe("patterns.ts sync with extract.ts", () => {
+	const { SKILL_EXTRACTORS: skillDefs, AFFIX_EXTRACTORS: affixDefs } =
+		require("./extract.js") as typeof import("./extract.js");
+	const { SKILL_PATTERN_KEYS: skillKeys, AFFIX_PATTERN_KEYS: affixKeys } =
+		require("./patterns.js") as typeof import("./patterns.js");
+
+	it("every SKILL_EXTRACTOR has a display pattern", () => {
+		const missing: string[] = [];
+		for (const def of skillDefs) {
+			if (!skillKeys.has(def.name) && !affixKeys.has(def.name)) {
+				missing.push(def.name);
+			}
+		}
+		expect(missing).toEqual([]);
+	});
+
+	it("every AFFIX_EXTRACTOR has a display pattern", () => {
+		const missing: string[] = [];
+		for (const def of affixDefs) {
+			if (!affixKeys.has(def.name) && !skillKeys.has(def.name)) {
+				missing.push(def.name);
+			}
+		}
+		expect(missing).toEqual([]);
+	});
+});
