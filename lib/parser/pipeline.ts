@@ -151,8 +151,8 @@ function runSkillPipeline(
 	// Run reactive pipeline
 	const result = runReactivePipeline(joinedDesc, "skill", bookName);
 
-	// Build state registry from description (for viz compatibility)
-	const states = buildStateRegistry(cell.description);
+	// States from reactive pipeline context listener
+	const states = { ...result.states };
 	resolveStateVars(states, cell);
 
 	// Collect diagnostics as errors
@@ -178,8 +178,8 @@ function runAffixPipeline(text: string, errors: string[]): PipelineResult {
 	// Run reactive pipeline
 	const result = runReactivePipeline(cleanText, "affix");
 
-	// Build state registry
-	const states = buildStateRegistry(cell.description);
+	// States from reactive pipeline context listener
+	const states = { ...result.states };
 	resolveStateVars(states, cell);
 
 	for (const d of result.diagnostics) {

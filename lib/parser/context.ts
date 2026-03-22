@@ -17,9 +17,12 @@
  *   5. Affix prefix stripping (first 【name】 is affix name)
  */
 
-import type { TokenEvent } from "./reader.js";
+import type { StateDef } from "../data/types.js";
+import type { StateInfo, TokenEvent } from "./reader.js";
 
 // ── Types ────────────────────────────────────────────────
+
+export type StateRegistry = Record<string, StateDef>;
 
 /** A primary token with its attached modifiers and structural context. */
 export interface GroupEvent {
@@ -99,15 +102,23 @@ function _isPrimary(term: string): boolean {
 
 // ── Grouping Algorithm ───────────────────────────────────
 
+/** Result of group(): groups + state registry. */
+export interface GroupResult {
+	groups: GroupEvent[];
+	states: StateRegistry;
+}
+
 /**
- * Group tokens by structural context.
+ * Group tokens by structural context and build state registry.
  *
  * @param tokens - Flat token stream from reader (sorted by position)
  * @param sourceType - "skill" or "affix" (affects prefix handling)
+ * @param stateInfos - State info from boundary splitting (name + target)
  */
 export function group(
 	tokens: TokenEvent[],
 	_sourceType: "skill" | "affix",
+	_stateInfos?: StateInfo[],
 ): GroupEvent[] {
 	if (tokens.length === 0) return [];
 
@@ -242,3 +253,208 @@ export function group(
 
 	return groups;
 }
+
+/**
+ * Group tokens and build state registry from tokens + stateInfos.
+ * This is the full context listener output — replaces buildStateRegistry().
+ */
+export function groupWithStates(
+	tokens: TokenEvent[],
+	sourceType: "skill" | "affix",
+	stateInfos: StateInfo[],
+): GroupResult {
+	const groups = group(tokens, sourceType, stateInfos);
+	const states = buildStatesFromTokens(tokens, stateInfos);
+	return { groups, states };
+}
+
+/**
+ * Build a StateRegistry from tokens + stateInfos.
+ * Replaces buildStateRegistry() from states.ts.
+ *
+ * State metadata comes from:
+ *   - stateInfos: name, target (from boundary splitting preText)
+ *   - tokens with scope: duration, max_stacks, on_attacked,
+ *     undispellable, permanent, chance, per_hit + stack_add
+ *   - state_ref tokens: for state creation and children detection
+ */
+function buildStatesFromTokens(
+	tokens: TokenEvent[],
+	stateInfos: StateInfo[],
+): StateRegistry {
+	const states: StateRegistry = {};
+
+	// Create state entries from boundary info
+	for (const info of stateInfos) {
+		const target = info.target;
+
+		// Collect modifier tokens within this scope
+		const scopedTokens = tokens.filter((t) => t.scope === info.name);
+		const allScopeTerms = scopedTokens.map((t) => t.term);
+
+		// Duration
+		let duration: number | "permanent" = 0;
+		const durToken = scopedTokens.find((t) => t.term === "duration");
+		if (durToken) duration = Number(durToken.captures.value);
+		// Also check for permanent in this scope
+		if (allScopeTerms.includes("permanent")) duration = "permanent";
+		// Check for permanent in the pre-boundary text
+		if (info.preText.includes("战斗状态内永久生效")) duration = "permanent";
+
+		// Also check tokens without scope that mention duration near a state_ref
+		// for this state (e.g., "持续8秒" after "添加【name】")
+		if (duration === 0) {
+			// Find state_ref for this name in unscoped tokens
+			const stateRefIdx = tokens.findIndex(
+				(t) =>
+					t.term === "state_ref" && t.captures.name === info.name && !t.scope,
+			);
+			if (stateRefIdx >= 0) {
+				// Look for duration token nearby (after the state_ref)
+				for (
+					let i = stateRefIdx + 1;
+					i < tokens.length && i < stateRefIdx + 5;
+					i++
+				) {
+					if (tokens[i].term === "duration" && !tokens[i].scope) {
+						duration = Number(tokens[i].captures.value);
+						break;
+					}
+					if (tokens[i].term === "permanent" && !tokens[i].scope) {
+						duration = "permanent";
+						break;
+					}
+				}
+			}
+		}
+
+		// Max stacks
+		let max_stacks: number | undefined;
+		let _max_stacks_var: string | undefined;
+		const stackToken = scopedTokens.find((t) => t.term === "max_stacks");
+		if (stackToken) {
+			// Skip if "各自" qualifier — applies to children, not self
+			if (stackToken.captures.qualifier !== "各自") {
+				const val = Number(stackToken.captures.value);
+				if (!Number.isNaN(val)) {
+					max_stacks = val;
+				} else {
+					_max_stacks_var = stackToken.captures.value;
+				}
+			}
+		}
+		// Also check unscoped max_stacks near the state_ref
+		if (max_stacks === undefined && !_max_stacks_var) {
+			for (const t of tokens) {
+				if (t.term === "max_stacks" && !t.scope) {
+					if (t.captures.qualifier !== "各自") {
+						const val = Number(t.captures.value);
+						if (!Number.isNaN(val)) max_stacks = val;
+						else _max_stacks_var = t.captures.value;
+					}
+				}
+			}
+		}
+
+		// Trigger
+		let trigger: "on_cast" | "on_attacked" | "per_tick" | undefined;
+		if (allScopeTerms.includes("on_attacked")) trigger = "on_attacked";
+		// Also check preText for on_attacked context
+		if (/受到(?:伤害|攻击|神通攻击)时/.test(info.preText))
+			trigger = "on_attacked";
+
+		// Chance
+		let chance: number | undefined;
+		const chanceToken = scopedTokens.find((t) => t.term === "chance");
+		if (chanceToken) chance = Number(chanceToken.captures.value);
+		// Also check preText for chance
+		if (!chance) {
+			const chanceMatch = info.preText.match(/(\d+)%概率/);
+			if (chanceMatch) chance = Number(chanceMatch[1]);
+		}
+
+		// Dispellable
+		let dispellable: boolean | undefined;
+		if (allScopeTerms.includes("undispellable")) dispellable = false;
+		// Also check preText
+		if (/不可驱散|无法被驱散/.test(info.preText)) dispellable = false;
+
+		// Per-hit stacking
+		let per_hit_stack: boolean | undefined;
+		if (
+			allScopeTerms.includes("per_hit") &&
+			allScopeTerms.includes("stack_add")
+		) {
+			per_hit_stack = true;
+		}
+		// Also check unscoped per_hit + stack_add near state_ref
+		if (!per_hit_stack) {
+			const hasPerHit = tokens.some((t) => t.term === "per_hit" && !t.scope);
+			const hasStackAdd = tokens.some(
+				(t) => t.term === "stack_add" && !t.scope,
+			);
+			if (hasPerHit && hasStackAdd) per_hit_stack = true;
+		}
+
+		const stateDef: StateDef = { target, duration };
+		if (max_stacks !== undefined) stateDef.max_stacks = max_stacks;
+		if (_max_stacks_var) stateDef._max_stacks_var = _max_stacks_var;
+		if (trigger) stateDef.trigger = trigger;
+		if (chance !== undefined) stateDef.chance = chance;
+		if (dispellable !== undefined) stateDef.dispellable = dispellable;
+		if (per_hit_stack) stateDef.per_hit_stack = per_hit_stack;
+
+		states[info.name] = stateDef;
+	}
+
+	// Detect children: state_ref tokens that reference other states
+	// Pattern: "添加1层【X】与【Y】" in unscoped tokens
+	for (const [name, _def] of Object.entries(states)) {
+		const children: string[] = [];
+		for (const t of tokens) {
+			if (
+				t.term === "state_ref" &&
+				t.captures.name !== name &&
+				states[t.captures.name]
+			) {
+				// Check if this ref is in the context of the parent state
+				if (t.scope === name || !t.scope) {
+					children.push(t.captures.name);
+				}
+			}
+		}
+		if (children.length > 0) {
+			states[name].children = [...new Set(children)];
+		}
+	}
+
+	// Also create state entries for state_ref tokens that don't have
+	// a 【name】：boundary (created via 添加/获得 without a definition)
+	for (const t of tokens) {
+		if (t.term === "state_ref" && !states[t.captures.name]) {
+			// Determine target from preText of the state_ref context
+			const preText = t.raw;
+			const target = OPPONENT_RE_CTX.test(preText) ? "opponent" : "self";
+
+			// Find duration near this state_ref
+			let duration: number | "permanent" = 0;
+			const refIdx = tokens.indexOf(t);
+			for (let i = refIdx + 1; i < tokens.length && i < refIdx + 5; i++) {
+				if (tokens[i].term === "duration") {
+					duration = Number(tokens[i].captures.value);
+					break;
+				}
+				if (tokens[i].term === "permanent") {
+					duration = "permanent";
+					break;
+				}
+			}
+
+			states[t.captures.name] = { target, duration };
+		}
+	}
+
+	return states;
+}
+
+const OPPONENT_RE_CTX = /对其施加|对敌方|对攻击方|为目标|对目标/;

@@ -41,6 +41,17 @@ interface Segment {
 	stateName?: string;
 	/** Character offset of this segment in the original text */
 	offset: number;
+	/** Text preceding the 【name】：boundary (for target detection) */
+	preText?: string;
+}
+
+/** State metadata extracted from boundary splitting + tokens. */
+export interface StateInfo {
+	name: string;
+	/** Target from context before 【name】 (对敌方/为自身) */
+	target: "self" | "opponent";
+	/** Text before the boundary that created this state */
+	preText: string;
 }
 
 /** A reader pattern entry — one Chinese term = one entry. */
@@ -893,10 +904,16 @@ function splitAtBoundaries(text: string): Segment[] {
 		const contentEnd =
 			i + 1 < matches.length ? matches[i + 1].index : text.length;
 
+		// Capture text before this boundary for target detection
+		const prevEnd =
+			i > 0 ? matches[i - 1].index + matches[i - 1].fullMatch.length : 0;
+		const preText = text.slice(prevEnd, boundary.index);
+
 		segments.push({
 			text: text.slice(contentStart, contentEnd),
 			stateName: boundary.name,
 			offset: contentStart,
+			preText,
 		});
 	}
 
@@ -913,15 +930,35 @@ const SORTED_PATTERNS = [...READER_PATTERNS].sort(
 	(a, b) => b.regex.source.length - a.regex.source.length,
 );
 
+/** Result of scan(): tokens + state info from boundaries. */
+export interface ScanResult {
+	tokens: TokenEvent[];
+	/** State info from boundary splitting (name + target from preText) */
+	stateInfos: StateInfo[];
+}
+
+const OPPONENT_RE =
+	/对其施加|对敌方施加|对敌方添加|对攻击方添加|为目标添加|对目标添加|对目标施加/;
+
+/**
+ * Scan text and return tokens only (convenience wrapper).
+ * Use scanWithStates() to also get state info from boundaries.
+ */
+export function scan(text: string): TokenEvent[] {
+	return scanWithStates(text).tokens;
+}
+
 /**
  * Scan text: split at 【name】：boundaries, then match patterns
  * within each segment. Tokens inherit scope from their segment.
+ * Also returns state info (name + target) from boundary context.
  */
-export function scan(text: string): TokenEvent[] {
+export function scanWithStates(text: string): ScanResult {
 	// Strip backticks — source markdown uses them for emphasis
 	const cleanText = text.replace(/`/g, "");
 	const segments = splitAtBoundaries(cleanText);
 	const tokens: TokenEvent[] = [];
+	const stateInfos: StateInfo[] = [];
 
 	for (const segment of segments) {
 		const segTokens = scanSegment(segment.text);
@@ -932,10 +969,20 @@ export function scan(text: string): TokenEvent[] {
 			}
 			tokens.push(token);
 		}
+
+		// Extract state info from boundary context
+		if (segment.stateName && segment.preText !== undefined) {
+			const target = OPPONENT_RE.test(segment.preText) ? "opponent" : "self";
+			stateInfos.push({
+				name: segment.stateName,
+				target,
+				preText: segment.preText,
+			});
+		}
 	}
 
 	tokens.sort((a, b) => a.position - b.position);
-	return tokens;
+	return { tokens, stateInfos };
 }
 
 /** Scan a single segment for pattern matches. */

@@ -20,13 +20,17 @@
 
 import { assign, createActor, emit, enqueueActions, setup } from "xstate";
 import type { EffectRow } from "../data/types.js";
-import { type GroupEvent, group } from "./context.js";
+import {
+	type GroupEvent,
+	groupWithStates,
+	type StateRegistry,
+} from "./context.js";
 import {
 	type DiagnosticEvent,
 	type HandlerContext,
 	parse,
 } from "./handlers.js";
-import { scan, type TokenEvent } from "./reader.js";
+import { type StateInfo, scanWithStates, type TokenEvent } from "./reader.js";
 
 // ── Types ────────────────────────────────────────────────
 
@@ -35,7 +39,9 @@ export interface PipelineContext {
 	sourceType: "skill" | "affix";
 	bookName?: string;
 	tokens: TokenEvent[];
+	stateInfos: StateInfo[];
 	groups: GroupEvent[];
+	states: StateRegistry;
 	effects: EffectRow[];
 	diagnostics: DiagnosticEvent[];
 }
@@ -61,15 +67,19 @@ export const pipelineMachine = setup({
 	},
 	actions: {
 		readTokens: enqueueActions(({ context, enqueue }) => {
-			const tokens = scan(context.text);
-			enqueue(assign({ tokens }));
+			const { tokens, stateInfos } = scanWithStates(context.text);
+			enqueue(assign({ tokens, stateInfos }));
 			for (const token of tokens) {
 				enqueue(emit({ type: "TOKEN" as const, token }));
 			}
 		}),
 		buildGroups: enqueueActions(({ context, enqueue }) => {
-			const groups = group(context.tokens, context.sourceType);
-			enqueue(assign({ groups }));
+			const { groups, states } = groupWithStates(
+				context.tokens,
+				context.sourceType,
+				context.stateInfos,
+			);
+			enqueue(assign({ groups, states }));
 			for (const g of groups) {
 				enqueue(emit({ type: "GROUP" as const, group: g }));
 			}
@@ -96,7 +106,9 @@ export const pipelineMachine = setup({
 		sourceType: input.sourceType,
 		bookName: input.bookName,
 		tokens: [],
+		stateInfos: [],
 		groups: [],
+		states: {},
 		effects: [],
 		diagnostics: [],
 	}),

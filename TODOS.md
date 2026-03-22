@@ -6,10 +6,25 @@ The reactive three-stage pipeline (reader → context → handlers) is implement
 
 ### 1. Subsume states.ts into context listener
 - **Priority:** P1
-- **Effort:** M (CC: ~30 min)
-- **Problem:** `buildStateRegistry()` in `states.ts` still runs as a separate pass in `pipeline.ts` and `exclusive.ts`. It extracts state metadata (duration, max_stacks, trigger, chance, dispellable, children, per_hit_stack) that the context listener doesn't produce. The reactive pipeline's boundary splitting handles scope assignment, but the full state registry still comes from old code.
-- **Impact:** State metadata in YAML output depends on `states.ts`, not the reactive pipeline. If we delete `states.ts`, state metadata is lost.
-- **Fix:** The context listener should extract state metadata from tokens within each `【name】：` segment — `duration`, `max_stacks`, `on_attacked`, `undispellable`, `per_hit_stack` are already reader tokens. The context listener should aggregate them into a `StateDef` per scope, replacing `buildStateRegistry()`.
+- **Effort:** M (CC: ~60 min)
+- **Status:** IN PROGRESS — `buildStatesFromTokens()` added to context.ts, wired into reactive.ts and pipeline.ts. But comparison against old `buildStateRegistry()` shows 10 differences across 5 books.
+- **Problem:** The new state builder doesn't match the old one. Specific issues:
+  1. **皓月剑诀 寂灭剑心**: `max_stacks=1` missing — text uses `上限1層` but reader only has `最多叠加X层` pattern, not `上限X层`. Need new reader pattern.
+  2. **元磁神光 天狼之啸**: `max_stacks=3` incorrectly assigned — an unscoped `max_stacks` token (from `最多叠加z层` where z is a variable) is being picked up. Should not be a literal 3.
+  3. **周天星元 灵鹤**: `duration=0` instead of `20` — `持续存在20秒` is in the main segment (before `【灵鹤】：`), not in the 灵鹤 scope. The boundary splitter puts it in the pre-text. Old parser found it by searching all lines mentioning the state name.
+  4. **天刹真魔 不灭魔体**: `trigger=on_attacked` missing — `受到伤害时` is consumed by `counter_buff_heal` compound regex. No separate `on_attacked` token produced.
+  5. **大罗幻诀 罗天魔咒**: `trigger=on_attacked` and `chance=30` missing — these are encoded in the `counter_debuff` token captures, not as separate `on_attacked`/`chance` tokens. State builder needs to read compound token captures.
+  6. **大罗幻诀 噬心之咒**: `chance=30` incorrectly assigned — the `chance` token is in `罗天魔咒` scope, not `噬心之咒`.
+  7. **大罗幻诀 断魂之咒**: `target=self` should be `opponent` — child states defined within a parent inherit the parent's target context. The boundary splitter's `preText` for child states is empty.
+  8. **大罗幻诀 断魂之咒**: `trigger=on_attacked` missing — same as #5, inherited from parent.
+  9. **无相魔劫咒 无相魔劫**: state entirely missing — `delayed_burst` compound pattern swallows `【无相魔劫】`, so no boundary split happens. No `state_ref` token either.
+  10. **皓月剑诀 寂灭剑心**: `上限1層` needs reader pattern (same as #1).
+- **Root causes:**
+  - A. Reader missing `上限X层` pattern (#1)
+  - B. Compound tokens swallowing structural info (#4, #5, #8, #9)
+  - C. State builder not inheriting parent state properties for children (#7, #8)
+  - D. Duration/max_stacks in pre-boundary text not captured (#3)
+  - E. Unscoped tokens incorrectly assigned to states (#2, #6)
 
 ### 2. Eliminate 2 book-specific skill overrides in pipeline.ts
 - **Priority:** P1
