@@ -113,12 +113,17 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 		}
 	});
 
-	test("target receives debuff (灵涸) via APPLY_STATE", () => {
+	test("target receives healing_received debuff via APPLY_STATE", () => {
 		const stateApplies = targetEvents.filter((e) => e.type === "STATE_APPLY");
-		const linghe = stateApplies.find(
-			(e) => e.type === "STATE_APPLY" && e.state.name === "灵涸",
+		const healDebuff = stateApplies.find(
+			(e) =>
+				e.type === "STATE_APPLY" &&
+				e.state.kind === "debuff" &&
+				e.state.effects?.some(
+					(eff: { stat: string }) => eff.stat === "healing_received",
+				),
 		);
-		expect(linghe).toBeDefined();
+		expect(healDebuff).toBeDefined();
 	});
 
 	test("target survives one cast at ATK=1000 (DR mitigates %maxHP)", () => {

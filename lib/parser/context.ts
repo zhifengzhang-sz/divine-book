@@ -44,11 +44,11 @@ const MODIFIER_TERMS = new Set([
 	"on_attacked",
 	"undispellable",
 	"permanent",
-	"per_hit_stack",
+	"stack_add",
 	"cap_vs_monster",
 	"self_equal_heal",
 	"cross_skill_accumulation",
-	"no_shield_double_damage",
+	// Note: no_shield_double_damage is a primary effect, not a modifier
 	"no_healing_bonus",
 	"no_damage_bonus",
 	"sequenced_skill",
@@ -60,6 +60,8 @@ const MODIFIER_TERMS = new Set([
 	"no_buff_double",
 	"dot_half_bonus",
 	"pre_cast_timing",
+	"conditional_cleanse",
+	"next_skill_scope",
 ]);
 
 /** Structure terms — define or reference named states. */
@@ -73,7 +75,7 @@ const STAT_TERMS = new Set([
 	"damage_reduction_stat",
 	"final_dmg_bonus",
 	"crit_rate_stat",
-	"crit_dmg_bonus",
+	// Note: crit_dmg_bonus is NOT a stat — it's a standalone skill-level effect
 	"healing_bonus_stat",
 	"defense_bonus_stat",
 	"hp_bonus_stat",
@@ -105,13 +107,11 @@ function _isPrimary(term: string): boolean {
  */
 export function group(
 	tokens: TokenEvent[],
-	sourceType: "skill" | "affix",
+	_sourceType: "skill" | "affix",
 ): GroupEvent[] {
 	if (tokens.length === 0) return [];
 
 	const groups: GroupEvent[] = [];
-	let _currentState: string | undefined;
-	let firstNamedState = true;
 
 	// Separate tokens by role
 	const primaries: { token: TokenEvent; index: number }[] = [];
@@ -132,36 +132,12 @@ export function group(
 		}
 	}
 
-	// ── Rule 1: Named state scoping ──────────────────────
-	// Build a scope map: position ranges → state name
-	const scopes: { name: string; start: number; end: number }[] = [];
-	const namedStates = stateEvents.filter((s) => s.token.term === "named_state");
-
-	for (let i = 0; i < namedStates.length; i++) {
-		const ns = namedStates[i];
-
-		// Rule 5: Affix prefix stripping — skip first named_state for affixes
-		if (sourceType === "affix" && firstNamedState) {
-			firstNamedState = false;
-			continue;
-		}
-		firstNamedState = false;
-
-		const name = ns.token.captures.name;
-		const start = ns.token.position;
-		const nextNs = namedStates[i + 1];
-		const end = nextNs ? nextNs.token.position : Number.MAX_SAFE_INTEGER;
-		scopes.push({ name, start, end });
-	}
-
-	/** Find which named state scope a position falls within. */
-	function findScope(position: number): string | undefined {
-		for (let i = scopes.length - 1; i >= 0; i--) {
-			if (position >= scopes[i].start && position < scopes[i].end) {
-				return scopes[i].name;
-			}
-		}
-		return undefined;
+	// ── Rule 1: Scope from token.scope ───────────────────
+	// State scoping comes from the reader's segment splitting (§4.0).
+	// Each token has an optional `scope` field set by the segment it
+	// was scanned in. No need to compete named_state tokens.
+	function findScope(token: TokenEvent): string | undefined {
+		return token.scope;
 	}
 
 	// ── Rule 2: Modifier attachment ──────────────────────
@@ -172,7 +148,7 @@ export function group(
 	const usedModifiers = new Set<number>();
 
 	for (const p of primaries) {
-		const scope = findScope(p.token.position);
+		const scope = findScope(p.token);
 		const attached: TokenEvent[] = [];
 
 		for (const m of modifiers) {
@@ -213,7 +189,7 @@ export function group(
 		// Group stats by their enclosing scope
 		const statsByScope = new Map<string | undefined, TokenEvent[]>();
 		for (const s of stats) {
-			const scope = findScope(s.token.position);
+			const scope = findScope(s.token);
 			const key = scope ?? "__global__";
 			if (!statsByScope.has(key)) statsByScope.set(key, []);
 			statsByScope.get(key)?.push(s.token);
@@ -225,8 +201,7 @@ export function group(
 			// Find the state_ref that contains these stats (for the buff name)
 			const stateRef = stateEvents.find(
 				(s) =>
-					s.token.term === "state_ref" &&
-					findScope(s.token.position) === parentState,
+					s.token.term === "state_ref" && findScope(s.token) === parentState,
 			);
 			const buffName = stateRef?.token.captures.name;
 
@@ -242,7 +217,7 @@ export function group(
 			const buffModifiers: TokenEvent[] = [...scopeStats];
 			for (const m of modifiers) {
 				if (usedModifiers.has(m.index)) continue;
-				if (findScope(m.token.position) === parentState) {
+				if (findScope(m.token) === parentState) {
 					buffModifiers.push(m.token);
 					usedModifiers.add(m.index);
 				}

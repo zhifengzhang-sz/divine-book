@@ -301,8 +301,7 @@ function ensureBaseTier(effects: EffectRow[], _rawEffects: EffectRow[]): void {
 	const hits = (firstReal.hits as number) ?? 1;
 
 	if ((firstReal.total as number) === BASE_SKILL_TOTAL) {
-		firstReal.data_state =
-			minEnlightenment > 0 ? `enlightenment=${minEnlightenment}` : undefined;
+		firstReal.data_state = `enlightenment=${minEnlightenment}`;
 		return;
 	}
 

@@ -43,6 +43,33 @@ export interface StateDef {
 
 export type EffectRow = { type: string; [k: string]: unknown };
 
+/** Raw reactive token from XState pipeline */
+export interface ReactiveToken {
+	term: string;
+	raw: string;
+	captures: Record<string, string>;
+	position: number;
+	scope?: string;
+}
+
+/** Raw reactive group from XState pipeline */
+export interface ReactiveGroup {
+	primary: ReactiveToken;
+	modifiers: ReactiveToken[];
+	parentState?: string;
+	scope: string;
+}
+
+/** XState emitted event */
+export type XStateEvent =
+	| { type: "TOKEN"; token: ReactiveToken }
+	| { type: "GROUP"; group: ReactiveGroup }
+	| { type: "EFFECT"; effect: EffectRow }
+	| {
+			type: "DIAGNOSTIC";
+			diagnostic: { level: string; message: string; term?: string };
+	  };
+
 export interface PipelineResult {
 	tokens: TokenEvent[];
 	groups: GroupEvent[];
@@ -50,4 +77,6 @@ export interface PipelineResult {
 	tiers: TierLine[];
 	states: Record<string, StateDef>;
 	errors: string[];
+	/** XState emitted events from the reactive pipeline */
+	xstate?: XStateEvent[];
 }

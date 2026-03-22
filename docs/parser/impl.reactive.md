@@ -144,8 +144,10 @@ export interface TokenEvent {
   raw: string;
   /** Extracted captures — variable refs or literal values */
   captures: Record<string, string>;
-  /** Character offset in the source text (for modifier attachment) */
+  /** Character offset in the original text (for modifier attachment) */
   position: number;
+  /** Named state scope inherited from segment (from 【name】：boundary splitting) */
+  scope?: string;
 }
 ```
 
@@ -316,14 +318,118 @@ export function runReactivePipeline(
 
 ---
 
-## §4 Stage 1: Reader Pattern Table
+## §4 Stage 1: Reader
+
+### §4.0 Structural Boundary Splitting (pre-processing)
+
+**Problem discovered during verification:** The original design assumed "each Chinese term has a unique surface form" so a flat left-to-right scan could recognize all tokens without overlap. This is false. Structural markers like `【name】：` (state definitions) appear embedded inside compound phrases:
+
+```
+为自身添加【蛮神】：持续期间提升自身w%的攻击力与暴击率，持续4秒
+```
+
+This is actually **two sentences** joined by a structural boundary:
+
+```
+Sentence 1: 为自身添加【蛮神】        ← state reference (creating the state)
+Boundary:   ：                         ← state definition delimiter
+Sentence 2: 持续期间提升自身w%的攻击力与暴击率，持续4秒  ← state definition (what it does)
+```
+
+A flat regex scan over the full text causes `state_ref` (`添加...【蛮神】`) to consume the `【蛮神】` text before `named_state` (`【蛮神】：`) can match. The state boundary is lost, and all tokens after it lose their scope.
+
+Similarly, Chinese commas (`，`) separate distinct effect clauses. `每段攻击造成目标y%最大气血值的伤害` is one clause where `每段攻击` modifies the whole clause — not a standalone `per_hit` token.
+
+**Solution: Split text at structural boundaries before scanning.**
+
+```
+Raw text
+  ↓
+splitAtBoundaries(text)
+  ↓
+Segment[]  ← each segment knows its scope (state name, clause index)
+  ↓
+scan(segment) per segment
+  ↓
+TokenEvent[]  ← each token inherits scope from its segment
+```
+
+#### §4.0.1 Boundary Types
+
+| Boundary | Pattern | Example |
+|:---------|:--------|:--------|
+| **State definition** | `【name】(?:状态)?[：:]` | `【蛮神】：` splits into ref + definition |
+| **Chinese comma clause** | `[，,]` between effect clauses | `造成...伤害，消耗...气血值` → two clauses |
+| **Semicolon clause** | `[；;]` between effect clauses | `造成...伤害；对无盾目标造成双倍伤害` |
+
+#### §4.0.2 Segment Structure
+
+```typescript
+interface Segment {
+  /** The text content of this segment */
+  text: string;
+  /** Named state scope this segment defines (from preceding 【name】：) */
+  stateName?: string;
+  /** Whether this is the state reference part (before ：) or definition (after ：) */
+  role: "main" | "state_ref" | "state_def";
+  /** Character offset in the original text (for position tracking) */
+  offset: number;
+}
+```
+
+#### §4.0.3 Split Algorithm
+
+```typescript
+function splitAtBoundaries(text: string): Segment[] {
+  const segments: Segment[] = [];
+
+  // Step 1: Split at 【name】：boundaries
+  // Pattern: text before 【name】 is "main" or "state_ref"
+  //          text after 【name】：is "state_def" with stateName = name
+  //          next 【name】：or end-of-text closes the scope
+
+  // Step 2: Within each segment, further split at ， and ；
+  // to isolate individual effect clauses
+
+  return segments;
+}
+```
+
+**Example — 九重天凤诀:**
+
+```
+Input:  化身星猿，对目标造成八段共x%攻击力的灵法伤害，同时每段攻击额外对目标
+        造成自身y%已损失气血值的伤害，每段攻击会消耗自身z%当前气血值并为自身
+        添加1层【蛮神】：持续期间提升自身w%的攻击力与暴击率，持续4秒
+
+Segments:
+  [0] role=main:      "化身星猿"
+  [1] role=main:      "对目标造成八段共x%攻击力的灵法伤害"
+  [2] role=main:      "同时每段攻击额外对目标造成自身y%已损失气血值的伤害"
+  [3] role=main:      "每段攻击会消耗自身z%当前气血值并为自身添加1层【蛮神】"
+  [4] role=state_def: "持续期间提升自身w%的攻击力与暴击率"  (stateName=蛮神)
+  [5] role=state_def: "持续4秒"  (stateName=蛮神)
+
+Tokens per segment:
+  [1] → base_attack { hits_cn: "八", total: "x" }
+  [2] → per_hit, self_lost_hp_damage { value: "y" }
+  [3] → per_hit, hp_cost { value: "z" }, state_ref { name: "蛮神" }
+  [4] → attack_bonus_stat { value: "w" }, crit_rate_stat (stateName=蛮神)
+  [5] → duration { value: "4" } (stateName=蛮神)
+```
+
+Now `per_hit` tokens are in the same clause as their primaries, `named_state` scoping comes from the segment boundary (not from a token competing with `state_ref`), and stat tokens correctly inherit the `蛮神` scope.
+
+**This change affects only the reader's pre-processing.** The context listener and handlers remain the same — they receive tokens with scope information and group them.
 
 ### §4.1 Design Principles
 
 1. **One Chinese term = one pattern.** No abstract categories. `神通伤害加深` and `伤害加深` are separate entries.
-2. **Longest match first.** Patterns sorted by expected match length descending. When a pattern matches, its range is consumed — subsequent patterns cannot match overlapping text.
-3. **Left-to-right scan.** Tokens are emitted in source text order (by `position`).
-4. **Captures are variable refs.** `(\w+)` captures variable names or literal numbers. Resolution to concrete values happens in post-processing (tiers.ts), not here.
+2. **Split before scan.** Text is split at structural boundaries (`【name】：`, `，`, `；`) into segments before pattern matching. Each segment is scanned independently.
+3. **Longest match first within each segment.** Patterns sorted by expected match length descending. When a pattern matches within a segment, its range is consumed.
+4. **Left-to-right scan.** Tokens are emitted in source text order (by `position` in original text).
+5. **Captures are variable refs.** `(\w+)` captures variable names or literal numbers. Resolution to concrete values happens in post-processing (tiers.ts), not here.
+6. **Scope inheritance.** Tokens inherit their `stateName` from the segment they belong to, not from competing with structural tokens.
 
 ### §4.2 Complete Pattern Table
 
@@ -514,8 +620,32 @@ Each row maps to one reader pattern entry. The `term` column is the token's iden
 
 ### §4.3 Scan Algorithm
 
+The scan now has two phases: split, then match.
+
 ```typescript
 export function scan(text: string): TokenEvent[] {
+  // Phase 1: Split at structural boundaries
+  const segments = splitAtBoundaries(text);
+
+  // Phase 2: Scan each segment independently
+  const tokens: TokenEvent[] = [];
+  for (const segment of segments) {
+    const segTokens = scanSegment(segment.text);
+    // Adjust positions and inherit scope
+    for (const token of segTokens) {
+      token.position += segment.offset;
+      if (segment.stateName) {
+        token.scope = segment.stateName;
+      }
+      tokens.push(token);
+    }
+  }
+
+  tokens.sort((a, b) => a.position - b.position);
+  return tokens;
+}
+
+function scanSegment(text: string): TokenEvent[] {
   // Sort patterns by regex source length descending (longest match first)
   const sorted = [...READER_PATTERNS].sort(
     (a, b) => b.regex.source.length - a.regex.source.length
@@ -575,7 +705,7 @@ Tokens are classified by role:
 |:-----|:------|
 | **Primary** | `base_attack`, `hp_cost`, `hp_cost_dot`, `percent_max_hp_damage`, `percent_current_hp_damage`, `self_lost_hp_damage`, `self_lost_hp_damage_dot`, `shield_destroy_damage`, `shield`, `self_heal`, `per_tick_heal`, `summon`, `debuff_*`, `counter_debuff`, `counter_buff_*`, `delayed_burst`, `echo_damage`, `dot_*`, `lifesteal*`, `self_buff_extra`, `self_buff_extend`, all affix-specific terms |
 | **Modifier** | `per_hit`, `per_tick`, `duration`, `max_stacks`, `chance`, `on_attacked`, `undispellable`, `permanent`, `per_hit_stack`, `cap_vs_monster`, `self_equal_heal`, `cross_skill_accumulation`, `no_shield_double_damage` |
-| **Structure** | `named_state`, `state_ref` |
+| **Structure** | `state_ref` (note: `named_state` is no longer a token — state scoping comes from segment boundaries in §4.0) |
 | **Stat** | `attack_bonus`, `damage_increase`, `skill_dmg_increase`, `damage_reduction`, `final_dmg_bonus`, `crit_rate`, `crit_dmg_bonus`, `healing_bonus`, `defense_bonus`, `hp_bonus` |
 
 ### §5.2 Grouping Algorithm
@@ -583,17 +713,17 @@ Tokens are classified by role:
 ```typescript
 export function group(tokens: TokenEvent[], sourceType: "skill" | "affix"): GroupEvent[] {
   const groups: GroupEvent[] = [];
-  let currentState: string | undefined;  // current 【name】：scope
-  let stateStack: string[] = [];         // for nested states
 
-  // Pass 1: Identify state scopes
-  // Tokens between 【name】：and the next 【name】：or EOF belong to that state's scope
+  // State scoping now comes from token.scope (set by segment splitting in §4.0)
+  // No need to track currentState via named_state tokens — the reader already did it.
 
-  // Pass 2: Attach modifiers to nearest preceding primary
-  // Modifier tokens attach to the most recent primary token (by position)
+  // Pass 1: Attach modifiers to nearest primary within the same segment/clause
+  // Modifier tokens attach to the nearest primary token by position.
+  // Clause boundaries (from segment splitting) prevent cross-clause attachment.
 
-  // Pass 3: Group stat tokens under their enclosing state_ref or named_state
-  // Multiple stat tokens within the same state definition form a single buff group
+  // Pass 2: Group stat tokens under their enclosing scope
+  // Multiple stat tokens with the same scope form a single self_buff group.
+  // The state_ref token (if present) provides the buff name.
 
   return groups;
 }
@@ -601,14 +731,14 @@ export function group(tokens: TokenEvent[], sourceType: "skill" | "affix"): Grou
 
 ### §5.3 Grouping Rules (detailed)
 
-**Rule 1 — Named state scoping:**
-When a `named_state` token is encountered (`【name】：`), all subsequent tokens until the next `named_state` or end-of-line belong to that state's scope. The context listener tracks `currentState` and assigns `parentState` to each group.
+**Rule 1 — Scope from segments (replaces old named_state scoping):**
+Tokens inherit `scope` from the segment they were scanned in (§4.0). The context listener reads `token.scope` to assign `parentState` to each group. No `named_state` token competition — scope is determined at the structural level before pattern matching.
 
-**Rule 2 — Modifier attachment:**
-Modifier tokens (`per_hit`, `duration`, `max_stacks`, `chance`, `on_attacked`, `undispellable`, `permanent`, `per_hit_stack`, `cap_vs_monster`) attach to the **nearest preceding primary token** by text position. If no primary token precedes the modifier, it's an orphan → emit DIAGNOSTIC and skip.
+**Rule 2 — Modifier attachment (within clause):**
+Modifier tokens (`per_hit`, `duration`, `max_stacks`, `chance`, `on_attacked`, `undispellable`, `permanent`, `per_hit_stack`, `cap_vs_monster`) attach to the **nearest primary token** within the same clause segment. Clause boundaries prevent `per_hit` in clause N from attaching to a primary in clause N+1. If no primary exists in the same clause, the modifier is an orphan → emit DIAGNOSTIC.
 
 **Rule 3 — Stat aggregation:**
-When multiple stat tokens (`attack_bonus`, `damage_reduction`, etc.) appear within the same state definition scope, they form a single `self_buff` group. The primary is the `state_ref` token, and the stats are modifiers.
+When multiple stat tokens (`attack_bonus`, `damage_reduction`, etc.) share the same `scope`, they form a single `self_buff` group. The `state_ref` token (if present in a preceding segment) provides the buff name.
 
 **Rule 4 — Qualifier propagation:**
 When `max_stacks` has `qualifier: "各自"`, the stack limit applies to child states (within `named_state` scopes), not the parent. The context listener marks the group with `target: "children"`.
@@ -1113,3 +1243,4 @@ Existing snapshot tests (`books.json`, `affixes.json`) remain unchanged. They te
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-03-21 | Initial implementation plan |
+| 2.0 | 2026-03-21 | **Added §4.0 Structural Boundary Splitting.** Verification revealed that flat longest-match-first scanning causes structural markers (`【name】：`, `每段攻击`) to be consumed by longer compound patterns, losing state scope and modifier context. Fix: split text at `【name】：` and clause boundaries before scanning each segment independently. Tokens inherit scope from their segment. Context listener reads `token.scope` instead of competing `named_state` tokens. |

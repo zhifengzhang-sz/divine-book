@@ -98,13 +98,34 @@ registerHandler({
 
 registerHandler({
 	handles: "percent_max_hp_damage",
-	parse: (group) => {
+	parse: (group, ctx) => {
 		const fields: Record<string, unknown> = {
 			value: group.primary.captures.value,
 		};
 		const cap = getModCapture(group, "cap_vs_monster", "value");
 		if (cap) fields.cap_vs_monster = cap;
 		if (hasMod(group, "per_hit")) fields.per_hit = true;
+
+		// Check for conditional_cleanse in modifiers or in allGroups
+		// (it may attach to an earlier primary by proximity)
+		const condCleanse =
+			getMod(group, "conditional_cleanse") ??
+			ctx.allGroups
+				.flatMap((g) => g.modifiers)
+				.find((m) => m.term === "conditional_cleanse");
+		if (condCleanse) {
+			const mtCn = condCleanse.captures.max_triggers_cn;
+			const mt = mtCn ? parseCnNumber(mtCn) : undefined;
+			return {
+				type: "conditional_damage",
+				value: fields.value,
+				damage_base: "self_max_hp",
+				per_hit: true,
+				condition: "cleanse_excess",
+				...(mt && mt > 0 ? { max_triggers: mt } : {}),
+			} as EffectRow;
+		}
+
 		return { type: "percent_max_hp_damage", ...fields } as EffectRow;
 	},
 });
@@ -131,6 +152,13 @@ registerHandler({
 		if (hasMod(group, "per_hit")) meta.per_hit = true;
 		if (hasMod(group, "self_equal_heal")) meta.self_heal = true;
 		if (group.parentState) meta.parent = group.parentState;
+		// Check for next_skill_scope modifier (破虚 pattern)
+		const nextSkill = getMod(group, "next_skill_scope");
+		if (nextSkill) {
+			meta.per_hit = true;
+			meta.name = group.parentState ?? "破虚";
+			meta.next_skill_hits = Number(nextSkill.captures.hits);
+		}
 		return {
 			type: "self_lost_hp_damage",
 			value: group.primary.captures.value,
@@ -176,11 +204,12 @@ registerHandler({
 	parse: (group) => {
 		const meta: Record<string, unknown> = {};
 		if (hasMod(group, "no_damage_bonus")) meta.ignore_damage_bonus = true;
+		const dur = getModCapture(group, "duration", "value");
 		return {
 			type: "debuff",
 			target: "echo_damage",
 			value: group.primary.captures.value,
-			duration: group.primary.captures.duration,
+			...(dur ? { duration: dur } : {}),
 			...meta,
 		} as EffectRow;
 	},
@@ -215,7 +244,7 @@ registerHandler({
 	handles: "dot_current_hp",
 	parse: (group) => {
 		const fields: Record<string, unknown> = {
-			tick_interval: group.primary.captures.interval,
+			tick_interval: group.primary.captures.interval ?? 1,
 			percent_current_hp: group.primary.captures.value,
 		};
 		const dur = getModCapture(group, "duration", "value");
@@ -230,7 +259,7 @@ registerHandler({
 	handles: "dot_lost_hp",
 	parse: (group) => {
 		const fields: Record<string, unknown> = {
-			tick_interval: group.primary.captures.interval,
+			tick_interval: group.primary.captures.interval ?? 1,
 			percent_lost_hp: group.primary.captures.value,
 		};
 		const dur = getModCapture(group, "duration", "value");
@@ -402,10 +431,11 @@ registerHandler({
 		const meta: Record<string, unknown> = {};
 		if (hasMod(group, "summon_trigger_on_cast")) meta.trigger = "on_cast";
 		const dmgTaken = getModCapture(group, "summon_damage_taken", "value");
+		const dur = getModCapture(group, "duration", "value");
 		const fields: Record<string, unknown> = {
-			duration: group.primary.captures.duration,
 			inherit_stats: group.primary.captures.inherit,
 		};
+		if (dur) fields.duration = dur;
 		if (dmgTaken) fields.damage_taken_multiplier = dmgTaken;
 		return { type: "summon", ...fields, ...meta } as EffectRow;
 	},
@@ -521,14 +551,10 @@ registerHandler({
 		}) as EffectRow,
 });
 
+// conditional_cleanse is a modifier — consumed by percent_max_hp_damage handler
 registerHandler({
-	handles: "conditional_damage_cleanse",
-	parse: (group) =>
-		({
-			type: "conditional_damage",
-			value: group.primary.captures.value,
-			condition: "cleanse_excess",
-		}) as EffectRow,
+	handles: "conditional_cleanse",
+	parse: () => null,
 });
 
 registerHandler({
@@ -546,16 +572,10 @@ registerHandler({
 	},
 });
 
+// next_skill_scope is a modifier — consumed by self_lost_hp_damage handler
 registerHandler({
-	handles: "next_skill_carry",
-	parse: (group) =>
-		({
-			type: "self_lost_hp_damage",
-			value: group.primary.captures.value,
-			per_hit: true,
-			name: "破虚",
-			next_skill_hits: Number(group.primary.captures.hits),
-		}) as EffectRow,
+	handles: "next_skill_scope",
+	parse: () => null,
 });
 
 registerHandler({
@@ -570,7 +590,13 @@ registerHandler({
 
 registerHandler({
 	handles: "self_buff",
-	parse: (group) => {
+	parse: (group, ctx) => {
+		// Skip if a self_buff_extra group exists — it handles the stats
+		const hasBufExtra = ctx.allGroups.some(
+			(g) => g.primary.term === "self_buff_extra",
+		);
+		if (hasBufExtra) return null;
+
 		const fields: Record<string, unknown> = {};
 		const name = group.primary.captures.name;
 		if (name) fields.name = name;
@@ -929,14 +955,28 @@ registerHandler({
 
 registerHandler({
 	handles: "self_buff_extra",
-	parse: (group) => {
+	parse: (group, ctx) => {
 		const buffName = group.primary.captures.buff_name;
-		// Collect stats from modifiers in the group
+		// Collect stats from modifiers in this group
 		const fields: Record<string, unknown> = {};
 		for (const mod of group.modifiers) {
 			if (isStat(mod.term)) {
 				const statKey = statTermToField(mod.term);
 				if (statKey) fields[statKey] = mod.captures.value;
+			}
+		}
+		// Also collect stats from self_buff groups in the same context
+		// (stat tokens may have been grouped separately by context listener)
+		if (Object.keys(fields).length === 0) {
+			for (const g of ctx.allGroups) {
+				if (g.primary.term === "self_buff") {
+					for (const mod of g.modifiers) {
+						if (isStat(mod.term)) {
+							const statKey = statTermToField(mod.term);
+							if (statKey) fields[statKey] = mod.captures.value;
+						}
+					}
+				}
 			}
 		}
 		if (Object.keys(fields).length === 0) return null;
@@ -1168,12 +1208,18 @@ registerHandler({
 
 registerHandler({
 	handles: "execute_conditional",
-	parse: (group) =>
-		({
-			type: "execute_conditional",
+	parse: (group) => {
+		const fields: Record<string, unknown> = {
 			hp_threshold: Number(group.primary.captures.threshold),
 			damage_increase: group.primary.captures.value,
-		}) as EffectRow,
+		};
+		if (group.primary.captures.crit_rate) {
+			fields.crit_rate_increase = group.primary.captures.crit_rate;
+		} else if (group.primary.raw.includes("必定暴击")) {
+			fields.guaranteed_crit = 1;
+		}
+		return { type: "execute_conditional", ...fields } as EffectRow;
+	},
 });
 
 registerHandler({
@@ -1295,6 +1341,22 @@ registerHandler({
 });
 
 registerHandler({
+	handles: "conditional_hp_scaling",
+	parse: (group) =>
+		({
+			type: "conditional_damage",
+			condition: `self_hp_above_${group.primary.captures.threshold}`,
+			per_step: group.primary.captures.per_step,
+			value: group.primary.captures.value,
+		}) as EffectRow,
+});
+
+registerHandler({
+	handles: "stack_add",
+	parse: () => null,
+});
+
+registerHandler({
 	handles: "shield_value_increase",
 	parse: (group) =>
 		({
@@ -1315,6 +1377,26 @@ registerHandler({
 // ── Skip handlers (tokens consumed by other handlers) ────
 
 const SKIP_TERMS = [
+	// Modifier tokens (consumed by context.ts grouping, not primary terms)
+	"per_hit",
+	"duration",
+	"max_stacks",
+	"chance",
+	"on_attacked",
+	"undispellable",
+	"permanent",
+	"stack_add",
+	// Stat tokens (consumed as modifiers inside self_buff groups)
+	"skill_dmg_increase",
+	"final_dmg_bonus",
+	"damage_increase_stat",
+	"attack_bonus_stat",
+	"damage_reduction_stat",
+	"crit_rate_stat",
+	"healing_bonus_stat",
+	"defense_bonus_stat",
+	"hp_bonus_stat",
+	// Sub-tokens (consumed by other handlers as modifiers)
 	"cap_vs_monster",
 	"cross_skill_accumulation",
 	"self_equal_heal",

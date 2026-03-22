@@ -1,17 +1,20 @@
 /**
  * Stage 1: Reader — Linguistic Pattern Recognition
  *
- * Scans Chinese game text left-to-right and emits one TokenEvent
- * per recognized term. Each Chinese term maps to exactly one pattern.
- * No deconfliction logic — the language itself disambiguates.
+ * Two-phase scan: split at structural boundaries, then match
+ * patterns within each segment independently.
  *
- * Architecture (impl.reactive.md §4):
+ * Architecture (impl.reactive.md §4.0 + §4.1):
  *
- *   text ──scan()──▶ TokenEvent[]
- *     │
- *     ├─ sorted by regex length desc (longest match first)
- *     ├─ consumed positions tracked (no overlapping matches)
- *     └─ output sorted by position (left-to-right)
+ *   text
+ *     ↓
+ *   splitAtBoundaries(text)  ← split at 【name】：
+ *     ↓
+ *   Segment[]  (text + stateName + offset)
+ *     ↓
+ *   scanSegment() per segment  ← longest-match-first within segment
+ *     ↓
+ *   TokenEvent[]  (scope inherited from segment)
  */
 
 // ── Types ────────────────────────────────────────────────
@@ -24,8 +27,20 @@ export interface TokenEvent {
 	raw: string;
 	/** Extracted captures — variable refs or literal values */
 	captures: Record<string, string>;
-	/** Character offset in the source text (for modifier attachment) */
+	/** Character offset in the original text (for modifier attachment) */
 	position: number;
+	/** Named state scope inherited from segment (from 【name】：boundary splitting) */
+	scope?: string;
+}
+
+/** A segment produced by splitting at structural boundaries. */
+interface Segment {
+	/** The text content of this segment */
+	text: string;
+	/** Named state scope this segment defines (from preceding 【name】：) */
+	stateName?: string;
+	/** Character offset of this segment in the original text */
+	offset: number;
 }
 
 /** A reader pattern entry — one Chinese term = one entry. */
@@ -72,13 +87,12 @@ const READER_PATTERNS: ReaderPattern[] = [
 	{
 		term: "base_attack",
 		regex:
-			/造成(?:((?:一|二|三|四|五|六|七|八|九|十)+)段)?(?:共(?:计)?)?(\w+)%攻击力的(?:灵法)?伤害/,
+			/(?<!额外)造成(?:((?:一|二|三|四|五|六|七|八|九|十)+)段)?(?:共(?:计)?)?(\w+)%攻击力的(?:灵法)?伤害/,
 		captureNames: ["hits_cn", "total"],
 	},
 	{
 		term: "percent_max_hp_damage",
-		regex:
-			/(?:每段(?:攻击|伤害))?(?:造成|附加)(?:目标)?(\w+)%(?:自身)?最大气血值的伤害/,
+		regex: /(?:造成|附加)(?:目标)?(\w+)%(?:自身)?最大气血值的伤害/,
 		captureNames: ["value"],
 	},
 	{
@@ -94,7 +108,8 @@ const READER_PATTERNS: ReaderPattern[] = [
 	},
 	{
 		term: "self_lost_hp_damage",
-		regex: /(?:额外)?对(?:其|目标)?造成自身(\w+)%已损(?:失)?气血值的伤害/,
+		regex:
+			/(?:额外)?(?:对(?:其|目标)?造成|附加)(?:自身)?(\w+)%已损(?:失)?气血值的伤害/,
 		captureNames: ["value"],
 	},
 	{
@@ -116,8 +131,8 @@ const READER_PATTERNS: ReaderPattern[] = [
 	{
 		term: "echo_damage",
 		regex:
-			/(?:每次)?受到(?:的)?伤害时[，,].*?额外受到.*?伤害(?:值)?为当次伤害的(\w+)%.*?持续(\w+)秒/,
-		captureNames: ["value", "duration"],
+			/(?:每次)?受到(?:的)?伤害时[，,].*?额外受到.*?伤害(?:值)?为当次伤害的(\w+)%/,
+		captureNames: ["value"],
 	},
 
 	// ── Cost ─────────────────────────────────────────────
@@ -144,6 +159,11 @@ const READER_PATTERNS: ReaderPattern[] = [
 	{
 		term: "final_dmg_bonus",
 		regex: /(\w+)%(?:的)?最终伤害(?:加成|加深)/,
+		captureNames: ["value"],
+	},
+	{
+		term: "final_dmg_bonus",
+		regex: /最终伤害(?:加成|加深).*?(?:提升)?(\w+)%/,
 		captureNames: ["value"],
 	},
 	{
@@ -191,13 +211,14 @@ const READER_PATTERNS: ReaderPattern[] = [
 
 	{
 		term: "dot_current_hp",
-		regex: /每(\w+(?:\.\w+)?)秒(?:额外)?造成(?:目标)?(\w+)%当前气血值的伤害/,
+		regex:
+			/每(\w+(?:\.\w+)?)?秒(?:额外)?(?:对目标)?造成(?:目标)?(\w+)%当前气血值的伤害/,
 		captureNames: ["interval", "value"],
 	},
 	{
 		term: "dot_lost_hp",
 		regex:
-			/每(\w+(?:\.\w+)?)秒(?:额外)?造成(?:目标)?(\w+)%已损(?:失)?气血值的伤害/,
+			/每(\w+(?:\.\w+)?)?秒(?:额外)?造成(?:目标)?(\w+)%已损(?:失)?气血值(?:的)?伤害/,
 		captureNames: ["interval", "value"],
 	},
 	{
@@ -265,9 +286,9 @@ const READER_PATTERNS: ReaderPattern[] = [
 		captureNames: [],
 	},
 	{
-		term: "per_hit_stack",
-		regex: /每段攻击.*?添加.*?层/,
-		captureNames: [],
+		term: "stack_add",
+		regex: /(?:会)?(?:为目标)?添加(\w+)层/,
+		captureNames: ["count"],
 	},
 
 	// ── Healing / Shield ─────────────────────────────────
@@ -332,8 +353,8 @@ const READER_PATTERNS: ReaderPattern[] = [
 
 	{
 		term: "summon",
-		regex: /持续(?:存在)?(\w+)秒的分身[，,]继承自身(\w+)%的属性/,
-		captureNames: ["duration", "inherit"],
+		regex: /的分身[，,]继承自身(\w+)%的属性/,
+		captureNames: ["inherit"],
 	},
 	{
 		term: "self_damage_taken_increase",
@@ -371,7 +392,7 @@ const READER_PATTERNS: ReaderPattern[] = [
 	{
 		term: "counter_buff_reflect",
 		regex:
-			/(?:每秒)?对目标.*?反射.*?自身所?受到(?:的)?伤害(?:值)?的(\w+)%与自身(\w+)%已损(?:失)?气血值的伤害/,
+			/每秒对目标.*?反射.*?自身所?受到(?:的)?伤害(?:值)?的(\w+)%与自身(\w+)%已损(?:失)?气血值的伤害/,
 		captureNames: ["reflect_dmg", "reflect_hp"],
 	},
 	{
@@ -391,9 +412,9 @@ const READER_PATTERNS: ReaderPattern[] = [
 		captureNames: ["name", "dur", "increase", "accum", "base"],
 	},
 	{
-		term: "conditional_damage_cleanse",
-		regex: /若净化.*?每段攻击附加(\w+)%自身最大气血值的伤害/,
-		captureNames: ["value"],
+		term: "conditional_cleanse",
+		regex: /若净化.*?接下来.*?([一二三四五六七八九十\d]+)个?神通.*?命中时/,
+		captureNames: ["max_triggers_cn"],
 	},
 	{
 		term: "skill_cooldown",
@@ -401,10 +422,9 @@ const READER_PATTERNS: ReaderPattern[] = [
 		captureNames: ["duration"],
 	},
 	{
-		term: "next_skill_carry",
-		regex:
-			/接下来(?:神通的)?(\d+)段攻击[，,]每段攻击附加(?:自身)?(\w+)%已损(?:失)?气血值的伤害/,
-		captureNames: ["hits", "value"],
+		term: "next_skill_scope",
+		regex: /接下来(?:神通的)?(\d+)段攻击/,
+		captureNames: ["hits"],
 	},
 	{
 		term: "per_enemy_lost_hp",
@@ -609,7 +629,7 @@ const READER_PATTERNS: ReaderPattern[] = [
 	},
 	{
 		term: "self_buff_extra",
-		regex: /【(.+?)】(?:状态)?(?:额外|下)?(?:使自身获得|提升(?:自身)?)/,
+		regex: /【([^【】]+)】(?:状态)?(?:额外|下)/,
 		captureNames: ["buff_name"],
 	},
 	{
@@ -716,6 +736,12 @@ const READER_PATTERNS: ReaderPattern[] = [
 	},
 	{
 		term: "execute_conditional",
+		regex:
+			/敌方气血值低于(\d+)%.*?伤害提升(\w+)%.*?(?:暴击率提升(\w+)%|必定暴击)/,
+		captureNames: ["threshold", "value", "crit_rate"],
+	},
+	{
+		term: "execute_conditional",
 		regex: /敌方气血值低于(\d+)%.*?伤害提升(\w+)%/,
 		captureNames: ["threshold", "value"],
 	},
@@ -754,6 +780,12 @@ const READER_PATTERNS: ReaderPattern[] = [
 		term: "min_lost_hp_threshold",
 		regex: /已损(?:气血值)?.*?至少按已损(\w+)%计算.*?伤害提升(\w+)%/,
 		captureNames: ["min_percent", "damage_increase"],
+	},
+	{
+		term: "conditional_hp_scaling",
+		regex:
+			/(?:当前)?气血高于(\w+)%时.*?每(?:额外)?高出(\w+)%.*?获得(\w+)%伤害加成/,
+		captureNames: ["threshold", "per_step", "value"],
 	},
 	{
 		term: "hp_cost_avoid_chance",
@@ -818,12 +850,63 @@ const READER_PATTERNS: ReaderPattern[] = [
 	},
 ];
 
+// ── Boundary Splitting ───────────────────────────────────
+//
+// Split text at 【name】：boundaries before scanning.
+// Each segment knows its state scope. Tokens inherit scope
+// from the segment they were scanned in.
+
+const STATE_DEF_RE = /【([^【】]+)】(?:状态)?[：:]/g;
+
+/**
+ * Split text at 【name】：structural boundaries.
+ * Text before the first 【name】：is "main" (no scope).
+ * Text after each 【name】：is scoped to that state until
+ * the next 【name】：or end of text.
+ */
+function splitAtBoundaries(text: string): Segment[] {
+	const segments: Segment[] = [];
+	const matches: { name: string; index: number; fullMatch: string }[] = [];
+
+	let m: RegExpExecArray | null = STATE_DEF_RE.exec(text);
+	while (m !== null) {
+		matches.push({ name: m[1], index: m.index, fullMatch: m[0] });
+		m = STATE_DEF_RE.exec(text);
+	}
+
+	if (matches.length === 0) {
+		// No state boundaries — entire text is one segment
+		return [{ text, offset: 0 }];
+	}
+
+	// Text before the first 【name】：
+	if (matches[0].index > 0) {
+		segments.push({
+			text: text.slice(0, matches[0].index),
+			offset: 0,
+		});
+	}
+
+	for (let i = 0; i < matches.length; i++) {
+		const boundary = matches[i];
+		const contentStart = boundary.index + boundary.fullMatch.length;
+		const contentEnd =
+			i + 1 < matches.length ? matches[i + 1].index : text.length;
+
+		segments.push({
+			text: text.slice(contentStart, contentEnd),
+			stateName: boundary.name,
+			offset: contentStart,
+		});
+	}
+
+	return segments;
+}
+
 // ── Scan Algorithm ───────────────────────────────────────
 //
-// Longest-match-first: patterns sorted by regex source length
-// descending. When a pattern matches, its character range is
-// consumed — subsequent patterns skip overlapping positions.
-// Output sorted by position (left-to-right in source text).
+// Two-phase: split at boundaries, then scan each segment.
+// Longest-match-first within each segment.
 
 /** Sort patterns by regex source length descending (longest first). */
 const SORTED_PATTERNS = [...READER_PATTERNS].sort(
@@ -831,10 +914,32 @@ const SORTED_PATTERNS = [...READER_PATTERNS].sort(
 );
 
 /**
- * Scan text and emit one TokenEvent per recognized Chinese term.
- * Patterns are matched longest-first. Consumed ranges prevent overlap.
+ * Scan text: split at 【name】：boundaries, then match patterns
+ * within each segment. Tokens inherit scope from their segment.
  */
 export function scan(text: string): TokenEvent[] {
+	// Strip backticks — source markdown uses them for emphasis
+	const cleanText = text.replace(/`/g, "");
+	const segments = splitAtBoundaries(cleanText);
+	const tokens: TokenEvent[] = [];
+
+	for (const segment of segments) {
+		const segTokens = scanSegment(segment.text);
+		for (const token of segTokens) {
+			token.position += segment.offset;
+			if (segment.stateName) {
+				token.scope = segment.stateName;
+			}
+			tokens.push(token);
+		}
+	}
+
+	tokens.sort((a, b) => a.position - b.position);
+	return tokens;
+}
+
+/** Scan a single segment for pattern matches. */
+function scanSegment(text: string): TokenEvent[] {
 	const tokens: TokenEvent[] = [];
 	const consumed = new Set<number>();
 
@@ -880,7 +985,6 @@ export function scan(text: string): TokenEvent[] {
 		}
 	}
 
-	// Sort by position (left-to-right in source text)
 	tokens.sort((a, b) => a.position - b.position);
 	return tokens;
 }

@@ -8,6 +8,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createActor } from "xstate";
 import {
 	type AffixEntry,
 	readSchoolAffixTable,
@@ -17,8 +18,12 @@ import {
 	type ExclusiveAffixEntry,
 	readExclusiveAffixTable,
 } from "../../lib/parser/exclusive.js";
-import { readMainSkillTables } from "../../lib/parser/md-table.js";
+import { readMainSkillTables, splitCell } from "../../lib/parser/md-table.js";
 import { runPipeline, type SourceType } from "../../lib/parser/pipeline.js";
+import {
+	type PipelineEmitted,
+	pipelineMachine,
+} from "../../lib/parser/reactive.js";
 
 const port = Number(process.env.PORT ?? 3001);
 
@@ -77,7 +82,7 @@ Bun.serve({
 		const url = new URL(req.url);
 		const path = url.pathname;
 
-		// Parse API — runs pipeline server-side
+		// Parse API — runs pipeline server-side + XState events
 		if (path === "/api/parse" && req.method === "POST") {
 			try {
 				const body = (await req.json()) as {
@@ -86,7 +91,31 @@ Bun.serve({
 					bookName?: string;
 				};
 				const result = runPipeline(body.sourceType, body.text, body.bookName);
-				return new Response(JSON.stringify(result), {
+
+				// Also run XState machine to collect emitted events
+				const cell = splitCell(body.text.replace(/\n/g, "<br>"));
+				const joinedDesc = cell.description.join("，");
+				const cleanText =
+					body.sourceType === "skill"
+						? joinedDesc
+						: joinedDesc.replace(/^【.+?】[：:]/, "");
+
+				const emitted: PipelineEmitted[] = [];
+				const actor = createActor(pipelineMachine, {
+					input: {
+						text: cleanText,
+						sourceType: body.sourceType === "skill" ? "skill" : "affix",
+						bookName: body.bookName,
+					},
+				});
+				actor.on("*", (ev: unknown) => {
+					emitted.push(ev as PipelineEmitted);
+				});
+				actor.start();
+				actor.send({ type: "PARSE" });
+				actor.stop();
+
+				return new Response(JSON.stringify({ ...result, xstate: emitted }), {
 					headers: { "Content-Type": "application/json" },
 				});
 			} catch (e) {

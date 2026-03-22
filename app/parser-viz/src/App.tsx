@@ -9,7 +9,7 @@ import { EffectView } from "./EffectView.tsx";
 import { GroupView } from "./GroupView.tsx";
 import { SourcePanel } from "./SourcePanel.tsx";
 import { TokenView } from "./TokenView.tsx";
-import type { PipelineResult, SourceType } from "./types.ts";
+import type { PipelineResult, SourceType, XStateEvent } from "./types.ts";
 import { T, panelStyle } from "./theme.ts";
 
 async function fetchPipeline(
@@ -110,6 +110,11 @@ export function App() {
 							</div>
 						)}
 
+						{/* XState reactive events */}
+						{result.xstate && result.xstate.length > 0 && (
+							<XStateEventsPanel events={result.xstate} />
+						)}
+
 						{/* Three columns */}
 						<div style={columnsRow}>
 							<div style={columnStyle}>
@@ -144,6 +149,112 @@ export function App() {
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+// ── XState Events Panel ──────────────────────────────────
+
+function XStateEventsPanel({ events }: { events: XStateEvent[] }) {
+	const [expanded, setExpanded] = useState(false);
+	const tokens = events.filter((e) => e.type === "TOKEN");
+	const groups = events.filter((e) => e.type === "GROUP");
+	const effects = events.filter((e) => e.type === "EFFECT");
+	const diagnostics = events.filter((e) => e.type === "DIAGNOSTIC");
+
+	return (
+		<div style={xstateContainer}>
+			<div
+				style={xstateHeader}
+				onClick={() => setExpanded(!expanded)}
+				onKeyDown={() => {}}
+			>
+				<span style={{ color: T.accent }}>
+					{expanded ? "▼" : "▶"} XState Pipeline Events
+				</span>
+				<span style={{ color: T.textMuted, fontSize: 11 }}>
+					{tokens.length} tokens → {groups.length} groups →{" "}
+					{effects.length} effects
+					{diagnostics.length > 0 &&
+						` (${diagnostics.length} diagnostics)`}
+				</span>
+			</div>
+			{expanded && (
+				<div style={xstateBody}>
+					{tokens.map((e, i) => {
+						if (e.type !== "TOKEN") return null;
+						const t = e.token;
+						return (
+							<div key={`t${i}`} style={xstateEventRow}>
+								<span style={xstageTag}>TOKEN</span>
+								<span style={{ color: T.keyword }}>
+									{t.term}
+								</span>
+								{t.scope && (
+									<span style={xstateScope}>
+										[{t.scope}]
+									</span>
+								)}
+								<span style={{ color: T.textMuted }}>
+									{JSON.stringify(t.captures)}
+								</span>
+								<span style={xstateRaw}>
+									{t.raw.slice(0, 30)}
+								</span>
+							</div>
+						);
+					})}
+					<div style={xstateDivider} />
+					{groups.map((e, i) => {
+						if (e.type !== "GROUP") return null;
+						const g = e.group;
+						return (
+							<div key={`g${i}`} style={xstateEventRow}>
+								<span style={xstageGroupTag}>GROUP</span>
+								<span style={{ color: T.keyword }}>
+									{g.primary.term}
+								</span>
+								{g.parentState && (
+									<span style={xstateScope}>
+										[{g.parentState}]
+									</span>
+								)}
+								{g.modifiers.length > 0 && (
+									<span style={{ color: T.textMuted }}>
+										+{" "}
+										{g.modifiers
+											.map((m) => m.term)
+											.join(", ")}
+									</span>
+								)}
+							</div>
+						);
+					})}
+					<div style={xstateDivider} />
+					{effects.map((e, i) => {
+						if (e.type !== "EFFECT") return null;
+						return (
+							<div key={`e${i}`} style={xstateEventRow}>
+								<span style={xstageEffectTag}>EFFECT</span>
+								<span style={{ color: T.string }}>
+									{JSON.stringify(e.effect)}
+								</span>
+							</div>
+						);
+					})}
+					{diagnostics.map((e, i) => {
+						if (e.type !== "DIAGNOSTIC") return null;
+						return (
+							<div key={`d${i}`} style={xstateEventRow}>
+								<span style={xstageDiagTag}>DIAG</span>
+								<span style={{ color: T.warn }}>
+									{e.diagnostic.message}
+								</span>
+							</div>
+						);
+					})}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -291,4 +402,84 @@ const stateMeta: React.CSSProperties = {
 	color: T.textMuted,
 	fontSize: 10,
 	fontFamily: T.body,
+};
+
+// ── XState panel styles ──────────────────────────────────
+
+const xstateContainer: React.CSSProperties = {
+	background: "rgba(46,204,113,0.03)",
+	border: `1px solid ${T.accent}22`,
+	borderRadius: 4,
+	flexShrink: 0,
+};
+
+const xstateHeader: React.CSSProperties = {
+	padding: "6px 10px",
+	cursor: "pointer",
+	display: "flex",
+	justifyContent: "space-between",
+	alignItems: "center",
+	fontSize: 12,
+	fontFamily: T.body,
+};
+
+const xstateBody: React.CSSProperties = {
+	padding: "4px 10px 8px",
+	maxHeight: 300,
+	overflowY: "auto",
+	fontSize: 11,
+	fontFamily: T.mono,
+};
+
+const xstateEventRow: React.CSSProperties = {
+	display: "flex",
+	gap: 8,
+	alignItems: "baseline",
+	padding: "1px 0",
+};
+
+const xstateRaw: React.CSSProperties = {
+	color: T.textMuted,
+	fontSize: 10,
+	maxWidth: 200,
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+	whiteSpace: "nowrap",
+};
+
+const xstateScope: React.CSSProperties = {
+	color: T.sp,
+	fontSize: 10,
+};
+
+const xstateDivider: React.CSSProperties = {
+	borderTop: `1px solid ${T.textMuted}22`,
+	margin: "4px 0",
+};
+
+const xstageTag: React.CSSProperties = {
+	background: `${T.accent}22`,
+	color: T.accent,
+	padding: "0 4px",
+	borderRadius: 2,
+	fontSize: 9,
+	fontWeight: 600,
+};
+
+const xstageGroupTag: React.CSSProperties = {
+	...xstageTag,
+	background: `${T.sp}22`,
+	color: T.sp,
+};
+
+const xstageEffectTag: React.CSSProperties = {
+	...xstageTag,
+	background: `${T.goldLight}22`,
+	color: T.goldLight,
+};
+
+const xstageDiagTag: React.CSSProperties = {
+	...xstageTag,
+	background: "rgba(231,76,60,0.15)",
+	color: "#e74c3c",
 };

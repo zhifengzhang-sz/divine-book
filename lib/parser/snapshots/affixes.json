@@ -91,8 +91,16 @@
         {
           "type": "random_buff",
           "attack": 20,
-          "crit_damage": 20,
-          "damage": 20,
+          "data_state": "fusion=50"
+        },
+        {
+          "type": "damage_increase",
+          "value": 20,
+          "data_state": "fusion=50"
+        },
+        {
+          "type": "damage_increase",
+          "value": 20,
           "data_state": "fusion=50"
         }
       ]
@@ -101,8 +109,8 @@
       "text": "本神通施放时，自身每多损失1%最大气血值，会使本次伤害提升x%\n融合50重：x=2.95",
       "effects": [
         {
-          "type": "per_self_lost_hp",
-          "per_percent": 2.95,
+          "type": "conditional_damage",
+          "value": 2.95,
           "data_state": "fusion=50"
         }
       ]
@@ -153,8 +161,8 @@
       "text": "本神通施放时，会使本次神通提升x%攻击力的效果\n融合50重：x=20",
       "effects": [
         {
-          "type": "attack_bonus",
-          "value": 20,
+          "type": "self_buff",
+          "attack_bonus": 20,
           "data_state": "fusion=50"
         }
       ]
@@ -178,8 +186,8 @@
         "text": "使本神通提升x%攻击力的效果\n融合50重：x=300",
         "effects": [
           {
-            "type": "attack_bonus",
-            "value": 300,
+            "type": "self_buff",
+            "attack_bonus": 300,
             "data_state": "fusion=50"
           }
         ]
@@ -236,8 +244,8 @@
         "text": "本神通施放时，会使本次神通的`最终伤害加深`提升x%\n融合50重：x=50",
         "effects": [
           {
-            "type": "final_damage_bonus",
-            "value": 50,
+            "type": "self_buff",
+            "final_damage_bonus": 50,
             "data_state": "fusion=50"
           }
         ]
@@ -247,7 +255,11 @@
         "effects": [
           {
             "type": "probability_to_certain",
-            "damage_increase": 50,
+            "data_state": "fusion=50"
+          },
+          {
+            "type": "damage_increase",
+            "value": 50,
             "data_state": "fusion=50"
           }
         ]
@@ -258,8 +270,16 @@
           {
             "type": "random_buff",
             "attack": 55,
-            "crit_damage": 55,
-            "damage": 55,
+            "data_state": "fusion=50"
+          },
+          {
+            "type": "damage_increase",
+            "value": 55,
+            "data_state": "fusion=50"
+          },
+          {
+            "type": "damage_increase",
+            "value": 55,
             "data_state": "fusion=50"
           }
         ]

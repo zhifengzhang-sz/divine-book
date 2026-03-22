@@ -3,17 +3,19 @@
  *
  * Wires all parser layers together:
  * 1. Read 主书.md → MD Table Reader → per-book raw cells
- * 2. For each book: Split Engine (using grammar from lookup table) → effects
- * 3. (Optional) Read 专属词缀.md → exclusive affix parser → merge into books
- * 4. Emit YAML output
+ * 2. For each book: Reactive pipeline (reader → context → handlers) → effects
+ * 3. For each book: Primary affix → reactive pipeline → effects
+ * 4. (Optional) Read 专属词缀.md → exclusive affix parser → merge into books
+ * 5. Emit YAML output
  */
 
+import type { ParsedBook } from "../data/types.js";
 import { BOOK_TABLE } from "./book-table.js";
 import type { BookData } from "./emit.js";
 import { emitBooks, formatYaml } from "./emit.js";
 import { parseExclusiveAffix, readExclusiveAffixTable } from "./exclusive.js";
-import { readMainSkillTables, splitCell } from "./md-table.js";
-import { type ParsedBook, parseBook } from "./split.js";
+import { readMainSkillTables } from "./md-table.js";
+import { runPipeline } from "./pipeline.js";
 
 export interface ParseResult {
 	books: Record<string, BookData>;
@@ -50,25 +52,44 @@ export function parseMainSkills(
 		}
 
 		try {
-			const skillCell = splitCell(entry.skillText);
-			const affixCell = splitCell(entry.affixText);
+			// Skill effects via reactive pipeline
+			const skillResult = runPipeline("skill", entry.skillText, entry.name);
 
-			const parsed = parseBook(
-				entry.name,
-				entry.school,
-				meta.grammar,
-				skillCell,
-				affixCell,
-			);
+			const parsed: ParsedBook = {
+				school: entry.school,
+				skill: skillResult.effects,
+				skillText: entry.skillText.replace(/<br\s*\/?>/gi, "\n"),
+				affixText: entry.affixText.replace(/<br\s*\/?>/gi, "\n"),
+			};
 
-			// Attach raw text from source
-			parsed.skillText = entry.skillText.replace(/<br\s*\/?>/gi, "\n");
-			parsed.affixText = entry.affixText.replace(/<br\s*\/?>/gi, "\n");
+			// States from the reactive pipeline
+			if (Object.keys(skillResult.states).length > 0) {
+				parsed.states = skillResult.states;
+			}
+
+			// Primary affix via reactive pipeline
+			if (entry.affixText) {
+				const affixResult = runPipeline("exclusive", entry.affixText);
+				if (affixResult.effects.length > 0) {
+					// Extract affix name from 【name】
+					const nameMatch = entry.affixText.match(/【(.+?)】/);
+					const affixName = nameMatch ? nameMatch[1] : "";
+					parsed.primaryAffix = {
+						name: affixName,
+						effects: affixResult.effects,
+					};
+				}
+			}
 
 			// Validate: must have at least base_attack
 			const hasBaseAttack = parsed.skill.some((e) => e.type === "base_attack");
 			if (!hasBaseAttack && parsed.skill.length > 0) {
 				warnings.push(`${entry.name}: no base_attack found in skill effects`);
+			}
+
+			// Collect pipeline diagnostics as warnings
+			for (const err of skillResult.errors) {
+				warnings.push(`${entry.name}: ${err}`);
 			}
 
 			parsedBooks.set(entry.name, parsed);
@@ -94,7 +115,6 @@ export function parseMainSkills(
 				const exclusive = parseExclusiveAffix(entry, states);
 				parsed.exclusiveAffix = exclusive;
 				parsed.exclusiveAffixText = entry.rawText;
-				// Update states if new ones were added
 				if (Object.keys(states).length > 0) {
 					parsed.states = states;
 				}
@@ -141,20 +161,32 @@ export function parseSingleBook(
 	const meta = BOOK_TABLE[entry.name];
 	if (!meta) return null;
 
-	const skillCell = splitCell(entry.skillText);
-	const affixCell = splitCell(entry.affixText);
+	// Skill effects via reactive pipeline
+	const skillResult = runPipeline("skill", entry.skillText, entry.name);
 
-	const parsed = parseBook(
-		entry.name,
-		entry.school,
-		meta.grammar,
-		skillCell,
-		affixCell,
-	);
+	const parsed: ParsedBook = {
+		school: entry.school,
+		skill: skillResult.effects,
+		skillText: entry.skillText.replace(/<br\s*\/?>/gi, "\n"),
+		affixText: entry.affixText.replace(/<br\s*\/?>/gi, "\n"),
+	};
 
-	// Attach raw text from source
-	parsed.skillText = entry.skillText.replace(/<br\s*\/?>/gi, "\n");
-	parsed.affixText = entry.affixText.replace(/<br\s*\/?>/gi, "\n");
+	if (Object.keys(skillResult.states).length > 0) {
+		parsed.states = skillResult.states;
+	}
+
+	// Primary affix via reactive pipeline
+	if (entry.affixText) {
+		const affixResult = runPipeline("exclusive", entry.affixText);
+		if (affixResult.effects.length > 0) {
+			const nameMatch = entry.affixText.match(/【(.+?)】/);
+			const affixName = nameMatch ? nameMatch[1] : "";
+			parsed.primaryAffix = {
+				name: affixName,
+				effects: affixResult.effects,
+			};
+		}
+	}
 
 	// Merge exclusive affix if provided
 	if (exclusiveMarkdown) {

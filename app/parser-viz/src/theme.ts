@@ -21,6 +21,11 @@ export const T = {
 	heading: "'Cinzel', serif",
 	headingCn: "'ZCOOL XiaoWei', 'Cinzel', serif",
 	body: "'Menlo', 'Fira Code', monospace",
+	mono: "'Menlo', 'Fira Code', monospace",
+	accent: "#2ecc71",
+	keyword: "#e5c07b",
+	string: "#98c379",
+	warn: "#e67e22",
 	glow: (color: string, size = 10) => `0 0 ${size}px ${color}88`,
 };
 

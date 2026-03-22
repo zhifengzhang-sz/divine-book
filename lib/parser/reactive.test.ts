@@ -66,11 +66,12 @@ describe("reader.scan", () => {
 		expect(dot?.captures.value).toBe("y");
 	});
 
-	it("T1: recognizes named_state definition", () => {
+	it("T1: boundary splitting assigns scope from 【name】：", () => {
 		const tokens = scan("【罗天魔咒】：受到伤害时");
-		expect(tokens.some((t) => t.term === "named_state")).toBe(true);
-		const ns = tokens.find((t) => t.term === "named_state");
-		expect(ns?.captures.name).toBe("罗天魔咒");
+		// 【name】：is a boundary — tokens after it inherit scope
+		const scoped = tokens.filter((t) => t.scope === "罗天魔咒");
+		expect(scoped.length).toBeGreaterThan(0);
+		expect(scoped[0].term).toBe("on_attacked");
 	});
 
 	// T2: Empty input
@@ -117,20 +118,15 @@ describe("context.group", () => {
 		expect(hpGroup?.modifiers.some((m) => m.term === "per_hit")).toBe(true);
 	});
 
-	// T5: Named state scoping
-	it("T5: assigns parentState from named_state scope", () => {
+	// T5: Scope from token.scope (set by boundary splitting)
+	it("T5: assigns parentState from token.scope", () => {
 		const tokens: TokenEvent[] = [
-			{
-				term: "named_state",
-				raw: "【噬心之咒】：",
-				captures: { name: "噬心之咒" },
-				position: 0,
-			},
 			{
 				term: "dot_current_hp",
 				raw: "y%当前气血值",
 				captures: { interval: "0.5", value: "y" },
 				position: 20,
+				scope: "噬心之咒",
 			},
 		];
 		const groups = group(tokens, "skill");
@@ -138,44 +134,29 @@ describe("context.group", () => {
 		expect(dotGroup?.parentState).toBe("噬心之咒");
 	});
 
-	// T6: Nested states
-	it("T6: handles parent-child state nesting", () => {
+	// T6: Multiple scopes from boundary splitting
+	it("T6: tokens with different scopes group correctly", () => {
 		const tokens: TokenEvent[] = [
-			{
-				term: "named_state",
-				raw: "【罗天魔咒】：",
-				captures: { name: "罗天魔咒" },
-				position: 0,
-			},
 			{
 				term: "on_attacked",
 				raw: "受到伤害时",
 				captures: {},
 				position: 20,
-			},
-			{
-				term: "named_state",
-				raw: "【噬心之咒】：",
-				captures: { name: "噬心之咒" },
-				position: 40,
+				scope: "罗天魔咒",
 			},
 			{
 				term: "dot_current_hp",
 				raw: "y%当前",
 				captures: { interval: "0.5", value: "y" },
 				position: 60,
-			},
-			{
-				term: "named_state",
-				raw: "【断魂之咒】：",
-				captures: { name: "断魂之咒" },
-				position: 80,
+				scope: "噬心之咒",
 			},
 			{
 				term: "dot_lost_hp",
 				raw: "y%已损",
 				captures: { interval: "0.5", value: "y" },
 				position: 100,
+				scope: "断魂之咒",
 			},
 		];
 		const groups = group(tokens, "skill");
@@ -350,24 +331,19 @@ describe("handlers.parse", () => {
 	});
 });
 
-// ─── T12: Dual-Run Migration Test (Skills) ───────────────
+// ─── T12: Reactive Pipeline Coverage Test ────────────────
 
-describe("reactive pipeline parity — skills", () => {
+describe("reactive pipeline coverage — skills", () => {
 	const entries = readMainSkillTables(markdown);
 
-	// Run the reactive pipeline against each book and compare
-	// effect TYPES with the imperative parser output.
-	// Full field-by-field comparison will be enabled once
-	// the reactive pipeline is tuned to match exactly.
 	for (const entry of entries) {
 		const meta = BOOK_TABLE[entry.name];
 		if (!meta) continue;
 
-		it(`${entry.name}: reactive produces effects`, () => {
+		it(`${entry.name}: produces tokens, groups, and effects`, () => {
 			const skillCell = splitCell(entry.skillText);
 			const joinedDesc = skillCell.description.join("，");
 
-			// Run reactive pipeline stages directly
 			const tokens = scan(joinedDesc);
 			expect(tokens.length).toBeGreaterThan(0);
 
@@ -378,9 +354,10 @@ describe("reactive pipeline parity — skills", () => {
 				allGroups: groups,
 				bookName: entry.name,
 			});
-			// At minimum, the reactive pipeline should produce some effects
-			// (book-specific overrides are handled in pipeline.ts, not here)
-			expect(effects.length).toBeGreaterThanOrEqual(0);
+			expect(effects.length).toBeGreaterThan(0);
+
+			// Every book must produce base_attack
+			expect(effects.some((e) => e.type === "base_attack")).toBe(true);
 		});
 	}
 });

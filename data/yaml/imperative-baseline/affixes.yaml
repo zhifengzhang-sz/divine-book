@@ -78,20 +78,16 @@ universal:
     effects:
       - type: random_buff
         attack: 20
-        data_state: fusion=50
-      - type: damage_increase
-        value: 20
-        data_state: fusion=50
-      - type: damage_increase
-        value: 20
+        crit_damage: 20
+        damage: 20
         data_state: fusion=50
   战意:
     text: |
       本神通施放时，自身每多损失1%最大气血值，会使本次伤害提升x%
       融合50重：x=2.95
     effects:
-      - type: conditional_damage
-        value: 2.95
+      - type: per_self_lost_hp
+        per_percent: 2.95
         data_state: fusion=50
   斩岳:
     text: |
@@ -132,8 +128,8 @@ universal:
       本神通施放时，会使本次神通提升x%攻击力的效果
       融合50重：x=20
     effects:
-      - type: self_buff
-        attack_bonus: 20
+      - type: attack_bonus
+        value: 20
         data_state: fusion=50
   通明:
     text: |
@@ -153,8 +149,8 @@ school:
         使本神通提升x%攻击力的效果
         融合50重：x=300
       effects:
-        - type: self_buff
-          attack_bonus: 300
+        - type: attack_bonus
+          value: 300
           data_state: fusion=50
     灵犀九重:
       text: |
@@ -200,8 +196,8 @@ school:
         本神通施放时，会使本次神通的`最终伤害加深`提升x%
         融合50重：x=50
       effects:
-        - type: self_buff
-          final_damage_bonus: 50
+        - type: final_damage_bonus
+          value: 50
           data_state: fusion=50
     天命有归:
       text: |
@@ -209,9 +205,7 @@ school:
         融合50重：x=50
       effects:
         - type: probability_to_certain
-          data_state: fusion=50
-        - type: damage_increase
-          value: 50
+          damage_increase: 50
           data_state: fusion=50
     景星天佑:
       text: |
@@ -220,12 +214,8 @@ school:
       effects:
         - type: random_buff
           attack: 55
-          data_state: fusion=50
-        - type: damage_increase
-          value: 55
-          data_state: fusion=50
-        - type: damage_increase
-          value: 55
+          crit_damage: 55
+          damage: 55
           data_state: fusion=50
   Demon:
     瑶光却邪:

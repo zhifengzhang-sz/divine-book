@@ -29,6 +29,18 @@ export interface StateDef {
 	_max_stacks_var?: string;
 }
 
+/** Intermediate parsed book — used by parser pipeline before YAML emission */
+export interface ParsedBook {
+	school: string;
+	skillText?: string;
+	affixText?: string;
+	exclusiveAffixText?: string;
+	states?: Record<string, StateDef>;
+	skill: EffectRow[];
+	primaryAffix?: { name: string; effects: EffectRow[] };
+	exclusiveAffix?: { name: string; effects: EffectRow[] };
+}
+
 /** Per-book parsed data — one entry in books.yaml */
 export interface BookData {
 	school: string;

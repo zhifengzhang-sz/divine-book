@@ -12,7 +12,7 @@
 
 import type { EffectRow } from "./emit.js";
 import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
-import { genericAffixParse } from "./split.js";
+import { runPipeline } from "./pipeline.js";
 import { buildStateRegistry, type StateRegistry } from "./states.js";
 import { buildDataState } from "./tiers.js";
 
@@ -113,8 +113,8 @@ export function parseExclusiveAffix(
 	}
 
 	if (parser === "generic") {
-		const effects = genericAffixParse(entry.cell, stateRegistry);
-		return { name: entry.affixName, effects };
+		const result = runPipeline("exclusive", entry.rawText);
+		return { name: entry.affixName, effects: result.effects };
 	}
 
 	const effects = parser(entry.cell);
@@ -250,6 +250,12 @@ const compound_惊蜇化龙: ExclusiveParser = (cell) =>
 		} as EffectRow,
 	]);
 
+const compound_通天剑诀: ExclusiveParser = (cell) =>
+	multiTierEffects(cell, (v, d) => [
+		{ type: "ignore_damage_reduction", ...ds(d) } as EffectRow,
+		{ type: "damage_increase", value: v.x, ...ds(d) } as EffectRow,
+	]);
+
 // ── Parser assignment table ────────────────────────────────────
 //
 // Every book must have an explicit entry.
@@ -261,7 +267,7 @@ const EXCLUSIVE_PARSER_TABLE: Record<string, "generic" | ExclusiveParser> = {
 	春黎剑阵: compound_春黎剑阵,
 	皓月剑诀: compound_皓月剑诀,
 	念剑诀: "generic",
-	通天剑诀: "generic",
+	通天剑诀: compound_通天剑诀,
 	"新-青元剑诀": "generic",
 	无极御剑诀: "generic",
 	// 法修

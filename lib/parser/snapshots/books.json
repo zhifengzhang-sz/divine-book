@@ -22,6 +22,7 @@
         "type": "percent_max_hp_damage",
         "value": 11,
         "cap_vs_monster": 2200,
+        "per_hit": true,
         "data_state": "enlightenment=0"
       },
       {
@@ -37,6 +38,7 @@
         "type": "percent_max_hp_damage",
         "value": 15,
         "cap_vs_monster": 3000,
+        "per_hit": true,
         "data_state": [
           "enlightenment=1",
           "fusion=20"
@@ -55,6 +57,7 @@
         "type": "percent_max_hp_damage",
         "value": 19,
         "cap_vs_monster": 3800,
+        "per_hit": true,
         "data_state": [
           "enlightenment=3",
           "fusion=32"
@@ -73,6 +76,7 @@
         "type": "percent_max_hp_damage",
         "value": 27,
         "cap_vs_monster": 5400,
+        "per_hit": true,
         "data_state": [
           "enlightenment=10",
           "fusion=51"
@@ -86,14 +90,12 @@
           "type": "per_hit_escalation",
           "value": 25,
           "stat": "skill_bonus",
-          "parent": "this",
           "data_state": "enlightenment=3"
         },
         {
           "type": "per_hit_escalation",
           "value": 42.5,
           "stat": "skill_bonus",
-          "parent": "this",
           "data_state": "enlightenment=10"
         }
       ]
@@ -107,7 +109,6 @@
           "value": -80,
           "duration": 8,
           "dispellable": false,
-          "name": "灵涸",
           "data_state": [
             "enlightenment=12",
             "fusion=52"
@@ -145,8 +146,8 @@
       },
       {
         "type": "summon",
-        "duration": 16,
         "inherit_stats": 54,
+        "duration": 16,
         "damage_taken_multiplier": 400,
         "trigger": "on_cast",
         "data_state": [
@@ -162,7 +163,6 @@
           "type": "summon_buff",
           "damage_taken_reduction_to": 120,
           "damage_increase": 200,
-          "parent": "this",
           "data_state": "fusion=50"
         }
       ]
@@ -247,7 +247,15 @@
         "type": "shield_destroy_damage",
         "shields_per_hit": 1,
         "percent_max_hp": 12,
-        "cap_vs_monster": 2400,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=57"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 1,
+        "total": 2400,
         "data_state": [
           "enlightenment=10",
           "fusion=57"
@@ -256,7 +264,15 @@
       {
         "type": "no_shield_double_damage",
         "no_shield_double": 1,
-        "cap_vs_monster": 4800,
+        "data_state": [
+          "enlightenment=10",
+          "fusion=57"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 1,
+        "total": 4800,
         "data_state": [
           "enlightenment=10",
           "fusion=57"
@@ -364,7 +380,6 @@
           "type": "extended_dot",
           "extra_seconds": 6.5,
           "tick_interval": 0.5,
-          "parent": "this",
           "data_state": "fusion=50"
         }
       ]
@@ -405,10 +420,8 @@
       "name": "焚心剑芒",
       "effects": [
         {
-          "type": "per_enemy_lost_hp",
-          "per_percent": 5,
-          "value": 10,
-          "parent": "this"
+          "type": "conditional_damage",
+          "value": 10
         }
       ]
     },
@@ -454,8 +467,7 @@
           "type": "debuff",
           "target": "skill_damage",
           "value": -30,
-          "duration": 16,
-          "parent": "this"
+          "duration": 16
         }
       ]
     },
@@ -535,9 +547,7 @@
       },
       {
         "type": "self_buff",
-        "final_damage_bonus": 10,
-        "duration": 20,
-        "name": "天鹤之佑"
+        "final_damage_bonus": 10
       }
     ],
     "primary_affix": {
@@ -545,9 +555,11 @@
       "effects": [
         {
           "type": "conditional_damage",
-          "condition": "self_final_damage_per_10",
-          "value": 100,
-          "parent": "天鹤之佑"
+          "value": 100
+        },
+        {
+          "type": "self_buff",
+          "final_damage_bonus": 50
         }
       ]
     },
@@ -583,9 +595,7 @@
       },
       {
         "type": "self_buff",
-        "damage_increase": 8,
-        "duration": 12,
-        "name": "天狼之啸"
+        "damage_increase": 8
       }
     ],
     "primary_affix": {
@@ -594,8 +604,7 @@
         {
           "type": "self_buff_extra",
           "attack_bonus": 7,
-          "buff_name": "天狼之啸",
-          "parent": "天狼之啸"
+          "buff_name": "天狼之啸"
         }
       ]
     },
@@ -634,13 +643,22 @@
     },
     "skill": [
       {
-        "type": "base_attack",
-        "hits": 5,
-        "total": 1500
-      },
-      {
         "type": "self_heal",
         "value": 20,
+        "data_state": [
+          "enlightenment=1",
+          "fusion=20"
+        ]
+      },
+      {
+        "type": "base_attack",
+        "hits": 5,
+        "total": 1500,
+        "data_state": "enlightenment=0"
+      },
+      {
+        "type": "heal_echo_damage",
+        "ratio": 1,
         "data_state": [
           "enlightenment=1",
           "fusion=20"
@@ -651,18 +669,17 @@
         "per_tick": 3.5,
         "total": 70,
         "tick_interval": 1,
-        "name": "灵鹤",
         "data_state": [
           "enlightenment=1",
           "fusion=20"
         ]
       },
       {
-        "type": "heal_echo_damage",
-        "ratio": 1,
+        "type": "self_heal",
+        "value": 20,
         "data_state": [
-          "enlightenment=1",
-          "fusion=20"
+          "enlightenment=3",
+          "fusion=50"
         ]
       },
       {
@@ -675,8 +692,8 @@
         ]
       },
       {
-        "type": "self_heal",
-        "value": 20,
+        "type": "heal_echo_damage",
+        "ratio": 1,
         "data_state": [
           "enlightenment=3",
           "fusion=50"
@@ -687,15 +704,6 @@
         "per_tick": 12.5,
         "total": 250,
         "tick_interval": 1,
-        "name": "灵鹤",
-        "data_state": [
-          "enlightenment=3",
-          "fusion=50"
-        ]
-      },
-      {
-        "type": "heal_echo_damage",
-        "ratio": 1,
         "data_state": [
           "enlightenment=3",
           "fusion=50"
@@ -711,7 +719,6 @@
           "duration": 16,
           "source": "self_max_hp",
           "trigger": "per_tick",
-          "parent": "灵鹤",
           "data_state": "fusion=20"
         },
         {
@@ -720,7 +727,6 @@
           "duration": 16,
           "source": "self_max_hp",
           "trigger": "per_tick",
-          "parent": "灵鹤",
           "data_state": "fusion=50"
         }
       ]
@@ -793,11 +799,8 @@
       },
       {
         "type": "self_buff",
-        "attack_bonus": 70,
-        "defense_bonus": 70,
-        "hp_bonus": 70,
-        "duration": 12,
         "name": "仙佑",
+        "attack_bonus": 70,
         "data_state": [
           "enlightenment=1",
           "fusion=51"
@@ -814,11 +817,8 @@
       },
       {
         "type": "self_buff",
-        "attack_bonus": 70,
-        "defense_bonus": 70,
-        "hp_bonus": 70,
-        "duration": 12,
         "name": "仙佑",
+        "attack_bonus": 70,
         "data_state": [
           "enlightenment=7",
           "fusion=51"
@@ -835,11 +835,8 @@
       },
       {
         "type": "self_buff",
-        "attack_bonus": 70,
-        "defense_bonus": 70,
-        "hp_bonus": 70,
-        "duration": 12,
         "name": "仙佑",
+        "attack_bonus": 70,
         "data_state": [
           "enlightenment=8",
           "fusion=51"
@@ -857,7 +854,6 @@
           "type": "self_buff_extra",
           "healing_bonus": 70,
           "buff_name": "仙佑",
-          "parent": "仙佑",
           "data_state": [
             "enlightenment=1",
             "fusion=51"
@@ -867,7 +863,6 @@
           "type": "self_buff_extra",
           "healing_bonus": 170,
           "buff_name": "仙佑",
-          "parent": "仙佑",
           "data_state": [
             "enlightenment=7",
             "fusion=51"
@@ -877,7 +872,6 @@
           "type": "self_buff_extra",
           "healing_bonus": 190,
           "buff_name": "仙佑",
-          "parent": "仙佑",
           "data_state": [
             "enlightenment=8",
             "fusion=51"
@@ -893,9 +887,6 @@
           "target": "healing_received",
           "value": -31,
           "duration": 20,
-          "conditional_value": -51,
-          "name": "灵枯",
-          "condition": "target_hp_below_30",
           "data_state": "fusion=50"
         }
       ]
@@ -925,8 +916,7 @@
       "effects": [
         {
           "type": "lifesteal",
-          "value": 75,
-          "parent": "天龙印"
+          "value": 75
         }
       ]
     },
@@ -954,8 +944,7 @@
       },
       {
         "type": "percent_max_hp_damage",
-        "value": 21,
-        "source": "self"
+        "value": 21
       }
     ],
     "primary_affix": {
@@ -963,10 +952,9 @@
       "effects": [
         {
           "type": "conditional_damage",
-          "condition": "self_hp_above_20",
+          "condition": "self_hp_above_x",
           "per_step": 3,
-          "value": 3,
-          "parent": "this"
+          "value": 3
         }
       ]
     },
@@ -976,7 +964,11 @@
         {
           "type": "enlightenment_bonus",
           "value": 1,
-          "damage_increase": 5,
+          "data_state": "fusion=50"
+        },
+        {
+          "type": "damage_increase",
+          "value": 5,
           "data_state": "fusion=50"
         }
       ]
@@ -999,6 +991,8 @@
       {
         "type": "conditional_damage",
         "value": 4,
+        "damage_base": "self_max_hp",
+        "per_hit": true,
         "condition": "cleanse_excess",
         "max_triggers": 3
       }
@@ -1063,13 +1057,6 @@
           "percent_max_hp": 1.6,
           "duration": "permanent",
           "parent": "结魂锁链"
-        },
-        {
-          "type": "per_debuff_stack_damage",
-          "per_n_stacks": 1,
-          "value": 0.5,
-          "max": 4,
-          "parent": "结魂锁链"
         }
       ]
     },
@@ -1097,12 +1084,12 @@
         "total": 1500
       },
       {
-        "type": "percent_max_hp_damage",
-        "value": 3
-      },
-      {
         "type": "buff_steal",
         "count": 2
+      },
+      {
+        "type": "percent_max_hp_damage",
+        "value": 3
       }
     ],
     "primary_affix": {
@@ -1112,10 +1099,7 @@
           "type": "debuff",
           "target": "attack",
           "value": -14,
-          "duration": 12,
-          "name": "惧意",
-          "per_stolen_buff": true,
-          "parent": "this"
+          "duration": 12
         }
       ]
     },
@@ -1167,49 +1151,9 @@
       "name": "魔妄吞天",
       "effects": [
         {
-          "type": "counter_debuff",
-          "name": "天人五衰",
-          "duration": 15,
-          "on_attacked_chance": 100,
-          "parent": "不灭魔体"
-        },
-        {
-          "type": "lethal_rate_reduction",
-          "value": -50,
-          "parent": "天人五衰",
-          "cycle_interval": 3,
-          "rotating": true
-        },
-        {
-          "type": "crit_damage_reduction",
-          "value": -50,
-          "parent": "天人五衰",
-          "cycle_interval": 3,
-          "rotating": true
-        },
-        {
-          "type": "crit_rate_reduction",
-          "value": -50,
-          "parent": "天人五衰",
-          "cycle_interval": 3,
-          "rotating": true
-        },
-        {
-          "type": "attack_reduction",
-          "value": -23,
-          "parent": "天人五衰",
-          "cycle_interval": 3,
-          "rotating": true
-        },
-        {
-          "type": "debuff",
-          "name": "天人五衰",
-          "target": "final_damage_reduction",
-          "value": -23,
-          "duration": 15,
-          "parent": "天人五衰",
-          "cycle_interval": 3,
-          "rotating": true
+          "type": "self_buff_extra",
+          "crit_rate": 50,
+          "buff_name": "不灭魔体"
         }
       ]
     },
@@ -1261,8 +1205,7 @@
           "value": 13,
           "max_stacks": 30,
           "per_debuff_stack": true,
-          "timing": "pre_cast",
-          "parent": "this"
+          "timing": "pre_cast"
         }
       ]
     },
@@ -1329,13 +1272,13 @@
       {
         "type": "base_attack",
         "hits": 5,
-        "total": 1500
+        "total": 1500,
+        "data_state": "enlightenment=0"
       },
       {
         "type": "counter_debuff",
         "on_attacked_chance": 30,
-        "name": "罗天魔咒",
-        "duration": 8,
+        "name": "噬心之咒",
         "data_state": [
           "enlightenment=0",
           "fusion=20"
@@ -1345,9 +1288,8 @@
         "type": "dot",
         "tick_interval": 0.5,
         "percent_current_hp": 2,
-        "duration": 4,
+        "duration": 8,
         "name": "噬心之咒",
-        "parent": "罗天魔咒",
         "data_state": [
           "enlightenment=0",
           "fusion=20"
@@ -1359,7 +1301,6 @@
         "percent_lost_hp": 2,
         "duration": 4,
         "name": "断魂之咒",
-        "parent": "罗天魔咒",
         "data_state": [
           "enlightenment=0",
           "fusion=20"
@@ -1377,8 +1318,7 @@
       {
         "type": "counter_debuff",
         "on_attacked_chance": 30,
-        "name": "罗天魔咒",
-        "duration": 8,
+        "name": "噬心之咒",
         "data_state": [
           "enlightenment=10",
           "fusion=50"
@@ -1388,9 +1328,8 @@
         "type": "dot",
         "tick_interval": 0.5,
         "percent_current_hp": 7,
-        "duration": 4,
+        "duration": 8,
         "name": "噬心之咒",
-        "parent": "罗天魔咒",
         "data_state": [
           "enlightenment=10",
           "fusion=50"
@@ -1402,7 +1341,6 @@
         "percent_lost_hp": 7,
         "duration": 4,
         "name": "断魂之咒",
-        "parent": "罗天魔咒",
         "data_state": [
           "enlightenment=10",
           "fusion=50"
@@ -1422,34 +1360,8 @@
           ]
         },
         {
-          "type": "cross_slot_debuff",
-          "target": "final_damage_reduction",
-          "value": -46,
-          "duration": 8,
-          "name": "命损",
-          "trigger": "on_attacked",
-          "parent": "罗天魔咒",
-          "data_state": [
-            "enlightenment=0",
-            "fusion=20"
-          ]
-        },
-        {
           "type": "counter_debuff_upgrade",
           "on_attacked_chance": 60,
-          "parent": "罗天魔咒",
-          "data_state": [
-            "enlightenment=10",
-            "fusion=52"
-          ]
-        },
-        {
-          "type": "cross_slot_debuff",
-          "target": "final_damage_reduction",
-          "value": -100,
-          "duration": 8,
-          "name": "命损",
-          "trigger": "on_attacked",
           "parent": "罗天魔咒",
           "data_state": [
             "enlightenment=10",
@@ -1503,9 +1415,7 @@
           "tick_interval": 1,
           "percent_lost_hp": 8,
           "duration": 8,
-          "name": "瞋痴业火",
-          "parent": "贪妄业火",
-          "per_n_stacks": 2
+          "name": "瞋痴业火"
         }
       ]
     },
@@ -1617,8 +1527,6 @@
         "type": "self_hp_cost",
         "value": 4,
         "tick_interval": 1,
-        "name": "怒意滔天",
-        "duration": "permanent",
         "data_state": [
           "enlightenment=1",
           "fusion=51"
@@ -1628,9 +1536,6 @@
         "type": "self_lost_hp_damage",
         "value": 11,
         "tick_interval": 1,
-        "includes_hp_spent": true,
-        "parent": "怒意滔天",
-        "duration": "permanent",
         "data_state": [
           "enlightenment=1",
           "fusion=51"
@@ -1644,8 +1549,6 @@
           "type": "self_lost_hp_damage",
           "value": 12,
           "every_n_hits": 4,
-          "parent": "怒意滔天",
-          "includes_hp_spent": true,
           "data_state": [
             "enlightenment=1",
             "fusion=51"
@@ -1657,8 +1560,8 @@
       "name": "怒血战意",
       "effects": [
         {
-          "type": "per_self_lost_hp",
-          "per_percent": 2,
+          "type": "conditional_damage",
+          "value": 2,
           "data_state": "fusion=50"
         }
       ]
@@ -1694,9 +1597,7 @@
       "effects": [
         {
           "type": "percent_max_hp_damage",
-          "value": 10,
-          "name": "镇杀",
-          "parent": "this"
+          "value": 10
         }
       ]
     },
@@ -1747,10 +1648,7 @@
       },
       {
         "type": "self_buff",
-        "attack_bonus": 20,
-        "damage_reduction": 20,
-        "duration": 4,
-        "name": "怒灵降世"
+        "attack_bonus": 20
       }
     ],
     "primary_affix": {
@@ -1759,16 +1657,14 @@
         {
           "type": "self_buff_extend",
           "value": 3.5,
-          "buff_name": "怒灵降世",
-          "parent": "怒灵降世"
+          "buff_name": "怒灵降世"
         },
         {
           "type": "periodic_cleanse",
           "chance": 30,
           "interval": 1,
           "cooldown": 25,
-          "max_triggers": 1,
-          "parent": "this"
+          "max_triggers": 1
         }
       ]
     },
@@ -1823,8 +1719,7 @@
       "effects": [
         {
           "type": "lifesteal",
-          "value": 82,
-          "parent": "极怒"
+          "value": 82
         }
       ]
     },
@@ -1877,9 +1772,7 @@
         "target": "final_damage_reduction",
         "value": -8,
         "duration": 4,
-        "name": "落星",
-        "per_hit_stack": true,
-        "dispellable": false
+        "name": "落星"
       }
     ],
     "primary_affix": {
@@ -1887,13 +1780,11 @@
       "effects": [
         {
           "type": "shield_strength",
-          "value": 21.5,
-          "parent": "this"
+          "value": 21.5
         },
         {
           "type": "hp_cost_avoid_chance",
-          "value": 30,
-          "parent": "this"
+          "value": 30
         }
       ]
     },
@@ -1939,10 +1830,7 @@
       },
       {
         "type": "self_buff",
-        "attack_bonus": 2.5,
-        "crit_rate": 2.5,
-        "duration": 4,
-        "name": "蛮神"
+        "attack_bonus": 2.5
       }
     ],
     "primary_affix": {
@@ -1950,13 +1838,11 @@
       "effects": [
         {
           "type": "periodic_dispel",
-          "count": 2,
-          "parent": "this"
+          "count": 2
         },
         {
           "type": "self_hp_floor",
-          "value": 10,
-          "parent": "this"
+          "value": 10
         }
       ]
     },
@@ -1983,18 +1869,19 @@
     },
     "skill": [
       {
-        "type": "self_hp_cost",
-        "value": 20
-      },
-      {
         "type": "base_attack",
         "hits": 5,
         "total": 1500
       },
       {
+        "type": "self_hp_cost",
+        "value": 20
+      },
+      {
         "type": "self_lost_hp_damage",
         "value": 10,
         "per_hit": true,
+        "parent": "破虚",
         "name": "破虚",
         "next_skill_hits": 8
       }

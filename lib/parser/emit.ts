@@ -5,8 +5,12 @@
  * matching the effects.yaml format.
  */
 
-import type { BookData, EffectRow, StateDef } from "../data/types.js";
-import type { ParsedBook } from "./split.js";
+import type {
+	BookData,
+	EffectRow,
+	ParsedBook,
+	StateDef,
+} from "../data/types.js";
 
 export type {
 	AffixSection,

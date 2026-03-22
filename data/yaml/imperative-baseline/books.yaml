@@ -29,7 +29,6 @@ books:
       - type: percent_max_hp_damage
         value: 11
         cap_vs_monster: 2200
-        per_hit: true
         data_state: enlightenment=0
       - type: base_attack
         hits: 6
@@ -40,7 +39,6 @@ books:
       - type: percent_max_hp_damage
         value: 15
         cap_vs_monster: 3000
-        per_hit: true
         data_state:
           - enlightenment=1
           - fusion=20
@@ -53,7 +51,6 @@ books:
       - type: percent_max_hp_damage
         value: 19
         cap_vs_monster: 3800
-        per_hit: true
         data_state:
           - enlightenment=3
           - fusion=32
@@ -66,7 +63,6 @@ books:
       - type: percent_max_hp_damage
         value: 27
         cap_vs_monster: 5400
-        per_hit: true
         data_state:
           - enlightenment=10
           - fusion=51
@@ -76,10 +72,12 @@ books:
         - type: per_hit_escalation
           value: 25
           stat: skill_bonus
+          parent: this
           data_state: enlightenment=3
         - type: per_hit_escalation
           value: 42.5
           stat: skill_bonus
+          parent: this
           data_state: enlightenment=10
     exclusive_affix:
       name: 天哀灵涸
@@ -89,6 +87,7 @@ books:
           value: -80
           duration: 8
           dispellable: false
+          name: 灵涸
           data_state:
             - enlightenment=12
             - fusion=52
@@ -120,8 +119,8 @@ books:
           - enlightenment=10
           - fusion=83
       - type: summon
-        inherit_stats: 54
         duration: 16
+        inherit_stats: 54
         damage_taken_multiplier: 400
         trigger: on_cast
         data_state:
@@ -133,6 +132,7 @@ books:
         - type: summon_buff
           damage_taken_reduction_to: 120
           damage_increase: 200
+          parent: this
           data_state: fusion=50
     exclusive_affix:
       name: 玄心剑魄
@@ -198,23 +198,13 @@ books:
       - type: shield_destroy_damage
         shields_per_hit: 1
         percent_max_hp: 12
-        data_state:
-          - enlightenment=10
-          - fusion=57
-      - type: base_attack
-        hits: 1
-        total: 2400
+        cap_vs_monster: 2400
         data_state:
           - enlightenment=10
           - fusion=57
       - type: no_shield_double_damage
         no_shield_double: 1
-        data_state:
-          - enlightenment=10
-          - fusion=57
-      - type: base_attack
-        hits: 1
-        total: 4800
+        cap_vs_monster: 4800
         data_state:
           - enlightenment=10
           - fusion=57
@@ -293,6 +283,7 @@ books:
         - type: extended_dot
           extra_seconds: 6.5
           tick_interval: 0.5
+          parent: this
           data_state: fusion=50
     exclusive_affix:
       name: 仙露护元
@@ -323,8 +314,10 @@ books:
     primary_affix:
       name: 焚心剑芒
       effects:
-        - type: conditional_damage
+        - type: per_enemy_lost_hp
+          per_percent: 5
           value: 10
+          parent: this
     exclusive_affix:
       name: 神威冲云
       effects:
@@ -363,6 +356,7 @@ books:
           target: skill_damage
           value: -30
           duration: 16
+          parent: this
     exclusive_affix:
       name: 天威煌煌
       effects:
@@ -424,13 +418,15 @@ books:
         total: 1500
       - type: self_buff
         final_damage_bonus: 10
+        duration: 20
+        name: 天鹤之佑
     primary_affix:
       name: 天鹤祈瑞
       effects:
         - type: conditional_damage
+          condition: self_final_damage_per_10
           value: 100
-        - type: self_buff
-          final_damage_bonus: 50
+          parent: 天鹤之佑
     exclusive_affix:
       name: 龙象护身
       effects:
@@ -460,12 +456,15 @@ books:
         total: 1500
       - type: self_buff
         damage_increase: 8
+        duration: 12
+        name: 天狼之啸
     primary_affix:
       name: 天狼战意
       effects:
         - type: self_buff_extra
           attack_bonus: 7
           buff_name: 天狼之啸
+          parent: 天狼之啸
     exclusive_affix:
       name: 真极穿空
       effects:
@@ -500,17 +499,11 @@ books:
         target: opponent
         duration: 0
     skill:
-      - type: self_heal
-        value: 20
-        data_state:
-          - enlightenment=1
-          - fusion=20
       - type: base_attack
         hits: 5
         total: 1500
-        data_state: enlightenment=0
-      - type: heal_echo_damage
-        ratio: 1
+      - type: self_heal
+        value: 20
         data_state:
           - enlightenment=1
           - fusion=20
@@ -518,22 +511,23 @@ books:
         per_tick: 3.5
         total: 70
         tick_interval: 1
+        name: 灵鹤
         data_state:
           - enlightenment=1
           - fusion=20
-      - type: self_heal
-        value: 20
+      - type: heal_echo_damage
+        ratio: 1
         data_state:
-          - enlightenment=3
-          - fusion=50
+          - enlightenment=1
+          - fusion=20
       - type: base_attack
         hits: 5
         total: 19065
         data_state:
           - enlightenment=3
           - fusion=50
-      - type: heal_echo_damage
-        ratio: 1
+      - type: self_heal
+        value: 20
         data_state:
           - enlightenment=3
           - fusion=50
@@ -541,6 +535,12 @@ books:
         per_tick: 12.5
         total: 250
         tick_interval: 1
+        name: 灵鹤
+        data_state:
+          - enlightenment=3
+          - fusion=50
+      - type: heal_echo_damage
+        ratio: 1
         data_state:
           - enlightenment=3
           - fusion=50
@@ -552,12 +552,14 @@ books:
           duration: 16
           source: self_max_hp
           trigger: per_tick
+          parent: 灵鹤
           data_state: fusion=20
         - type: shield
           value: 4.4
           duration: 16
           source: self_max_hp
           trigger: per_tick
+          parent: 灵鹤
           data_state: fusion=50
     exclusive_affix:
       name: 奇能诡道
@@ -616,8 +618,11 @@ books:
         total: 1500
         data_state: enlightenment=1
       - type: self_buff
-        name: 仙佑
         attack_bonus: 70
+        defense_bonus: 70
+        hp_bonus: 70
+        duration: 12
+        name: 仙佑
         data_state:
           - enlightenment=1
           - fusion=51
@@ -628,8 +633,11 @@ books:
           - enlightenment=7
           - fusion=51
       - type: self_buff
-        name: 仙佑
         attack_bonus: 70
+        defense_bonus: 70
+        hp_bonus: 70
+        duration: 12
+        name: 仙佑
         data_state:
           - enlightenment=7
           - fusion=51
@@ -640,8 +648,11 @@ books:
           - enlightenment=8
           - fusion=51
       - type: self_buff
-        name: 仙佑
         attack_bonus: 70
+        defense_bonus: 70
+        hp_bonus: 70
+        duration: 12
+        name: 仙佑
         data_state:
           - enlightenment=8
           - fusion=51
@@ -653,18 +664,21 @@ books:
         - type: self_buff_extra
           healing_bonus: 70
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=1
             - fusion=51
         - type: self_buff_extra
           healing_bonus: 170
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=7
             - fusion=51
         - type: self_buff_extra
           healing_bonus: 190
           buff_name: 仙佑
+          parent: 仙佑
           data_state:
             - enlightenment=8
             - fusion=51
@@ -675,6 +689,9 @@ books:
           target: healing_received
           value: -31
           duration: 20
+          conditional_value: -51
+          name: 灵枯
+          condition: target_hp_below_30
           data_state: fusion=50
   星元化岳:
     school: Spell
@@ -701,6 +718,7 @@ books:
       effects:
         - type: lifesteal
           value: 75
+          parent: 天龙印
     exclusive_affix:
       name: 仙灵汲元
       effects:
@@ -724,21 +742,21 @@ books:
         total: 1500
       - type: percent_max_hp_damage
         value: 21
+        source: self
     primary_affix:
       name: 天灵怒威
       effects:
         - type: conditional_damage
-          condition: self_hp_above_x
+          condition: self_hp_above_20
           per_step: 3
           value: 3
+          parent: this
     exclusive_affix:
       name: 天人合一
       effects:
         - type: enlightenment_bonus
           value: 1
-          data_state: fusion=50
-        - type: damage_increase
-          value: 5
+          damage_increase: 5
           data_state: fusion=50
   九天真雷诀:
     school: Spell
@@ -756,8 +774,6 @@ books:
         count: 2
       - type: conditional_damage
         value: 4
-        damage_base: self_max_hp
-        per_hit: true
         condition: cleanse_excess
         max_triggers: 3
     exclusive_affix:
@@ -810,6 +826,11 @@ books:
           percent_max_hp: 1.6
           duration: permanent
           parent: 结魂锁链
+        - type: per_debuff_stack_damage
+          per_n_stacks: 1
+          value: 0.5
+          max: 4
+          parent: 结魂锁链
     exclusive_affix:
       name: 引灵摘魂
       effects:
@@ -833,10 +854,10 @@ books:
       - type: base_attack
         hits: 7
         total: 1500
-      - type: buff_steal
-        count: 2
       - type: percent_max_hp_damage
         value: 3
+      - type: buff_steal
+        count: 2
     primary_affix:
       name: 魔意震慑
       effects:
@@ -844,6 +865,9 @@ books:
           target: attack
           value: -14
           duration: 12
+          name: 惧意
+          per_stolen_buff: true
+          parent: this
     exclusive_affix:
       name: 心魔惑言
       effects:
@@ -885,9 +909,39 @@ books:
     primary_affix:
       name: 魔妄吞天
       effects:
-        - type: self_buff_extra
-          crit_rate: 50
-          buff_name: 不灭魔体
+        - type: counter_debuff
+          name: 天人五衰
+          duration: 15
+          on_attacked_chance: 100
+          parent: 不灭魔体
+        - type: lethal_rate_reduction
+          value: -50
+          parent: 天人五衰
+          cycle_interval: 3
+          rotating: true
+        - type: crit_damage_reduction
+          value: -50
+          parent: 天人五衰
+          cycle_interval: 3
+          rotating: true
+        - type: crit_rate_reduction
+          value: -50
+          parent: 天人五衰
+          cycle_interval: 3
+          rotating: true
+        - type: attack_reduction
+          value: -23
+          parent: 天人五衰
+          cycle_interval: 3
+          rotating: true
+        - type: debuff
+          name: 天人五衰
+          target: final_damage_reduction
+          value: -23
+          duration: 15
+          parent: 天人五衰
+          cycle_interval: 3
+          rotating: true
     exclusive_affix:
       name: 魔骨明心
       effects:
@@ -931,6 +985,7 @@ books:
           max_stacks: 30
           per_debuff_stack: true
           timing: pre_cast
+          parent: this
     exclusive_affix:
       name: 心逐神随
       effects:
@@ -984,18 +1039,19 @@ books:
       - type: base_attack
         hits: 5
         total: 1500
-        data_state: enlightenment=0
       - type: counter_debuff
         on_attacked_chance: 30
-        name: 噬心之咒
+        name: 罗天魔咒
+        duration: 8
         data_state:
           - enlightenment=0
           - fusion=20
       - type: dot
         tick_interval: 0.5
         percent_current_hp: 2
-        duration: 8
+        duration: 4
         name: 噬心之咒
+        parent: 罗天魔咒
         data_state:
           - enlightenment=0
           - fusion=20
@@ -1004,6 +1060,7 @@ books:
         percent_lost_hp: 2
         duration: 4
         name: 断魂之咒
+        parent: 罗天魔咒
         data_state:
           - enlightenment=0
           - fusion=20
@@ -1015,15 +1072,17 @@ books:
           - fusion=50
       - type: counter_debuff
         on_attacked_chance: 30
-        name: 噬心之咒
+        name: 罗天魔咒
+        duration: 8
         data_state:
           - enlightenment=10
           - fusion=50
       - type: dot
         tick_interval: 0.5
         percent_current_hp: 7
-        duration: 8
+        duration: 4
         name: 噬心之咒
+        parent: 罗天魔咒
         data_state:
           - enlightenment=10
           - fusion=50
@@ -1032,6 +1091,7 @@ books:
         percent_lost_hp: 7
         duration: 4
         name: 断魂之咒
+        parent: 罗天魔咒
         data_state:
           - enlightenment=10
           - fusion=50
@@ -1044,8 +1104,28 @@ books:
           data_state:
             - enlightenment=0
             - fusion=20
+        - type: cross_slot_debuff
+          target: final_damage_reduction
+          value: -46
+          duration: 8
+          name: 命损
+          trigger: on_attacked
+          parent: 罗天魔咒
+          data_state:
+            - enlightenment=0
+            - fusion=20
         - type: counter_debuff_upgrade
           on_attacked_chance: 60
+          parent: 罗天魔咒
+          data_state:
+            - enlightenment=10
+            - fusion=52
+        - type: cross_slot_debuff
+          target: final_damage_reduction
+          value: -100
+          duration: 8
+          name: 命损
+          trigger: on_attacked
           parent: 罗天魔咒
           data_state:
             - enlightenment=10
@@ -1089,6 +1169,8 @@ books:
           percent_lost_hp: 8
           duration: 8
           name: 瞋痴业火
+          parent: 贪妄业火
+          per_n_stacks: 2
     exclusive_affix:
       name: 天魔真解
       effects:
@@ -1176,12 +1258,17 @@ books:
       - type: self_hp_cost
         value: 4
         tick_interval: 1
+        name: 怒意滔天
+        duration: permanent
         data_state:
           - enlightenment=1
           - fusion=51
       - type: self_lost_hp_damage
         value: 11
         tick_interval: 1
+        includes_hp_spent: true
+        parent: 怒意滔天
+        duration: permanent
         data_state:
           - enlightenment=1
           - fusion=51
@@ -1191,14 +1278,16 @@ books:
         - type: self_lost_hp_damage
           value: 12
           every_n_hits: 4
+          parent: 怒意滔天
+          includes_hp_spent: true
           data_state:
             - enlightenment=1
             - fusion=51
     exclusive_affix:
       name: 怒血战意
       effects:
-        - type: conditional_damage
-          value: 2
+        - type: per_self_lost_hp
+          per_percent: 2
           data_state: fusion=50
   惊蜇化龙:
     school: Body
@@ -1229,6 +1318,8 @@ books:
       effects:
         - type: percent_max_hp_damage
           value: 10
+          name: 镇杀
+          parent: this
     exclusive_affix:
       name: 索心真诀
       effects:
@@ -1267,17 +1358,22 @@ books:
         self_heal: true
       - type: self_buff
         attack_bonus: 20
+        damage_reduction: 20
+        duration: 4
+        name: 怒灵降世
     primary_affix:
       name: 星猿弃天
       effects:
         - type: self_buff_extend
           value: 3.5
           buff_name: 怒灵降世
+          parent: 怒灵降世
         - type: periodic_cleanse
           chance: 30
           interval: 1
           cooldown: 25
           max_triggers: 1
+          parent: this
     exclusive_affix:
       name: 破釜沉舟
       effects:
@@ -1317,6 +1413,7 @@ books:
       effects:
         - type: lifesteal
           value: 82
+          parent: 极怒
     exclusive_affix:
       name: 真言不灭
       effects:
@@ -1357,13 +1454,17 @@ books:
         value: -8
         duration: 4
         name: 落星
+        per_hit_stack: true
+        dispellable: false
     primary_affix:
       name: 星猿援护
       effects:
         - type: shield_strength
           value: 21.5
+          parent: this
         - type: hp_cost_avoid_chance
           value: 30
+          parent: this
     exclusive_affix:
       name: 乘胜逐北
       effects:
@@ -1399,13 +1500,18 @@ books:
         per_hit: true
       - type: self_buff
         attack_bonus: 2.5
+        crit_rate: 2.5
+        duration: 4
+        name: 蛮神
     primary_affix:
       name: 星猿永生
       effects:
         - type: periodic_dispel
           count: 2
+          parent: this
         - type: self_hp_floor
           value: 10
+          parent: this
     exclusive_affix:
       name: 玉石俱焚
       effects:
@@ -1425,15 +1531,14 @@ books:
         target: self
         duration: 0
     skill:
+      - type: self_hp_cost
+        value: 20
       - type: base_attack
         hits: 5
         total: 1500
-      - type: self_hp_cost
-        value: 20
       - type: self_lost_hp_damage
         value: 10
         per_hit: true
-        parent: 破虚
         name: 破虚
         next_skill_hits: 8
     exclusive_affix:
