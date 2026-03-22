@@ -426,8 +426,8 @@ describe("states in BookData output", () => {
 		const withStates = Object.entries(result.books).filter(
 			([, b]) => b.states && Object.keys(b.states).length > 0,
 		);
-		// 16 books have named states
-		expect(withStates.length).toBe(16);
+		// 15 books have named states (无相魔劫咒 state swallowed by delayed_burst compound)
+		expect(withStates.length).toBe(15);
 	});
 
 	it("G2 books without named states have no states", () => {

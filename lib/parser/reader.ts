@@ -277,6 +277,11 @@ const READER_PATTERNS: ReaderPattern[] = [
 		captureNames: ["qualifier", "value"],
 	},
 	{
+		term: "max_stacks",
+		regex: /上限(\w+)层/,
+		captureNames: ["value"],
+	},
+	{
 		term: "chance",
 		regex: /(?:各?有)?(\w+)%(?:的)?概率/,
 		captureNames: ["value"],

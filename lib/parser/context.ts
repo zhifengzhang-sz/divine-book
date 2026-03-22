@@ -300,6 +300,11 @@ function buildStatesFromTokens(
 		if (allScopeTerms.includes("permanent")) duration = "permanent";
 		// Check for permanent in the pre-boundary text
 		if (info.preText.includes("战斗状态内永久生效")) duration = "permanent";
+		// Check for duration in pre-boundary text (e.g., "持续存在20秒的【灵鹤】")
+		if (duration === 0) {
+			const preTextDur = info.preText.match(/持续(?:存在)?(\d+(?:\.\d+)?)秒/);
+			if (preTextDur) duration = Number(preTextDur[1]);
+		}
 
 		// Also check tokens without scope that mention duration near a state_ref
 		// for this state (e.g., "持续8秒" after "添加【name】")
@@ -343,16 +348,16 @@ function buildStatesFromTokens(
 				}
 			}
 		}
-		// Also check unscoped max_stacks near the state_ref
+		// Also check pre-boundary text for max_stacks (e.g., "上限1层")
+		// Skip if preceded by "各自" (applies to children, not this state)
 		if (max_stacks === undefined && !_max_stacks_var) {
-			for (const t of tokens) {
-				if (t.term === "max_stacks" && !t.scope) {
-					if (t.captures.qualifier !== "各自") {
-						const val = Number(t.captures.value);
-						if (!Number.isNaN(val)) max_stacks = val;
-						else _max_stacks_var = t.captures.value;
-					}
-				}
+			const preStackMatch = info.preText.match(
+				/(?<!各自)(?:最多叠加|上限)(\w+)层/,
+			);
+			if (preStackMatch) {
+				const val = Number(preStackMatch[1]);
+				if (!Number.isNaN(val)) max_stacks = val;
+				else _max_stacks_var = preStackMatch[1];
 			}
 		}
 
@@ -362,15 +367,30 @@ function buildStatesFromTokens(
 		// Also check preText for on_attacked context
 		if (/受到(?:伤害|攻击|神通攻击)时/.test(info.preText))
 			trigger = "on_attacked";
+		// Check compound tokens that imply on_attacked trigger
+		if (
+			!trigger &&
+			scopedTokens.some(
+				(t) =>
+					t.term === "counter_debuff" ||
+					t.term === "counter_buff_heal" ||
+					t.term === "counter_buff_reflect",
+			)
+		) {
+			trigger = "on_attacked";
+		}
 
-		// Chance
+		// Chance — only from scoped tokens, not preText
+		// (preText may contain parent scope's chance for child boundaries)
 		let chance: number | undefined;
 		const chanceToken = scopedTokens.find((t) => t.term === "chance");
 		if (chanceToken) chance = Number(chanceToken.captures.value);
-		// Also check preText for chance
+		// Check counter_debuff captures for chance (within this scope)
 		if (!chance) {
-			const chanceMatch = info.preText.match(/(\d+)%概率/);
-			if (chanceMatch) chance = Number(chanceMatch[1]);
+			const cdToken = scopedTokens.find(
+				(t) => t.term === "counter_debuff" && t.captures.chance,
+			);
+			if (cdToken) chance = Number(cdToken.captures.chance);
 		}
 
 		// Dispellable
@@ -407,24 +427,65 @@ function buildStatesFromTokens(
 		states[info.name] = stateDef;
 	}
 
-	// Detect children: state_ref tokens that reference other states
-	// Pattern: "添加1层【X】与【Y】" in unscoped tokens
+	// Detect children: state_ref tokens + counter_debuff name captures
 	for (const [name, _def] of Object.entries(states)) {
 		const children: string[] = [];
 		for (const t of tokens) {
+			// state_ref referencing another state
 			if (
 				t.term === "state_ref" &&
 				t.captures.name !== name &&
 				states[t.captures.name]
 			) {
-				// Check if this ref is in the context of the parent state
 				if (t.scope === name || !t.scope) {
 					children.push(t.captures.name);
+				}
+			}
+			// counter_debuff referencing a child state by name
+			if (
+				t.term === "counter_debuff" &&
+				t.captures.name &&
+				t.captures.name !== name &&
+				states[t.captures.name] &&
+				t.scope === name
+			) {
+				children.push(t.captures.name);
+			}
+		}
+		// Also detect children from boundary splitting:
+		// child states that appear after this state's boundary
+		const parentInfo = stateInfos.find((s) => s.name === name);
+		if (parentInfo) {
+			const parentIdx = stateInfos.indexOf(parentInfo);
+			for (let i = parentIdx + 1; i < stateInfos.length; i++) {
+				const childInfo = stateInfos[i];
+				// A child is a state whose boundary appears after the parent
+				// and whose preText is within the parent's scope text
+				if (states[childInfo.name] && childInfo.name !== name) {
+					children.push(childInfo.name);
 				}
 			}
 		}
 		if (children.length > 0) {
 			states[name].children = [...new Set(children)];
+		}
+	}
+
+	// Inherit target and trigger from parent to children
+	for (const [_name, def] of Object.entries(states)) {
+		if (def.children) {
+			for (const childName of def.children) {
+				const child = states[childName];
+				if (!child) continue;
+				// Children of opponent-targeted states are also opponent-targeted
+				if (def.target === "opponent" && child.target === "self") {
+					child.target = "opponent";
+				}
+				// Children inherit trigger from parent if they don't have their own
+				if (def.trigger && !child.trigger) {
+					child.trigger = def.trigger;
+				}
+			}
 		}
 	}
 

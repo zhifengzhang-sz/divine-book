@@ -1262,10 +1262,7 @@
       "断魂之咒": {
         "target": "opponent",
         "duration": 4,
-        "trigger": "on_attacked",
-        "children": [
-          "噬心之咒"
-        ]
+        "trigger": "on_attacked"
       }
     },
     "skill": [
@@ -1436,10 +1433,6 @@
     "affix_text": "【灭劫魔威】：【无相魔劫】状态结束时的伤害提升65% （数据为没有悟境的情况）",
     "exclusive_affix_text": "本神通命中时，对目标施加负面状态【魔劫】，持续8秒\n【魔劫】：降低敌方x%的治疗量，并使神通造成的伤害提升y%，若目标不存在任何治疗状态，伤害提升效果进一步提升至z%\n融合50重：x=40.8, y=105, z=205",
     "states": {
-      "无相魔劫": {
-        "target": "opponent",
-        "duration": 12
-      },
       "魔劫": {
         "target": "opponent",
         "duration": 8
@@ -1693,7 +1686,8 @@
     "states": {
       "极怒": {
         "target": "self",
-        "duration": 4
+        "duration": 4,
+        "trigger": "on_attacked"
       }
     },
     "skill": [

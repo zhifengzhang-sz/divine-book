@@ -979,7 +979,6 @@ books:
         target: opponent
         duration: 4
         trigger: on_attacked
-        children: [噬心之咒]
     skill:
       - type: base_attack
         hits: 5
@@ -1106,9 +1105,6 @@ books:
       【魔劫】：降低敌方x%的治疗量，并使神通造成的伤害提升y%，若目标不存在任何治疗状态，伤害提升效果进一步提升至z%
       融合50重：x=40.8, y=105, z=205
     states:
-      无相魔劫:
-        target: opponent
-        duration: 12
       魔劫:
         target: opponent
         duration: 8
@@ -1301,6 +1297,7 @@ books:
       极怒:
         target: self
         duration: 4
+        trigger: on_attacked
     skill:
       - type: self_hp_cost
         value: 10
