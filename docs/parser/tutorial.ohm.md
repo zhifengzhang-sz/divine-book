@@ -212,7 +212,78 @@ If the text doesn't match, `match.failed()` is true and `match.shortMessage` tel
 Line 1, col 42: expected "共计"
 ```
 
+For example, if someone changes the raw data from `"共计"` to `"共"`, the grammar catches it immediately. You fix it by updating the grammar rule to match the new text.
+
 This is the grammar's job: **parse or fail with a precise error**. It doesn't know about effect types — that's the semantic's job (see tutorial.semantics.md).
+
+### §5.1 Runnable Example
+
+Save this as `example.ts` and run with `bun example.ts`:
+
+```typescript
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import * as ohm from "ohm-js";
+
+// Load grammars
+const base = readFileSync(resolve("lib/parser/grammars-v1/Base.ohm"), "utf-8");
+const book = readFileSync(resolve("lib/parser/grammars-v1/books/千锋聚灵剑.ohm"), "utf-8");
+const grammars = ohm.grammars(base + "\n" + book);
+const grammar = grammars["千锋聚灵剑"];
+
+// The raw text (from data/raw/主书.md, backticks stripped)
+const raw =
+  "剑破天地，对范围内目标造成六段共计x%攻击力的灵法伤害，" +
+  "并每段攻击造成目标y%最大气血值的伤害（对怪物伤害不超过自身z%攻击力）";
+
+// Parse
+const match = grammar.match(raw, "skillDescription");
+if (match.failed()) {
+  console.error("FAILED:", match.shortMessage);
+  process.exit(1);
+}
+console.log("Parse succeeded!");
+
+// Show the parse tree structure
+const sem = grammar.createSemantics();
+sem.addOperation("describe", {
+  _nonterminal(...children) {
+    const name = this.ctorName;
+    const childDescs = children.map((c: ohm.Node) => c.describe()).filter(Boolean);
+    if (childDescs.length === 0) return `${name}: "${this.sourceString}"`;
+    return `${name}\n${childDescs.map((d: string) => "  " + d.replace(/\n/g, "\n  ")).join("\n")}`;
+  },
+  _terminal() {
+    return "";
+  },
+  _iter(...children) {
+    return children.map((c: ohm.Node) => c.describe()).filter(Boolean).join("\n");
+  },
+});
+
+console.log("\nParse tree:");
+console.log(sem(match).describe());
+```
+
+**Output:**
+
+```
+Parse succeeded!
+
+Parse tree:
+skillDescription
+  preamble: "剑破天地，对范围内目标"
+  baseAttack
+    cnHitCount
+      cnNumber: "六"
+    varRef: "x"
+  perHit: "每段攻击"
+  damageWithCap
+    percentMaxHpDmg
+      varRef: "y"
+    capVsMonster
+      varRef: "z"
+```
 
 ---
 

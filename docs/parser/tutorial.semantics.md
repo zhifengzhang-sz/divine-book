@@ -242,6 +242,106 @@ const effects = sem(match).toEffects();
 
 The grammar and semantics are created once per book. `grammar.match()` + `sem(match).toEffects()` runs per input text.
 
+### §6.1 Runnable Example
+
+Save this as `example-semantics.ts` and run with `bun example-semantics.ts`:
+
+```typescript
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import * as ohm from "ohm-js";
+
+// --- Load grammar ---
+const base = readFileSync(resolve("lib/parser/grammars-v1/Base.ohm"), "utf-8");
+const book = readFileSync(resolve("lib/parser/grammars-v1/books/千锋聚灵剑.ohm"), "utf-8");
+const grammars = ohm.grammars(base + "\n" + book);
+const grammar = grammars["千锋聚灵剑"];
+
+// --- Chinese number helper ---
+const CN: Record<string, number> = {
+  一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5,
+  六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
+};
+function parseCn(s: string): number {
+  return CN[s] ?? (Number.parseInt(s, 10) || 1);
+}
+
+// --- Create semantics ---
+const sem = grammar.createSemantics();
+
+// Register extractVar attribute
+sem.addAttribute("extractVar", {
+  varRef_letters(_c: ohm.Node) { return this.sourceString; },
+  varRef_decimal(_i: ohm.Node, _d: ohm.Node, _f: ohm.Node) { return this.sourceString; },
+  varRef_integer(_d: ohm.Node) { return this.sourceString; },
+  stateName(_o: ohm.Node, c: ohm.Node, _cl: ohm.Node) { return c.sourceString; },
+  stateNameChars(_c: ohm.Node) { return this.sourceString; },
+  digits(_d: ohm.Node) { return this.sourceString; },
+  cnNumber(_d: ohm.Node) { return String(parseCn(this.sourceString)); },
+  _nonterminal(...children: ohm.Node[]) {
+    for (const child of children) {
+      try { const v = child.extractVar; if (/^[a-z]/.test(v)) return v; } catch {}
+    }
+    return this.sourceString;
+  },
+  _terminal() { return this.sourceString; },
+  _iter(...children: ohm.Node[]) {
+    return children.length > 0 ? children[children.length - 1].extractVar : this.sourceString;
+  },
+});
+
+// Register toEffects operation
+sem.addOperation("toEffects", {
+  skillDescription(_pre, baseAttack, _sep, _perHit, damageWithCap) {
+    return [...baseAttack.toEffects(), ...damageWithCap.toEffects()];
+  },
+  baseAttack(_zc, cnHit, _gongji, varRef, _pct, _atkli) {
+    return [{ type: "base_attack", hits: parseCn(cnHit.sourceString.replace("段", "")), total: varRef.extractVar }];
+  },
+  damageWithCap(dmg, _lp, cap, _rp) {
+    return [{ type: "percent_max_hp_damage", value: dmg.extractVar, cap_vs_monster: cap.extractVar }];
+  },
+  preamble(_) { return []; },
+  cnHitCount(_cn, _d) { return []; },
+  perHit(_) { return []; },
+  _terminal() { return []; },
+  _iter(...children) { return children.flatMap((c: ohm.Node) => c.toEffects()); },
+});
+
+// --- Parse and extract ---
+const raw =
+  "剑破天地，对范围内目标造成六段共计x%攻击力的灵法伤害，" +
+  "并每段攻击造成目标y%最大气血值的伤害（对怪物伤害不超过自身z%攻击力）";
+
+const match = grammar.match(raw, "skillDescription");
+if (match.failed()) {
+  console.error("Parse failed:", match.shortMessage);
+  process.exit(1);
+}
+
+const effects = sem(match).toEffects();
+console.log("Effects:");
+console.log(JSON.stringify(effects, null, 2));
+```
+
+**Output:**
+
+```json
+Effects:
+[
+  {
+    "type": "base_attack",
+    "hits": 6,
+    "total": "x"
+  },
+  {
+    "type": "percent_max_hp_damage",
+    "value": "y",
+    "cap_vs_monster": "z"
+  }
+]
+```
+
 ---
 
 ## §7 Testing Semantics
