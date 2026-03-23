@@ -1,0 +1,28 @@
+周天星元 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Note: selfHeal BEFORE baseAttack
+  skillDescription = preamble selfHeal "，并" midProse baseAttack "，并" healEcho "，" stateClause
+  preamble = (~selfHeal any)*
+  selfHeal = "为自身恢复共" varRef "%" "最大气血值"
+  midProse = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共计" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+  healEcho = "附加临摹期间所恢复气血值的等额伤害"
+  stateClause = gapTo<stateName> stateName "：" stateBody
+  stateBody = "每秒恢复自身和友方" varRef "%" "气血值" "，" "共计恢复" varRef "%" "的最大气血值"
+
+  // ── Primary affix【天书灵盾】
+  // Raw: 【灵鹤】每次恢复气血时会为目标添加一个x%自身最大气血值的护盾，持续16秒
+  primaryAffix = stateName "每次恢复气血时" gapTo<varRef> varRef "%" "自身最大气血值的护盾" "，" "持续" varRef "秒"
+
+  // ── Exclusive affix【奇能诡道】(multi-clause)
+  // Raw: 1. 当本神通为敌方添加减益状态时，有x%概率额外多附加1层该减益状态
+  //      2. 若本神通施加伤害加深类（...）增益状态时，则会额外对目标施加负面状态【逆转阴阳】：
+  //         敌方会减少y倍触发属性的伤害减免类效果，持续时间与触发的增益状态相同
+  exclusiveAffix = exclusiveAffix_1 " 2. " exclusiveAffix_2
+  exclusiveAffix_1 = "1. 当本神通为敌方添加减益状态时" "，" "有" varRef "%" "概率额外多附加1层该减益状态"
+  exclusiveAffix_2
+    = "若本神通施加伤害加深类" gapTo<"增益"> "增益状态时" "，"
+      "则会额外对目标施加负面状态" stateName "："
+      "敌方会减少" varRef "倍触发属性的伤害减免类效果" "，" "持续时间与触发的增益状态相同"
+}

@@ -1,0 +1,29 @@
+梵圣真魔咒 <: Base {
+  // Raw: 役使六道鬼王攻击目标，对其造成六段共计x%攻击力的灵法伤害，
+  //      每段攻击会为目标添加1层【贪妄业火】：
+  //      每秒对目标造成y%当前气血值的伤害，持续8秒
+
+  skillDescription = preamble baseAttack "，" perHitStateAdd "：" stateBody
+  preamble = (~"对其造成" any)*
+
+  baseAttack = "对其造成" cnHitCount "共计" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  perHitStateAdd = "每段攻击会为目标添加" varRef "层" stateName
+
+  stateBody = dotCurrentHp "，" duration
+  dotCurrentHp = "每秒对目标造成" varRef "%" "当前气血值的伤害"
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【魔心焚尽】
+  // Raw: 目标每获得两个【贪妄业火】，会额外附加一层持续8秒的【瞋痴业火】：
+  //      每秒造成目标x%已损气血值伤害
+  primaryAffix
+    = "目标每获得" cnNumberOrDigit "个" stateName "，"
+      "会额外附加一层持续" varRef "秒的" stateName "："
+      "每秒造成目标" varRef "%" "已损气血值伤害"
+
+  // ── Exclusive affix【天魔真解】
+  // Raw: 使本神通添加的持续伤害效果触发间隙缩短x%
+  exclusiveAffix = "使本神通添加的持续伤害效果触发间隙缩短" varRef "%"
+}

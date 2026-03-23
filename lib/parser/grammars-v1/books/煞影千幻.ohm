@@ -1,0 +1,33 @@
+煞影千幻 <: Base {
+  // Raw: 通灵星辰巨猿，消耗自身x%当前气血值，
+  //      对目标造成三段共y%攻击力的灵法伤害，
+  //      额外对目标造成自身z%已损失气血值的伤害，
+  //      并为自身添加w%最大气血值的护盾，护盾持续8秒，
+  //      同时每段攻击必定会对目标添加1层不可驱散的【落星】：
+  //      降低u%最终伤害减免，持续4秒
+
+  skillDescription = preamble hpCost "，" baseAttack "，" selfLostHpDmg "，并" shield "，" shieldDur "，同时" stateAddClause
+  preamble = (~hpCost any)*
+
+  hpCost = "消耗自身" varRef "%" "当前气血值"
+
+  baseAttack = "对目标造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  selfLostHpDmg = "额外对目标造成自身" varRef "%" "已损失气血值的伤害"
+
+  shield = "为自身添加" varRef "%" "最大气血值的护盾"
+  shieldDur = "护盾持续" varRef "秒"
+
+  // "每段攻击必定会对目标添加1层不可驱散的【落星】：降低u%最终伤害减免，持续4秒"
+  stateAddClause = "每段攻击" gapTo<"添加"> "添加" varRef "层" "不可驱散的" stateName "：" debuffBody
+  debuffBody = "降低" varRef "%" "最终伤害减免" "，" "持续" varRef "秒"
+
+  // ── Primary affix【星猿援护】
+  // Raw: 获得的护盾提升至自身x%最大气血值，且有y%的概率不消耗气血值
+  primaryAffix = "获得的护盾提升至自身" varRef "%" "最大气血值" "，" "且有" varRef "%" "的概率不消耗气血值"
+
+  // ── Exclusive affix【乘胜逐北】
+  // Raw: 本神通造成伤害时，若敌方处于控制状态，则使本次伤害提升x%
+  exclusiveAffix = "本神通造成伤害时" "，" "若敌方处于控制状态" "，" "则使本次伤害提升" varRef "%"
+}

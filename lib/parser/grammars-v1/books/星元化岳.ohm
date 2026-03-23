@@ -1,0 +1,19 @@
+星元化岳 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  skillDescription = preamble baseAttack "，" echoDamageClause
+  preamble = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+  echoDamageClause = echoDamage "（" noDamageBonus "）" "，" duration
+  echoDamage = "当目标每次受到伤害时" "，" "会额外受到一次攻击" "，" "伤害值为当次伤害的" varRef "%"
+  noDamageBonus = "该伤害不受伤害加成影响"
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【天龙轮转】
+  // Raw: 真灵天龙造成伤害时，恢复自身本次伤害x%的气血值
+  primaryAffix = gapTo<"造成伤害时"> "造成伤害时" "，" "恢复自身本次伤害" varRef "%" "的气血值"
+
+  // ── Exclusive affix【仙灵汲元】
+  // Raw: 本神通造成伤害时，会使本次神通获得x%的吸血效果
+  exclusiveAffix = "本神通造成伤害时" "，" "会使本次神通获得" varRef "%" "的吸血效果"
+}

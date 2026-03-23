@@ -1,0 +1,25 @@
+解体化形 <: Base {
+  // Raw: 召唤魔神虚影攻击目标，造成五段共x%攻击力的灵法伤害，
+  //      同时目标当前每具有一个减益状态效果，
+  //      本次神通伤害提升y%，最多计算10个减益状态
+
+  skillDescription = preamble baseAttack "，同时" perDebuffStackDmg
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  perDebuffStackDmg
+    = "目标当前每具有一个减益状态效果" "，"
+      "本次神通伤害提升" varRef "%" "，"
+      "最多计算" varRef "个减益状态"
+
+  // ── Primary affix【魔神降世】
+  primaryAffix
+    = "技能释放前根据目标身上减益状态的最高层数提升自身攻击力" "，"
+      "每层提升自身" varRef "%" "的攻击力" "，"
+      "最多" ("计算" | "技术") varRef "层"
+
+  // ── Exclusive affix【心逐神随】
+  exclusiveAffix = "本神通施放时" "，" "会使本次神通所有效果" varRef "%" "概率提升4倍" "，" varRef "%" "概率提升3倍" "，" varRef "%" "概率提升2倍"
+}

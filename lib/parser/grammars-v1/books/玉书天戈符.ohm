@@ -1,0 +1,17 @@
+玉书天戈符 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  skillDescription = preamble baseAttack "，同时" perHitMaxHpDmg
+  preamble = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+  perHitMaxHpDmg = "每段伤害附加" varRef "%" "自身最大气血值的伤害"
+
+  // ── Primary affix【天灵怒威】
+  // Raw: 当前气血高于x%时获得伤害加成，每额外高出y%气血值获得y%伤害加成
+  primaryAffix = "当前气血高于" varRef "%" "时获得伤害加成" "，" "每额外高出" varRef "%" "气血值获得" varRef "%" "伤害加成"
+
+  // ── Exclusive affix【天人合一】
+  // Raw: 使本神通的悟境等级加1，并使本神通造成的伤害提升x%
+  // Note: parenthetical "（最高不超过3级）" stripped by caller
+  exclusiveAffix = "使本神通的悟境等级加" varRef "，" "并使本神通造成的伤害提升" varRef "%"
+}

@@ -1,0 +1,27 @@
+天轮魔经 <: Base {
+  // Raw: 召唤幽鬼对范围随机目标造成七段共x%攻击力的灵法伤害，
+  //      并役使幽鬼偷取目标y个增益状态，
+  //      每偷取1个增益状态，对目标造成z%最大气血值的伤害
+
+  skillDescription = preamble baseAttack "，并" buffSteal "，" perStealDmg
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  buffSteal = gapTo<"偷取目标"> "偷取目标" varRef "个增益状态"
+  perStealDmg = "每偷取1个增益状态" "，" "对目标造成" varRef "%" "最大气血值的伤害"
+
+  // ── Primary affix【魔意震慑】
+  // Raw: 每偷取目标一个增益状态对目标附加一层【惧意】状态：攻击力降低x%，持续12秒
+  primaryAffix
+    = "每偷取目标一个增益状态对目标附加一层" stateName "状态" "："
+      "攻击力降低" varRef "%" "，" "持续" varRef "秒"
+
+  // ── Exclusive affix【心魔惑言】
+  // Raw: 使本神通添加的减益状态层数增加x%，敌方每有5层减益状态会使本神通所有伤害提升y%，最大提升z%
+  exclusiveAffix
+    = "使本神通添加的减益状态层数增加" varRef "%" "，"
+      "敌方每有" varRef "层减益状态会使本神通所有伤害提升" varRef "%" "，"
+      "最大提升" varRef "%"
+}

@@ -1,0 +1,37 @@
+皓月剑诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 造成十段共计x%攻击力的灵法伤害，神通释放时自身获得增益状态【寂灭剑心】：
+  //      每段伤害命中时湮灭敌方1个护盾，并额外造成y%敌方最大气血值的伤害
+  //      （对怪物最多造成z%攻击力的伤害）；对无盾目标造成双倍伤害
+  //      （对怪物最多造成w%攻击力的伤害）；【寂灭剑心】上限1层，持续4秒
+
+  skillDescription = preamble baseAttack "，" stateClause
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共计" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateClause = gapTo<"获得"> "获得增益状态" stateName "：" stateBody
+  stateBody = perHit shieldDestroy "；" noShieldDouble "；" stateName maxStacks "，" duration
+
+  perHit = "每段伤害命中时"
+  shieldDestroy = "湮灭敌方" varRef "个护盾" "，并额外造成" varRef "%" "敌方最大气血值的伤害" "（" capVsMonster "）"
+  noShieldDouble = "对无盾目标造成双倍伤害" "（" capVsMonster "）"
+  capVsMonster = "对怪物最多造成" varRef "%" "攻击力的伤害"
+  maxStacks = "上限" varRef "层"
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【碎魂剑意】─────────────────────────
+  // Raw: 【寂灭剑心】每0.5秒对目标造成湮灭护盾的总个数*600%攻击力的伤害
+  //      （若触发湮灭护盾效果时敌方无护盾加持，则计算湮灭2个护盾）
+
+  primaryAffix = stateName "每" varRef "秒对目标造成湮灭护盾的总个数*" varRef "%" "攻击力的伤害" ("（" gapTo<"）"> "）")?
+
+  // ── Exclusive affix【追神真诀】─────────────────────────
+  // Raw: 1. 本神通所添加的持续伤害触发时，额外造成目标x%已损失气血值的伤害
+  //      2. 本神通附加目标最大气血的伤害提高y%，并且造成的伤害提升z%
+
+  exclusiveAffix = exclusiveAffix_1 " 2. " exclusiveAffix_2
+  exclusiveAffix_1 = "1. 本神通所添加的持续伤害触发时" "，" "额外造成目标" varRef "%" "已损失气血值的伤害"
+  exclusiveAffix_2 = "本神通附加目标最大气血的伤害提高" varRef "%" "，" "并且造成的伤害提升" varRef "%"
+}

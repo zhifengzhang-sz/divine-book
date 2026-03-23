@@ -1,0 +1,38 @@
+无相魔劫咒 <: Base {
+  // Raw: 魔威浩荡，引魔将之力造成五段共1500%攻击力的灵法伤害，
+  //      神通施放时对敌方施加负面状态【无相魔劫】，持续12秒。
+  //      【无相魔劫】期间敌方受到的神通伤害增加10%，
+  //      并且【无相魔劫】时间结束时，
+  //      对目标造成10%【无相魔劫】期间提升的伤害+5000%攻击力的伤害
+
+  skillDescription = preamble baseAttack "，" stateApply delayedBurstBody
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateApply = gapTo<"施加"> "施加负面状态" stateName "，" "持续" varRef "秒" "。"
+
+  delayedBurstBody
+    = stateName "期间敌方受到的神通伤害增加" varRef "%"
+      "，并且" stateName "时间结束时" "，"
+      "对目标造成" varRef "%" stateName "期间提升的伤害+" varRef "%" "攻击力的伤害"
+
+  // ── Primary affix【灭劫魔威】
+  // Raw: 【无相魔劫】状态结束时的伤害提升65%
+  primaryAffix = stateName "状态结束时的伤害提升" varRef "%"
+
+  // ── Exclusive affix【无相魔威】(multi-line with state definition)
+  // Raw: 本神通命中时，对目标施加负面状态【魔劫】，持续8秒
+  //      【魔劫】：降低敌方x%的治疗量，并使神通造成的伤害提升y%，
+  //      若目标不存在任何治疗状态，伤害提升效果进一步提升至z%
+  ws = (" " | "\n" | "\r")*
+
+  exclusiveAffix
+    = "本神通命中时" "，" "对目标施加负面状态" stateName "，" "持续" varRef "秒"
+      ws stateName "：" exclusiveAffixStateBody
+  exclusiveAffixStateBody
+    = "降低敌方" varRef "%" "的治疗量" "，"
+      "并使神通造成的伤害提升" varRef "%" "，"
+      "若目标不存在任何治疗状态" "，" "伤害提升效果进一步提升至" varRef "%"
+}

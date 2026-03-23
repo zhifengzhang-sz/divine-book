@@ -1,0 +1,30 @@
+春黎剑阵 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 造成五段共计x%攻击力的灵法伤害，并创建一个持续存在16秒的分身，
+  //      继承自身y%的属性。主角释放神通后分身会攻击敌方，分身受到的伤害为自身的z%
+
+  skillDescription = preamble baseAttack "，并" summonClause
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共计" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  summonClause = "创建一个持续存在" varRef "秒的分身" "，" summon "。" summonTrigger "，" summonDmgTaken
+  summon = "继承自身" varRef "%" "的属性"
+  summonTrigger = "主角释放神通后分身" gapTo<"攻击"> "攻击敌方"
+  summonDmgTaken = "分身受到的伤害为自身的" varRef "%"
+
+  // ── Primary affix【幻象剑灵】─────────────────────────
+  // Raw: 分身受到伤害降低至自身的x%， 造成的伤害增加y%
+
+  primaryAffix = "分身受到" "的"? "伤害降低至自身的" varRef "%" "，" " "? "造成的伤害增加" varRef "%"
+
+  // ── Exclusive affix【玄心剑魄】─────────────────────────
+  // Raw: 本神通施放后，会对敌方添加持续w秒的【噬心】：每秒受到x%攻击力的伤害，
+  //      若被驱散，立即受到y%攻击力的伤害，并眩晕z秒
+
+  exclusiveAffix
+    = "本神通施放后" "，" "会对敌方添加持续" varRef "秒的" stateName "："
+      "每秒受到" varRef "%" "攻击力的伤害" "，"
+      "若被驱散" "，" "立即受到" varRef "%" "攻击力的伤害" "，" "并眩晕" varRef "秒"
+}

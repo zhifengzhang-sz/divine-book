@@ -13,7 +13,7 @@
 import type { EffectRow } from "./emit.js";
 import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
 import { runPipeline } from "./pipeline.js";
-import { buildStateRegistry, type StateRegistry } from "./states.js";
+import type { StateRegistry } from "./state-builder.js";
 import { buildDataState } from "./tiers.js";
 
 export interface ExclusiveAffixEntry {
@@ -96,14 +96,6 @@ export function parseExclusiveAffix(
 	entry: ExclusiveAffixEntry,
 	stateRegistry: StateRegistry,
 ): { name: string; effects: EffectRow[] } {
-	// Build state registry from exclusive affix description and merge
-	const affixStates = buildStateRegistry(entry.cell.description);
-	for (const [name, def] of Object.entries(affixStates)) {
-		if (!stateRegistry[name]) {
-			stateRegistry[name] = def;
-		}
-	}
-
 	const parser = EXCLUSIVE_PARSER_TABLE[entry.bookName];
 	if (!parser) {
 		throw new Error(
@@ -114,6 +106,14 @@ export function parseExclusiveAffix(
 
 	if (parser === "generic") {
 		const result = runPipeline("exclusive", entry.rawText);
+		// Merge states from exclusive affix into the book's state registry
+		if (result.states) {
+			for (const [name, def] of Object.entries(result.states)) {
+				if (!stateRegistry[name]) {
+					stateRegistry[name] = def;
+				}
+			}
+		}
 		return { name: entry.affixName, effects: result.effects };
 	}
 

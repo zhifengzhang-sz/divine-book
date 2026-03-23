@@ -1,0 +1,29 @@
+念剑诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 在4秒内不可被选中。同时降下轰雷剑阵，造成八段共x%攻击力的灵法伤害，
+  //      轰雷剑阵每造成2次伤害时，伤害提升y倍，单次伤害至多被该效果重复加成10次
+
+  skillDescription = preamble untargetable "。同时" midProse baseAttack "，" periodicEscalation
+  preamble = (~untargetable any)*
+
+  untargetable = "在" varRef "秒内不可被选中"
+  midProse = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  periodicEscalation
+    = gapTo<"每造成"> "每造成" varRef "次伤害时" "，"
+      gapTo<"伤害提升"> "伤害提升" varRef "倍" "，"
+      "单次伤害至多被该效果重复加成" varRef "次"
+
+  // ── Primary affix【雷阵剑影】─────────────────────────
+  // Raw: 技能结束后雷阵不会马上消失，将额外持续存在x秒，每0.5秒造成一次伤害
+
+  primaryAffix = gapTo<"额外持续存在"> "额外持续存在" varRef "秒" "，" "每" varRef "秒造成一次伤害"
+
+  // ── Exclusive affix【仙露护元】─────────────────────────
+  // Raw: 使本神通添加的增益状态持续时间延长x%
+
+  exclusiveAffix = "使本神通添加的增益状态持续时间延长" varRef "%"
+}

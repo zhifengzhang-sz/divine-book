@@ -1,0 +1,9 @@
+修为词缀_体修 <: Base {
+  affixDescription = tx_jinGangHuTi | tx_poMieTianGuang | tx_qingYunLingDun | tx_tanLangTunXing | tx_yiZhuiShenYuan
+
+  tx_jinGangHuTi = "本神通施放时" "，" "会在施放期间提升自身" varRef "%" "的伤害减免"
+  tx_poMieTianGuang = "本神通命中时" "，" "会使本次神通额外造成" varRef "%" "攻击力的伤害"
+  tx_qingYunLingDun = "使本神通添加的护盾值提升" varRef "%"
+  tx_tanLangTunXing = "本神通施放时" "，" "敌方每多损失" varRef "%" "最大气血值" "，" "会使本次伤害提升" varRef "%"
+  tx_yiZhuiShenYuan = "使本神通根据自身已损气血值计算伤害时至少按已损" varRef "%" "计算" "，" "并使本神通造成的伤害提升" varRef "%"
+}

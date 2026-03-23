@@ -1,0 +1,21 @@
+元磁神光 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Note: "攻击力的伤害" not "攻击力的灵法伤害"
+  skillDescription = preamble baseAttack "，" stateClause
+  preamble = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的伤害"
+  cnHitCount = cnNumber "段"
+  stateClause = gapTo<"获得"> "获得" "一层" stateName "：" stateBody
+  stateBody = "提升" varRef "%" "伤害加深" "，" "最多叠加" varRef "层" "，" "持续" varRef "秒"
+
+  // ── Primary affix【天狼战意】
+  // Raw: 每层【天狼之啸】额外提升自身x%攻击力
+  primaryAffix = "每层" stateName "额外提升自身" varRef "%" "攻击力"
+
+  // ── Exclusive affix【真极穿空】
+  // Raw: 使本神通添加的增益状态层数增加x%，自身每5层增益状态，提升y%伤害，最大提升z%伤害
+  exclusiveAffix
+    = "使本神通添加的增益状态层数增加" varRef "%" "，"
+      "自身每" varRef "层增益状态" "，" "提升" varRef "%" "伤害" "，"
+      "最大提升" varRef "%" "伤害"
+}

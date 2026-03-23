@@ -1,0 +1,24 @@
+通天剑诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 造成六段共x%攻击力的灵法伤害，并使本神通暴击伤害提高y%，
+  //      释放后自身8秒内受到伤害提高z%
+
+  skillDescription = preamble baseAttack "，并" critDmgBonus "，" selfDmgTakenIncrease
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  critDmgBonus = "使本神通暴击伤害提高" varRef "%"
+  selfDmgTakenIncrease = "释放后自身" varRef "秒内受到伤害提高" varRef "%"
+
+  // ── Primary affix【焚心剑芒】─────────────────────────
+  // Raw: 敌方当前气血值每损失x%，本神通伤害额外增加y%
+
+  primaryAffix = "敌方当前气血值每损失" varRef "%" "，" "本神通伤害额外增加" varRef "%"
+
+  // ── Exclusive affix【神威冲云】─────────────────────────
+  // Raw: 使本神通无视敌方所有伤害减免效果，并提升x%伤害
+
+  exclusiveAffix = "使本神通无视敌方所有伤害减免效果" "，" "并提升" varRef "%" "伤害"
+}

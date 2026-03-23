@@ -1,0 +1,23 @@
+通用词缀 <: Base {
+  affixDescription
+    = ty_zhouShu | ty_qingLing | ty_yeYan | ty_jiXia | ty_poZhu | ty_jinTang
+    | ty_nuMu | ty_guiYin | ty_fuYin | ty_zhanYi | ty_zhanYue | ty_tunHai
+    | ty_lingDun | ty_lingWei | ty_cuiShan | ty_tongMing
+
+  ty_zhouShu = "使本神通添加的减益效果强度提升" varRef "%"
+  ty_qingLing = "使本神通添加的增益效果强度提升" varRef "%"
+  ty_yeYan = "使本神通添加的所有状态效果持续时间延长" varRef "%"
+  ty_jiXia = "本神通施放时" "，" "若敌方处于控制效果" "，" "则使本次伤害提升" varRef "%"
+  ty_poZhu = "本神通施放时" "，" "每造成" varRef "段伤害" "，" "剩余段数伤害提升" varRef "%" "，" "最多提升" varRef "%"
+  ty_jinTang = "本神通施放时" "，" "会在施放期间提升自身" varRef "%" "的伤害减免"
+  ty_nuMu = "本神通施放时" "，" "若敌方气血值低于" varRef "%" "，" "则使本次伤害提升" varRef "%" "，" "且暴击率提升" varRef "%"
+  ty_guiYin = "当本神通所添加的持续伤害触发时" "，" "额外造成目标" varRef "%" "已损失气血值的伤害"
+  ty_fuYin = "本神通施放时" "，" "会使本次神通获得以下任意1个加成" "：" "攻击提升" varRef "%" "、" "致命伤害提升" varRef "%" "、" "造成的伤害提升" varRef "%"
+  ty_zhanYi = "本神通施放时" "，" "自身每多损失1%最大气血值" "，" "会使本次伤害提升" varRef "%"
+  ty_zhanYue = "本神通施放时" "，" "会使本次神通额外造成" varRef "%" "攻击力的伤害"
+  ty_tunHai = "本神通施放时" "，" "敌方每多损失1%最大" "值"? "气血值" "，" "会使本次伤害提升" varRef "%"
+  ty_lingDun = "使本神通添加的护盾值提升" varRef "%"
+  ty_lingWei = "本神通施放后" "，" "使下一个施放的神通释放时额外获得" varRef "%" "的神通伤害加深"
+  ty_cuiShan = "本神通施放时" "，" "会使本次神通提升" varRef "%" "攻击力的效果"
+  ty_tongMing = "使本神通必定会心造成" varRef "倍伤害" "，" "并有" varRef "%" "概率将之提升至" varRef "倍"
+}

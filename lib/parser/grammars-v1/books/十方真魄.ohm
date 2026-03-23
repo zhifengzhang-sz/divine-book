@@ -1,0 +1,36 @@
+十方真魄 <: Base {
+  // Raw: 借星灵之力快速接近目标，消耗自身x%当前气血值，
+  //      对目标造成十段共y%攻击力的灵法伤害，
+  //      在神通的最后会对踢向目标，额外对其造成自身z%已损失气血值的伤害，
+  //      并等额恢复自身气血，同时为自身添加【怒灵降世】：
+  //      持续期间提升自身w%的攻击力与伤害减免，持续4秒
+
+  skillDescription = preamble hpCost "，" baseAttack "，" selfLostHpWithHeal "，同时" stateAdd "：" stateBody
+  preamble = (~hpCost any)*
+
+  hpCost = "消耗自身" varRef "%" "当前气血值"
+
+  baseAttack = "对目标造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  // "在神通的最后会对踢向目标，额外对其造成自身z%已损失气血值的伤害，并等额恢复自身气血"
+  selfLostHpWithHeal = gapTo<selfLostHpDmg> selfLostHpDmg "，并" selfEqualHeal
+  selfLostHpDmg = "额外对其造成自身" varRef "%" "已损失气血值的伤害"
+  selfEqualHeal = "等额恢复自身气血"
+
+  stateAdd = "为自身添加" stateName
+
+  // "持续期间提升自身w%的攻击力与伤害减免，持续4秒"
+  stateBody = "持续期间提升自身" varRef "%" "的攻击力与伤害减免" "，" "持续" varRef "秒"
+
+  // ── Primary affix【星猿弃天】
+  // Raw: 延长x秒【怒灵降世】持续时间，并且每秒有y%概率驱散自身所有控制状态，25秒内最多触发1次驱散状态
+  primaryAffix
+    = "延长" varRef "秒" stateName "持续时间" "，"
+      "并且每秒有" varRef "%" "概率驱散自身所有控制状态" "，"
+      varRef "秒内最多触发" varRef "次" any*
+
+  // ── Exclusive affix【破釜沉舟】
+  // Raw: 本神通施放时，会使本次神通伤害提升x%，施放期间自身受到的伤害也提升y%
+  exclusiveAffix = "本神通施放时" "，" "会使本次神通伤害提升" varRef "%" "，" "施放期间自身受到的伤害也提升" varRef "%"
+}

@@ -1,0 +1,8 @@
+修为词缀_剑修 <: Base {
+  affixDescription = jx_cuiYunZheYue | jx_lingXiJiuChong | jx_poSuiWuShuang | jx_xinHuoCuiFeng
+
+  jx_cuiYunZheYue = "使本神通提升" varRef "%" "攻击力的效果"
+  jx_lingXiJiuChong = "使本神通必定会心造成" varRef "倍伤害" "，" "并有" varRef "%" "概率将之提升至" varRef "倍"
+  jx_poSuiWuShuang = "本神通施放时" "，" "会使本次神通提升" varRef "%" "攻击力的效果" "、" varRef "%" "的伤害" "、" varRef "%" "的暴击伤害"
+  jx_xinHuoCuiFeng = "本神通命中时" "，" "每造成" varRef "段伤害" "，" "剩余段数伤害提升" varRef "%" "，" "最多提升" varRef "%"
+}

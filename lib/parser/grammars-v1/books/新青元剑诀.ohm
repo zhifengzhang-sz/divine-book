@@ -1,0 +1,24 @@
+新青元剑诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 造成六段共x%攻击力的灵法伤害，并依敌方神通装配顺序，
+  //      使其下一个未释放的神通进入8秒冷却时间
+
+  skillDescription = preamble baseAttack "，并" sequencedCooldown
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  sequencedCooldown = "依敌方神通装配顺序" "，" skillCooldown
+  skillCooldown = "使其下一个未释放的神通进入" varRef "秒冷却时间"
+
+  // ── Primary affix【追命剑阵】─────────────────────────
+  // Raw: 使敌方的神通伤害降低x%，持续16秒
+
+  primaryAffix = "使敌方的神通伤害降低" varRef "%" "，" "持续" varRef "秒"
+
+  // ── Exclusive affix【天威煌煌】─────────────────────────
+  // Raw: 本神通施放后，使下一个施放的神通额外获得x%的神通伤害加深
+
+  exclusiveAffix = "本神通施放后" "，" "使下一个施放的神通额外获得" varRef "%" "的神通伤害加深"
+}

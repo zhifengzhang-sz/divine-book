@@ -1,0 +1,27 @@
+千锋聚灵剑 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Raw: 造成六段共计x%攻击力的灵法伤害，并每段攻击造成目标y%最大气血值的伤害
+  //      （对怪物伤害不超过自身z%攻击力）
+
+  skillDescription = preamble baseAttack "，并" perHit damageWithCap
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共计" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  perHit = "每段攻击"
+
+  damageWithCap = percentMaxHpDmg "（" capVsMonster "）"
+  percentMaxHpDmg = "造成目标" varRef "%" "最大气血值的伤害"
+  capVsMonster = "对怪物伤害不超过自身" varRef "%" "攻击力"
+
+  // ── Primary affix【惊神剑光】─────────────────────────
+  // Raw: 本神通每段攻击造成伤害后，下一段提升x%神通加成
+
+  primaryAffix = "本神通每段攻击造成伤害后" "，" "下一段提升" varRef "%" "神通加成"
+
+  // ── Exclusive affix【天哀灵涸】─────────────────────────
+  // Raw: 本神通施放后，会对敌方添加持续8秒的【灵涸】：治疗量降低x%，且无法被驱散
+
+  exclusiveAffix = "本神通施放后" "，" "会对敌方添加持续" varRef "秒的" stateName "：" "治疗量降低" varRef "%" "，" "且无法被驱散"
+}

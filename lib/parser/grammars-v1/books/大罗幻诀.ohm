@@ -1,0 +1,48 @@
+大罗幻诀 <: Base {
+  // Raw: 对目标进行攻击，造成五段共x%攻击力的灵法伤害，
+  //      并为自身添加【罗天魔咒】：
+  //      受到伤害时，各有30%概率对攻击方添加1层【噬心之咒】与【断魂之咒】，
+  //      各自最多叠加5层。【罗天魔咒】持续8秒
+  //      \n【噬心之咒】：每0.5秒额外造成目标y%当前气血值的伤害，持续4秒
+  //      \n【断魂之咒】：每0.5秒额外造成目标y%已损失气血值的伤害，持续4秒
+
+  skillDescription = preamble baseAttack "，并" stateAdd "：" mainBody "。" mainDuration ws childBlock ws childBlock
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateAdd = "为自身添加" stateName
+
+  // "受到伤害时，各有30%概率对攻击方添加1层【噬心之咒】与【断魂之咒】，各自最多叠加5层"
+  mainBody = counterDebuff "，" maxStacks
+  counterDebuff
+    = "受到伤害时" "，" "各有" varRef "%" "概率对攻击方添加" varRef "层"
+      stateName ("与" stateName)*
+  maxStacks = "各自最多叠加" varRef "层"
+
+  // "【罗天魔咒】持续8秒"
+  mainDuration = stateName "持续" varRef "秒"
+
+  ws = (" " | "\n" | "\r")*
+
+  // 【噬心之咒】：每0.5秒额外造成目标y%当前气血值的伤害，持续4秒
+  // 【断魂之咒】：每0.5秒额外造成目标y%已损失气血值的伤害，持续4秒
+  childBlock = stateName "：" childBody
+
+  childBody
+    = "每" varRef "秒额外造成目标" varRef "%" "当前气血值的伤害" "，" "持续" varRef "秒"   -- currentHp
+    | "每" varRef "秒额外造成目标" varRef "%" "已损失气血值的伤害" "，" "持续" varRef "秒"  -- lostHp
+
+  // ── Primary affix【魔魂咒界】
+  // Raw: 【罗天魔咒】状态下附加异常概率提升至60%，受到攻击时，
+  //      额外给目标附加【命损】：最终伤害减免减低x%，持续8秒
+  primaryAffix
+    = stateName "状态下附加异常概率提升至" varRef "%" "，"
+      "受到攻击时" "，" "额外给目标附加" stateName "："
+      "最终伤害减免" ("减低" | "降低") varRef "%" "，" "持续" varRef "秒"
+
+  // ── Exclusive affix【古魔之魂】
+  // Raw: 使本神通添加的持续伤害上升x%
+  exclusiveAffix = "使本神通添加的持续伤害上升" varRef "%"
+}

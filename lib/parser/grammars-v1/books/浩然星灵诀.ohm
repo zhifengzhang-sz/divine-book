@@ -1,0 +1,17 @@
+浩然星灵诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  skillDescription = preamble baseAttack "，" stateClause
+  preamble = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+  stateClause = gapTo<"获得"> "获得" stateName "状态" "：" stateBody
+  stateBody = "提升" varRef "%" "最终伤害加成" "，" "持续" varRef "秒"
+
+  // ── Primary affix【天鹤祈瑞】
+  // Raw: 自身每拥有x%最终伤害加深，本技能附加y%攻击力的伤害，最多计算z%最终伤害加深
+  primaryAffix = "自身每拥有" varRef "%" "最终伤害加深" "，" "本技能附加" varRef "%" "攻击力的伤害" "，" "最多计算" varRef "%" "最终伤害加深"
+
+  // ── Exclusive affix【龙象护身】
+  // Raw: 使本神通添加的增益效果强度提升x%
+  exclusiveAffix = "使本神通添加的增益效果强度提升" varRef "%"
+}

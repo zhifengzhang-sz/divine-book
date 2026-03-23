@@ -1,0 +1,42 @@
+天刹真魔 <: Base {
+  // Raw: 对目标进行攻击，造成五段共x%攻击力的灵法伤害，并为自身添加【不灭魔体】：
+  //      受到伤害时，自身恢复该次伤害损失气血值的y%的气血值（该效果不受治疗加成影响）
+  //      \n【不灭魔体】战斗状态内永久生效
+  //
+  // Note: newline before state modifiers
+
+  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateModifiers
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateAdd = "为自身添加" stateName
+
+  // "受到伤害时，自身恢复该次伤害损失气血值的y%的气血值（该效果不受治疗加成影响）"
+  stateBody = counterBuffHeal "（" noHealingBonus "）"
+  counterBuffHeal = "受到伤害时" "，" "自身恢复该次伤害损失气血值的" varRef "%" "的气血值"
+  noHealingBonus = "该效果不受治疗加成影响"
+
+  ws = (" " | "\n" | "\r")*
+
+  // "【不灭魔体】战斗状态内永久生效"
+  stateModifiers = stateName "战斗状态内永久生效"
+
+  // ── Primary affix【魔妄吞天】
+  // Raw: 在【不灭魔体】状态下受到攻击时，为目标附加【天人五衰】：
+  //      每3秒轮流降低目标x%致命率、x%暴击伤害、x%暴击率、y%攻击力、y%最终伤害减免，持续15秒
+  primaryAffix
+    = "在" stateName "状态下受到攻击时" "，" "为目标附加" stateName "："
+      "每" varRef "秒轮流降低目标" varRef "%" "致命率" "、"
+      varRef "%" "暴击伤害" "、" varRef "%" "暴击率" "、"
+      varRef "%" "攻击力" "、" varRef "%" "最终伤害减免" "，"
+      "持续" varRef "秒"
+
+  // ── Exclusive affix【魔骨明心】(multi-clause)
+  // Raw: 1. 本神通命中时，若敌方具有减益状态，则提升自身x%的治疗量，持续8秒
+  //      2. 在神通悟境的条件下：本神通每次造成伤害时，降低敌方y%最终伤害减免，持续1秒
+  exclusiveAffix = exclusiveAffix_1 " 2. " exclusiveAffix_2
+  exclusiveAffix_1 = "1. 本神通命中时" "，" "若敌方具有减益状态" "，" "则提升自身" varRef "%" "的治疗量" "，" "持续" varRef "秒"
+  exclusiveAffix_2 = "在神通悟境的条件下" "：" "本神通每次造成伤害时" "，" "降低敌方" varRef "%" "最终伤害减免" "，" "持续" varRef "秒"
+}

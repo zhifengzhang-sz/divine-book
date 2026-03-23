@@ -1,0 +1,26 @@
+九重天凤诀 <: Base {
+  // Raw: 化身星猿，对目标造成八段共x%攻击力的灵法伤害，
+  //      同时每段攻击额外对目标造成自身y%已损失气血值的伤害，
+  //      每段攻击会消耗自身z%当前气血值并为自身添加1层【蛮神】：
+  //      持续期间提升自身w%的攻击力与暴击率，持续4秒
+
+  skillDescription = preamble baseAttack "，同时" perHitSelfLostHpDmg "，" perHitCostAndState "：" stateBody
+  preamble = (~"对目标造成" any)*
+
+  baseAttack = "对目标造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  perHitSelfLostHpDmg = "每段攻击额外对目标造成自身" varRef "%" "已损失气血值的伤害"
+
+  perHitCostAndState = "每段攻击会消耗自身" varRef "%" "当前气血值并为自身添加" varRef "层" stateName
+
+  stateBody = "持续期间提升自身" varRef "%" "的攻击力与暴击率" "，" "持续" varRef "秒"
+
+  // ── Primary affix【星猿永生】
+  // Raw: 本技能造成伤害前优先驱散目标两个增益效果，释放本技能时气血不会降至x%以下
+  primaryAffix = "本技能造成伤害前优先驱散目标" cnNumberOrDigit "个增益效果" "，" "释放本技能时气血不会降至" varRef "%" "以下"
+
+  // ── Exclusive affix【玉石俱焚】
+  // Raw: 当本神通所添加的护盾消失时，会对敌方额外造成护盾值x%的伤害
+  exclusiveAffix = "当本神通所添加的护盾消失时" "，" "会对敌方额外造成护盾值" varRef "%" "的伤害"
+}

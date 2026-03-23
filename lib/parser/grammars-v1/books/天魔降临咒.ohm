@@ -1,0 +1,45 @@
+天魔降临咒 <: Base {
+  // Raw: 对目标造成五段共x%攻击力的灵法伤害，并对其施加【结魂锁链】：
+  //      使受到的伤害i减少y%，敌方受到的伤害增加z%，
+  //      锁定目标具有的每层（个）减益效果会使敌方受到的伤害额外提升w%， 最多提升至u%
+  //      \n【结魂锁链】战斗状态内永久生效， 最多叠加1层
+  //
+  // Note: newline before state modifiers, stray "i" in raw, space before "最多"
+
+  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateModifiers
+  preamble = (~"造成" any)*
+
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateAdd = "对其施加" stateName
+
+  stateBody = inlineDmgReduction "，" inlineDmgIncrease "，" inlinePerDebuff
+
+  // "使受到的伤害i减少y%" — note the stray letter "i"
+  inlineDmgReduction = "使受到的伤害" letter? "减少" varRef "%"
+
+  // "敌方受到的伤害增加z%"
+  inlineDmgIncrease = "敌方受到的伤害增加" varRef "%"
+
+  // "锁定目标具有的每层（个）减益效果会使敌方受到的伤害额外提升w%， 最多提升至u%"
+  inlinePerDebuff
+    = "锁定目标具有的每层（个）减益效果" gapTo<"伤害"> "伤害额外提升" varRef "%"
+      "，" " "? "最多提升至" varRef "%"
+
+  ws = (" " | "\n" | "\r")*
+
+  // "【结魂锁链】战斗状态内永久生效， 最多叠加1层"
+  stateModifiers = stateName "战斗状态内永久生效" "，" " "? "最多叠加" varRef "层"
+
+  // ── Primary affix【魔念生息】
+  // Raw: 敌方处于【结魂锁链】下，每秒受到x%最大气血值的伤害，
+  //      并且【结魂锁链】提升敌方受到的伤害上限提升至y%
+  primaryAffix
+    = "敌方处于" stateName "下" "，" "每秒受到" varRef "%" "最大气血值的伤害" "，"
+      "并且" stateName "提升敌方受到的伤害上限提升至" varRef "%"
+
+  // ── Exclusive affix【引灵摘魂】
+  // Raw: 使本神通攻击带有减益状态的敌方时，会使本次伤害提升x%
+  exclusiveAffix = "使本神通攻击带有减益状态的敌方时" "，" "会使本次伤害提升" varRef "%"
+}

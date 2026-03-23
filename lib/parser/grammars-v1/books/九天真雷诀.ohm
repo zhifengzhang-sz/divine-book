@@ -1,0 +1,17 @@
+九天真雷诀 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  skillDescription = preamble baseAttack "，" selfCleanse "，" conditionalDamage "。"?
+  preamble = (~"造成" any)*
+  baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+  selfCleanse = gapTo<"驱散自身"> "驱散自身" varRef "个负面状态"
+  conditionalDamage
+    = "若净化" gapTo<"接下来"> "接下来" gapTo<"命中时"> "命中时" "，"
+      "每段攻击附加" varRef "%" "自身最大气血值的伤害"
+
+  // ── Primary affix: NONE
+
+  // ── Exclusive affix【九雷真解】
+  // Raw: 本神通每次施加增益/减益状态或添加护盾时，引动真雷轰击敌方，造成一次本神通x%的灵法伤害
+  exclusiveAffix = "本神通每次施加增益/减益状态或添加护盾时" "，" "引动真雷轰击敌方" "，" "造成一次本神通" varRef "%" "的灵法伤害"
+}

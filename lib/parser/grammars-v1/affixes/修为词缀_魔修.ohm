@@ -1,0 +1,8 @@
+修为词缀_魔修 <: Base {
+  affixDescription = mx_yaoGuangQueXie | mx_kuiHunJiXia | mx_xuanNvHuXin | mx_huoXingWuWang
+
+  mx_yaoGuangQueXie = "当本神通造成治疗效果时" "，" "会对敌方额外造成治疗量" varRef "%" "的伤害"
+  mx_kuiHunJiXia = "本神通施放时" "，" "若敌方气血值低于" varRef "%" "，" "则使本次伤害提升" varRef "%" "，" "且必定暴击"
+  mx_xuanNvHuXin = "本神通造成伤害后" "，" "自身会获得1个本次神通伤害值的" varRef "%" "的护盾" "，" "护盾持续" varRef "秒"
+  mx_huoXingWuWang = "本神通施放时" "，" "会对敌方添加以下任意1个减益效果" "：" "攻击降低" varRef "%" "、" "暴击率降低" varRef "%" "、" "暴击伤害降低" varRef "%"
+}

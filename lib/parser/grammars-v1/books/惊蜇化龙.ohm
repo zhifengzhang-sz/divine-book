@@ -1,0 +1,37 @@
+惊蜇化龙 <: Base {
+  // Raw: 合猿影构筑星辰杀阵，消耗自身x%当前气血值，
+  //      对目标造成八段共x%攻击力的灵法伤害，
+  //      额外对目标造成自身y%已损失气血值的伤害，
+  //      并提升自身z%神通伤害加深，持续4秒
+  //
+  // Note: hpCost comes before baseAttack, same var "x" for cost and attack
+
+  skillDescription = preamble hpCost "，" baseAttack "，" selfLostHpDmg "，并" skillDmgBuff "，" duration
+  preamble = (~hpCost any)*
+
+  hpCost = "消耗自身" varRef "%" "当前气血值"
+
+  baseAttack = "对目标造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  selfLostHpDmg = "额外对目标造成自身" varRef "%" "已损失气血值的伤害"
+
+  skillDmgBuff = "提升自身" varRef "%" "神通伤害加深"
+
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【星猿幻杀】
+  primaryAffix
+    = "本技能每段攻击必定给目标附加一层" stateName "："
+      "每叠加" cnNumberOrDigit "层便会消耗并造成目标" varRef "%" "最大气血值伤害"
+
+  // ── Exclusive affix【索心真诀】(multi-clause)
+  exclusiveAffix = exclusiveAffix_1 " 2. " exclusiveAffix_2
+  exclusiveAffix_1
+    = "1. 本神通造成伤害时" "，" "目标每有" varRef "层减益状态" "，"
+      "会使本次额外造成目标" varRef "%" "最大气血值的真实伤害" "，"
+      "最多造成" varRef "%" "最大气血值的真实伤害"
+  exclusiveAffix_2
+    = "在神通悟境的条件下" "：" "本神通附加自身已损气血的伤害提高" varRef "%" "，"
+      "并使造成的伤害提升" varRef "%"
+}

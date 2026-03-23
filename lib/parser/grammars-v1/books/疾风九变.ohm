@@ -1,0 +1,31 @@
+疾风九变 <: Base {
+  // Raw: 积蓄力量冲向敌方，消耗自身10%当前气血值，
+  //      对目标造成十段共1500%攻击力的灵法伤害，
+  //      并为自身添加【极怒】：每秒对目标反射自身所受到伤害值的50%
+  //      与自身15%已损失气血值的伤害，持续4秒
+
+  skillDescription = preamble hpCost "，" baseAttack "，并" stateAdd "：" stateBody
+  preamble = (~hpCost any)*
+
+  hpCost = "消耗自身" varRef "%" "当前气血值"
+
+  baseAttack = "对目标造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
+  cnHitCount = cnNumber "段"
+
+  stateAdd = "为自身添加" stateName
+
+  // "每秒对目标反射自身所受到伤害值的50%与自身15%已损失气血值的伤害，持续4秒"
+  stateBody = counterBuffReflect "，" duration
+  counterBuffReflect
+    = "每秒对目标" gapTo<"反射"> "反射自身所受到伤害值的" varRef "%"
+      "与自身" varRef "%" "已损失气血值的伤害"
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【星猿复灵】
+  // Raw: 恢复【极怒】造成伤害82%的气血值
+  primaryAffix = "恢复" stateName "造成伤害" varRef "%" "的气血值"
+
+  // ── Exclusive affix【真言不灭】
+  // Raw: 使本神通添加的所有状态持续时间延长x%
+  exclusiveAffix = "使本神通添加的所有状态持续时间延长" varRef "%"
+}

@@ -1,0 +1,22 @@
+甲元仙符 <: Base {
+  // ── Skill ─────────────────────────────────────────────
+  // Note: no hit count (single hit)
+  skillDescription = preamble baseAttack "，" stateClause
+  preamble = (~"造成" any)*
+  baseAttack = "造成" varRef "%" "攻击力的灵法伤害"
+  stateClause = gapTo<"获得"> "获得" stateName "状态" "，" tripleStatBuff "，" duration
+  tripleStatBuff = "提升自身" varRef "%" "攻击力加成、守御加成、最大气血值"
+  duration = "持续" varRef "秒"
+
+  // ── Primary affix【天光虹露】
+  // Raw: 【仙佑】状态额外使自身获得x%治疗加成
+  primaryAffix = stateName "状态额外使自身获得" varRef "%" "治疗加成"
+
+  // ── Exclusive affix【天倾灵枯】
+  // Raw: 本神通施放后，会对敌方添加持续20秒的【灵枯】：治疗量降低x%，
+  //      若敌方气血值低于30%，所降低的治疗量增至y%
+  exclusiveAffix
+    = "本神通施放后" "，" "会对敌方添加持续" varRef "秒的" stateName "："
+      "治疗量降低" varRef "%" "，"
+      "若敌方气血值低于" varRef "%" "，" "所降低的治疗量增至" varRef "%"
+}

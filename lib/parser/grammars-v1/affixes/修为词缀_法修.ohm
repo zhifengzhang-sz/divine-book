@@ -1,0 +1,8 @@
+修为词缀_法修 <: Base {
+  affixDescription = fx_changShengTianZe | fx_mingWangZhiLu | fx_tianMingYouGui | fx_jingXingTianYou
+
+  fx_changShengTianZe = "使本神通的所有治疗效果提升" varRef "%"
+  fx_mingWangZhiLu = "本神通施放时" "，" "会使本次神通的最终伤害加深提升" varRef "%"
+  fx_tianMingYouGui = "使本神通的概率触发效果提升为必定触发" "，" "并使本神通造成的伤害提升" varRef "%"
+  fx_jingXingTianYou = "本神通施放时" "，" "会使本次神通获得以下任意1个加成" "：" "攻击提升" varRef "%" "、" "致命伤害提升" varRef "%" "、" "造成的伤害提升" varRef "%"
+}
