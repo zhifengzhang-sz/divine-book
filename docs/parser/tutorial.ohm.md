@@ -180,17 +180,31 @@ The book grammar only defines rules specific to this book's text structure. The 
 ## §5 Testing a Grammar
 
 ```typescript
+import { readFileSync } from "node:fs";
 import * as ohm from "ohm-js";
 
+// 1. Load .ohm files from disk as plain text
+const baseOhm = readFileSync("lib/parser/grammars-v1/Base.ohm", "utf-8");
+const bookOhm = readFileSync("lib/parser/grammars-v1/books/千锋聚灵剑.ohm", "utf-8");
+
+// 2. Compile both into grammar objects (Base must come first for inheritance)
 const grammars = ohm.grammars(baseOhm + "\n" + bookOhm);
 const grammar = grammars["千锋聚灵剑"];
 
+// 3. Match raw text against the skillDescription entry point
 const raw = "剑破天地，对范围内目标造成六段共计x%攻击力的灵法伤害，" +
             "并每段攻击造成目标y%最大气血值的伤害（对怪物伤害不超过自身z%攻击力）";
 
 const match = grammar.match(raw, "skillDescription");
 console.log(match.succeeded());  // true
 ```
+
+**How it works:**
+- `.ohm` files are plain text — `readFileSync` loads them as strings
+- `ohm.grammars()` takes a single string containing one or more grammar definitions
+- Base.ohm must come before the book grammar because `千锋聚灵剑 <: Base` references it
+- `grammars["千锋聚灵剑"]` retrieves the compiled grammar by name
+- `grammar.match(text, "skillDescription")` parses starting from the `skillDescription` rule
 
 If the text doesn't match, `match.failed()` is true and `match.shortMessage` tells you where and what was expected:
 
