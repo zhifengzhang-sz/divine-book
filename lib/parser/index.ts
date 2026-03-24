@@ -6,7 +6,7 @@
  *   → tiers.ts resolve → emit.ts → YAML
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import * as ohm from "ohm-js";
 import type { EffectRow, ParsedBook } from "../data/types.js";
@@ -48,7 +48,38 @@ export async function loadGrammars() {
 
 // ── Parse one entry point ───────────────────────────────
 
-function cleanText(raw: string): string {
+export function getGrammar(name: string): ohm.Grammar | undefined {
+	return grammars[name] ?? grammars[name.replace(/-/g, "")];
+}
+
+export function getSemantics(name: string) {
+	return semMods[name] ?? semMods[name.replace(/-/g, "")];
+}
+
+export function readSource(name: string, ext: ".ohm" | ".ts"): string | null {
+	const dir = ext === ".ohm" ? GD : SD;
+	for (const sub of ["books", "affixes", ""]) {
+		const p = sub ? resolve(dir, sub, `${name}${ext}`) : resolve(dir, `${name}${ext}`);
+		if (existsSync(p)) return readFileSync(p, "utf-8");
+	}
+	return null;
+}
+
+export function buildParseTree(grammar: ohm.Grammar, match: ohm.MatchResult): object {
+	const s = grammar.createSemantics();
+	// biome-ignore lint/suspicious/noExplicitAny: tree builder returns mixed types
+	s.addOperation<any>("toTree", {
+		_nonterminal(...c: ohm.Node[]) {
+			const k = c.map((x: ohm.Node) => x.toTree()).filter(Boolean);
+			return k.length ? { r: this.ctorName, c: k } : { r: this.ctorName, t: this.sourceString };
+		},
+		_terminal() { return this.sourceString.length > 0 ? { r: "_", t: this.sourceString } : null; },
+		_iter(...c: ohm.Node[]) { const k = c.map((x: ohm.Node) => x.toTree()).filter(Boolean); return k.length ? k : null; },
+	});
+	return s(match).toTree();
+}
+
+export function cleanText(raw: string): string {
 	return raw
 		.replace(/`/g, "")                        // strip backticks
 		.replace(/^【[^】]+】[：:]/, "")           // strip affix name prefix
@@ -61,7 +92,7 @@ function cleanText(raw: string): string {
 		.trim();
 }
 
-function parseEntry(grammarName: string, text: string, entryPoint: string): EffectRow[] {
+export function parseEntry(grammarName: string, text: string, entryPoint: string): EffectRow[] {
 	// Strip dashes from name (raw data has 新-青元剑诀, grammar has 新青元剑诀)
 	const g = grammars[grammarName] ?? grammars[grammarName.replace(/-/g, "")];
 	if (!g) { console.warn(`No grammar: ${grammarName}`); return []; }
