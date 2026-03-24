@@ -1,0 +1,39 @@
+法宝 <: Base {
+  // Template grammar for all 法宝 (instruments/treasures).
+  // Parses the body after frontmatter and "## 基础属性" are stripped.
+
+  document = flavorText abilityBlock+ tiersBlock definitionBlock? end
+
+  // ── Flavor text ───────────────────────────────────────
+  // Everything before the first ### header
+  flavorText = (~"### " any)*
+
+  // ── Ability block ─────────────────────────────────────
+  // ### Name\n\n- effect\n- effect\n\n
+  abilityBlock = "### " abilityName "\n" ws effectLine+
+
+  abilityName = (~"\n" any)+
+
+  effectLine = "- " effectText "\n" ws
+
+  effectText = (~"\n" any)+
+
+  // ── Tiers block ───────────────────────────────────────
+  tiersBlock = "### Tiers\n" ws tierLine+
+
+  tierLine = tierLabel "：" varAssignment ("," " "? varAssignment)* "\n" ws
+
+  tierLabel = cnNumber "星"
+
+  varAssignment = varRef "=" numLiteral
+
+  numLiteral = "-"? digit+ ("." digit+)?
+
+  // ── Definitions block (optional) ──────────────────────
+  definitionBlock = "## 定义\n" ws definitionLine+
+
+  definitionLine = digit+ "." " "? (~"\n" any)+ "\n"? ws
+
+  // ── Whitespace ────────────────────────────────────────
+  ws = (" " | "\n" | "\r")*
+}
