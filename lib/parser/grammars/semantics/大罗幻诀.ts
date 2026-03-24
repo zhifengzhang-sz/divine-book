@@ -53,10 +53,11 @@ export function addSemantics(s: ohm.Semantics): void {
 			countVar,
 			_c,
 			firstName,
-			conjNames,
+			_yus,
+			conjStateNames,
 		) {
 			const states: string[] = [firstName.extractVar];
-			for (const child of conjNames.children) {
+			for (const child of conjStateNames.children) {
 				states.push(child.extractVar);
 			}
 			return [

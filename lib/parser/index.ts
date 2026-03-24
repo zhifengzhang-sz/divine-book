@@ -49,18 +49,28 @@ export async function loadGrammars() {
 // ── Parse one entry point ───────────────────────────────
 
 function cleanText(raw: string): string {
-	return raw.replace(/`/g, "").replace(/^【[^】]+】[：:]/, "");
+	return raw
+		.replace(/`/g, "")                        // strip backticks
+		.replace(/^【[^】]+】[：:]/, "")           // strip affix name prefix
+		.replace(/\\([*])/g, "$1")                 // unescape \* → *
+		.replace(/\*注\*[：:][^）\n]*/g, "")       // strip *注*：... notes
+		.replace(/（最高不超过\d+级）/g, "")         // strip （最高不超过3级）
+		.replace(/（\d+层[^）]*达到[^）]*）/g, "")   // strip （25层达到最大提升伤害）
+		.replace(/（持续伤害效果受[^）]*）/g, "")     // strip （持续伤害效果受一半伤害加成）
+		.replace(/\s*（数据为[^）]*）/g, "")
+		.trim();
 }
 
 function parseEntry(grammarName: string, text: string, entryPoint: string): EffectRow[] {
-	const g = grammars[grammarName];
+	// Strip dashes from name (raw data has 新-青元剑诀, grammar has 新青元剑诀)
+	const g = grammars[grammarName] ?? grammars[grammarName.replace(/-/g, "")];
 	if (!g) { console.warn(`No grammar: ${grammarName}`); return []; }
 
 	const clean = cleanText(text);
 	const m = g.match(clean, entryPoint);
 	if (m.failed()) { console.warn(`Parse failed (${grammarName}/${entryPoint}): ${m.shortMessage}`); return []; }
 
-	const mod = semMods[grammarName];
+	const mod = semMods[grammarName] ?? semMods[grammarName.replace(/-/g, "")];
 	if (!mod) { console.warn(`No semantics: ${grammarName}`); return []; }
 
 	const s = g.createSemantics();
@@ -130,7 +140,11 @@ function parseBook(entry: RawBookEntry, exclusiveText: string): ParsedBook {
 	let exclusiveAffix: ParsedBook["exclusiveAffix"];
 	if (exclusiveText.trim()) {
 		const exclCell = splitCell(exclusiveText);
-		const exclDesc = exclCell.description.join("");
+		// Join descriptions: \n for lines starting with 【 (multi-line states), space otherwise
+		const exclDesc = exclCell.description.reduce((acc, line, i) => {
+			if (i === 0) return line;
+			return acc + (line.startsWith("【") ? "\n" : " ") + line;
+		}, "");
 		const exclEffects = parseEntry(entry.name, exclDesc, "exclusiveAffix");
 		const resolvedExcl = resolveTiers(exclEffects, exclCell.tiers.map(t => ({
 			enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars,
