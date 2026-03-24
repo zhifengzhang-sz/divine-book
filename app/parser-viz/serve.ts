@@ -155,8 +155,8 @@ Bun.serve({
 				ohmSource: readSource(name, ".ohm"),
 				semSource: readSource(name, ".ts"),
 				skill, primary, exclusive,
-				schoolAffixes: { grammar: schoolGrammar, ohmSource: readSource(schoolGrammar, ".ohm"), items: schoolItems },
-				universalAffixes: { grammar: "通用词缀", ohmSource: readSource("通用词缀", ".ohm"), items: universalItems },
+				schoolAffixes: { grammar: schoolGrammar, ohmSource: readSource(schoolGrammar, ".ohm"), semSource: readSource(schoolGrammar, ".ts"), items: schoolItems },
+				universalAffixes: { grammar: "通用词缀", ohmSource: readSource("通用词缀", ".ohm"), semSource: readSource("通用词缀", ".ts"), items: universalItems },
 			});
 		}
 
