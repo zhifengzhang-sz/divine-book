@@ -109,17 +109,23 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 		return book?.affixText || undefined;
 	};
 
+	// Split combined text back into skill + affix for parsing
+	const getSkillText = () => {
+		const divider = text.indexOf("───── 主词缀 ─────");
+		return divider >= 0 ? text.substring(0, divider).trim() : text;
+	};
+
 	// Fire parse
 	const handleParse = () => {
 		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, text, bookName, getAffixText());
+		onParse(sourceType, getSkillText(), bookName, getAffixText());
 	};
 
 	// Auto-parse on text/selection change
 	useEffect(() => {
 		if (!text) return;
 		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, text, bookName, getAffixText());
+		onParse(sourceType, getSkillText(), bookName, getAffixText());
 	}, [text, selected, sourceType]);
 
 	if (loading) {
@@ -222,7 +228,9 @@ function getEntries(data: SourceData, sourceType: SourceType): DropdownEntry[] {
 			return data.books.map((b) => ({
 				key: b.name,
 				label: `${b.name} (${b.school})`,
-				text: b.skillText,
+				text: b.affixText
+					? `${b.skillText}\n───── 主词缀 ─────\n${b.affixText}`
+					: b.skillText,
 			}));
 		case "exclusive":
 			return data.exclusive.map((e) => ({

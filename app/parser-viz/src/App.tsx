@@ -166,10 +166,13 @@ export function App() {
 
 				{bookName ? (
 					<div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-						{/* Grammar at the center */}
+						{/* Grammar + Semantics at the center */}
 						<div style={{ ...panelStyle, padding: 0 }}>
-							<Node label={`${bookName}.ohm — grammar (3 entry points)`} status="ok">
+							<Node label={`${bookName}.ohm — grammar`} status="ok">
 								<Code code={ohmSource} />
+							</Node>
+							<Node label={`${bookName}.ts — semantics`} status={skillResult?.semanticsSource ? "ok" : "pending"}>
+								<Code code={skillResult?.semanticsSource ?? "(not loaded)"} />
 							</Node>
 						</div>
 
