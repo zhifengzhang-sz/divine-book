@@ -1,73 +1,115 @@
 import { useEffect, useState } from "react";
-import { T, css } from "./theme.ts";
-import { BookSelector } from "./BookSelector.tsx";
+import { T, globalCSS } from "./theme.ts";
+import { SectionHeader, Select } from "./SectionHeader.tsx";
 import { GrammarPanel } from "./GrammarPanel.tsx";
 import { EntryPointFlow } from "./EntryPointFlow.tsx";
-import { SharedAffixes } from "./SharedAffixes.tsx";
 
-interface BookData {
-	name: string;
-	school: string;
-	ohmSource: string | null;
-	semSource: string | null;
-	skill: any;
-	primary: any;
-	exclusive: any;
-	schoolAffixes: any;
-	universalAffixes: any;
+// ── Data fetching hooks ─────────────────────────────────
+
+function useBookList() {
+	const [books, setBooks] = useState<{ name: string; school: string }[]>([]);
+	useEffect(() => { fetch("/api/books").then(r => r.json()).then(setBooks); }, []);
+	return books;
 }
+
+function useSchoolList() {
+	const [schools, setSchools] = useState<string[]>([]);
+	useEffect(() => { fetch("/api/schools").then(r => r.json()).then(setSchools); }, []);
+	return schools;
+}
+
+function useFetch<T>(url: string | null) {
+	const [data, setData] = useState<T | null>(null);
+	useEffect(() => {
+		if (!url) { setData(null); return; }
+		fetch(url).then(r => r.json()).then(setData);
+	}, [url]);
+	return data;
+}
+
+// ── Section 1: Main Book ────────────────────────────────
+
+function MainBookSection({ books }: { books: { name: string; school: string }[] }) {
+	const [sel, setSel] = useState("");
+	useEffect(() => { if (books.length && !sel) setSel(books[0].name); }, [books]);
+	const data = useFetch<any>(sel ? `/api/book/${encodeURIComponent(sel)}` : null);
+
+	return <section style={sectionStyle}>
+		<SectionHeader title="① Main Book">
+			<Select value={sel} onChange={setSel} options={books.map(b => ({ value: b.name, label: `${b.name} (${b.school})` }))} />
+		</SectionHeader>
+		{data && <>
+			<GrammarPanel name={data.grammar} ohm={data.ohmSource} sem={data.semSource} />
+			<EntryPointFlow name="skillDescription" result={data.skill ? { ...data.skill, tiers: data.skillTiers } : null} />
+			<EntryPointFlow name="primaryAffix" result={data.primary ? { ...data.primary, tiers: data.primaryTiers } : null} />
+		</>}
+	</section>;
+}
+
+// ── Section 2: Exclusive Affix ──────────────────────────
+
+function ExclusiveSection({ books }: { books: { name: string; school: string }[] }) {
+	const [sel, setSel] = useState("");
+	useEffect(() => { if (books.length && !sel) setSel(books[0].name); }, [books]);
+	const data = useFetch<any>(sel ? `/api/exclusive/${encodeURIComponent(sel)}` : null);
+
+	return <section style={sectionStyle}>
+		<SectionHeader title="② Exclusive Affix">
+			<Select value={sel} onChange={setSel} options={books.map(b => ({ value: b.name, label: `${b.name} (${b.school})` }))} />
+		</SectionHeader>
+		{data && <>
+			<GrammarPanel name={data.grammar} ohm={data.ohmSource} sem={data.semSource} />
+			<EntryPointFlow name="exclusiveAffix" result={data.exclusive ? { ...data.exclusive, tiers: data.exclusiveTiers } : null} />
+		</>}
+	</section>;
+}
+
+// ── Section 3: School Affix ─────────────────────────────
+
+function SchoolSection({ schools }: { schools: string[] }) {
+	const [sel, setSel] = useState("");
+	useEffect(() => { if (schools.length && !sel) setSel(schools[0]); }, [schools]);
+	const data = useFetch<any>(sel ? `/api/school/${encodeURIComponent(sel)}` : null);
+
+	return <section style={sectionStyle}>
+		<SectionHeader title="③ School Affix">
+			<Select value={sel} onChange={setSel} options={schools.map(s => ({ value: s, label: s }))} />
+		</SectionHeader>
+		{data && <>
+			<GrammarPanel name={data.grammar} ohm={data.ohmSource} sem={data.semSource} />
+			{data.affixes?.map((a: any) => <EntryPointFlow key={a.name} name={a.name} result={a} />)}
+		</>}
+	</section>;
+}
+
+// ── Section 4: Common Affix ─────────────────────────────
+
+function CommonSection() {
+	const data = useFetch<any>("/api/common");
+
+	return <section style={sectionStyle}>
+		<SectionHeader title="④ Common Affix" />
+		{data && <>
+			<GrammarPanel name={data.grammar} ohm={data.ohmSource} sem={data.semSource} />
+			{data.affixes?.map((a: any) => <EntryPointFlow key={a.name} name={a.name} result={a} />)}
+		</>}
+	</section>;
+}
+
+// ── App ─────────────────────────────────────────────────
 
 export function App() {
-	const [books, setBooks] = useState<{ name: string; school: string }[]>([]);
-	const [selected, setSelected] = useState("");
-	const [data, setData] = useState<BookData | null>(null);
-	const [loading, setLoading] = useState(false);
+	const books = useBookList();
+	const schools = useSchoolList();
 
-	useEffect(() => {
-		fetch("/api/books").then(r => r.json()).then((list: any[]) => {
-			setBooks(list);
-			if (list.length > 0) setSelected(list[0].name);
-		});
-	}, []);
-
-	useEffect(() => {
-		if (!selected) return;
-		setLoading(true);
-		fetch(`/api/book/${encodeURIComponent(selected)}`)
-			.then(r => r.json())
-			.then(d => { setData(d); setLoading(false); });
-	}, [selected]);
-
-	return (
-		<div style={{ height: "100vh", width: "100vw", background: T.bgGrad, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-			<style>{css}</style>
-
-			{/* Header */}
-			<div style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
-				<span style={{ fontFamily: T.heading, fontSize: 15, color: T.goldBright }}>灵書 Parser</span>
-				<BookSelector books={books} selected={selected} onSelect={setSelected} />
-				{loading && <span style={{ color: T.muted, fontSize: 10 }}>loading...</span>}
-				{data && <span style={{ color: T.muted, fontSize: 10, fontFamily: T.mono }}>{data.school}</span>}
-			</div>
-
-			{data && (
-				<div style={{ flex: 1, padding: "12px 20px", overflow: "auto" }}>
-					<GrammarPanel name={data.name} ohmSource={data.ohmSource} semSource={data.semSource} />
-
-					<div style={sectionLabel}>Book Entry Points</div>
-					<EntryPointFlow name="skillDescription" result={data.skill} />
-					<EntryPointFlow name="primaryAffix" result={data.primary} />
-					<EntryPointFlow name="exclusiveAffix" result={data.exclusive} />
-
-					<div style={sectionLabel}>Shared Affixes</div>
-					<SharedAffixes school={data.schoolAffixes} universal={data.universalAffixes} />
-				</div>
-			)}
-		</div>
-	);
+	return <div style={{ minHeight: "100vh", color: T.text, padding: "12px 20px" }}>
+		<style>{globalCSS}</style>
+		<h1 style={{ fontFamily: T.heading, fontSize: 16, color: T.goldBright, marginBottom: 16 }}>灵書 Parser Visualizer</h1>
+		<MainBookSection books={books} />
+		<ExclusiveSection books={books} />
+		<SchoolSection schools={schools} />
+		<CommonSection />
+	</div>;
 }
 
-const sectionLabel: React.CSSProperties = {
-	color: T.muted, fontSize: 10, fontFamily: T.heading,
-	margin: "10px 0 4px", borderBottom: `1px solid ${T.border}33`, paddingBottom: 2,
-};
+const sectionStyle: React.CSSProperties = { marginBottom: 24 };

@@ -1,8 +1,14 @@
 #!/usr/bin/env bun
 /**
  * Parser viz server.
- * GET /api/books — list books
- * GET /api/book/:name — everything about one book (grammar, semantics, all parse results, shared affixes)
+ *
+ * 4 endpoints matching 4 sections:
+ *   GET /api/books            → book list
+ *   GET /api/book/:name       → skill + primaryAffix
+ *   GET /api/exclusive/:book  → exclusiveAffix
+ *   GET /api/schools          → school list
+ *   GET /api/school/:school   → school affixes
+ *   GET /api/common           → universal affixes
  */
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -11,70 +17,65 @@ import * as ohm from "ohm-js";
 import { readMainSkillTables } from "../../lib/parser/md-table.js";
 
 const port = Number(process.env.PORT ?? 3001);
-const grammarsDir = resolve("lib/parser/grammars-v1");
-const semanticsDir = resolve("lib/parser/grammars/semantics");
+const GD = resolve("lib/parser/grammars-v1"); // grammars dir
+const SD = resolve("lib/parser/grammars/semantics"); // semantics dir
 
-// ── Data ────────────────────────────────────────────────
+// ── Raw data ────────────────────────────────────────────
 
-const mainMd = readFileSync(resolve("data/raw/主书.md"), "utf-8");
-const exclusiveMd = readFileSync(resolve("data/raw/专属词缀.md"), "utf-8");
-const universalMd = readFileSync(resolve("data/raw/通用词缀.md"), "utf-8");
-const schoolMd = readFileSync(resolve("data/raw/修为词缀.md"), "utf-8");
+const bookEntries = readMainSkillTables(readFileSync(resolve("data/raw/主书.md"), "utf-8"));
 
-const bookEntries = readMainSkillTables(mainMd);
-
-// Exclusive affix per book
 const exclusiveMap: Record<string, string> = {};
-for (const line of exclusiveMd.split("\n")) {
-	if (!line.startsWith("|") || line.includes("---") || line.includes("功法")) continue;
-	const cells = line.split("|").slice(1, -1).map(c => c.trim());
-	if (cells.length >= 3) exclusiveMap[cells[0].replace(/`/g, "")] = cells[2].replace(/<br\s*\/?>/gi, "\n");
+for (const l of readFileSync(resolve("data/raw/专属词缀.md"), "utf-8").split("\n")) {
+	if (!l.startsWith("|") || l.includes("---") || l.includes("功法")) continue;
+	const c = l.split("|").slice(1, -1).map(s => s.trim());
+	if (c.length >= 3) exclusiveMap[c[0].replace(/`/g, "")] = c[2].replace(/<br\s*\/?>/gi, "\n");
 }
 
-// Universal affixes (name → raw text)
-const universalAffixes: { name: string; text: string }[] = [];
-for (const line of universalMd.split("\n")) {
-	if (!line.startsWith("|") || line.includes("---") || line.match(/^\|\s*词缀\s*\||^\|\s*效果/)) continue;
-	const cells = line.split("|").slice(1, -1).map(c => c.trim());
-	if (cells.length >= 2) universalAffixes.push({ name: cells[0].replace(/【|】/g, ""), text: cells[1].replace(/<br\s*\/?>/gi, "\n") });
-}
-
-// School affixes per school
-const schoolMap: Record<string, string> = { Sword: "剑修", Spell: "法修", Demon: "魔修", Body: "体修" };
-const schoolAffixes: Record<string, { name: string; text: string }[]> = {};
-for (const section of schoolMd.split(/^####\s+/m).slice(1)) {
-	const school = section.split("\n")[0].trim();
-	schoolAffixes[school] = [];
-	for (const line of section.split("\n")) {
-		if (!line.startsWith("|") || line.includes("---") || line.match(/^\|\s*词缀\s*\||^\|\s*效果/)) continue;
-		const cells = line.split("|").slice(1, -1).map(c => c.trim());
-		if (cells.length >= 2) schoolAffixes[school].push({ name: cells[0].replace(/【|】/g, ""), text: cells[1].replace(/<br\s*\/?>/gi, "\n") });
+type AffixRaw = { name: string; text: string };
+function parseAffixMd(md: string): Record<string, AffixRaw[]> {
+	const result: Record<string, AffixRaw[]> = {};
+	for (const sec of md.split(/^####\s+/m).slice(1)) {
+		const school = sec.split("\n")[0].trim();
+		result[school] = [];
+		for (const l of sec.split("\n")) {
+			if (!l.startsWith("|") || l.includes("---") || l.match(/^\|\s*词缀/)) continue;
+			const c = l.split("|").slice(1, -1).map(s => s.trim());
+			if (c.length >= 2) result[school].push({ name: c[0].replace(/【|】/g, ""), text: c[1].replace(/<br\s*\/?>/gi, "\n") });
+		}
 	}
+	return result;
 }
 
-// ── Grammars ────────────────────────────────────────────
+const schoolAffixData = parseAffixMd(readFileSync(resolve("data/raw/修为词缀.md"), "utf-8"));
+const universalAffixData: AffixRaw[] = [];
+for (const l of readFileSync(resolve("data/raw/通用词缀.md"), "utf-8").split("\n")) {
+	if (!l.startsWith("|") || l.includes("---") || l.match(/^\|\s*词缀/)) continue;
+	const c = l.split("|").slice(1, -1).map(s => s.trim());
+	if (c.length >= 2) universalAffixData.push({ name: c[0].replace(/【|】/g, ""), text: c[1].replace(/<br\s*\/?>/gi, "\n") });
+}
+
+const schoolNameMap: Record<string, string> = { Sword: "剑修", Spell: "法修", Demon: "魔修", Body: "体修" };
+
+// ── Grammars + Semantics ────────────────────────────────
 
 const allOhm = [
-	readFileSync(resolve(grammarsDir, "Base.ohm"), "utf-8"),
-	...readdirSync(resolve(grammarsDir, "books")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(grammarsDir, "books", f), "utf-8")),
-	...readdirSync(resolve(grammarsDir, "affixes")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(grammarsDir, "affixes", f), "utf-8")),
+	readFileSync(resolve(GD, "Base.ohm"), "utf-8"),
+	...readdirSync(resolve(GD, "books")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(GD, "books", f), "utf-8")),
+	...readdirSync(resolve(GD, "affixes")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(GD, "affixes", f), "utf-8")),
 ].join("\n");
 const grammars = ohm.grammars(allOhm);
 
-// ── Semantics ───────────────────────────────────────────
-
-const semModules: Record<string, { addSemantics: (s: ohm.Semantics) => void }> = {};
+const semMods: Record<string, any> = {};
 await Promise.all(
-	readdirSync(semanticsDir)
-		.filter(f => f.endsWith(".ts") && f !== "shared.ts" && !f.includes("test"))
-		.map(async f => { try { semModules[f.replace(".ts", "")] = await import(resolve(semanticsDir, f)); } catch {} })
+	readdirSync(SD).filter(f => f.endsWith(".ts") && f !== "shared.ts" && !f.includes("test"))
+		.map(async f => { try { semMods[f.replace(".ts", "")] = await import(resolve(SD, f)); } catch {} })
 );
 
 // ── Helpers ─────────────────────────────────────────────
 
-function readSource(name: string, ext: string): string | null {
+function src(name: string, ext: string): string | null {
 	for (const sub of ["books", "affixes", ""]) {
-		const dir = ext === ".ohm" ? grammarsDir : semanticsDir;
+		const dir = ext === ".ohm" ? GD : SD;
 		const p = sub ? resolve(dir, sub, `${name}${ext}`) : resolve(dir, `${name}${ext}`);
 		if (existsSync(p)) return readFileSync(p, "utf-8");
 	}
@@ -85,29 +86,33 @@ function clean(raw: string): string {
 	return raw.replace(/`/g, "").split("\n").filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("").replace(/^【[^】]+】[：:]/, "");
 }
 
-function buildTree(g: ohm.Grammar, m: ohm.MatchResult): object {
+function tierLines(raw: string): string[] {
+	return raw.replace(/`/g, "").split("\n").filter(l => l.match(/^悟\d|^融合/));
+}
+
+function tree(g: ohm.Grammar, m: ohm.MatchResult): object {
 	const s = g.createSemantics();
 	s.addOperation("t", {
-		_nonterminal(...ch: ohm.Node[]) { const k = ch.map(c => c.t()).filter(Boolean); return k.length ? { r: this.ctorName, c: k } : { r: this.ctorName, t: this.sourceString }; },
+		_nonterminal(...c: ohm.Node[]) { const k = c.map(x => x.t()).filter(Boolean); return k.length ? { r: this.ctorName, c: k } : { r: this.ctorName, t: this.sourceString }; },
 		_terminal() { return this.sourceString.length > 0 ? { r: "_", t: this.sourceString } : null; },
-		_iter(...ch: ohm.Node[]) { const k = ch.map(c => c.t()).filter(Boolean); return k.length ? k : null; },
+		_iter(...c: ohm.Node[]) { const k = c.map(x => x.t()).filter(Boolean); return k.length ? k : null; },
 	});
 	return s(m).t();
 }
 
-function parse(grammarName: string, text: string, entryPoint: string) {
+function parse(grammarName: string, rawText: string, entryPoint: string) {
 	const g = grammars[grammarName];
-	if (!g) return { raw: text, error: `No grammar: ${grammarName}` };
-	const c = clean(text);
+	if (!g) return { raw: rawText, error: `No grammar: ${grammarName}` };
+	const c = clean(rawText);
 	const m = g.match(c, entryPoint);
 	if (m.failed()) return { raw: c, error: m.shortMessage ?? "Parse failed" };
-	const tree = buildTree(g, m);
+	const t = tree(g, m);
 	let effects: object[] = [];
 	let effectError: string | undefined;
-	const mod = semModules[grammarName];
+	const mod = semMods[grammarName];
 	if (mod) { try { const s = g.createSemantics(); mod.addSemantics(s); effects = s(m).toEffects(); } catch (e) { effectError = (e as Error).message; } }
 	else effectError = `No semantics: ${grammarName}`;
-	return { raw: c, tree, effects, effectError };
+	return { raw: c, tree: t, effects, effectError };
 }
 
 // ── Server ──────────────────────────────────────────────
@@ -116,62 +121,74 @@ Bun.serve({
 	port,
 	async fetch(req) {
 		const url = new URL(req.url);
-		const path = url.pathname;
+		const p = url.pathname;
 
-		if (path === "/api/books") {
-			return Response.json(bookEntries.map(e => ({ name: e.name, school: e.school })));
-		}
+		// Book list
+		if (p === "/api/books") return Response.json(bookEntries.map(e => ({ name: e.name, school: e.school })));
 
-		if (path.startsWith("/api/book/")) {
-			const name = decodeURIComponent(path.slice("/api/book/".length));
-			const entry = bookEntries.find(e => e.name === name);
-			if (!entry) return Response.json({ error: `Not found: ${name}` }, { status: 404 });
+		// School list
+		if (p === "/api/schools") return Response.json(Object.keys(schoolAffixData));
 
-			const skillText = entry.skillText.replace(/<br\s*\/?>/gi, "\n");
-			const affixText = entry.affixText.replace(/<br\s*\/?>/gi, "\n");
-			const exclText = exclusiveMap[name] ?? "";
-
-			// Book-specific parses
-			const skill = parse(name, skillText, "skillDescription");
-			const primary = affixText.trim() ? parse(name, affixText, "primaryAffix") : null;
-			const exclusive = exclText.trim() ? parse(name, exclText, "exclusiveAffix") : null;
-
-			// School affixes for this book's school
-			const cnSchool = schoolMap[entry.school] ?? "";
-			const schoolGrammar = `修为词缀_${cnSchool}`;
-			const schoolItems = (schoolAffixes[cnSchool] ?? []).map(a => ({
-				name: a.name,
-				...parse(schoolGrammar, a.text, "affixDescription"),
-			}));
-
-			// Universal affixes
-			const universalItems = universalAffixes.map(a => ({
-				name: a.name,
-				...parse("通用词缀", a.text, "affixDescription"),
-			}));
-
+		// § 1 Main book: skill + primaryAffix
+		if (p.startsWith("/api/book/")) {
+			const name = decodeURIComponent(p.slice(10));
+			const e = bookEntries.find(b => b.name === name);
+			if (!e) return Response.json({ error: "Not found" }, { status: 404 });
+			const skillRaw = e.skillText.replace(/<br\s*\/?>/gi, "\n");
+			const affixRaw = e.affixText.replace(/<br\s*\/?>/gi, "\n");
 			return Response.json({
-				name, school: entry.school,
-				ohmSource: readSource(name, ".ohm"),
-				semSource: readSource(name, ".ts"),
-				skill, primary, exclusive,
-				schoolAffixes: { grammar: schoolGrammar, ohmSource: readSource(schoolGrammar, ".ohm"), semSource: readSource(schoolGrammar, ".ts"), items: schoolItems },
-				universalAffixes: { grammar: "通用词缀", ohmSource: readSource("通用词缀", ".ohm"), semSource: readSource("通用词缀", ".ts"), items: universalItems },
+				grammar: name, ohmSource: src(name, ".ohm"), semSource: src(name, ".ts"),
+				skill: parse(name, skillRaw, "skillDescription"),
+				skillTiers: tierLines(skillRaw),
+				primary: affixRaw.trim() ? parse(name, affixRaw, "primaryAffix") : null,
+				primaryTiers: affixRaw.trim() ? tierLines(affixRaw) : [],
 			});
 		}
 
-		if (path === "/" || path === "/index.html") return new Response(Bun.file("app/parser-viz/index.html"));
-		if (path.endsWith(".tsx") || path.endsWith(".ts")) {
+		// § 2 Exclusive affix
+		if (p.startsWith("/api/exclusive/")) {
+			const name = decodeURIComponent(p.slice(15));
+			const raw = exclusiveMap[name] ?? "";
+			if (!raw) return Response.json({ error: "Not found" }, { status: 404 });
+			return Response.json({
+				grammar: name, ohmSource: src(name, ".ohm"), semSource: src(name, ".ts"),
+				exclusive: parse(name, raw, "exclusiveAffix"),
+				exclusiveTiers: tierLines(raw),
+			});
+		}
+
+		// § 3 School affixes
+		if (p.startsWith("/api/school/")) {
+			const school = decodeURIComponent(p.slice(12));
+			const affixes = schoolAffixData[school] ?? [];
+			const grammar = `修为词缀_${school}`;
+			return Response.json({
+				grammar, ohmSource: src(grammar, ".ohm"), semSource: src(grammar, ".ts"),
+				affixes: affixes.map(a => ({ name: a.name, ...parse(grammar, a.text, "affixDescription"), tiers: tierLines(a.text) })),
+			});
+		}
+
+		// § 4 Common affixes
+		if (p === "/api/common") {
+			const grammar = "通用词缀";
+			return Response.json({
+				grammar, ohmSource: src(grammar, ".ohm"), semSource: src(grammar, ".ts"),
+				affixes: universalAffixData.map(a => ({ name: a.name, ...parse(grammar, a.text, "affixDescription"), tiers: tierLines(a.text) })),
+			});
+		}
+
+		// Static
+		if (p === "/" || p === "/index.html") return new Response(Bun.file("app/parser-viz/index.html"));
+		if (p.endsWith(".tsx") || p.endsWith(".ts")) {
 			try {
-				const r = await Bun.build({ entrypoints: [`app/parser-viz${path}`], format: "esm", target: "browser", minify: false });
+				const r = await Bun.build({ entrypoints: [`app/parser-viz${p}`], format: "esm", target: "browser", minify: false });
 				if (r.success && r.outputs.length) return new Response(await r.outputs[0].text(), { headers: { "Content-Type": "application/javascript" } });
 			} catch {}
 			return new Response("Build error", { status: 500 });
 		}
-		const file = Bun.file(`app/parser-viz${path}`);
-		if (await file.exists()) return new Response(file);
+		const f = Bun.file(`app/parser-viz${p}`);
+		if (await f.exists()) return new Response(f);
 		return new Response("Not found", { status: 404 });
 	},
 });
-
 console.log(`Parser viz: http://localhost:${port}`);
