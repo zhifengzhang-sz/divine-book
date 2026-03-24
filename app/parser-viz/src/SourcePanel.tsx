@@ -120,11 +120,12 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 		onParse(sourceType, getSkillText(), selected, getAffixText());
 	};
 
-	// Auto-parse on text/selection change
+	// Auto-parse on text/selection change (sourceType changes trigger via the
+	// source-type effect above which updates text+selected, so no need to depend on sourceType)
 	useEffect(() => {
-		if (!text) return;
+		if (!text || !selected) return;
 		onParse(sourceType, getSkillText(), selected, getAffixText());
-	}, [text, selected, sourceType]);
+	}, [text, selected]);
 
 	if (loading) {
 		return (

@@ -98,12 +98,13 @@ function EntryFlow({ name, result }: { name: string; result: PipelineResult | nu
 	);
 
 	const hasEffects = result.effects && result.effects.length > 0;
+	const errors = result.errors ?? [];
 
 	return (
 		<div style={{ ...panelStyle, padding: 0, marginBottom: 6 }}>
 			<div style={{ padding: "6px 10px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
 				<span style={{ color: T.goldLight, fontFamily: T.heading, fontSize: 12 }}>{name}</span>
-				{result.errors.length > 0 && <span style={{ color: T.red, fontSize: 10, fontFamily: T.mono }}>{result.errors[0]}</span>}
+				{errors.length > 0 && <span style={{ color: T.red, fontSize: 10, fontFamily: T.mono }}>{errors[0]}</span>}
 			</div>
 			<Node label="raw text" status="ok">
 				<Code code={result.rawText ?? ""} />
