@@ -110,7 +110,7 @@ function handleParse(body: { sourceType: string; text: string; bookName?: string
 
 	const grammar = compiledGrammars[bookName];
 	if (!grammar) {
-		return { ohmSource, semanticsSource, parseTree: null, effects: [], errors: [`No grammar for "${bookName}"`], tokens: [], groups: [], tiers: [], states: {} };
+		return { rawText: cleanText, ohmSource, semanticsSource, parseTree: null, effects: [], errors: [`No grammar for "${bookName}"`], tokens: [], groups: [], tiers: [], states: {} };
 	}
 
 	// Strip backticks and tier lines from text
@@ -118,7 +118,7 @@ function handleParse(body: { sourceType: string; text: string; bookName?: string
 
 	const match = grammar.match(cleanText, entryPoint);
 	if (match.failed()) {
-		return { ohmSource, semanticsSource, parseTree: null, effects: [], errors: [match.shortMessage ?? "Parse failed"], tokens: [], groups: [], tiers: [], states: {} };
+		return { rawText: cleanText, ohmSource, semanticsSource, parseTree: null, effects: [], errors: [match.shortMessage ?? "Parse failed"], tokens: [], groups: [], tiers: [], states: {} };
 	}
 
 	const parseTree = describeTree(grammar, match);
@@ -135,6 +135,7 @@ function handleParse(body: { sourceType: string; text: string; bookName?: string
 	}
 
 	return {
+		rawText: cleanText,
 		ohmSource,
 		semanticsSource,
 		parseTree,

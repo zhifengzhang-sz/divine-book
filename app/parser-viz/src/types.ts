@@ -54,7 +54,8 @@ export interface PipelineResult {
 	tiers: TierLine[];
 	states: Record<string, StateDef>;
 	errors: string[];
-	// New grammar system fields
+	// Grammar system fields
+	rawText?: string;
 	ohmSource?: string;
 	semanticsSource?: string;
 	parseTree?: ParseTreeNode;

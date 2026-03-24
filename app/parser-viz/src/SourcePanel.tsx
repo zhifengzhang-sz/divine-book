@@ -43,8 +43,6 @@ interface SourceData {
 
 interface SourcePanelProps {
 	onParse: (sourceType: SourceType, text: string, bookName?: string) => void;
-	ohmSource?: string;
-	semanticsSource?: string;
 }
 
 // ── Source type options ──────────────────────────────────
@@ -56,74 +54,7 @@ const SOURCE_TYPES: { value: SourceType; label: string }[] = [
 	{ value: "universal", label: "通用词缀" },
 ];
 
-// ── Native <dialog> — vanilla DOM, no React ─────────────
-
-function openFloatingDialog(title: string, code: string) {
-	// Remove existing
-	document.getElementById("src-dialog")?.remove();
-
-	const d = document.createElement("dialog");
-	d.id = "src-dialog";
-	Object.assign(d.style, {
-		position: "fixed", top: "60px", left: "200px",
-		width: "700px", height: "500px", maxWidth: "none", maxHeight: "none",
-		background: "#1a1a1a", color: "#e0e0e0",
-		border: "2px solid #b8860b", borderRadius: "8px",
-		padding: "0", margin: "0",
-		boxShadow: "0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(184,134,11,0.15)",
-		display: "flex", flexDirection: "column",
-		resize: "both", overflow: "hidden",
-	});
-
-	// Transparent backdrop
-	const style = document.createElement("style");
-	style.textContent = `#src-dialog::backdrop { background: transparent; pointer-events: none; }`;
-	d.appendChild(style);
-
-	// Header
-	const h = document.createElement("div");
-	Object.assign(h.style, {
-		display: "flex", justifyContent: "space-between", alignItems: "center",
-		padding: "8px 14px", borderBottom: "1px solid #b8860b44",
-		fontFamily: "'Cinzel', serif", fontSize: "13px", color: "#ffd700",
-		cursor: "grab", userSelect: "none", flexShrink: "0",
-	});
-	h.textContent = title;
-
-	const btn = document.createElement("button");
-	btn.textContent = "✕";
-	Object.assign(btn.style, { background: "none", border: "none", color: "#888", fontSize: "16px", cursor: "pointer", padding: "2px 6px" });
-	btn.onclick = () => { d.close(); d.remove(); };
-	h.appendChild(btn);
-
-	// Code
-	const pre = document.createElement("pre");
-	pre.textContent = code;
-	Object.assign(pre.style, {
-		flex: "1", margin: "0", padding: "14px", overflow: "auto",
-		fontFamily: "'Menlo', 'Fira Code', monospace", fontSize: "12px",
-		lineHeight: "1.6", color: "#e0e0e0", whiteSpace: "pre-wrap", wordBreak: "break-all",
-	});
-
-	d.appendChild(h);
-	d.appendChild(pre);
-	document.body.appendChild(d);
-
-	// Drag by header
-	h.addEventListener("mousedown", (e) => {
-		const sx = e.clientX, sy = e.clientY;
-		const ox = d.offsetLeft, oy = d.offsetTop;
-		h.style.cursor = "grabbing";
-		const move = (ev: MouseEvent) => { d.style.left = `${ox + ev.clientX - sx}px`; d.style.top = `${oy + ev.clientY - sy}px`; };
-		const up = () => { h.style.cursor = "grab"; window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
-		window.addEventListener("mousemove", move);
-		window.addEventListener("mouseup", up);
-	});
-
-	d.showModal();
-}
-
-export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanelProps) {
+export function SourcePanel({ onParse }: SourcePanelProps) {
 	const [sourceType, setSourceType] = useState<SourceType>("skill");
 	const [data, setData] = useState<SourceData | null>(null);
 	const [selected, setSelected] = useState("");
@@ -261,26 +192,6 @@ export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanel
 				/>
 			</div>
 
-			{/* View source buttons */}
-			<div style={{ display: "flex", gap: 6 }}>
-				<button
-					type="button"
-					onClick={() => ohmSource && openFloatingDialog(`${selected}.ohm`, ohmSource)}
-					style={sourceButtonStyle}
-					disabled={!ohmSource}
-				>
-					.ohm
-				</button>
-				<button
-					type="button"
-					onClick={() => semanticsSource && openFloatingDialog(`${selected}.ts`, semanticsSource)}
-					style={sourceButtonStyle}
-					disabled={!semanticsSource}
-				>
-					semantics
-				</button>
-			</div>
-
 			{/* Parse button */}
 			<button type="button" onClick={handleParse} style={parseButtonStyle}>
 				Parse
@@ -374,15 +285,4 @@ const parseButtonStyle: React.CSSProperties = {
 	boxShadow: `0 3px 0 #111, 0 0 10px rgba(184,134,11,0.3)`,
 };
 
-const sourceButtonStyle: React.CSSProperties = {
-	flex: 1,
-	background: "#222",
-	color: T.textMuted,
-	border: `1px solid ${T.border}`,
-	borderRadius: 4,
-	padding: "5px 8px",
-	fontSize: 11,
-	fontFamily: T.mono,
-	cursor: "pointer",
-};
 
