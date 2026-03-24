@@ -1,9 +1,9 @@
 /**
- * Stage 2: Group Events (Context Listener)
+ * Stage 2: Grammar Effects (ohm Parse + Post-processing)
  *
  * Each card shows:
- * 1. Event line: GROUP type [+ modifiers]
- * 2. State scope (if inside a named state)
+ * 1. Effect type [+ merged modifiers]
+ * 2. State scope (if inside a named state segment)
  */
 
 import type { GroupEvent } from "./types.ts";
@@ -20,11 +20,11 @@ export function GroupView({ groups }: { groups: GroupEvent[] }) {
 		<div>
 			<div style={stageHeaderStyle}>
 				<span style={stageNum}>2</span>
-				Group Events
-				<span style={stageSubtitle}>Context Listener</span>
+				Grammar Effects
+				<span style={stageSubtitle}>ohm Parse</span>
 			</div>
 			{groups.length === 0 ? (
-				<div style={emptyStyle}>No groups formed</div>
+				<div style={emptyStyle}>No effects parsed</div>
 			) : (
 				<div style={listStyle}>
 					{groups.map((group, i) => (

@@ -42,7 +42,12 @@ interface SourceData {
 }
 
 interface SourcePanelProps {
-	onParse: (sourceType: SourceType, text: string, bookName?: string) => void;
+	onParse: (
+		sourceType: SourceType,
+		text: string,
+		bookName?: string,
+		affixText?: string,
+	) => void;
 }
 
 // ── Source type options ──────────────────────────────────
@@ -112,6 +117,14 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 	useEffect(() => {
 		if (!text) return;
 		const bookName = sourceType === "skill" ? selected : undefined;
+		// For skills, send raw skillText (not the decorated textarea) + affixText
+		if (sourceType === "skill" && data) {
+			const book = data.books.find((b) => b.name === selected);
+			if (book) {
+				onParse(sourceType, book.skillText, bookName, book.affixText || undefined);
+				return;
+			}
+		}
 		onParse(sourceType, text, bookName);
 	}, [text, selected, sourceType]);
 
@@ -214,7 +227,9 @@ function getEntries(data: SourceData, sourceType: SourceType): DropdownEntry[] {
 			return data.books.map((b) => ({
 				key: b.name,
 				label: `${b.name} (${b.school})`,
-				text: b.skillText,
+				text: b.affixText
+					? `── 主技能 ──\n${b.skillText}\n\n── 主词缀 ──\n${b.affixText}`
+					: `── 主技能 ──\n${b.skillText}`,
 			}));
 		case "exclusive":
 			return data.exclusive.map((e) => ({

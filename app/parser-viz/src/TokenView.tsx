@@ -1,9 +1,9 @@
 /**
- * Stage 1: Token Events (Reader)
+ * Stage 1: Segments (Boundary Splitting)
  *
  * Each card shows:
- * 1. Event line: type { key: value, ... } — the structured event
- * 2. Source text: the matched Chinese prose (event message)
+ * 1. Segment type: main_segment or state_segment (with target)
+ * 2. Source text: the Chinese prose in this segment
  */
 
 import type { TokenEvent } from "./types.ts";
@@ -20,11 +20,11 @@ export function TokenView({ tokens }: { tokens: TokenEvent[] }) {
 		<div>
 			<div style={stageHeaderStyle}>
 				<span style={stageNum}>1</span>
-				Token Events
-				<span style={stageSubtitle}>Reader</span>
+				Segments
+				<span style={stageSubtitle}>Boundary Split</span>
 			</div>
 			{tokens.length === 0 ? (
-				<div style={emptyStyle}>No tokens extracted</div>
+				<div style={emptyStyle}>No segments</div>
 			) : (
 				<div style={listStyle}>
 					{tokens.map((tok, i) => (
