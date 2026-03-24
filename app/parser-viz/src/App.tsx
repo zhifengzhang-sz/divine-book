@@ -51,27 +51,23 @@ export function App() {
 			</div>
 
 			{data && (
-				<div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+				<div style={{ flex: 1, padding: "12px 20px", overflow: "auto" }}>
+					<GrammarPanel name={data.name} ohmSource={data.ohmSource} semSource={data.semSource} />
 
-					{/* Left column: grammar + per-book entry points */}
-					<div style={{ flex: 1, padding: "12px 12px 12px 20px", overflow: "auto" }}>
-						<GrammarPanel name={data.name} ohmSource={data.ohmSource} semSource={data.semSource} />
+					<div style={sectionLabel}>Book Entry Points</div>
+					<EntryPointFlow name="skillDescription" result={data.skill} />
+					<EntryPointFlow name="primaryAffix" result={data.primary} />
+					<EntryPointFlow name="exclusiveAffix" result={data.exclusive} />
 
-						<div style={{ color: T.muted, fontSize: 10, fontFamily: T.heading, margin: "8px 0 4px", borderBottom: `1px solid ${T.border}33`, paddingBottom: 2 }}>
-							Entry Points
-						</div>
-						<EntryPointFlow name="skillDescription" result={data.skill} />
-						<EntryPointFlow name="primaryAffix" result={data.primary} />
-						<EntryPointFlow name="exclusiveAffix" result={data.exclusive} />
-					</div>
-
-					{/* Right column: shared affixes */}
-					<div style={{ width: 340, padding: "12px 20px 12px 12px", overflow: "auto", borderLeft: `1px solid ${T.border}` }}>
-						<SharedAffixes school={data.schoolAffixes} universal={data.universalAffixes} />
-					</div>
-
+					<div style={sectionLabel}>Shared Affixes</div>
+					<SharedAffixes school={data.schoolAffixes} universal={data.universalAffixes} />
 				</div>
 			)}
 		</div>
 	);
 }
+
+const sectionLabel: React.CSSProperties = {
+	color: T.muted, fontSize: 10, fontFamily: T.heading,
+	margin: "10px 0 4px", borderBottom: `1px solid ${T.border}33`, paddingBottom: 2,
+};
