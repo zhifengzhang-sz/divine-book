@@ -122,43 +122,42 @@ Per-book grammars solve all three: each grammar matches **exactly** one book's t
 
 ## §3 Architecture
 
-The system has two layers:
+Each book has **one grammar file** with **three entry points**. Three separate inputs (from three markdown table columns) go through the same grammar, each using its own entry point:
 
 ```
-raw text (Chinese prose)
-    │
-    ▼
-  Translator (.ohm)         "What structure does this text have?"
-    │
-    ▼
-  Parse Tree (CST)
-    │
-    ▼
-  Extractor (semantic .ts)   "What effects does this structure mean?"
-    │
-    ▼
-  Effect[] (typed data)      Contract between parser and simulator
+                        千锋聚灵剑.ohm
+                    ┌───────────────────────┐
+skill raw text  ──▶ │  skillDescription     │ ──▶ parse tree ──▶ Effect[]
+                    │                       │
+affix raw text  ──▶ │  primaryAffix         │ ──▶ parse tree ──▶ Effect[]
+                    │                       │
+excl. raw text  ──▶ │  exclusiveAffix       │ ──▶ parse tree ──▶ Effect[]
+                    └───────────────────────┘
+                              │
+                        千锋聚灵剑.ts (semantics)
 ```
+
+The grammar defines the boundaries — it knows which entry point handles which input. The semantics extract typed effects from each parse tree. Same `.ohm` file, same `.ts` file, three inputs, three outputs.
 
 ### §3.1 Separation of Concerns
 
-| Component | Knows about | Doesn't know about |
-|-----------|------------|-------------------|
-| **Translator** (`.ohm`) | Chinese text structure | Effect types, field names |
-| **Extractor** (semantic `.ts`) | Parse tree nodes, effect types | Raw Chinese text |
-| **Effect types** (`effect-types.ts`) | Field shapes | Grammar rules, Chinese text |
+| Component | Role |
+|-----------|------|
+| **Grammar** (`.ohm`) | Defines structure AND boundaries — three entry points for three inputs |
+| **Semantics** (`.ts`) | Extracts typed `Effect[]` from parse tree nodes |
+| **Effect types** (`effect-types.ts`) | Contract between parser and simulator |
 
-The translator and extractor meet at the parse tree. The extractor and simulator meet at the effect types.
+### §3.2 What Lives in the Grammar
 
-### §3.2 Per-Book Scope
+The grammar is the center of the system. For each book it defines:
 
-Each book's grammar is a self-contained translator for that book. It defines:
+- `skillDescription` — the main skill text structure (all 28 books)
+- `primaryAffix` — the per-book primary affix (25/28 books)
+- `exclusiveAffix` — the per-book exclusive affix (all 28 books)
 
-- `skillDescription` — main skill text structure
-- `primaryAffix` — per-book primary affix (25/28 books)
-- `exclusiveAffix` — per-book exclusive affix (all 28 books)
+These are three **entry points** in the same `.ohm` file, not three separate grammars. The grammar knows the boundary between skill text and affix text — it's encoded in the rule structure.
 
-Shared affixes (common + school) have their own grammars since they apply across books.
+Shared affixes (common + school) have their own grammars since they apply across books, not per-book.
 
 ### §3.3 Inheritance
 

@@ -174,6 +174,12 @@ Bun.serve({
 		if (path === "/api/sources/books") {
 			return new Response(booksResponse, { headers: { "Content-Type": "application/json" } });
 		}
+		// Grammar file content
+		if (path === "/api/ohm" && url.searchParams.get("book")) {
+			const content = readOhmFile(url.searchParams.get("book")!);
+			return new Response(JSON.stringify({ content }), { headers: { "Content-Type": "application/json" } });
+		}
+
 		// Stub empty responses for source types we haven't wired yet
 		if (path === "/api/sources/exclusive" || path === "/api/sources/school" || path === "/api/sources/universal") {
 			return new Response(JSON.stringify({ entries: [] }), { headers: { "Content-Type": "application/json" } });

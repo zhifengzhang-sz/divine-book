@@ -121,12 +121,22 @@ lib/parser/
       semantics.test.ts     ← semantic extraction tests
 ```
 
-**Data flow per book:**
+**Data flow per book — one grammar, three entry points:**
 
-1. `grammar.match(skillText, "skillDescription")` → skill effects
-2. `grammar.match(primaryAffixText, "primaryAffix")` → primary affix effects (25/28 books)
-3. `grammar.match(exclusiveAffixText, "exclusiveAffix")` → exclusive affix effects
-4. Common/school affixes parsed via their respective grammar
+```
+                       BookName.ohm
+                   ┌─────────────────────┐
+skill column   ──▶ │ skillDescription    │ ──▶ parse tree ──▶ semantics ──▶ Effect[]
+                   │                     │
+affix column   ──▶ │ primaryAffix        │ ──▶ parse tree ──▶ semantics ──▶ Effect[]
+                   │                     │
+专属词缀 table ──▶ │ exclusiveAffix      │ ──▶ parse tree ──▶ semantics ──▶ Effect[]
+                   └─────────────────────┘
+```
+
+The grammar defines the boundaries. Three inputs from three different data sources, same `.ohm` file, same `.ts` semantics, different entry points.
+
+Common/school affixes use their own grammars (通用词缀.ohm, 修为词缀_*.ohm) since they apply across books.
 
 ---
 

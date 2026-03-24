@@ -105,27 +105,25 @@ These files are the layers around the grammar system. They read raw markdown, re
 
 ## §1 Pipeline Overview
 
+The grammar is the center. IO layers feed it three inputs per book, one per entry point:
+
 ```
-data/raw/主书.md ──→ md-table.ts ──→ per-book raw text
-                                          │
-data/raw/通用词缀.md ──→ common-affixes.ts ──→ affix raw text
-data/raw/修为词缀.md ──┘                        │
-                                                │
-data/raw/专属词缀.md ──→ exclusive.ts ──→ exclusive affix raw text
-                                                │
-                     ┌──────────────────────────┘
-                     │
-                     ▼
-              grammars + semantics ──→ Effect[]
-                     │
-                     ▼
-              tiers.ts ──→ resolve "x","y" → concrete numbers
-                     │
-                     ▼
-              emit.ts ──→ YAML output
-                     │
-                     ▼
-              index.ts ──→ orchestrates the full pipeline
+data/raw/主書.md ──→ md-table.ts ──┬── skill column ──────┐
+                                   └── affix column ──────┤
+                                                          │
+data/raw/专属词缀.md ──→ exclusive.ts ── excl. column ────┤
+                                                          ▼
+                                                   BookName.ohm
+                                               ┌─────────────────┐
+                                  skill text ──▶ skillDescription │──▶ Effect[]
+                                  affix text ──▶ primaryAffix     │──▶ Effect[] ──▶ tiers.ts ──▶ emit.ts
+                                  excl. text ──▶ exclusiveAffix   │──▶ Effect[]
+                                               └─────────────────┘
+                                                        │
+                                                  BookName.ts (semantics)
+
+data/raw/通用词缀.md ──→ common-affixes.ts ──▶ 通用词缀.ohm ──▶ Effect[]
+data/raw/修为词缀.md ──→ common-affixes.ts ──▶ 修为词缀_*.ohm ──▶ Effect[]
 ```
 
 ---

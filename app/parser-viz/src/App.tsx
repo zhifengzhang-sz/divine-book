@@ -1,8 +1,9 @@
 /**
  * Parser Pipeline Visualizer — Per-Book Grammar Edition
  *
- * Vertical workflow: each step is a collapsible panel.
- * Click the header to expand/collapse and see the content.
+ * Shows one grammar (.ohm) at the center with three entry points.
+ * Each entry point has: raw text → parse tree → effects.
+ * Click any node to expand and see its content.
  */
 
 import { useCallback, useState } from "react";
@@ -10,52 +11,49 @@ import { SourcePanel } from "./SourcePanel.tsx";
 import type { PipelineResult, SourceType, ParseTreeNode } from "./types.ts";
 import { T, panelStyle } from "./theme.ts";
 
+// ── API ─────────────────────────────────────────────────
+
 async function fetchParse(
-	sourceType: SourceType,
+	bookName: string,
 	text: string,
-	bookName?: string,
-	entryPoint?: string,
+	entryPoint: string,
 ): Promise<PipelineResult> {
 	const res = await fetch("/api/parse", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ sourceType, text, bookName, entryPoint }),
+		body: JSON.stringify({ sourceType: "skill", text, bookName, entryPoint }),
 	});
 	return res.json();
 }
 
-// ── Collapsible step ────────────────────────────────────
+// ── Collapsible node ────────────────────────────────────
 
-function Step({ n, title, status, children }: {
-	n: number;
-	title: string;
-	status: "ok" | "error" | "pending";
+function Node({ label, status, children }: {
+	label: string;
+	status: "ok" | "error" | "empty" | "pending";
 	children: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(false);
-	const icon = status === "ok" ? "✓" : status === "error" ? "✗" : "○";
+	const icon = status === "ok" ? "✓" : status === "error" ? "✗" : status === "empty" ? "—" : "○";
 	const color = status === "ok" ? T.green : status === "error" ? T.red : T.textMuted;
 
 	return (
-		<div style={{ ...panelStyle, marginBottom: 6, padding: 0, overflow: "hidden" }}>
+		<div style={{ marginBottom: 2 }}>
 			<div
 				onClick={() => setOpen(!open)}
 				style={{
-					display: "flex", alignItems: "center", gap: 8,
-					padding: "8px 14px", cursor: "pointer", userSelect: "none",
-					borderBottom: open ? `1px solid ${T.border}` : "none",
+					display: "flex", alignItems: "center", gap: 6,
+					padding: "5px 10px", cursor: "pointer", userSelect: "none",
+					background: open ? "rgba(255,215,0,0.03)" : "transparent",
+					borderRadius: 4, fontSize: 12, fontFamily: T.mono,
 				}}
 			>
-				<span style={{ color, fontSize: 13, fontWeight: 600, fontFamily: T.mono }}>{icon}</span>
-				<span style={{ color: T.goldLight, fontFamily: T.heading, fontSize: 13 }}>
-					Step {n}: {title}
-				</span>
-				<span style={{ marginLeft: "auto", color: T.textMuted, fontSize: 11 }}>
-					{open ? "▾" : "▸"}
-				</span>
+				<span style={{ color, fontWeight: 600 }}>{icon}</span>
+				<span style={{ color: T.text }}>{label}</span>
+				<span style={{ marginLeft: "auto", color: T.textMuted, fontSize: 10 }}>{open ? "▾" : "▸"}</span>
 			</div>
 			{open && (
-				<div style={{ padding: "10px 14px", maxHeight: 400, overflow: "auto" }}>
+				<div style={{ padding: "6px 10px 10px 26px", maxHeight: 350, overflow: "auto" }}>
 					{children}
 				</div>
 			)}
@@ -63,17 +61,14 @@ function Step({ n, title, status, children }: {
 	);
 }
 
-// ── Parse tree renderer ─────────────────────────────────
+// ── Tree renderer ───────────────────────────────────────
 
-function TreeNode({ node, depth = 0 }: { node: ParseTreeNode | ParseTreeNode[]; depth?: number }) {
-	if (Array.isArray(node)) {
-		return <>{node.map((n, i) => <TreeNode key={i} node={n} depth={depth} />)}</>;
-	}
-	const indent = depth * 14;
+function TreeView({ node, depth = 0 }: { node: ParseTreeNode | ParseTreeNode[]; depth?: number }) {
+	if (Array.isArray(node)) return <>{node.map((n, i) => <TreeView key={i} node={n} depth={depth} />)}</>;
 	if (node.text && !node.children) {
 		if (node.rule === "_terminal" && node.text.length <= 1) return null;
 		return (
-			<div style={{ paddingLeft: indent, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
+			<div style={{ paddingLeft: depth * 14, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
 				<span style={{ color: T.textMuted }}>{node.rule}: </span>
 				<span style={{ color: T.green }}>"{node.text}"</span>
 			</div>
@@ -81,41 +76,70 @@ function TreeNode({ node, depth = 0 }: { node: ParseTreeNode | ParseTreeNode[]; 
 	}
 	return (
 		<div>
-			<div style={{ paddingLeft: indent, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
+			<div style={{ paddingLeft: depth * 14, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
 				<span style={{ color: T.sp, fontWeight: 600 }}>{node.rule}</span>
 			</div>
-			{node.children?.map((child, i) => (
-				<TreeNode key={i} node={child as ParseTreeNode} depth={depth + 1} />
-			))}
+			{node.children?.map((child, i) => <TreeView key={i} node={child as ParseTreeNode} depth={depth + 1} />)}
 		</div>
 	);
 }
 
-// ── Code block ──────────────────────────────────────────
-
 function Code({ code }: { code: string }) {
+	return <pre style={{ margin: 0, fontFamily: T.mono, fontSize: 11, lineHeight: 1.5, color: T.text, whiteSpace: "pre-wrap" }}>{code}</pre>;
+}
+
+// ── Entry point flow ────────────────────────────────────
+
+function EntryFlow({ name, result }: { name: string; result: PipelineResult | null }) {
+	if (!result) return (
+		<div style={{ padding: "4px 10px", fontSize: 11, color: T.textMuted, fontFamily: T.mono }}>
+			{name}: no input
+		</div>
+	);
+
+	const hasEffects = result.effects && result.effects.length > 0;
+
 	return (
-		<pre style={{
-			margin: 0, padding: 0, background: "transparent",
-			fontFamily: T.mono, fontSize: 11, lineHeight: 1.5,
-			color: T.text, whiteSpace: "pre-wrap", wordBreak: "break-all",
-		}}>
-			{code}
-		</pre>
+		<div style={{ ...panelStyle, padding: 0, marginBottom: 6 }}>
+			<div style={{ padding: "6px 10px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+				<span style={{ color: T.goldLight, fontFamily: T.heading, fontSize: 12 }}>{name}</span>
+				{result.errors.length > 0 && <span style={{ color: T.red, fontSize: 10, fontFamily: T.mono }}>{result.errors[0]}</span>}
+			</div>
+			<Node label="raw text" status="ok">
+				<Code code={result.rawText ?? ""} />
+			</Node>
+			<Node label="parse tree" status={result.parseTree ? "ok" : "error"}>
+				{result.parseTree ? <TreeView node={result.parseTree} /> : <span style={{ color: T.red, fontSize: 11 }}>failed</span>}
+			</Node>
+			<Node label="Effect[]" status={hasEffects ? "ok" : "error"}>
+				<Code code={JSON.stringify(result.effects, null, 2)} />
+			</Node>
+		</div>
 	);
 }
 
 // ── Main App ────────────────────────────────────────────
 
 export function App() {
-	const [result, setResult] = useState<PipelineResult | null>(null);
+	const [bookName, setBookName] = useState("");
+	const [skillResult, setSkillResult] = useState<PipelineResult | null>(null);
 	const [affixResult, setAffixResult] = useState<PipelineResult | null>(null);
+	const [ohmSource, setOhmSource] = useState("");
 
 	const handleParse = useCallback(
-		(sourceType: SourceType, text: string, bookName?: string, affixText?: string) => {
-			fetchParse(sourceType, text, bookName, "skillDescription").then(setResult);
-			if (affixText && bookName) {
-				fetchParse(sourceType, affixText, bookName, "primaryAffix").then(setAffixResult);
+		(sourceType: SourceType, text: string, bName?: string, affixText?: string) => {
+			const name = bName ?? "";
+			setBookName(name);
+
+			// Fetch .ohm file content
+			fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
+
+			// Parse skill
+			fetchParse(name, text, "skillDescription").then(setSkillResult);
+
+			// Parse primary affix
+			if (affixText) {
+				fetchParse(name, affixText, "primaryAffix").then(setAffixResult);
 			} else {
 				setAffixResult(null);
 			}
@@ -126,84 +150,27 @@ export function App() {
 	return (
 		<div style={appContainer}>
 			<style>{globalCSS}</style>
-
 			<h1 style={titleStyle}>Parser Pipeline Visualizer</h1>
 
 			<div style={layoutStyle}>
-				{/* Left: Source panel */}
 				<SourcePanel onParse={handleParse} />
 
-				{/* Right: Vertical workflow */}
-				{result ? (
-					<div style={workflowArea}>
-						{/* Errors */}
-						{result.errors.length > 0 && (
-							<div style={errorBox}>
-								{result.errors.map((e, i) => <div key={i}>{e}</div>)}
-							</div>
-						)}
+				{bookName ? (
+					<div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+						{/* Grammar at the center */}
+						<div style={{ ...panelStyle, padding: 0 }}>
+							<Node label={`${bookName}.ohm — grammar (3 entry points)`} status="ok">
+								<Code code={ohmSource} />
+							</Node>
+						</div>
 
-						{/* Step 1: Raw text */}
-						<Step n={1} title="Raw Text" status="ok">
-							<Code code={result.rawText ?? "(no raw text)"} />
-						</Step>
-
-						{/* Step 2: Grammar (.ohm) */}
-						<Step n={2} title="Grammar (.ohm)" status={result.ohmSource ? "ok" : "pending"}>
-							<Code code={result.ohmSource ?? "// not available"} />
-						</Step>
-
-						{/* Step 3: Parse Tree */}
-						<Step n={3} title="Parse Tree" status={result.parseTree ? "ok" : "error"}>
-							{result.parseTree ? (
-								<TreeNode node={result.parseTree} />
-							) : (
-								<div style={{ color: T.red, fontFamily: T.mono, fontSize: 11 }}>
-									Parse failed — no tree produced
-								</div>
-							)}
-						</Step>
-
-						{/* Step 4: Semantics (.ts) */}
-						<Step n={4} title="Semantics (.ts)" status={result.semanticsSource ? "ok" : "pending"}>
-							<Code code={result.semanticsSource ?? "// not available"} />
-						</Step>
-
-						{/* Step 5: Effects */}
-						<Step n={5} title="Skill Effects → Effect[]" status={result.effects?.length > 0 ? "ok" : "error"}>
-							<Code code={JSON.stringify(result.effects, null, 2)} />
-						</Step>
-
-						{/* Primary Affix section */}
-						{affixResult && (
-							<>
-								<div style={{ height: 4, background: `linear-gradient(90deg, transparent, ${T.goldDark}44, transparent)`, margin: "4px 0" }} />
-
-								<Step n={6} title="Primary Affix — Raw Text" status="ok">
-									<Code code={affixResult.rawText ?? "(no affix text)"} />
-								</Step>
-
-								<Step n={7} title="Primary Affix — Parse Tree" status={affixResult.parseTree ? "ok" : "error"}>
-									{affixResult.parseTree ? (
-										<TreeNode node={affixResult.parseTree} />
-									) : (
-										<div style={{ color: T.red, fontFamily: T.mono, fontSize: 11 }}>
-											Parse failed: {affixResult.errors?.[0] ?? "unknown"}
-										</div>
-									)}
-								</Step>
-
-								<Step n={8} title="Primary Affix — Effects" status={affixResult.effects?.length > 0 ? "ok" : "error"}>
-									<Code code={JSON.stringify(affixResult.effects, null, 2)} />
-								</Step>
-							</>
-						)}
+						{/* Three flows through the grammar */}
+						<EntryFlow name="skillDescription" result={skillResult} />
+						<EntryFlow name="primaryAffix" result={affixResult} />
 					</div>
 				) : (
 					<div style={{ ...panelStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-						<div style={{ color: T.textMuted, fontFamily: T.heading, fontSize: 14 }}>
-							Select a book and click Parse
-						</div>
+						<div style={{ color: T.textMuted, fontFamily: T.heading, fontSize: 14 }}>Select a book</div>
 					</div>
 				)}
 			</div>
@@ -221,51 +188,19 @@ body { overflow: hidden; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #5c403388; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #b8860b44; }
 `;
 
 const appContainer: React.CSSProperties = {
-	height: "100vh",
-	width: "100vw",
+	height: "100vh", width: "100vw",
 	background: `radial-gradient(ellipse at center, #1a1510 0%, #0d0d0d 70%)`,
-	display: "flex",
-	flexDirection: "column",
-	padding: 16,
-	gap: 10,
-	overflow: "hidden",
+	display: "flex", flexDirection: "column", padding: 16, gap: 10, overflow: "hidden",
 };
 
 const titleStyle: React.CSSProperties = {
-	fontFamily: T.heading,
-	fontSize: 18,
-	color: T.goldLight,
-	textShadow: `0 0 10px ${T.goldDark}88, 2px 2px 4px #000`,
-	margin: 0,
-	flexShrink: 0,
+	fontFamily: T.heading, fontSize: 18, color: T.goldLight,
+	textShadow: `0 0 10px ${T.goldDark}88, 2px 2px 4px #000`, margin: 0, flexShrink: 0,
 };
 
 const layoutStyle: React.CSSProperties = {
-	flex: 1,
-	display: "flex",
-	gap: 12,
-	overflow: "hidden",
-};
-
-const workflowArea: React.CSSProperties = {
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	overflow: "auto",
-	minWidth: 0,
-};
-
-const errorBox: React.CSSProperties = {
-	background: "rgba(231,76,60,0.1)",
-	border: `1px solid ${T.red}44`,
-	borderRadius: 4,
-	padding: "4px 10px",
-	fontSize: 11,
-	color: T.red,
-	fontFamily: T.body,
-	marginBottom: 6,
+	flex: 1, display: "flex", gap: 12, overflow: "hidden",
 };
