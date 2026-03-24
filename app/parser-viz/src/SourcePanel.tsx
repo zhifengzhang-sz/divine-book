@@ -43,6 +43,8 @@ interface SourceData {
 
 interface SourcePanelProps {
 	onParse: (sourceType: SourceType, text: string, bookName?: string) => void;
+	ohmSource?: string;
+	semanticsSource?: string;
 }
 
 // ── Source type options ──────────────────────────────────
@@ -54,12 +56,13 @@ const SOURCE_TYPES: { value: SourceType; label: string }[] = [
 	{ value: "universal", label: "通用词缀" },
 ];
 
-export function SourcePanel({ onParse }: SourcePanelProps) {
+export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanelProps) {
 	const [sourceType, setSourceType] = useState<SourceType>("skill");
 	const [data, setData] = useState<SourceData | null>(null);
 	const [selected, setSelected] = useState("");
 	const [text, setText] = useState("");
 	const [loading, setLoading] = useState(true);
+	const [dialogContent, setDialogContent] = useState<{ title: string; code: string } | null>(null);
 
 	// Load all source data on mount
 	useEffect(() => {
@@ -192,10 +195,43 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 				/>
 			</div>
 
+			{/* View source buttons */}
+			<div style={{ display: "flex", gap: 6 }}>
+				<button
+					type="button"
+					onClick={() => ohmSource && setDialogContent({ title: `${selected}.ohm`, code: ohmSource })}
+					style={sourceButtonStyle}
+					disabled={!ohmSource}
+				>
+					.ohm
+				</button>
+				<button
+					type="button"
+					onClick={() => semanticsSource && setDialogContent({ title: `${selected}.ts`, code: semanticsSource })}
+					style={sourceButtonStyle}
+					disabled={!semanticsSource}
+				>
+					semantics
+				</button>
+			</div>
+
 			{/* Parse button */}
 			<button type="button" onClick={handleParse} style={parseButtonStyle}>
 				Parse
 			</button>
+
+			{/* Source dialog */}
+			{dialogContent && (
+				<div style={dialogOverlay} onClick={() => setDialogContent(null)}>
+					<div style={dialogBox} onClick={(e) => e.stopPropagation()}>
+						<div style={dialogHeader}>
+							<span>{dialogContent.title}</span>
+							<button type="button" onClick={() => setDialogContent(null)} style={dialogClose}>✕</button>
+						</div>
+						<pre style={dialogCode}>{dialogContent.code}</pre>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -282,4 +318,74 @@ const parseButtonStyle: React.CSSProperties = {
 	cursor: "pointer",
 	textShadow: "1px 1px 2px #000",
 	boxShadow: `0 3px 0 #111, 0 0 10px rgba(184,134,11,0.3)`,
+};
+
+const sourceButtonStyle: React.CSSProperties = {
+	flex: 1,
+	background: "#222",
+	color: T.textMuted,
+	border: `1px solid ${T.border}`,
+	borderRadius: 4,
+	padding: "5px 8px",
+	fontSize: 11,
+	fontFamily: T.mono,
+	cursor: "pointer",
+};
+
+const dialogOverlay: React.CSSProperties = {
+	position: "fixed",
+	top: 0,
+	left: 0,
+	right: 0,
+	bottom: 0,
+	background: "rgba(0,0,0,0.7)",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	zIndex: 1000,
+};
+
+const dialogBox: React.CSSProperties = {
+	background: "#1a1a1a",
+	border: `2px solid ${T.goldDark}`,
+	borderRadius: 8,
+	width: "80vw",
+	maxWidth: 900,
+	maxHeight: "80vh",
+	display: "flex",
+	flexDirection: "column",
+	boxShadow: `0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(184,134,11,0.15)`,
+};
+
+const dialogHeader: React.CSSProperties = {
+	display: "flex",
+	justifyContent: "space-between",
+	alignItems: "center",
+	padding: "10px 16px",
+	borderBottom: `1px solid ${T.goldDark}44`,
+	fontFamily: T.heading,
+	fontSize: 14,
+	color: T.goldLight,
+};
+
+const dialogClose: React.CSSProperties = {
+	background: "none",
+	border: "none",
+	color: T.textMuted,
+	fontSize: 16,
+	cursor: "pointer",
+	padding: "2px 6px",
+};
+
+const dialogCode: React.CSSProperties = {
+	flex: 1,
+	margin: 0,
+	padding: 16,
+	overflow: "auto",
+	fontFamily: T.mono,
+	fontSize: 12,
+	lineHeight: 1.6,
+	color: T.text,
+	whiteSpace: "pre-wrap",
+	wordBreak: "break-all",
 };

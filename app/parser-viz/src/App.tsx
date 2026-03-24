@@ -52,17 +52,6 @@ function TreeNode({ node, depth = 0 }: { node: ParseTreeNode | ParseTreeNode[]; 
 	);
 }
 
-// ── Code panel component ────────────────────────────────
-
-function CodePanel({ title, code, maxHeight = 300 }: { title: string; code: string; maxHeight?: number }) {
-	return (
-		<div style={{ ...panelStyle, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-			<div style={sectionTitle}>{title}</div>
-			<pre style={{ ...codeStyle, maxHeight, flex: 1 }}>{code}</pre>
-		</div>
-	);
-}
-
 // ── Main App ────────────────────────────────────────────
 
 export function App() {
@@ -84,7 +73,11 @@ export function App() {
 			{/* Main layout: source panel + pipeline area */}
 			<div style={layoutStyle}>
 				{/* Left: Source panel */}
-				<SourcePanel onParse={handleParse} />
+				<SourcePanel
+					onParse={handleParse}
+					ohmSource={result?.ohmSource}
+					semanticsSource={result?.semanticsSource}
+				/>
 
 				{/* Right: Grammar pipeline */}
 				{result ? (
@@ -98,17 +91,13 @@ export function App() {
 							</div>
 						)}
 
-						{/* Two columns: grammar/tree on left, effects/semantics on right */}
+						{/* Two columns: parse tree + effects */}
 						<div style={columnsRow}>
-							{/* Left column: grammar file + parse tree */}
+							{/* Left: Parse tree */}
 							<div style={columnStyle}>
-								{result.ohmSource && (
-									<CodePanel title="② Grammar (.ohm)" code={result.ohmSource} maxHeight={250} />
-								)}
-								<div style={{ height: 8 }} />
 								<div style={{ ...panelStyle, flex: 1, overflow: "auto" }}>
 									<div style={sectionTitle}>
-										③ Parse Tree
+										Parse Tree
 										{result.parseTree ? (
 											<span style={{ color: T.green, fontSize: 10, marginLeft: 8 }}>✓ matched</span>
 										) : (
@@ -125,10 +114,10 @@ export function App() {
 								</div>
 							</div>
 
-							{/* Right column: effects + semantics file */}
+							{/* Right: Effects */}
 							<div style={{ ...columnStyle, flex: 1.2 }}>
-								<div style={{ ...panelStyle, overflow: "auto", maxHeight: 300 }}>
-									<div style={sectionTitle}>④ Effects → Effect[]</div>
+								<div style={{ ...panelStyle, flex: 1, overflow: "auto" }}>
+									<div style={sectionTitle}>Effects → Effect[]</div>
 									{result.effects.length > 0 ? (
 										<EffectView effects={result.effects} />
 									) : (
@@ -137,10 +126,6 @@ export function App() {
 										</div>
 									)}
 								</div>
-								<div style={{ height: 8 }} />
-								{result.semanticsSource && (
-									<CodePanel title="Semantics (.ts)" code={result.semanticsSource} maxHeight={300} />
-								)}
 							</div>
 						</div>
 					</div>
@@ -240,17 +225,4 @@ const sectionTitle: React.CSSProperties = {
 	borderBottom: `1px solid ${T.goldDark}44`,
 	paddingBottom: 4,
 	marginBottom: 8,
-};
-
-const codeStyle: React.CSSProperties = {
-	margin: 0,
-	padding: 0,
-	background: "transparent",
-	color: T.text,
-	fontFamily: T.mono,
-	fontSize: 11,
-	lineHeight: 1.5,
-	overflow: "auto",
-	whiteSpace: "pre-wrap",
-	wordBreak: "break-all",
 };
