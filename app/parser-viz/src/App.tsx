@@ -131,16 +131,25 @@ export function App() {
 			const name = bName ?? "";
 			setBookName(name);
 
-			// Fetch .ohm file content
-			fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
-
-			// Parse skill
-			fetchParse(name, text, "skillDescription").then(setSkillResult);
-
-			// Parse primary affix
-			if (affixText) {
-				fetchParse(name, affixText, "primaryAffix").then(setAffixResult);
+			if (sourceType === "skill") {
+				// Book: grammar has 3 entry points
+				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
+				fetchParse(name, text, "skillDescription").then(setSkillResult);
+				if (affixText) {
+					fetchParse(name, affixText, "primaryAffix").then(setAffixResult);
+				} else {
+					setAffixResult(null);
+				}
+			} else if (sourceType === "exclusive") {
+				// Exclusive affix: use book grammar's exclusiveAffix entry point
+				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
+				fetchParse(name, text, "exclusiveAffix").then(setSkillResult);
+				setAffixResult(null);
 			} else {
+				// School/universal affixes: use affix-specific grammars
+				// These use affixDescription entry point and their own grammar names
+				setOhmSource("(shared affix grammar)");
+				setSkillResult(null);
 				setAffixResult(null);
 			}
 		},
@@ -164,9 +173,9 @@ export function App() {
 							</Node>
 						</div>
 
-						{/* Three flows through the grammar */}
-						<EntryFlow name="skillDescription" result={skillResult} />
-						<EntryFlow name="primaryAffix" result={affixResult} />
+						{/* Flows through the grammar */}
+						{skillResult && <EntryFlow name="skillDescription" result={skillResult} />}
+						{affixResult && <EntryFlow name="primaryAffix" result={affixResult} />}
 					</div>
 				) : (
 					<div style={{ ...panelStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>

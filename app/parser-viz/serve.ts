@@ -16,7 +16,44 @@ const port = Number(process.env.PORT ?? 3001);
 // ── Load raw data ───────────────────────────────────────
 
 const mainMd = readFileSync(resolve("data/raw/主书.md"), "utf-8");
+const exclusiveMd = readFileSync(resolve("data/raw/专属词缀.md"), "utf-8");
+const schoolMd = readFileSync(resolve("data/raw/修为词缀.md"), "utf-8");
+const universalMd = readFileSync(resolve("data/raw/通用词缀.md"), "utf-8");
 const bookEntries = readMainSkillTables(mainMd);
+
+// Simple markdown table parser for affix files
+function parseAffixTable(md: string, cols: number): string[][] {
+	const rows: string[][] = [];
+	for (const line of md.split("\n")) {
+		if (!line.startsWith("|") || line.includes("---")) continue;
+		const cells = line.split("|").slice(1, -1).map(c => c.trim());
+		if (cells.length >= cols && !cells[0].match(/^词缀$|^功法$|^效果/)) rows.push(cells);
+	}
+	return rows;
+}
+
+// Parse exclusive affixes: | 功法 | 词缀 | 效果描述 |
+const exclusiveEntries = parseAffixTable(exclusiveMd, 3).map(([book, name, text]) => ({
+	bookName: book.replace(/`/g, ""),
+	affixName: name.replace(/【|】/g, ""),
+	rawText: text.replace(/<br\s*\/?>/gi, "\n"),
+}));
+
+// Parse school affixes: | 词缀 | 效果描述 |
+const schoolSections = schoolMd.split(/^####\s+/m).slice(1);
+const schoolEntries: { name: string; school: string; rawText: string }[] = [];
+for (const section of schoolSections) {
+	const school = section.split("\n")[0].trim();
+	for (const [name, text] of parseAffixTable(section, 2)) {
+		schoolEntries.push({ name: name.replace(/【|】/g, ""), school, rawText: text.replace(/<br\s*\/?>/gi, "\n") });
+	}
+}
+
+// Parse universal affixes: | 词缀 | 效果描述 |
+const universalEntries = parseAffixTable(universalMd, 2).map(([name, text]) => ({
+	name: name.replace(/【|】/g, ""),
+	rawText: text.replace(/<br\s*\/?>/gi, "\n"),
+}));
 
 // ── Load grammars ───────────────────────────────────────
 
@@ -108,8 +145,13 @@ function handleParse(body: { sourceType: string; text: string; bookName?: string
 	const ohmSource = readOhmFile(bookName);
 	const semanticsSource = readSemanticsFile(bookName);
 
-	// Strip backticks and tier lines from text
-	const cleanText = body.text.replace(/`/g, "").split("\n").filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("");
+	// Strip backticks, tier lines, and affix name prefix (【name】：)
+	const cleanText = body.text
+		.replace(/`/g, "")
+		.split("\n")
+		.filter(l => !l.match(/^悟\d|^融合|^此功能/))
+		.join("")
+		.replace(/^【[^】]+】[：:]/, "");
 
 	const grammar = compiledGrammars[bookName];
 	if (!grammar) {
@@ -180,9 +222,14 @@ Bun.serve({
 			return new Response(JSON.stringify({ content }), { headers: { "Content-Type": "application/json" } });
 		}
 
-		// Stub empty responses for source types we haven't wired yet
-		if (path === "/api/sources/exclusive" || path === "/api/sources/school" || path === "/api/sources/universal") {
-			return new Response(JSON.stringify({ entries: [] }), { headers: { "Content-Type": "application/json" } });
+		if (path === "/api/sources/exclusive") {
+			return new Response(JSON.stringify({ entries: exclusiveEntries }), { headers: { "Content-Type": "application/json" } });
+		}
+		if (path === "/api/sources/school") {
+			return new Response(JSON.stringify({ entries: schoolEntries }), { headers: { "Content-Type": "application/json" } });
+		}
+		if (path === "/api/sources/universal") {
+			return new Response(JSON.stringify({ entries: universalEntries }), { headers: { "Content-Type": "application/json" } });
 		}
 
 		// HTML
