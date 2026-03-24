@@ -146,15 +146,17 @@ export function App() {
 				fetchParse(name, text, "exclusiveAffix").then(r => { setSkillResult(r); });
 				setAffixResult(null);
 			} else if (sourceType === "universal") {
-				// Universal affixes: grammar is 通用词缀
-				setOhmSource("(通用词缀.ohm — shared across all books)");
-				fetchParse("通用词缀", text, "affixDescription").then(setSkillResult);
+				fetchParse("通用词缀", text, "affixDescription").then(r => {
+					setSkillResult(r);
+					setOhmSource(r.ohmSource ?? "");
+				});
 				setAffixResult(null);
 			} else if (sourceType === "school") {
-				// School affixes: grammar is 修为词缀_<school>
-				// We don't know which school from the name alone, so pass name and let server figure it out
-				setOhmSource("(修为词缀_*.ohm — per school)");
-				fetchParse(name, text, "affixDescription").then(setSkillResult);
+				// Server resolves affix name → grammar name (修为词缀_<school>)
+				fetchParse(name, text, "affixDescription").then(r => {
+					setSkillResult(r);
+					setOhmSource(r.ohmSource ?? "");
+				});
 				setAffixResult(null);
 			}
 		},

@@ -115,9 +115,13 @@ function describeTree(grammar: ohm.Grammar, match: ohm.MatchResult): object {
 
 // ── Read file content for display ───────────────────────
 
-function readOhmFile(bookName: string): string {
-	try { return readFileSync(resolve(grammarsDir, "books", `${bookName}.ohm`), "utf-8"); }
-	catch { return `// No grammar file for ${bookName}`; }
+function readOhmFile(name: string): string {
+	// Try books/ first, then affixes/
+	for (const dir of ["books", "affixes"]) {
+		try { return readFileSync(resolve(grammarsDir, dir, `${name}.ohm`), "utf-8"); }
+		catch { /* try next */ }
+	}
+	return `// No grammar file for ${name}`;
 }
 
 function readSemanticsFile(bookName: string): string {
