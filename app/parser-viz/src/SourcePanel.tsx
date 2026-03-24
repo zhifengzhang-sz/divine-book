@@ -3,7 +3,7 @@
  * picking a book/affix from dropdown, and editing raw text.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { SourceType } from "./types.ts";
 import { T, panelStyle, selectStyle, labelStyle } from "./theme.ts";
 
@@ -55,6 +55,59 @@ const SOURCE_TYPES: { value: SourceType; label: string }[] = [
 	{ value: "school", label: "修为词缀" },
 	{ value: "universal", label: "通用词缀" },
 ];
+
+// ── Draggable floating dialog ────────────────────────────
+
+function DraggableDialog({ title, code, onClose }: { title: string; code: string; onClose: () => void }) {
+	const dialogRef = useRef<HTMLDivElement>(null);
+	const [pos, setPos] = useState({ x: 200, y: 60 });
+	const [size, setSize] = useState({ w: 700, h: 500 });
+	const dragging = useRef(false);
+	const resizing = useRef(false);
+	const offset = useRef({ x: 0, y: 0 });
+
+	const onMouseDown = useCallback((e: React.MouseEvent) => {
+		dragging.current = true;
+		offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+		e.preventDefault();
+	}, [pos]);
+
+	const onResizeDown = useCallback((e: React.MouseEvent) => {
+		resizing.current = true;
+		offset.current = { x: e.clientX, y: e.clientY };
+		e.preventDefault();
+		e.stopPropagation();
+	}, []);
+
+	useEffect(() => {
+		const onMove = (e: MouseEvent) => {
+			if (dragging.current) {
+				setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
+			}
+			if (resizing.current) {
+				const dx = e.clientX - offset.current.x;
+				const dy = e.clientY - offset.current.y;
+				offset.current = { x: e.clientX, y: e.clientY };
+				setSize(s => ({ w: Math.max(300, s.w + dx), h: Math.max(200, s.h + dy) }));
+			}
+		};
+		const onUp = () => { dragging.current = false; resizing.current = false; };
+		window.addEventListener("mousemove", onMove);
+		window.addEventListener("mouseup", onUp);
+		return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+	}, []);
+
+	return (
+		<div ref={dialogRef} style={{ ...dialogBox, left: pos.x, top: pos.y, width: size.w, height: size.h }}>
+			<div style={dialogHeader} onMouseDown={onMouseDown}>
+				<span>{title}</span>
+				<button type="button" onClick={onClose} style={dialogClose}>✕</button>
+			</div>
+			<pre style={dialogCode}>{code}</pre>
+			<div style={resizeHandle} onMouseDown={onResizeDown} />
+		</div>
+	);
+}
 
 export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanelProps) {
 	const [sourceType, setSourceType] = useState<SourceType>("skill");
@@ -220,17 +273,13 @@ export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanel
 				Parse
 			</button>
 
-			{/* Source dialog */}
+			{/* Floating draggable dialog */}
 			{dialogContent && (
-				<div style={dialogOverlay} onClick={() => setDialogContent(null)}>
-					<div style={dialogBox} onClick={(e) => e.stopPropagation()}>
-						<div style={dialogHeader}>
-							<span>{dialogContent.title}</span>
-							<button type="button" onClick={() => setDialogContent(null)} style={dialogClose}>✕</button>
-						</div>
-						<pre style={dialogCode}>{dialogContent.code}</pre>
-					</div>
-				</div>
+				<DraggableDialog
+					title={dialogContent.title}
+					code={dialogContent.code}
+					onClose={() => setDialogContent(null)}
+				/>
 			)}
 		</div>
 	);
@@ -332,40 +381,28 @@ const sourceButtonStyle: React.CSSProperties = {
 	cursor: "pointer",
 };
 
-const dialogOverlay: React.CSSProperties = {
-	position: "fixed",
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	background: "rgba(0,0,0,0.7)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	zIndex: 1000,
-};
-
 const dialogBox: React.CSSProperties = {
+	position: "fixed",
 	background: "#1a1a1a",
 	border: `2px solid ${T.goldDark}`,
 	borderRadius: 8,
-	width: "80vw",
-	maxWidth: 900,
-	maxHeight: "80vh",
 	display: "flex",
 	flexDirection: "column",
 	boxShadow: `0 0 40px rgba(0,0,0,0.8), 0 0 20px rgba(184,134,11,0.15)`,
+	zIndex: 1000,
 };
 
 const dialogHeader: React.CSSProperties = {
 	display: "flex",
 	justifyContent: "space-between",
 	alignItems: "center",
-	padding: "10px 16px",
+	padding: "8px 14px",
 	borderBottom: `1px solid ${T.goldDark}44`,
 	fontFamily: T.heading,
-	fontSize: 14,
+	fontSize: 13,
 	color: T.goldLight,
+	cursor: "grab",
+	userSelect: "none",
 };
 
 const dialogClose: React.CSSProperties = {
@@ -380,7 +417,7 @@ const dialogClose: React.CSSProperties = {
 const dialogCode: React.CSSProperties = {
 	flex: 1,
 	margin: 0,
-	padding: 16,
+	padding: 14,
 	overflow: "auto",
 	fontFamily: T.mono,
 	fontSize: 12,
@@ -388,4 +425,15 @@ const dialogCode: React.CSSProperties = {
 	color: T.text,
 	whiteSpace: "pre-wrap",
 	wordBreak: "break-all",
+};
+
+const resizeHandle: React.CSSProperties = {
+	position: "absolute",
+	bottom: 0,
+	right: 0,
+	width: 16,
+	height: 16,
+	cursor: "nwse-resize",
+	background: `linear-gradient(135deg, transparent 50%, ${T.goldDark}44 50%)`,
+	borderRadius: "0 0 6px 0",
 };
