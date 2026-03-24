@@ -101,20 +101,20 @@ const booksResponse = JSON.stringify({
 
 // ── API: parse using new grammar system ─────────────────
 
-function handleParse(body: { sourceType: string; text: string; bookName?: string }) {
+function handleParse(body: { sourceType: string; text: string; bookName?: string; entryPoint?: string }) {
 	const bookName = body.bookName ?? "";
-	const entryPoint = body.sourceType === "skill" ? "skillDescription" : "primaryAffix";
+	const entryPoint = body.entryPoint ?? (body.sourceType === "skill" ? "skillDescription" : "primaryAffix");
 
 	const ohmSource = readOhmFile(bookName);
 	const semanticsSource = readSemanticsFile(bookName);
+
+	// Strip backticks and tier lines from text
+	const cleanText = body.text.replace(/`/g, "").split("\n").filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("");
 
 	const grammar = compiledGrammars[bookName];
 	if (!grammar) {
 		return { rawText: cleanText, ohmSource, semanticsSource, parseTree: null, effects: [], errors: [`No grammar for "${bookName}"`], tokens: [], groups: [], tiers: [], states: {} };
 	}
-
-	// Strip backticks and tier lines from text
-	const cleanText = body.text.replace(/`/g, "").split("\n").filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("");
 
 	const match = grammar.match(cleanText, entryPoint);
 	if (match.failed()) {

@@ -10,15 +10,16 @@ import { SourcePanel } from "./SourcePanel.tsx";
 import type { PipelineResult, SourceType, ParseTreeNode } from "./types.ts";
 import { T, panelStyle } from "./theme.ts";
 
-async function fetchPipeline(
+async function fetchParse(
 	sourceType: SourceType,
 	text: string,
 	bookName?: string,
+	entryPoint?: string,
 ): Promise<PipelineResult> {
 	const res = await fetch("/api/parse", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ sourceType, text, bookName }),
+		body: JSON.stringify({ sourceType, text, bookName, entryPoint }),
 	});
 	return res.json();
 }
@@ -108,10 +109,16 @@ function Code({ code }: { code: string }) {
 
 export function App() {
 	const [result, setResult] = useState<PipelineResult | null>(null);
+	const [affixResult, setAffixResult] = useState<PipelineResult | null>(null);
 
 	const handleParse = useCallback(
-		(sourceType: SourceType, text: string, bookName?: string) => {
-			fetchPipeline(sourceType, text, bookName).then(setResult);
+		(sourceType: SourceType, text: string, bookName?: string, affixText?: string) => {
+			fetchParse(sourceType, text, bookName, "skillDescription").then(setResult);
+			if (affixText && bookName) {
+				fetchParse(sourceType, affixText, bookName, "primaryAffix").then(setAffixResult);
+			} else {
+				setAffixResult(null);
+			}
 		},
 		[],
 	);
@@ -163,9 +170,34 @@ export function App() {
 						</Step>
 
 						{/* Step 5: Effects */}
-						<Step n={5} title="Effects → Effect[]" status={result.effects?.length > 0 ? "ok" : "error"}>
+						<Step n={5} title="Skill Effects → Effect[]" status={result.effects?.length > 0 ? "ok" : "error"}>
 							<Code code={JSON.stringify(result.effects, null, 2)} />
 						</Step>
+
+						{/* Primary Affix section */}
+						{affixResult && (
+							<>
+								<div style={{ height: 4, background: `linear-gradient(90deg, transparent, ${T.goldDark}44, transparent)`, margin: "4px 0" }} />
+
+								<Step n={6} title="Primary Affix — Raw Text" status="ok">
+									<Code code={affixResult.rawText ?? "(no affix text)"} />
+								</Step>
+
+								<Step n={7} title="Primary Affix — Parse Tree" status={affixResult.parseTree ? "ok" : "error"}>
+									{affixResult.parseTree ? (
+										<TreeNode node={affixResult.parseTree} />
+									) : (
+										<div style={{ color: T.red, fontFamily: T.mono, fontSize: 11 }}>
+											Parse failed: {affixResult.errors?.[0] ?? "unknown"}
+										</div>
+									)}
+								</Step>
+
+								<Step n={8} title="Primary Affix — Effects" status={affixResult.effects?.length > 0 ? "ok" : "error"}>
+									<Code code={JSON.stringify(affixResult.effects, null, 2)} />
+								</Step>
+							</>
+						)}
 					</div>
 				) : (
 					<div style={{ ...panelStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>

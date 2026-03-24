@@ -42,7 +42,7 @@ interface SourceData {
 }
 
 interface SourcePanelProps {
-	onParse: (sourceType: SourceType, text: string, bookName?: string) => void;
+	onParse: (sourceType: SourceType, text: string, bookName?: string, affixText?: string) => void;
 }
 
 // ── Source type options ──────────────────────────────────
@@ -102,17 +102,24 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 		if (entry) setText(entry.text);
 	};
 
+	// Get affix text for the selected book
+	const getAffixText = () => {
+		if (sourceType !== "skill" || !data) return undefined;
+		const book = data.books.find(b => b.name === selected);
+		return book?.affixText || undefined;
+	};
+
 	// Fire parse
 	const handleParse = () => {
 		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, text, bookName);
+		onParse(sourceType, text, bookName, getAffixText());
 	};
 
 	// Auto-parse on text/selection change
 	useEffect(() => {
 		if (!text) return;
 		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, text, bookName);
+		onParse(sourceType, text, bookName, getAffixText());
 	}, [text, selected, sourceType]);
 
 	if (loading) {
