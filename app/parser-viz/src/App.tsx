@@ -14,6 +14,7 @@ import { T, panelStyle } from "./theme.ts";
 // ── API ─────────────────────────────────────────────────
 
 async function fetchParse(
+	sourceType: string,
 	bookName: string,
 	text: string,
 	entryPoint: string,
@@ -21,7 +22,7 @@ async function fetchParse(
 	const res = await fetch("/api/parse", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ sourceType: "skill", text, bookName, entryPoint }),
+		body: JSON.stringify({ sourceType, text, bookName, entryPoint }),
 	});
 	return res.json();
 }
@@ -136,30 +137,29 @@ export function App() {
 			if (sourceType === "skill") {
 				setGrammarLabel(name);
 				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
-				fetchParse(name, text, "skillDescription").then(setSkillResult);
+				fetchParse("skill", name, text, "skillDescription").then(setSkillResult);
 				if (affixText) {
-					fetchParse(name, affixText, "primaryAffix").then(setAffixResult);
+					fetchParse("skill", name, affixText, "primaryAffix").then(setAffixResult);
 				} else {
 					setAffixResult(null);
 				}
 			} else if (sourceType === "exclusive") {
 				setGrammarLabel(name);
 				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
-				fetchParse(name, text, "exclusiveAffix").then(setSkillResult);
+				fetchParse("exclusive", name, text, "exclusiveAffix").then(setSkillResult);
 				setAffixResult(null);
 			} else if (sourceType === "universal") {
 				setGrammarLabel("通用词缀");
-				fetchParse("通用词缀", text, "affixDescription").then(r => {
+				fetchParse("universal", "通用词缀", text, "affixDescription").then(r => {
 					setSkillResult(r);
 					setOhmSource(r.ohmSource ?? "");
 				});
 				setAffixResult(null);
 			} else if (sourceType === "school") {
 				setGrammarLabel(name);
-				fetchParse(name, text, "affixDescription").then(r => {
+				fetchParse("school", name, text, "affixDescription").then(r => {
 					setSkillResult(r);
 					setOhmSource(r.ohmSource ?? "");
-					// Update label to resolved grammar name
 					const m = r.ohmSource?.match(/^(\S+)\s*<:/m);
 					if (m) setGrammarLabel(m[1]);
 				});
