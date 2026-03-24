@@ -60,52 +60,81 @@ const SOURCE_TYPES: { value: SourceType; label: string }[] = [
 // ── Draggable floating dialog ────────────────────────────
 
 function DraggableDialog({ title, code, onClose }: { title: string; code: string; onClose: () => void }) {
-	const dialogRef = useRef<HTMLDivElement>(null);
-	const [pos, setPos] = useState({ x: 200, y: 60 });
-	const [size, setSize] = useState({ w: 700, h: 500 });
+	const boxRef = useRef<HTMLDivElement>(null);
+	const posRef = useRef({ x: 200, y: 60 });
+	const sizeRef = useRef({ w: 700, h: 500 });
 	const dragging = useRef(false);
-	const resizing = useRef(false);
-	const offset = useRef({ x: 0, y: 0 });
+	const resizeDrag = useRef(false);
+	const startMouse = useRef({ x: 0, y: 0 });
+	const startPos = useRef({ x: 0, y: 0 });
+	const startSize = useRef({ w: 0, h: 0 });
 
-	const onMouseDown = useCallback((e: React.MouseEvent) => {
-		dragging.current = true;
-		offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
-		e.preventDefault();
-	}, [pos]);
+	// Force re-render helper
+	const [, forceUpdate] = useState(0);
 
-	const onResizeDown = useCallback((e: React.MouseEvent) => {
-		resizing.current = true;
-		offset.current = { x: e.clientX, y: e.clientY };
-		e.preventDefault();
-		e.stopPropagation();
-	}, []);
+	const applyTransform = () => {
+		if (!boxRef.current) return;
+		boxRef.current.style.left = `${posRef.current.x}px`;
+		boxRef.current.style.top = `${posRef.current.y}px`;
+		boxRef.current.style.width = `${sizeRef.current.w}px`;
+		boxRef.current.style.height = `${sizeRef.current.h}px`;
+	};
 
 	useEffect(() => {
 		const onMove = (e: MouseEvent) => {
 			if (dragging.current) {
-				setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
+				posRef.current = {
+					x: startPos.current.x + (e.clientX - startMouse.current.x),
+					y: startPos.current.y + (e.clientY - startMouse.current.y),
+				};
+				applyTransform();
 			}
-			if (resizing.current) {
-				const dx = e.clientX - offset.current.x;
-				const dy = e.clientY - offset.current.y;
-				offset.current = { x: e.clientX, y: e.clientY };
-				setSize(s => ({ w: Math.max(300, s.w + dx), h: Math.max(200, s.h + dy) }));
+			if (resizeDrag.current) {
+				sizeRef.current = {
+					w: Math.max(300, startSize.current.w + (e.clientX - startMouse.current.x)),
+					h: Math.max(200, startSize.current.h + (e.clientY - startMouse.current.y)),
+				};
+				applyTransform();
 			}
 		};
-		const onUp = () => { dragging.current = false; resizing.current = false; };
+		const onUp = () => { dragging.current = false; resizeDrag.current = false; };
 		window.addEventListener("mousemove", onMove);
 		window.addEventListener("mouseup", onUp);
 		return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
 	}, []);
 
+	const onDragStart = (e: React.MouseEvent) => {
+		dragging.current = true;
+		startMouse.current = { x: e.clientX, y: e.clientY };
+		startPos.current = { ...posRef.current };
+		e.preventDefault();
+	};
+
+	const onResizeStart = (e: React.MouseEvent) => {
+		resizeDrag.current = true;
+		startMouse.current = { x: e.clientX, y: e.clientY };
+		startSize.current = { ...sizeRef.current };
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
 	return (
-		<div ref={dialogRef} style={{ ...dialogBox, left: pos.x, top: pos.y, width: size.w, height: size.h }}>
-			<div style={dialogHeader} onMouseDown={onMouseDown}>
+		<div
+			ref={boxRef}
+			style={{
+				...dialogBox,
+				left: posRef.current.x,
+				top: posRef.current.y,
+				width: sizeRef.current.w,
+				height: sizeRef.current.h,
+			}}
+		>
+			<div style={dialogHeader} onMouseDown={onDragStart}>
 				<span>{title}</span>
 				<button type="button" onClick={onClose} style={dialogClose}>✕</button>
 			</div>
 			<pre style={dialogCode}>{code}</pre>
-			<div style={resizeHandle} onMouseDown={onResizeDown} />
+			<div style={resizeHandle} onMouseDown={onResizeStart} />
 		</div>
 	);
 }
