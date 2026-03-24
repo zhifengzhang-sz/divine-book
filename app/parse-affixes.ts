@@ -1,83 +1,124 @@
 #!/usr/bin/env bun
 /**
- * CLI: Parse common & school affixes → affixes.yaml
+ * CLI: Parse common + school affixes → affixes.yaml
  *
  * Usage:
- *   bun app/parse-affixes.ts                          # parse all, write to stdout
- *   bun app/parse-affixes.ts -o data/yaml/affixes.yaml  # write to file
+ *   bun app/parse-affixes.ts                           # write to stdout
+ *   bun app/parse-affixes.ts -o data/yaml/affixes.yaml # write to file
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
+import * as ohm from "ohm-js";
 import {
-	formatAffixesYaml,
-	parseCommonAffixes,
+	readSchoolAffixTable,
+	readUniversalAffixTable,
 } from "../lib/parser/common-affixes.js";
+import { type TierSpec, buildDataState, resolveFields } from "../lib/parser/tiers.js";
 
-const { values } = parseArgs({
-	options: {
-		output: { type: "string", short: "o" },
-		help: { type: "boolean", short: "h" },
-	},
-});
+const { values } = parseArgs({ options: { output: { type: "string", short: "o" } } });
 
-if (values.help) {
-	console.log(`Usage: bun app/parse-affixes.ts [options]
+const GD = resolve("lib/parser/grammars-v1");
+const SD = resolve("lib/parser/grammars/semantics");
 
-Options:
-  --output, -o <path> Write YAML to file instead of stdout
-  --help, -h          Show this help`);
-	process.exit(0);
+// Load grammars
+const allOhm = [
+	readFileSync(resolve(GD, "Base.ohm"), "utf-8"),
+	...readdirSync(resolve(GD, "books")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(GD, "books", f), "utf-8")),
+	...readdirSync(resolve(GD, "affixes")).filter(f => f.endsWith(".ohm")).map(f => readFileSync(resolve(GD, "affixes", f), "utf-8")),
+].join("\n");
+const grammars = ohm.grammars(allOhm);
+
+// Load semantics
+// biome-ignore lint/suspicious/noExplicitAny: ohm semantics
+const semMods: Record<string, any> = {};
+await Promise.all(
+	readdirSync(SD).filter(f => f.endsWith(".ts") && f !== "shared.ts" && !f.includes("test"))
+		.map(async f => { try { semMods[f.replace(".ts", "")] = await import(resolve(SD, f)); } catch {} }),
+);
+
+function parseAffix(grammarName: string, text: string): object[] {
+	const g = grammars[grammarName];
+	if (!g) { console.warn(`No grammar: ${grammarName}`); return []; }
+	const clean = text.replace(/`/g, "").trim();
+	const m = g.match(clean, "affixDescription");
+	if (m.failed()) { console.warn(`Parse failed (${grammarName}/${text.substring(0, 20)}): ${m.shortMessage}`); return []; }
+	const mod = semMods[grammarName];
+	if (!mod) { console.warn(`No semantics: ${grammarName}`); return []; }
+	const s = g.createSemantics();
+	mod.addSemantics(s);
+	return s(m).toEffects();
 }
 
-const universalPath = resolve("data/raw/通用词缀.md");
-const schoolPath = resolve("data/raw/修为词缀.md");
-
-if (!existsSync(universalPath)) {
-	console.error(`Error: ${universalPath} not found`);
-	process.exit(1);
+function resolveTiers(effects: object[], tiers: TierSpec[]): object[] {
+	if (tiers.length === 0) return effects;
+	const resolved: object[] = [];
+	for (const tier of tiers) {
+		const ds = buildDataState(tier);
+		for (const eff of effects) {
+			const e = eff as Record<string, unknown>;
+			const fields: Record<string, string | number> = {};
+			for (const [k, v] of Object.entries(e)) { if (k !== "type" && (typeof v === "string" || typeof v === "number")) fields[k] = v; }
+			const rf = resolveFields(fields, tier.vars);
+			const row: Record<string, unknown> = { type: e.type, ...rf };
+			if (ds) row.data_state = ds;
+			for (const [k, v] of Object.entries(e)) { if (k !== "type" && typeof v !== "string" && typeof v !== "number") row[k] = v; }
+			resolved.push(row);
+		}
+	}
+	return resolved;
 }
-if (!existsSync(schoolPath)) {
-	console.error(`Error: ${schoolPath} not found`);
-	process.exit(1);
+
+// Parse
+const universalEntries = readUniversalAffixTable(readFileSync(resolve("data/raw/通用词缀.md"), "utf-8"));
+const schoolEntries = readSchoolAffixTable(readFileSync(resolve("data/raw/修为词缀.md"), "utf-8"));
+
+const universal: Record<string, { text: string; effects: object[] }> = {};
+for (const e of universalEntries) {
+	const effects = parseAffix("通用词缀", e.cell.description.join(""));
+	const resolved = resolveTiers(effects, e.cell.tiers.map(t => ({ enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars })));
+	universal[e.name] = { text: e.rawText.replace(/<br\s*\/?>/gi, "\n"), effects: resolved };
 }
 
-const universalMd = readFileSync(universalPath, "utf-8");
-const schoolMd = readFileSync(schoolPath, "utf-8");
+const schoolNameMap: Record<string, string> = { Sword: "剑修", Spell: "法修", Demon: "魔修", Body: "体修" };
+const school: Record<string, Record<string, { text: string; effects: object[] }>> = {};
+for (const e of schoolEntries) {
+	const cn = schoolNameMap[e.school ?? ""] ?? e.school ?? "";
+	const gn = `修为词缀_${cn}`;
+	if (!school[cn]) school[cn] = {};
+	const effects = parseAffix(gn, e.cell.description.join(""));
+	const resolved = resolveTiers(effects, e.cell.tiers.map(t => ({ enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars })));
+	school[cn][e.name] = { text: e.rawText.replace(/<br\s*\/?>/gi, "\n"), effects: resolved };
+}
 
-const result = parseCommonAffixes(universalMd, schoolMd);
-
-// Print warnings
-if (result.warnings.length > 0) {
-	console.error("Warnings:");
-	for (const w of result.warnings) {
-		console.error(`  ⚠ ${w}`);
+// Format YAML
+const lines: string[] = ["# Common & school affixes — generated by parse-affixes", "# Regenerate with: bun app/parse-affixes.ts", "", "universal:"];
+for (const [name, d] of Object.entries(universal)) {
+	lines.push(`  ${name}:`, "    text: |");
+	for (const l of d.text.split("\n")) lines.push(`      ${l}`);
+	lines.push("    effects:");
+	for (const eff of d.effects) {
+		const entries = Object.entries(eff as Record<string, unknown>);
+		lines.push(`      - ${entries[0][0]}: ${JSON.stringify(entries[0][1])}`);
+		for (const [k, v] of entries.slice(1)) lines.push(`        ${k}: ${JSON.stringify(v)}`);
+	}
+}
+lines.push("", "school:");
+for (const [sn, affixes] of Object.entries(school)) {
+	lines.push(`  ${sn}:`);
+	for (const [name, d] of Object.entries(affixes)) {
+		lines.push(`    ${name}:`, "      text: |");
+		for (const l of d.text.split("\n")) lines.push(`        ${l}`);
+		lines.push("      effects:");
+		for (const eff of d.effects) {
+			const entries = Object.entries(eff as Record<string, unknown>);
+			lines.push(`        - ${entries[0][0]}: ${JSON.stringify(entries[0][1])}`);
+			for (const [k, v] of entries.slice(1)) lines.push(`          ${k}: ${JSON.stringify(v)}`);
+		}
 	}
 }
 
-// Summary
-const uCount = Object.keys(result.universal).length;
-const sCount = Object.values(result.school).reduce(
-	(sum, group) => sum + Object.keys(group).length,
-	0,
-);
-let totalEffects = 0;
-for (const d of Object.values(result.universal))
-	totalEffects += d.effects.length;
-for (const group of Object.values(result.school)) {
-	for (const d of Object.values(group)) totalEffects += d.effects.length;
-}
-console.error(
-	`\nParsed ${uCount} universal + ${sCount} school = ${uCount + sCount} affixes, ${totalEffects} total effects`,
-);
-
-// Output
-const yaml = formatAffixesYaml(result);
-
-if (values.output) {
-	writeFileSync(values.output, yaml);
-	console.error(`Written to ${values.output}`);
-} else {
-	console.log(yaml);
-}
+const yamlStr = lines.join("\n") + "\n";
+if (values.output) { writeFileSync(values.output, yamlStr); console.log(`Written to ${values.output}`); }
+else console.log(yamlStr);

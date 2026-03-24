@@ -687,7 +687,7 @@ books:
         total: 1500
       - type: echo_damage
         value: 25
-        duration: 持续8秒
+        duration: 8
         ignore_damage_bonus: true
     primary_affix:
       name: 天龙轮转
@@ -777,7 +777,7 @@ books:
         hits: 5
         total: 1500
       - type: state_add
-        state: 对其施加【结魂锁链】
+        state: 结魂锁链
       - type: self_buff
         name: 结魂锁链
         damage_reduction: 5.2
@@ -858,7 +858,7 @@ books:
         hits: 5
         total: 1500
       - type: state_add
-        state: 为自身添加【不灭魔体】
+        state: 不灭魔体
       - type: counter_buff
         trigger: on_attacked
         heal_on_damage_taken: 8
@@ -938,7 +938,7 @@ books:
           - enlightenment=0
           - fusion=20
       - type: state_add
-        state: 为自身添加【罗天魔咒】
+        state: 罗天魔咒
         data_state:
           - enlightenment=0
           - fusion=20
@@ -973,7 +973,7 @@ books:
           - enlightenment=10
           - fusion=50
       - type: state_add
-        state: 为自身添加【罗天魔咒】
+        state: 罗天魔咒
         data_state:
           - enlightenment=10
           - fusion=50
@@ -1134,7 +1134,7 @@ books:
           - enlightenment=1
           - fusion=51
       - type: state_add
-        state: 为自身添加【怒意滔天】
+        state: 怒意滔天
         data_state:
           - enlightenment=1
           - fusion=51
@@ -1211,7 +1211,7 @@ books:
         value: 16
         self_heal: true
       - type: state_add
-        state: 为自身添加【怒灵降世】
+        state: 怒灵降世
       - type: self_buff
         attack_bonus: 20
         damage_reduction: 20
@@ -1252,7 +1252,7 @@ books:
         hits: 10
         total: 1500
       - type: state_add
-        state: 为自身添加【极怒】
+        state: 极怒
       - type: counter_buff
         reflect_received_damage: 50
         reflect_percent_lost_hp: 15

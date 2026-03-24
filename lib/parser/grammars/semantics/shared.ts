@@ -54,11 +54,14 @@ export function addExtractVar(s: ohm.Semantics): void {
 			return _child.extractVar;
 		},
 		_nonterminal(...children: ohm.Node[]) {
-			// Multi-child rules: find the varRef child
+			// Multi-child rules: find the varRef or stateName child.
+			// Skip terminal nodes (they return raw text like "为自身添加").
+			// Only non-terminal children (varRef, stateName, cnNumber) are meaningful.
 			for (const child of children) {
+				if (child.ctorName === "_terminal" || child.ctorName === "_iter") continue;
 				try {
 					const val = child.extractVar;
-					if (val && /^[a-z]/.test(val)) return val;
+					if (val && val !== this.sourceString) return val;
 				} catch {
 					// no extractVar on this child
 				}
