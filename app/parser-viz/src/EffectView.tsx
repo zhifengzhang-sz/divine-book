@@ -1,9 +1,9 @@
 /**
- * Stage 2: Effects (Grammar Parse → Tier Resolution)
+ * Stage 3: Effects (Parser)
  *
  * Each card shows:
- * 1. Effect type { key: val, ... } with resolved variable values
- * 2. Data state tag (tier gating: enlightenment/fusion level)
+ * 1. Event line: type { key: val, ... }
+ * 2. Data state tag (tier gating)
  */
 
 import type { EffectRow } from "./types.ts";
@@ -19,9 +19,9 @@ export function EffectView({ effects }: { effects: EffectRow[] }) {
 	return (
 		<div>
 			<div style={stageHeaderStyle}>
-				<span style={stageNum}>2</span>
+				<span style={stageNum}>3</span>
 				Effects
-				<span style={stageSubtitle}>Grammar Parse</span>
+				<span style={stageSubtitle}>Parser Output</span>
 			</div>
 			{effects.length === 0 ? (
 				<div style={emptyStyle}>No effects parsed</div>

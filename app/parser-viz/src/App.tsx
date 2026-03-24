@@ -1,80 +1,40 @@
 /**
  * Parser Pipeline Visualizer — Per-Book Grammar Edition
  *
- * Shows the full process: raw text → grammar → parse tree → effects
- * With the .ohm and semantic .ts file contents visible.
+ * Keeps the original Obsidian Grimoire layout (left source panel + right pipeline)
+ * but shows the new grammar pipeline: raw text → .ohm → parse tree → effects.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import type { BookEntry, ParseResponse } from "./types.ts";
+import { useCallback, useState } from "react";
+import { EffectView } from "./EffectView.tsx";
+import { SourcePanel } from "./SourcePanel.tsx";
+import type { PipelineResult, SourceType, ParseTreeNode } from "./types.ts";
+import { T, panelStyle } from "./theme.ts";
 
-// ── API calls ───────────────────────────────────────────
-
-async function fetchBooks(): Promise<BookEntry[]> {
-	const res = await fetch("/api/books");
-	const data = await res.json();
-	return data.books;
-}
-
-async function fetchParse(
-	bookName: string,
-	entryPoint: string,
+async function fetchPipeline(
+	sourceType: SourceType,
 	text: string,
-): Promise<ParseResponse> {
+	bookName?: string,
+): Promise<PipelineResult> {
 	const res = await fetch("/api/parse", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ bookName, entryPoint, text }),
+		body: JSON.stringify({ sourceType, text, bookName }),
 	});
 	return res.json();
 }
 
-// ── Styles ──────────────────────────────────────────────
+// ── Parse Tree component ────────────────────────────────
 
-const T = {
-	bg: "#282c34",
-	panel: "#2c313a",
-	border: "#4b5263",
-	text: "#abb2bf",
-	textMuted: "#5c6370",
-	accent: "#61afef",
-	green: "#98c379",
-	red: "#e06c75",
-	yellow: "#e5c07b",
-	purple: "#c678dd",
-	orange: "#d19a66",
-};
-
-const mono = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
-
-// ── Components ──────────────────────────────────────────
-
-function CodeBlock({ title, code, lang }: { title: string; code: string; lang?: string }) {
-	return (
-		<div style={{ marginBottom: 12 }}>
-			<div style={{ color: T.yellow, fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{title}</div>
-			<pre style={{
-				background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
-				padding: 12, margin: 0, overflow: "auto", maxHeight: 400,
-				fontFamily: mono, fontSize: 12, lineHeight: 1.5, color: T.text,
-			}}>
-				{code}
-			</pre>
-		</div>
-	);
-}
-
-function TreeView({ node, depth = 0 }: { node: any; depth?: number }) {
-	if (!node) return null;
+function TreeNode({ node, depth = 0 }: { node: ParseTreeNode | ParseTreeNode[]; depth?: number }) {
 	if (Array.isArray(node)) {
-		return <>{node.map((n, i) => <TreeView key={i} node={n} depth={depth} />)}</>;
+		return <>{node.map((n, i) => <TreeNode key={i} node={n} depth={depth} />)}</>;
 	}
-	const indent = depth * 16;
+	const indent = depth * 14;
 	if (node.text && !node.children) {
-		// Leaf
 		if (node.rule === "_terminal" && node.text.length <= 1) return null;
 		return (
-			<div style={{ paddingLeft: indent, fontFamily: mono, fontSize: 12, lineHeight: 1.6 }}>
+			<div style={{ paddingLeft: indent, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
 				<span style={{ color: T.textMuted }}>{node.rule}: </span>
 				<span style={{ color: T.green }}>"{node.text}"</span>
 			</div>
@@ -82,160 +42,215 @@ function TreeView({ node, depth = 0 }: { node: any; depth?: number }) {
 	}
 	return (
 		<div>
-			<div style={{ paddingLeft: indent, fontFamily: mono, fontSize: 12, lineHeight: 1.6 }}>
-				<span style={{ color: T.purple, fontWeight: 600 }}>{node.rule}</span>
+			<div style={{ paddingLeft: indent, fontFamily: T.mono, fontSize: 11, lineHeight: 1.6 }}>
+				<span style={{ color: T.sp, fontWeight: 600 }}>{node.rule}</span>
 			</div>
-			{node.children?.map((child: any, i: number) => (
-				<TreeView key={i} node={child} depth={depth + 1} />
+			{node.children?.map((child, i) => (
+				<TreeNode key={i} node={child as ParseTreeNode} depth={depth + 1} />
 			))}
 		</div>
 	);
 }
 
-function EffectsView({ effects, error }: { effects?: any[]; error?: string }) {
-	if (error) return <div style={{ color: T.red, fontFamily: mono, fontSize: 12 }}>{error}</div>;
-	if (!effects || effects.length === 0) return <div style={{ color: T.textMuted }}>No effects</div>;
-	return (
-		<pre style={{
-			background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
-			padding: 12, margin: 0, overflow: "auto", fontFamily: mono, fontSize: 12,
-			lineHeight: 1.5, color: T.text,
-		}}>
-			{JSON.stringify(effects, null, 2)}
-		</pre>
-	);
-}
+// ── Code panel component ────────────────────────────────
 
-// ── Step indicator ──────────────────────────────────────
-
-function Step({ n, label, status }: { n: number; label: string; status: "ok" | "error" | "pending" }) {
-	const color = status === "ok" ? T.green : status === "error" ? T.red : T.textMuted;
-	const icon = status === "ok" ? "✓" : status === "error" ? "✗" : "○";
+function CodePanel({ title, code, maxHeight = 300 }: { title: string; code: string; maxHeight?: number }) {
 	return (
-		<span style={{ color, fontSize: 13, fontWeight: 600, marginRight: 16 }}>
-			{icon} Step {n}: {label}
-		</span>
+		<div style={{ ...panelStyle, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+			<div style={sectionTitle}>{title}</div>
+			<pre style={{ ...codeStyle, maxHeight, flex: 1 }}>{code}</pre>
+		</div>
 	);
 }
 
 // ── Main App ────────────────────────────────────────────
 
 export function App() {
-	const [books, setBooks] = useState<BookEntry[]>([]);
-	const [selected, setSelected] = useState<string>("");
-	const [entryPoint, setEntryPoint] = useState<string>("skillDescription");
-	const [result, setResult] = useState<ParseResponse | null>(null);
+	const [result, setResult] = useState<PipelineResult | null>(null);
 
-	useEffect(() => { fetchBooks().then(b => { setBooks(b); if (b.length > 0) setSelected(b[0].name); }); }, []);
-
-	const selectedBook = books.find(b => b.name === selected);
-
-	const handleParse = useCallback(() => {
-		if (!selectedBook) return;
-		const lines = (entryPoint === "skillDescription" ? selectedBook.skillText : selectedBook.affixText).split("\n");
-		// Strip tier lines and backticks
-		const text = lines.filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("").replace(/`/g, "");
-		fetchParse(selected, entryPoint, text).then(setResult);
-	}, [selected, entryPoint, selectedBook]);
-
-	// Auto-parse on selection change
-	useEffect(() => { if (selectedBook) handleParse(); }, [selected, entryPoint]);
+	const handleParse = useCallback(
+		(sourceType: SourceType, text: string, bookName?: string) => {
+			fetchPipeline(sourceType, text, bookName).then(setResult);
+		},
+		[],
+	);
 
 	return (
-		<div style={{ background: T.bg, color: T.text, minHeight: "100vh", padding: "20px 32px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-			<style>{`* { box-sizing: border-box; } body { margin: 0; }`}</style>
+		<div style={appContainer}>
+			<style>{globalCSS}</style>
 
-			<h1 style={{ color: "#fff", fontSize: 20, margin: "0 0 16px 0" }}>
-				Parser Pipeline Visualizer
-				<span style={{ color: T.textMuted, fontWeight: 400, fontSize: 14, marginLeft: 12 }}>
-					per-book grammar edition
-				</span>
-			</h1>
+			<h1 style={titleStyle}>Parser Pipeline Visualizer</h1>
 
-			{/* Book selector */}
-			<div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center" }}>
-				<select
-					value={selected}
-					onChange={e => setSelected(e.target.value)}
-					style={{ background: T.panel, color: T.text, border: `1px solid ${T.border}`, borderRadius: 4, padding: "6px 10px", fontSize: 14 }}
-				>
-					{books.map(b => <option key={b.name} value={b.name}>{b.name} ({b.school})</option>)}
-				</select>
+			{/* Main layout: source panel + pipeline area */}
+			<div style={layoutStyle}>
+				{/* Left: Source panel */}
+				<SourcePanel onParse={handleParse} />
 
-				<select
-					value={entryPoint}
-					onChange={e => setEntryPoint(e.target.value)}
-					style={{ background: T.panel, color: T.text, border: `1px solid ${T.border}`, borderRadius: 4, padding: "6px 10px", fontSize: 14 }}
-				>
-					<option value="skillDescription">skillDescription</option>
-					<option value="primaryAffix">primaryAffix</option>
-					<option value="exclusiveAffix">exclusiveAffix</option>
-				</select>
-
-				<button
-					onClick={handleParse}
-					style={{ background: T.accent, color: "#fff", border: "none", borderRadius: 4, padding: "6px 16px", fontSize: 14, cursor: "pointer" }}
-				>
-					Parse
-				</button>
-			</div>
-
-			{result && (
-				<div>
-					{/* Step indicators */}
-					<div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap" }}>
-						<Step n={1} label="Raw Text" status="ok" />
-						<Step n={2} label="Grammar (.ohm)" status="ok" />
-						<Step n={3} label="Parse Tree" status={result.parseSucceeded ? "ok" : "error"} />
-						<Step n={4} label="Effects" status={result.effects ? "ok" : result.effectError ? "error" : "pending"} />
-					</div>
-
-					{/* 2×2 grid: raw+grammar on left, tree+effects on right */}
-					<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
-						{/* Step 1: Raw text */}
-						<div>
-							<CodeBlock title={`① Raw Text — ${result.bookName} / ${result.entryPoint}`} code={result.rawText} />
-						</div>
-
-						{/* Step 3: Parse tree */}
-						<div>
-							<div style={{ color: T.yellow, fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-								③ Parse Tree
-								{!result.parseSucceeded && <span style={{ color: T.red, marginLeft: 8 }}>FAILED: {result.parseError}</span>}
+				{/* Right: Grammar pipeline */}
+				{result ? (
+					<div style={pipelineArea}>
+						{/* Errors */}
+						{result.errors.length > 0 && (
+							<div style={errorBox}>
+								{result.errors.map((e, i) => (
+									<div key={i}>{e}</div>
+								))}
 							</div>
-							{result.parseSucceeded && result.parseTree ? (
-								<div style={{
-									background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6,
-									padding: 12, overflow: "auto", maxHeight: 400,
-								}}>
-									<TreeView node={result.parseTree} />
+						)}
+
+						{/* Two columns: grammar/tree on left, effects/semantics on right */}
+						<div style={columnsRow}>
+							{/* Left column: grammar file + parse tree */}
+							<div style={columnStyle}>
+								{result.ohmSource && (
+									<CodePanel title="② Grammar (.ohm)" code={result.ohmSource} maxHeight={250} />
+								)}
+								<div style={{ height: 8 }} />
+								<div style={{ ...panelStyle, flex: 1, overflow: "auto" }}>
+									<div style={sectionTitle}>
+										③ Parse Tree
+										{result.parseTree ? (
+											<span style={{ color: T.green, fontSize: 10, marginLeft: 8 }}>✓ matched</span>
+										) : (
+											<span style={{ color: T.red, fontSize: 10, marginLeft: 8 }}>✗ failed</span>
+										)}
+									</div>
+									{result.parseTree ? (
+										<TreeNode node={result.parseTree} />
+									) : (
+										<div style={{ color: T.textMuted, fontSize: 11, fontFamily: T.mono }}>
+											No parse tree (grammar match failed)
+										</div>
+									)}
 								</div>
-							) : (
-								<div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 6, padding: 12, color: T.red, fontFamily: mono, fontSize: 12 }}>
-									{result.parseError}
+							</div>
+
+							{/* Right column: effects + semantics file */}
+							<div style={{ ...columnStyle, flex: 1.2 }}>
+								<div style={{ ...panelStyle, overflow: "auto", maxHeight: 300 }}>
+									<div style={sectionTitle}>④ Effects → Effect[]</div>
+									{result.effects.length > 0 ? (
+										<EffectView effects={result.effects} />
+									) : (
+										<div style={{ color: T.textMuted, fontSize: 11, fontFamily: T.mono }}>
+											No effects extracted
+										</div>
+									)}
 								</div>
-							)}
-						</div>
-
-						{/* Step 2: Grammar file */}
-						<div>
-							<CodeBlock title={`② Grammar — ${result.bookName}.ohm`} code={result.ohmSource} />
-						</div>
-
-						{/* Step 4: Effects */}
-						<div>
-							<div style={{ color: T.yellow, fontSize: 13, fontWeight: 600, marginBottom: 4 }}>④ Effects → Effect[]</div>
-							<EffectsView effects={result.effects} error={result.effectError} />
-						</div>
-
-						{/* Semantics source (full width) */}
-						<div style={{ gridColumn: "1 / -1" }}>
-							<CodeBlock title={`Semantics — ${result.bookName}.ts`} code={result.semanticsSource} lang="typescript" />
+								<div style={{ height: 8 }} />
+								{result.semanticsSource && (
+									<CodePanel title="Semantics (.ts)" code={result.semanticsSource} maxHeight={300} />
+								)}
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
+				) : (
+					<div style={{ ...panelStyle, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+						<div style={{ color: T.textMuted, fontFamily: T.heading, fontSize: 14 }}>
+							Select a book and click Parse
+						</div>
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }
+
+// ── Styles (original Obsidian Grimoire theme) ────────────
+
+const globalCSS = `
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { overflow: hidden; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #5c403388; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #b8860b44; }
+`;
+
+const appContainer: React.CSSProperties = {
+	height: "100vh",
+	width: "100vw",
+	background: `radial-gradient(ellipse at center, #1a1510 0%, #0d0d0d 70%)`,
+	backgroundImage: `radial-gradient(ellipse at center, #1a1510 0%, #0d0d0d 70%), url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M30 0v60M0 30h60' stroke='%23b8860b' stroke-opacity='0.03'/%3E%3C/svg%3E")`,
+	display: "flex",
+	flexDirection: "column",
+	padding: 16,
+	gap: 10,
+	overflow: "hidden",
+};
+
+const titleStyle: React.CSSProperties = {
+	fontFamily: T.heading,
+	fontSize: 18,
+	color: T.goldLight,
+	textShadow: `0 0 10px ${T.goldDark}88, 2px 2px 4px #000`,
+	margin: 0,
+	flexShrink: 0,
+};
+
+const layoutStyle: React.CSSProperties = {
+	flex: 1,
+	display: "flex",
+	gap: 12,
+	overflow: "hidden",
+};
+
+const pipelineArea: React.CSSProperties = {
+	flex: 1,
+	display: "flex",
+	flexDirection: "column",
+	gap: 6,
+	overflow: "hidden",
+	minWidth: 0,
+};
+
+const columnsRow: React.CSSProperties = {
+	flex: 1,
+	display: "flex",
+	gap: 8,
+	overflow: "hidden",
+};
+
+const columnStyle: React.CSSProperties = {
+	flex: 1,
+	display: "flex",
+	flexDirection: "column",
+	overflow: "hidden",
+	minWidth: 0,
+};
+
+const errorBox: React.CSSProperties = {
+	background: "rgba(231,76,60,0.1)",
+	border: `1px solid ${T.red}44`,
+	borderRadius: 4,
+	padding: "4px 10px",
+	fontSize: 11,
+	color: T.red,
+	fontFamily: T.body,
+	flexShrink: 0,
+};
+
+const sectionTitle: React.CSSProperties = {
+	fontFamily: T.heading,
+	fontSize: 12,
+	color: T.goldLight,
+	textShadow: "1px 1px 2px #000",
+	borderBottom: `1px solid ${T.goldDark}44`,
+	paddingBottom: 4,
+	marginBottom: 8,
+};
+
+const codeStyle: React.CSSProperties = {
+	margin: 0,
+	padding: 0,
+	background: "transparent",
+	color: T.text,
+	fontFamily: T.mono,
+	fontSize: 11,
+	lineHeight: 1.5,
+	overflow: "auto",
+	whiteSpace: "pre-wrap",
+	wordBreak: "break-all",
+};

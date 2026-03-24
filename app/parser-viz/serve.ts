@@ -16,7 +16,6 @@ const port = Number(process.env.PORT ?? 3001);
 // ── Load raw data ───────────────────────────────────────
 
 const mainMd = readFileSync(resolve("data/raw/主书.md"), "utf-8");
-const exclusiveMd = readFileSync(resolve("data/raw/专属词缀.md"), "utf-8");
 const bookEntries = readMainSkillTables(mainMd);
 
 // ── Load grammars ───────────────────────────────────────
@@ -60,12 +59,8 @@ function describeTree(grammar: ohm.Grammar, match: ohm.MatchResult): object {
 	const sem = grammar.createSemantics();
 	sem.addOperation("toTree", {
 		_nonterminal(...children: ohm.Node[]) {
-			const childTrees = children
-				.map((c: ohm.Node) => c.toTree())
-				.filter((t: unknown) => t !== null);
-			if (childTrees.length === 0) {
-				return { rule: this.ctorName, text: this.sourceString };
-			}
+			const childTrees = children.map((c: ohm.Node) => c.toTree()).filter((t: unknown) => t !== null);
+			if (childTrees.length === 0) return { rule: this.ctorName, text: this.sourceString };
 			return { rule: this.ctorName, children: childTrees };
 		},
 		_terminal() {
@@ -74,81 +69,61 @@ function describeTree(grammar: ohm.Grammar, match: ohm.MatchResult): object {
 			return { rule: "_terminal", text };
 		},
 		_iter(...children: ohm.Node[]) {
-			const childTrees = children
-				.map((c: ohm.Node) => c.toTree())
-				.filter((t: unknown) => t !== null);
+			const childTrees = children.map((c: ohm.Node) => c.toTree()).filter((t: unknown) => t !== null);
 			return childTrees.length > 0 ? childTrees : null;
 		},
 	});
 	return sem(match).toTree();
 }
 
-// ── Read .ohm and .ts file content ──────────────────────
+// ── Read file content for display ───────────────────────
 
 function readOhmFile(bookName: string): string {
-	try {
-		return readFileSync(resolve(grammarsDir, "books", `${bookName}.ohm`), "utf-8");
-	} catch {
-		return `// No grammar file found for ${bookName}`;
-	}
+	try { return readFileSync(resolve(grammarsDir, "books", `${bookName}.ohm`), "utf-8"); }
+	catch { return `// No grammar file for ${bookName}`; }
 }
 
 function readSemanticsFile(bookName: string): string {
-	try {
-		return readFileSync(resolve(semanticsDir, `${bookName}.ts`), "utf-8");
-	} catch {
-		return `// No semantics file found for ${bookName}`;
-	}
+	try { return readFileSync(resolve(semanticsDir, `${bookName}.ts`), "utf-8"); }
+	catch { return `// No semantics file for ${bookName}`; }
 }
 
-// ── API: parse a book ───────────────────────────────────
+// ── Pre-build source data responses (for SourcePanel) ───
 
-interface ParseRequest {
-	bookName: string;
-	entryPoint: "skillDescription" | "primaryAffix" | "exclusiveAffix";
-	text: string;
-}
+const booksResponse = JSON.stringify({
+	entries: bookEntries.map((e) => ({
+		name: e.name,
+		school: e.school,
+		skillText: e.skillText.replace(/<br\s*\/?>/gi, "\n"),
+		affixText: e.affixText.replace(/<br\s*\/?>/gi, "\n"),
+	})),
+});
 
-interface ParseResponse {
-	bookName: string;
-	entryPoint: string;
-	rawText: string;
-	ohmSource: string;
-	semanticsSource: string;
-	parseSucceeded: boolean;
-	parseError?: string;
-	parseTree?: object;
-	effects?: object[];
-	effectError?: string;
-}
+// ── API: parse using new grammar system ─────────────────
 
-function handleParse(body: ParseRequest): ParseResponse {
-	const { bookName, entryPoint, text } = body;
+function handleParse(body: { sourceType: string; text: string; bookName?: string }) {
+	const bookName = body.bookName ?? "";
+	const entryPoint = body.sourceType === "skill" ? "skillDescription" : "primaryAffix";
 
 	const ohmSource = readOhmFile(bookName);
 	const semanticsSource = readSemanticsFile(bookName);
 
 	const grammar = compiledGrammars[bookName];
 	if (!grammar) {
-		return {
-			bookName, entryPoint, rawText: text, ohmSource, semanticsSource,
-			parseSucceeded: false, parseError: `No grammar found for "${bookName}"`,
-		};
+		return { ohmSource, semanticsSource, parseTree: null, effects: [], errors: [`No grammar for "${bookName}"`], tokens: [], groups: [], tiers: [], states: {} };
 	}
 
-	const match = grammar.match(text, entryPoint);
+	// Strip backticks and tier lines from text
+	const cleanText = body.text.replace(/`/g, "").split("\n").filter(l => !l.match(/^悟\d|^融合|^此功能/)).join("");
+
+	const match = grammar.match(cleanText, entryPoint);
 	if (match.failed()) {
-		return {
-			bookName, entryPoint, rawText: text, ohmSource, semanticsSource,
-			parseSucceeded: false, parseError: match.shortMessage ?? "Parse failed",
-		};
+		return { ohmSource, semanticsSource, parseTree: null, effects: [], errors: [match.shortMessage ?? "Parse failed"], tokens: [], groups: [], tiers: [], states: {} };
 	}
 
-	// Parse tree
 	const parseTree = describeTree(grammar, match);
 
-	// Effects
-	let effects: object[] | undefined;
+	let effects: object[] = [];
 	let effectError: string | undefined;
 	const semMod = semanticModules[bookName];
 	if (semMod) {
@@ -156,16 +131,20 @@ function handleParse(body: ParseRequest): ParseResponse {
 			const sem = grammar.createSemantics();
 			semMod.addSemantics(sem);
 			effects = sem(match).toEffects();
-		} catch (e) {
-			effectError = (e as Error).message;
-		}
-	} else {
-		effectError = `No semantics module loaded for "${bookName}"`;
+		} catch (e) { effectError = (e as Error).message; }
 	}
 
 	return {
-		bookName, entryPoint, rawText: text, ohmSource, semanticsSource,
-		parseSucceeded: true, parseTree, effects, effectError,
+		ohmSource,
+		semanticsSource,
+		parseTree,
+		effects,
+		errors: effectError ? [effectError] : [],
+		// Compat fields for original components
+		tokens: [],
+		groups: [],
+		tiers: [],
+		states: {},
 	};
 }
 
@@ -179,40 +158,24 @@ Bun.serve({
 		const url = new URL(req.url);
 		const path = url.pathname;
 
-		// Parse API
+		// Parse API — new grammar pipeline
 		if (path === "/api/parse" && req.method === "POST") {
 			try {
-				const body = await req.json() as ParseRequest;
+				const body = await req.json();
 				const result = handleParse(body);
-				return new Response(JSON.stringify(result), {
-					headers: { "Content-Type": "application/json" },
-				});
+				return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
 			} catch (e) {
-				return new Response(JSON.stringify({ error: (e as Error).message }), {
-					status: 400, headers: { "Content-Type": "application/json" },
-				});
+				return new Response(JSON.stringify({ error: (e as Error).message }), { status: 400, headers: { "Content-Type": "application/json" } });
 			}
 		}
 
-		// Book list API
-		if (path === "/api/books") {
-			const books = bookEntries.map(e => ({
-				name: e.name,
-				school: e.school,
-				skillText: e.skillText.replace(/<br\s*\/?>/gi, "\n"),
-				affixText: e.affixText.replace(/<br\s*\/?>/gi, "\n"),
-			}));
-			return new Response(JSON.stringify({ books }), {
-				headers: { "Content-Type": "application/json" },
-			});
+		// Source data endpoints (for SourcePanel)
+		if (path === "/api/sources/books") {
+			return new Response(booksResponse, { headers: { "Content-Type": "application/json" } });
 		}
-
-		// Grammar file content API
-		if (path === "/api/ohm" && url.searchParams.get("book")) {
-			const content = readOhmFile(url.searchParams.get("book")!);
-			return new Response(JSON.stringify({ content }), {
-				headers: { "Content-Type": "application/json" },
-			});
+		// Stub empty responses for source types we haven't wired yet
+		if (path === "/api/sources/exclusive" || path === "/api/sources/school" || path === "/api/sources/universal") {
+			return new Response(JSON.stringify({ entries: [] }), { headers: { "Content-Type": "application/json" } });
 		}
 
 		// HTML
@@ -224,17 +187,9 @@ Bun.serve({
 		if (path.endsWith(".tsx") || path.endsWith(".ts")) {
 			const filePath = `app/parser-viz${path}`;
 			try {
-				const result = await Bun.build({
-					entrypoints: [filePath],
-					format: "esm",
-					target: "browser",
-					minify: false,
-				});
+				const result = await Bun.build({ entrypoints: [filePath], format: "esm", target: "browser", minify: false });
 				if (result.success && result.outputs.length > 0) {
-					const code = await result.outputs[0].text();
-					return new Response(code, {
-						headers: { "Content-Type": "application/javascript" },
-					});
+					return new Response(await result.outputs[0].text(), { headers: { "Content-Type": "application/javascript" } });
 				}
 				return new Response(`Build error: ${result.logs.join("\n")}`, { status: 500 });
 			} catch (e) {
