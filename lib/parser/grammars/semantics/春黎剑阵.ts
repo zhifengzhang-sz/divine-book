@@ -50,7 +50,6 @@ export function addSemantics(s: ohm.Semantics): void {
 			_fssddsh,
 			_deOpt,
 			_shjdz,
-			_zsdOpt,
 			dmgReductionVar,
 			_pct1,
 			_sep,
