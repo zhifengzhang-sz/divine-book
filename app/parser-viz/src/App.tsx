@@ -7,12 +7,15 @@ import { EntryPointFlow } from "./EntryPointFlow.tsx";
 
 type Part = "book" | "exclusive" | "school" | "common";
 
+type Flow = { name: string; raw: string; tree?: object; effects?: object[]; error?: string; effectError?: string; tiers?: string[] };
+
 interface FlowData {
 	grammar: string;
 	ohmSource: string | null;
 	semSource: string | null;
-	flows: { name: string; raw: string; tree?: object; effects?: object[]; error?: string; effectError?: string; tiers?: string[] }[];
-	rawDisplay: string; // full raw text for left panel
+	flows: Flow[];
+	allAffixes?: Flow[]; // for school/common: all affixes available for sub-selector
+	rawDisplay: string;
 }
 
 // ── Data fetching ───────────────────────────────────────
@@ -42,13 +45,15 @@ async function fetchFlowData(part: Part, key: string): Promise<FlowData> {
 	}
 	if (part === "school") {
 		const d = await fetch(`/api/school/${encodeURIComponent(key)}`).then(r => r.json());
-		const flows = (d.affixes ?? []).map((a: any) => ({ name: a.name, ...a }));
-		return { grammar: d.grammar, ohmSource: d.ohmSource, semSource: d.semSource, flows, rawDisplay: flows.map((f: any) => `【${f.name}】${f.raw}`).join("\n\n") };
+		const allAffixes: Flow[] = (d.affixes ?? []).map((a: any) => ({ name: a.name, ...a }));
+		const first = allAffixes[0];
+		return { grammar: d.grammar, ohmSource: d.ohmSource, semSource: d.semSource, flows: first ? [first] : [], allAffixes, rawDisplay: first?.raw ?? "" };
 	}
 	// common
 	const d = await fetch("/api/common").then(r => r.json());
-	const flows = (d.affixes ?? []).map((a: any) => ({ name: a.name, ...a }));
-	return { grammar: d.grammar, ohmSource: d.ohmSource, semSource: d.semSource, flows, rawDisplay: flows.map((f: any) => `【${f.name}】${f.raw}`).join("\n\n") };
+	const allAffixes: Flow[] = (d.affixes ?? []).map((a: any) => ({ name: a.name, ...a }));
+	const first = allAffixes[0];
+	return { grammar: d.grammar, ohmSource: d.ohmSource, semSource: d.semSource, flows: first ? [first] : [], allAffixes, rawDisplay: first?.raw ?? "" };
 }
 
 // ── App ─────────────────────────────────────────────────
@@ -58,6 +63,7 @@ export function App() {
 	const [schools, setSchools] = useState<string[]>([]);
 	const [part, setPart] = useState<Part>("book");
 	const [key, setKey] = useState("");
+	const [affixKey, setAffixKey] = useState("");
 	const [data, setData] = useState<FlowData | null>(null);
 
 	// Load lists
@@ -77,8 +83,17 @@ export function App() {
 	// Fetch data when key changes
 	useEffect(() => {
 		if (!key) return;
-		fetchFlowData(part, key).then(setData);
+		fetchFlowData(part, key).then(d => {
+			setData(d);
+			if (d.allAffixes?.length) setAffixKey(d.allAffixes[0].name);
+			else setAffixKey("");
+		});
 	}, [part, key]);
+
+	// When affix selector changes, update displayed flow
+	const displayData = data && data.allAffixes && affixKey
+		? { ...data, flows: data.allAffixes.filter(a => a.name === affixKey), rawDisplay: data.allAffixes.find(a => a.name === affixKey)?.raw ?? "" }
+		: data;
 
 	// Selector options based on part
 	const options = part === "book" || part === "exclusive"
@@ -117,21 +132,31 @@ export function App() {
 					</div>
 				)}
 
+				{/* Affix sub-selector (school + common) */}
+				{data?.allAffixes && data.allAffixes.length > 0 && (
+					<div style={{ marginBottom: 12 }}>
+						<div style={labelStyle}>Affix:</div>
+						<select value={affixKey} onChange={e => setAffixKey(e.target.value)} style={selectStyle}>
+							{data.allAffixes.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+						</select>
+					</div>
+				)}
+
 				<div style={dividerStyle} />
 
 				{/* Raw text display */}
 				<div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
 					<div style={labelStyle}>Raw text:</div>
-					<div style={rawTextStyle}>{data?.rawDisplay ?? ""}</div>
+					<div style={rawTextStyle}>{displayData?.rawDisplay ?? ""}</div>
 				</div>
 			</div>
 
 			{/* Main area */}
 			<div style={mainStyle}>
-				{data ? (
+				{displayData ? (
 					<>
-						<GrammarPanel name={data.grammar} ohm={data.ohmSource} sem={data.semSource} />
-						{data.flows.map(f => <EntryPointFlow key={f.name} name={f.name} result={f} />)}
+						<GrammarPanel name={displayData.grammar} ohm={displayData.ohmSource} sem={displayData.semSource} />
+						{displayData.flows.map(f => <EntryPointFlow key={f.name} name={f.name} result={f} />)}
 					</>
 				) : (
 					<div style={{ color: T.muted, fontFamily: T.heading, fontSize: 13, padding: 20 }}>Loading...</div>
