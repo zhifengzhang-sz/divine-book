@@ -38,7 +38,6 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p2,
 			_stateName3,
 			_qjts,
-			_plus,
 			burstAtkVar,
 			_p3,
 			_gkldsh,

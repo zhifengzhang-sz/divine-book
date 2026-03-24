@@ -26,8 +26,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_sep2,
 			_zdjs,
 			maxVar,
-			_g,
-			_jyzt,
+			_gjyzt,
 		) {
 			return [
 				{
@@ -46,6 +45,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_dgkl,
 			_sep2,
 			_zd,
+			_jsOrJs,
 			maxVar,
 			_c,
 		) {

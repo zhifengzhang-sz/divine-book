@@ -104,6 +104,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_dfhjsbc,
 			varRef,
 			_bei,
+			_sep2,
 			_dchsj,
 		) {
 			return [

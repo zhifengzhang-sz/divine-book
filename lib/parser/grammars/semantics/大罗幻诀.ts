@@ -135,6 +135,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			state2,
 			_colon,
 			_zzshjm,
+			_jdOrJd,
 			varRef2,
 			_p2,
 			_sep3,

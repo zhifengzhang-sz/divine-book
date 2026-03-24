@@ -42,9 +42,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_ymdf,
 			shieldCount,
 			_gehd,
-			_sep,
 			_bew,
-			_zc,
 			dmgVar,
 			_pct,
 			_dfmxhp,
@@ -102,7 +100,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		exclusiveAffix_1(_pre, _sep, _ewzc, varRef, _pct, _yssl) {
 			return [{ type: "dot_extra_per_tick", value: varRef.extractVar }];
 		},
-		exclusiveAffix_2(_pre, _bstg, varRef1, _pct1, _sep, _bing, varRef2, _pct2) {
+		exclusiveAffix_2(_bstg, varRef1, _pct1, _sep, _bing, varRef2, _pct2) {
 			return [
 				{ type: "percent_max_hp_damage", value: varRef1.extractVar },
 				{ type: "damage_increase", value: varRef2.extractVar },

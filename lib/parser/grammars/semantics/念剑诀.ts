@@ -75,8 +75,8 @@ export function addSemantics(s: ohm.Semantics): void {
 				},
 			];
 		},
-		exclusiveAffix(_lit) {
-			return [{ type: "buff_duration", value: _lit.extractVar }];
+		exclusiveAffix(_lit, varRef, _p) {
+			return [{ type: "buff_duration", value: varRef.extractVar }];
 		},
 		preamble(_) {
 			return [];

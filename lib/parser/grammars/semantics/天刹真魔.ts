@@ -62,7 +62,6 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			_mei,
 			_intervalVar,
-			_miao,
 			_xlljdmb,
 			v1,
 			_p1,
