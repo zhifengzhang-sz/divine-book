@@ -1,5 +1,3 @@
-/** Dropdown to select a book. */
-
 import { T } from "./theme.ts";
 
 export function BookSelector({ books, selected, onSelect }: {
@@ -8,21 +6,16 @@ export function BookSelector({ books, selected, onSelect }: {
 	onSelect: (name: string) => void;
 }) {
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-			<label style={{ color: T.gold, fontFamily: T.heading, fontSize: 13 }}>Book:</label>
-			<select
-				value={selected}
-				onChange={e => onSelect(e.target.value)}
-				style={{
-					background: T.panel, color: T.text, border: `1px solid ${T.border}`,
-					borderRadius: 4, padding: "6px 10px", fontSize: 13, fontFamily: T.mono,
-					minWidth: 250,
-				}}
-			>
-				{books.map(b => (
-					<option key={b.name} value={b.name}>{b.name} ({b.school})</option>
-				))}
-			</select>
-		</div>
+		<select
+			value={selected}
+			onChange={e => onSelect(e.target.value)}
+			style={{
+				background: T.panel, color: T.text, border: `1px solid ${T.border}`,
+				borderRadius: T.radius, padding: "5px 8px", fontSize: 12,
+				fontFamily: T.mono, outline: "none",
+			}}
+		>
+			{books.map(b => <option key={b.name} value={b.name}>{b.name} ({b.school})</option>)}
+		</select>
 	);
 }

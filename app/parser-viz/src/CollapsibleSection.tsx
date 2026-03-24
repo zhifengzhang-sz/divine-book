@@ -1,31 +1,34 @@
-/** Generic collapsible panel — click header to expand/collapse. */
-
 import { useState } from "react";
 import { T } from "./theme.ts";
 
-export function CollapsibleSection({ title, badge, defaultOpen = false, children }: {
+export function CollapsibleSection({ title, badge, status, defaultOpen = false, children }: {
 	title: string;
 	badge?: string;
+	status?: "ok" | "error" | "none";
 	defaultOpen?: boolean;
 	children: React.ReactNode;
 }) {
 	const [open, setOpen] = useState(defaultOpen);
+	const statusColor = status === "ok" ? T.green : status === "error" ? T.red : T.muted;
 
 	return (
-		<div style={{ border: `1px solid ${T.border}`, borderRadius: 6, marginBottom: 6, background: T.panel }}>
+		<div style={{ marginBottom: 4 }}>
 			<div
 				onClick={() => setOpen(!open)}
 				style={{
-					display: "flex", alignItems: "center", gap: 8,
-					padding: "6px 12px", cursor: "pointer", userSelect: "none",
+					display: "flex", alignItems: "center", gap: 6,
+					padding: "4px 8px", cursor: "pointer", userSelect: "none",
+					borderRadius: T.radius, fontSize: 11,
+					background: open ? T.panelHover : "transparent",
 				}}
 			>
-				<span style={{ color: T.muted, fontSize: 10 }}>{open ? "▾" : "▸"}</span>
-				<span style={{ color: T.gold, fontFamily: T.heading, fontSize: 12 }}>{title}</span>
-				{badge && <span style={{ color: T.green, fontSize: 10, fontFamily: T.mono }}>{badge}</span>}
+				<span style={{ color: T.muted, fontSize: 9, width: 8 }}>{open ? "▾" : "▸"}</span>
+				{status && <span style={{ color: statusColor, fontSize: 10 }}>{status === "ok" ? "✓" : status === "error" ? "✗" : "·"}</span>}
+				<span style={{ color: T.text, fontFamily: T.mono, fontSize: 11 }}>{title}</span>
+				{badge && <span style={{ color: T.muted, fontSize: 9, marginLeft: "auto" }}>{badge}</span>}
 			</div>
 			{open && (
-				<div style={{ padding: "8px 12px", borderTop: `1px solid ${T.border}33`, maxHeight: 400, overflow: "auto" }}>
+				<div style={{ padding: "4px 8px 8px 22px", maxHeight: 350, overflow: "auto" }}>
 					{children}
 				</div>
 			)}
