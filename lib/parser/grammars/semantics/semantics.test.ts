@@ -2,10 +2,10 @@
  * Semantics test — validates grammar → effect type mapping.
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "bun:test";
 import * as ohm from "ohm-js";
 import { addSemantics as add千锋聚灵剑 } from "./千锋聚灵剑.js";
 
@@ -51,9 +51,7 @@ describe("千锋聚灵剑 semantics", () => {
 		expect(match.succeeded()).toBe(true);
 
 		const effects = sem(match).toEffects();
-		expect(effects).toEqual([
-			{ type: "per_hit_escalation", value: "x" },
-		]);
+		expect(effects).toEqual([{ type: "per_hit_escalation", value: "x" }]);
 	});
 
 	it("exclusiveAffix → HealReduction with state", () => {

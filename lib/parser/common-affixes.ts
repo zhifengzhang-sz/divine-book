@@ -9,7 +9,7 @@
 
 import { cleanEffects, type EffectRow, formatEffect } from "./emit.js";
 import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
-import { runPipeline } from "./pipeline.js";
+// import { runPipeline } from "./pipeline.js"; // TODO: rewire
 
 export interface AffixEntry {
 	name: string;
@@ -148,7 +148,7 @@ export function parseCommonAffixes(
 	for (const entry of universalEntries) {
 		// Parse with tiers preserved so the UI can show progression dropdown.
 		// Universal/school affixes typically have one snapshot (e.g., "融合50重：x=20").
-		const effects = runPipeline("universal", entry.rawText).effects;
+		const effects: any[] = []; // TODO: rewire // runPipeline("universal", entry.rawText).effects;
 		if (effects.length === 0) {
 			warnings.push(`Universal affix ${entry.name}: no effects extracted`);
 		}
@@ -166,7 +166,7 @@ export function parseCommonAffixes(
 			school[schoolName] = {};
 		}
 
-		const effects = runPipeline("universal", entry.rawText).effects;
+		const effects: any[] = []; // TODO: rewire // runPipeline("universal", entry.rawText).effects;
 		if (effects.length === 0) {
 			warnings.push(
 				`School affix ${entry.name} (${schoolName}): no effects extracted`,

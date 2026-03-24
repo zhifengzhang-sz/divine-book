@@ -5,8 +5,17 @@
 import type * as ohm from "ohm-js";
 
 const CN: Record<string, number> = {
-	一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5,
-	六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
+	一: 1,
+	二: 2,
+	两: 2,
+	三: 3,
+	四: 4,
+	五: 5,
+	六: 6,
+	七: 7,
+	八: 8,
+	九: 9,
+	十: 10,
 };
 
 export function parseCn(s: string): number {

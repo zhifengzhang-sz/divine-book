@@ -25,8 +25,10 @@ export interface StateDef {
 	dispellable?: boolean;
 	children?: string[];
 	per_hit_stack?: boolean;
-	/** Unresolved variable reference for max_stacks — internal, resolved by split.ts */
+	/** Unresolved variable reference for max_stacks — internal, resolved by pipeline */
 	_max_stacks_var?: string;
+	/** Unresolved variable reference for duration — internal, resolved by pipeline */
+	_duration_var?: string;
 }
 
 /** Intermediate parsed book — used by parser pipeline before YAML emission */

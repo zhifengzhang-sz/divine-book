@@ -296,78 +296,315 @@ interface StateAdd {
 // §9 Affix Effects — Common (通用词缀)
 // ══════════════════════════════════════════════════════════
 
-interface DebuffStrength { type: "debuff_strength"; value: VarRef }
-interface BuffStrength { type: "buff_strength"; value: VarRef }
-interface AllStateDuration { type: "all_state_duration"; value: VarRef }
-interface ConditionalDamageControlled { type: "conditional_damage_controlled"; value: VarRef }
-interface PerHitEscalation { type: "per_hit_escalation"; value?: VarRef; hits?: VarRef; per_hit?: VarRef; max?: VarRef }
-interface DamageReductionDuringCast { type: "damage_reduction_during_cast"; value: VarRef }
-interface ExecuteConditional { type: "execute_conditional"; hp_threshold: VarRef; damage_increase: VarRef; crit_rate_increase?: VarRef; guaranteed_crit?: number }
-interface DotExtraPerTick { type: "dot_extra_per_tick"; value: VarRef }
-interface RandomBuff { type: "random_buff"; attack: VarRef }
-interface PerSelfLostHp { type: "per_self_lost_hp"; value: VarRef }
-interface FlatExtraDamage { type: "flat_extra_damage"; value: VarRef }
-interface PerEnemyLostHp { type: "per_enemy_lost_hp"; per_percent: VarRef; value: VarRef }
-interface ShieldValueIncrease { type: "shield_value_increase"; value: VarRef }
-interface NextSkillBuff { type: "next_skill_buff"; value: VarRef }
-interface AttackBonus { type: "attack_bonus"; value: VarRef; per_debuff_stack?: boolean; max_stacks?: VarRef; timing?: "pre_cast" }
-interface GuaranteedResonance { type: "guaranteed_resonance"; base_multiplier: VarRef; chance: VarRef; upgraded_multiplier: VarRef }
-interface TripleBonus { type: "triple_bonus"; attack_bonus: VarRef; damage_increase: VarRef; crit_damage_increase: VarRef }
-interface ProbabilityToCertain { type: "probability_to_certain" }
-interface DamageIncrease { type: "damage_increase"; value: VarRef }
-interface FinalDmgBonus { type: "final_dmg_bonus"; value: VarRef }
-interface HealingIncrease { type: "healing_increase"; value: VarRef }
-interface HealingToDamage { type: "healing_to_damage"; value: VarRef }
-interface DamageToShield { type: "damage_to_shield"; value: VarRef; duration: VarRef }
-interface RandomDebuff { type: "random_debuff"; attack: VarRef; crit_rate: VarRef; crit_damage: VarRef }
-interface BuffDuration { type: "buff_duration"; value: VarRef }
-interface BuffStackIncrease { type: "buff_stack_increase"; value: VarRef }
-interface DebuffStackIncrease { type: "debuff_stack_increase"; value: VarRef }
-interface DebuffStackChance { type: "debuff_stack_chance"; value: VarRef }
+interface DebuffStrength {
+	type: "debuff_strength";
+	value: VarRef;
+}
+interface BuffStrength {
+	type: "buff_strength";
+	value: VarRef;
+}
+interface AllStateDuration {
+	type: "all_state_duration";
+	value: VarRef;
+}
+interface ConditionalDamageControlled {
+	type: "conditional_damage_controlled";
+	value: VarRef;
+}
+interface PerHitEscalation {
+	type: "per_hit_escalation";
+	value?: VarRef;
+	hits?: VarRef;
+	per_hit?: VarRef;
+	max?: VarRef;
+}
+interface DamageReductionDuringCast {
+	type: "damage_reduction_during_cast";
+	value: VarRef;
+}
+interface ExecuteConditional {
+	type: "execute_conditional";
+	hp_threshold: VarRef;
+	damage_increase: VarRef;
+	crit_rate_increase?: VarRef;
+	guaranteed_crit?: number;
+}
+interface DotExtraPerTick {
+	type: "dot_extra_per_tick";
+	value: VarRef;
+}
+interface RandomBuff {
+	type: "random_buff";
+	attack: VarRef;
+}
+interface PerSelfLostHp {
+	type: "per_self_lost_hp";
+	value: VarRef;
+}
+interface FlatExtraDamage {
+	type: "flat_extra_damage";
+	value: VarRef;
+}
+interface PerEnemyLostHp {
+	type: "per_enemy_lost_hp";
+	per_percent: VarRef;
+	value: VarRef;
+}
+interface ShieldValueIncrease {
+	type: "shield_value_increase";
+	value: VarRef;
+}
+interface NextSkillBuff {
+	type: "next_skill_buff";
+	value: VarRef;
+}
+interface AttackBonus {
+	type: "attack_bonus";
+	value: VarRef;
+	per_debuff_stack?: boolean;
+	max_stacks?: VarRef;
+	timing?: "pre_cast";
+}
+interface GuaranteedResonance {
+	type: "guaranteed_resonance";
+	base_multiplier: VarRef;
+	chance: VarRef;
+	upgraded_multiplier: VarRef;
+}
+interface TripleBonus {
+	type: "triple_bonus";
+	attack_bonus: VarRef;
+	damage_increase: VarRef;
+	crit_damage_increase: VarRef;
+}
+interface ProbabilityToCertain {
+	type: "probability_to_certain";
+}
+interface DamageIncrease {
+	type: "damage_increase";
+	value: VarRef;
+}
+interface FinalDmgBonus {
+	type: "final_dmg_bonus";
+	value: VarRef;
+}
+interface HealingIncrease {
+	type: "healing_increase";
+	value: VarRef;
+}
+interface HealingToDamage {
+	type: "healing_to_damage";
+	value: VarRef;
+}
+interface DamageToShield {
+	type: "damage_to_shield";
+	value: VarRef;
+	duration: VarRef;
+}
+interface RandomDebuff {
+	type: "random_debuff";
+	attack: VarRef;
+	crit_rate: VarRef;
+	crit_damage: VarRef;
+}
+interface BuffDuration {
+	type: "buff_duration";
+	value: VarRef;
+}
+interface BuffStackIncrease {
+	type: "buff_stack_increase";
+	value: VarRef;
+}
+interface DebuffStackIncrease {
+	type: "debuff_stack_increase";
+	value: VarRef;
+}
+interface DebuffStackChance {
+	type: "debuff_stack_chance";
+	value: VarRef;
+}
 
 // ══════════════════════════════════════════════════════════
 // §10 Affix Effects — Per-book Primary (主词缀)
 // ══════════════════════════════════════════════════════════
 
-interface SummonBuff { type: "summon_buff"; damage_taken: VarRef; damage_dealt: VarRef }
-interface ShieldDestroyDot { type: "shield_destroy_dot"; state: string; interval: VarRef; value: VarRef }
-interface ExtendedDot { type: "extended_dot"; duration: VarRef; interval: VarRef }
-interface DebuffSkillDmg { type: "debuff_skill_dmg"; value: VarRef; duration: VarRef }
-interface SelfBuffExtra { type: "self_buff_extra"; state?: string; buff_name?: string }
-interface SelfBuffExtend { type: "self_buff_extend"; value: VarRef; state: string }
-interface PeriodicCleanse { type: "periodic_cleanse"; chance: VarRef; target: string; cooldown: VarRef; max_times: VarRef }
-interface LifestealWithParent { type: "lifesteal_with_parent"; state: string; value: VarRef }
-interface ShieldStrength { type: "shield_strength"; value: VarRef }
-interface CounterDebuffUpgrade { type: "counter_debuff_upgrade"; state: string; value: VarRef }
-interface DotPermanentMaxHp { type: "dot_permanent_max_hp"; state: string; value: VarRef }
-interface PerDebuffDamageUpgrade { type: "per_debuff_damage_upgrade"; state: string; value: VarRef }
-interface PerStolenBuffDebuff { type: "per_stolen_buff_debuff"; state: string; value: VarRef; duration: VarRef }
-interface DelayedBurstIncrease { type: "delayed_burst_increase"; state: string; value: VarRef }
-interface PercentMaxHpAffix { type: "percent_max_hp_affix"; value: VarRef }
-interface ConditionalHpScaling { type: "conditional_hp_scaling"; hp_threshold: VarRef; per_step: VarRef; value: VarRef }
-interface PerBuffStackDamage { type: "per_buff_stack_damage"; per_stack: VarRef; value: VarRef; max: VarRef }
+interface SummonBuff {
+	type: "summon_buff";
+	damage_taken: VarRef;
+	damage_dealt: VarRef;
+}
+interface ShieldDestroyDot {
+	type: "shield_destroy_dot";
+	state: string;
+	interval: VarRef;
+	value: VarRef;
+}
+interface ExtendedDot {
+	type: "extended_dot";
+	duration: VarRef;
+	interval: VarRef;
+}
+interface DebuffSkillDmg {
+	type: "debuff_skill_dmg";
+	value: VarRef;
+	duration: VarRef;
+}
+interface SelfBuffExtra {
+	type: "self_buff_extra";
+	state?: string;
+	buff_name?: string;
+}
+interface SelfBuffExtend {
+	type: "self_buff_extend";
+	value: VarRef;
+	state: string;
+}
+interface PeriodicCleanse {
+	type: "periodic_cleanse";
+	chance: VarRef;
+	target: string;
+	cooldown: VarRef;
+	max_times: VarRef;
+}
+interface LifestealWithParent {
+	type: "lifesteal_with_parent";
+	state: string;
+	value: VarRef;
+}
+interface ShieldStrength {
+	type: "shield_strength";
+	value: VarRef;
+}
+interface CounterDebuffUpgrade {
+	type: "counter_debuff_upgrade";
+	state: string;
+	value: VarRef;
+}
+interface DotPermanentMaxHp {
+	type: "dot_permanent_max_hp";
+	state: string;
+	value: VarRef;
+}
+interface PerDebuffDamageUpgrade {
+	type: "per_debuff_damage_upgrade";
+	state: string;
+	value: VarRef;
+}
+interface PerStolenBuffDebuff {
+	type: "per_stolen_buff_debuff";
+	state: string;
+	value: VarRef;
+	duration: VarRef;
+}
+interface DelayedBurstIncrease {
+	type: "delayed_burst_increase";
+	state: string;
+	value: VarRef;
+}
+interface PercentMaxHpAffix {
+	type: "percent_max_hp_affix";
+	value: VarRef;
+}
+interface ConditionalHpScaling {
+	type: "conditional_hp_scaling";
+	hp_threshold: VarRef;
+	per_step: VarRef;
+	value: VarRef;
+}
+interface PerBuffStackDamage {
+	type: "per_buff_stack_damage";
+	per_stack: VarRef;
+	value: VarRef;
+	max: VarRef;
+}
 
 // ══════════════════════════════════════════════════════════
 // §11 Affix Effects — Exclusive (专属词缀)
 // ══════════════════════════════════════════════════════════
 
-interface Lifesteal { type: "lifesteal"; value: VarRef }
-interface OnDispel { type: "on_dispel"; value: VarRef }
-interface PeriodicDispel { type: "periodic_dispel"; count?: string | number; interval?: number; duration?: VarRef; damage_percent_of_skill?: VarRef; no_buff_double?: boolean }
-interface OnShieldExpire { type: "on_shield_expire"; value: VarRef }
-interface OnBuffDebuffShield { type: "on_buff_debuff_shield"; trigger_kind: string; value: VarRef }
-interface ProbabilityMultiplier { type: "probability_multiplier"; chance_4x: VarRef; chance_3x: VarRef; chance_2x: VarRef }
-interface DotDamageIncrease { type: "dot_damage_increase"; value: VarRef }
-interface DotFrequencyIncrease { type: "dot_frequency_increase"; value: VarRef }
-interface ConditionalDamageDebuff { type: "conditional_damage_debuff"; value: VarRef }
-interface PerDebuffTrueDamage { type: "per_debuff_true_damage"; value: VarRef; max: VarRef }
-interface SelfHpFloor { type: "self_hp_floor"; value: VarRef }
-interface EnlightenmentBonus { type: "enlightenment_bonus"; value: VarRef }
-interface IgnoreDamageReduction { type: "ignore_damage_reduction" }
-interface SkillDamageIncreaseAffix { type: "skill_damage_increase_affix"; value: VarRef }
-interface MinLostHpThreshold { type: "min_lost_hp_threshold"; min_percent: VarRef; damage_increase: VarRef }
-interface CrossSlotDebuff { type: "cross_slot_debuff"; target: string; value: VarRef; duration: VarRef; name: string; trigger: string }
-interface HealReduction { type: "heal_reduction"; value: VarRef; enhanced_value?: VarRef; hp_threshold?: VarRef }
+interface Lifesteal {
+	type: "lifesteal";
+	value: VarRef;
+}
+interface OnDispel {
+	type: "on_dispel";
+	value: VarRef;
+}
+interface PeriodicDispel {
+	type: "periodic_dispel";
+	count?: string | number;
+	interval?: number;
+	duration?: VarRef;
+	damage_percent_of_skill?: VarRef;
+	no_buff_double?: boolean;
+}
+interface OnShieldExpire {
+	type: "on_shield_expire";
+	value: VarRef;
+}
+interface OnBuffDebuffShield {
+	type: "on_buff_debuff_shield";
+	trigger_kind: string;
+	value: VarRef;
+}
+interface ProbabilityMultiplier {
+	type: "probability_multiplier";
+	chance_4x: VarRef;
+	chance_3x: VarRef;
+	chance_2x: VarRef;
+}
+interface DotDamageIncrease {
+	type: "dot_damage_increase";
+	value: VarRef;
+}
+interface DotFrequencyIncrease {
+	type: "dot_frequency_increase";
+	value: VarRef;
+}
+interface ConditionalDamageDebuff {
+	type: "conditional_damage_debuff";
+	value: VarRef;
+}
+interface PerDebuffTrueDamage {
+	type: "per_debuff_true_damage";
+	value: VarRef;
+	max: VarRef;
+}
+interface SelfHpFloor {
+	type: "self_hp_floor";
+	value: VarRef;
+}
+interface EnlightenmentBonus {
+	type: "enlightenment_bonus";
+	value: VarRef;
+}
+interface IgnoreDamageReduction {
+	type: "ignore_damage_reduction";
+}
+interface SkillDamageIncreaseAffix {
+	type: "skill_damage_increase_affix";
+	value: VarRef;
+}
+interface MinLostHpThreshold {
+	type: "min_lost_hp_threshold";
+	min_percent: VarRef;
+	damage_increase: VarRef;
+}
+interface CrossSlotDebuff {
+	type: "cross_slot_debuff";
+	target: string;
+	value: VarRef;
+	duration: VarRef;
+	name: string;
+	trigger: string;
+}
+interface HealReduction {
+	type: "heal_reduction";
+	value: VarRef;
+	enhanced_value?: VarRef;
+	hp_threshold?: VarRef;
+}
 
 // ══════════════════════════════════════════════════════════
 // §12 Union type
@@ -375,42 +612,103 @@ interface HealReduction { type: "heal_reduction"; value: VarRef; enhanced_value?
 
 export type Effect =
 	// Damage
-	| BaseAttack | PercentMaxHpDamage | PercentCurrentHpDamage | SelfLostHpDamage
-	| ShieldDestroyDamage | NoShieldDoubleDamage | EchoDamage | HealEchoDamage
-	| PerDebuffStackDamage | PeriodicEscalation | DelayedBurst | ConditionalDamage
+	| BaseAttack
+	| PercentMaxHpDamage
+	| PercentCurrentHpDamage
+	| SelfLostHpDamage
+	| ShieldDestroyDamage
+	| NoShieldDoubleDamage
+	| EchoDamage
+	| HealEchoDamage
+	| PerDebuffStackDamage
+	| PeriodicEscalation
+	| DelayedBurst
+	| ConditionalDamage
 	| FlatExtraDamage
 	// Cost
 	| SelfHpCost
 	// DoT
 	| Dot
 	// Healing / Shield
-	| SelfHeal | Shield
+	| SelfHeal
+	| Shield
 	// Buff
 	| SelfBuff
 	// Debuff
 	| Debuff
 	// Complex
-	| BuffSteal | Untargetable | CounterDebuff | CounterBuff | Summon
-	| CritDmgBonus | SelfDamageTakenIncrease | SelfCleanse
+	| BuffSteal
+	| Untargetable
+	| CounterDebuff
+	| CounterBuff
+	| Summon
+	| CritDmgBonus
+	| SelfDamageTakenIncrease
+	| SelfCleanse
 	// State
-	| StateRef | StateAdd
+	| StateRef
+	| StateAdd
 	// Common affixes
-	| DebuffStrength | BuffStrength | AllStateDuration | ConditionalDamageControlled
-	| PerHitEscalation | DamageReductionDuringCast | ExecuteConditional
-	| DotExtraPerTick | RandomBuff | PerSelfLostHp | PerEnemyLostHp
-	| ShieldValueIncrease | NextSkillBuff | AttackBonus | GuaranteedResonance
-	| TripleBonus | ProbabilityToCertain | DamageIncrease | FinalDmgBonus
-	| HealingIncrease | HealingToDamage | DamageToShield | RandomDebuff
-	| BuffDuration | BuffStackIncrease | DebuffStackIncrease | DebuffStackChance
+	| DebuffStrength
+	| BuffStrength
+	| AllStateDuration
+	| ConditionalDamageControlled
+	| PerHitEscalation
+	| DamageReductionDuringCast
+	| ExecuteConditional
+	| DotExtraPerTick
+	| RandomBuff
+	| PerSelfLostHp
+	| PerEnemyLostHp
+	| ShieldValueIncrease
+	| NextSkillBuff
+	| AttackBonus
+	| GuaranteedResonance
+	| TripleBonus
+	| ProbabilityToCertain
+	| DamageIncrease
+	| FinalDmgBonus
+	| HealingIncrease
+	| HealingToDamage
+	| DamageToShield
+	| RandomDebuff
+	| BuffDuration
+	| BuffStackIncrease
+	| DebuffStackIncrease
+	| DebuffStackChance
 	// Primary affixes
-	| SummonBuff | ShieldDestroyDot | ExtendedDot | DebuffSkillDmg
-	| SelfBuffExtra | SelfBuffExtend | PeriodicCleanse | LifestealWithParent
-	| ShieldStrength | CounterDebuffUpgrade | DotPermanentMaxHp | PerDebuffDamageUpgrade
-	| PerStolenBuffDebuff | DelayedBurstIncrease | PercentMaxHpAffix
-	| ConditionalHpScaling | PerBuffStackDamage
+	| SummonBuff
+	| ShieldDestroyDot
+	| ExtendedDot
+	| DebuffSkillDmg
+	| SelfBuffExtra
+	| SelfBuffExtend
+	| PeriodicCleanse
+	| LifestealWithParent
+	| ShieldStrength
+	| CounterDebuffUpgrade
+	| DotPermanentMaxHp
+	| PerDebuffDamageUpgrade
+	| PerStolenBuffDebuff
+	| DelayedBurstIncrease
+	| PercentMaxHpAffix
+	| ConditionalHpScaling
+	| PerBuffStackDamage
 	// Exclusive affixes
-	| Lifesteal | OnDispel | PeriodicDispel | OnShieldExpire | OnBuffDebuffShield
-	| ProbabilityMultiplier | DotDamageIncrease | DotFrequencyIncrease
-	| ConditionalDamageDebuff | PerDebuffTrueDamage | SelfHpFloor
-	| EnlightenmentBonus | IgnoreDamageReduction | SkillDamageIncreaseAffix
-	| MinLostHpThreshold | CrossSlotDebuff | HealReduction;
+	| Lifesteal
+	| OnDispel
+	| PeriodicDispel
+	| OnShieldExpire
+	| OnBuffDebuffShield
+	| ProbabilityMultiplier
+	| DotDamageIncrease
+	| DotFrequencyIncrease
+	| ConditionalDamageDebuff
+	| PerDebuffTrueDamage
+	| SelfHpFloor
+	| EnlightenmentBonus
+	| IgnoreDamageReduction
+	| SkillDamageIncreaseAffix
+	| MinLostHpThreshold
+	| CrossSlotDebuff
+	| HealReduction;
