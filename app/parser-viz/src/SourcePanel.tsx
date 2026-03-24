@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import type { SourceType } from "./types.ts";
 import { T, panelStyle, selectStyle, labelStyle } from "./theme.ts";
 
@@ -273,13 +274,14 @@ export function SourcePanel({ onParse, ohmSource, semanticsSource }: SourcePanel
 				Parse
 			</button>
 
-			{/* Floating draggable dialog */}
-			{dialogContent && (
+			{/* Floating draggable dialog — portaled to body */}
+			{dialogContent && createPortal(
 				<DraggableDialog
 					title={dialogContent.title}
 					code={dialogContent.code}
 					onClose={() => setDialogContent(null)}
-				/>
+				/>,
+				document.body,
 			)}
 		</div>
 	);
