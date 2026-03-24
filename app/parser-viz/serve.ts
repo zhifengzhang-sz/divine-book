@@ -138,8 +138,22 @@ const booksResponse = JSON.stringify({
 
 // ── API: parse using new grammar system ─────────────────
 
+// Map school affix names → grammar names
+const schoolAffixToGrammar: Record<string, string> = {};
+for (const e of schoolEntries) {
+	const grammarName = `修为词缀_${e.school}`;
+	schoolAffixToGrammar[e.name] = grammarName;
+}
+
+function resolveGrammarName(sourceType: string, name: string): string {
+	if (sourceType === "universal") return "通用词缀";
+	if (sourceType === "school") return schoolAffixToGrammar[name] ?? name;
+	return name; // skill and exclusive use book name directly
+}
+
 function handleParse(body: { sourceType: string; text: string; bookName?: string; entryPoint?: string }) {
-	const bookName = body.bookName ?? "";
+	const rawName = body.bookName ?? "";
+	const bookName = resolveGrammarName(body.sourceType, rawName);
 	const entryPoint = body.entryPoint ?? (body.sourceType === "skill" ? "skillDescription" : "primaryAffix");
 
 	const ohmSource = readOhmFile(bookName);

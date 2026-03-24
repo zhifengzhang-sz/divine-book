@@ -143,13 +143,18 @@ export function App() {
 			} else if (sourceType === "exclusive") {
 				// Exclusive affix: use book grammar's exclusiveAffix entry point
 				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
-				fetchParse(name, text, "exclusiveAffix").then(setSkillResult);
+				fetchParse(name, text, "exclusiveAffix").then(r => { setSkillResult(r); });
 				setAffixResult(null);
-			} else {
-				// School/universal affixes: use affix-specific grammars
-				// These use affixDescription entry point and their own grammar names
-				setOhmSource("(shared affix grammar)");
-				setSkillResult(null);
+			} else if (sourceType === "universal") {
+				// Universal affixes: grammar is 通用词缀
+				setOhmSource("(通用词缀.ohm — shared across all books)");
+				fetchParse("通用词缀", text, "affixDescription").then(setSkillResult);
+				setAffixResult(null);
+			} else if (sourceType === "school") {
+				// School affixes: grammar is 修为词缀_<school>
+				// We don't know which school from the name alone, so pass name and let server figure it out
+				setOhmSource("(修为词缀_*.ohm — per school)");
+				fetchParse(name, text, "affixDescription").then(setSkillResult);
 				setAffixResult(null);
 			}
 		},

@@ -117,15 +117,13 @@ export function SourcePanel({ onParse }: SourcePanelProps) {
 
 	// Fire parse
 	const handleParse = () => {
-		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, getSkillText(), bookName, getAffixText());
+		onParse(sourceType, getSkillText(), selected, getAffixText());
 	};
 
 	// Auto-parse on text/selection change
 	useEffect(() => {
 		if (!text) return;
-		const bookName = sourceType === "skill" ? selected : undefined;
-		onParse(sourceType, getSkillText(), bookName, getAffixText());
+		onParse(sourceType, getSkillText(), selected, getAffixText());
 	}, [text, selected, sourceType]);
 
 	if (loading) {
