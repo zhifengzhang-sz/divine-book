@@ -122,6 +122,7 @@ function EntryFlow({ name, result }: { name: string; result: PipelineResult | nu
 
 export function App() {
 	const [bookName, setBookName] = useState("");
+	const [grammarLabel, setGrammarLabel] = useState("");
 	const [skillResult, setSkillResult] = useState<PipelineResult | null>(null);
 	const [affixResult, setAffixResult] = useState<PipelineResult | null>(null);
 	const [ohmSource, setOhmSource] = useState("");
@@ -132,7 +133,7 @@ export function App() {
 			setBookName(name);
 
 			if (sourceType === "skill") {
-				// Book: grammar has 3 entry points
+				setGrammarLabel(name);
 				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
 				fetchParse(name, text, "skillDescription").then(setSkillResult);
 				if (affixText) {
@@ -141,21 +142,25 @@ export function App() {
 					setAffixResult(null);
 				}
 			} else if (sourceType === "exclusive") {
-				// Exclusive affix: use book grammar's exclusiveAffix entry point
+				setGrammarLabel(name);
 				fetch(`/api/ohm?book=${encodeURIComponent(name)}`).then(r => r.json()).then(d => setOhmSource(d.content ?? ""));
-				fetchParse(name, text, "exclusiveAffix").then(r => { setSkillResult(r); });
+				fetchParse(name, text, "exclusiveAffix").then(setSkillResult);
 				setAffixResult(null);
 			} else if (sourceType === "universal") {
+				setGrammarLabel("通用词缀");
 				fetchParse("通用词缀", text, "affixDescription").then(r => {
 					setSkillResult(r);
 					setOhmSource(r.ohmSource ?? "");
 				});
 				setAffixResult(null);
 			} else if (sourceType === "school") {
-				// Server resolves affix name → grammar name (修为词缀_<school>)
+				setGrammarLabel(name);
 				fetchParse(name, text, "affixDescription").then(r => {
 					setSkillResult(r);
 					setOhmSource(r.ohmSource ?? "");
+					// Update label to resolved grammar name
+					const m = r.ohmSource?.match(/^(\S+)\s*<:/m);
+					if (m) setGrammarLabel(m[1]);
 				});
 				setAffixResult(null);
 			}
@@ -175,10 +180,10 @@ export function App() {
 					<div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
 						{/* Grammar + Semantics at the center */}
 						<div style={{ ...panelStyle, padding: 0 }}>
-							<Node label={`${bookName}.ohm — grammar`} status="ok">
+							<Node label={`${grammarLabel}.ohm — grammar`} status="ok">
 								<Code code={ohmSource} />
 							</Node>
-							<Node label={`${bookName}.ts — semantics`} status={skillResult?.semanticsSource ? "ok" : "pending"}>
+							<Node label={`${grammarLabel}.ts — semantics`} status={skillResult?.semanticsSource ? "ok" : "pending"}>
 								<Code code={skillResult?.semanticsSource ?? "(not loaded)"} />
 							</Node>
 						</div>
