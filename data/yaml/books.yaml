@@ -857,6 +857,10 @@ books:
     affix_text: |
       【魔妄吞天】：在【不灭魔体】状态下受到攻击时，为目标附加【天人五衰】：每3秒轮流降低目标x%致命率、x%暴击伤害、x%暴击率、y%攻击力、y%最终伤害减免，持续15秒
       x=50, y=23
+    exclusive_affix_text: |
+      1. 本神通命中时，若敌方具有`减益`状态，则提升自身x%的治疗量，持续8秒
+       2. 在`神通悟境`的条件下：本神通每次造成伤害时，降低敌方y%`最终伤害减免`，持续1秒
+      融合50重：x=90, y=20
     skill:
       - type: base_attack
         hits: 5
@@ -875,6 +879,20 @@ books:
           target_state: 天人五衰
           crit_rate: 50
           duration: 15
+    exclusive_affix:
+      name: 魔骨明心
+      effects:
+        - type: self_buff
+          healing_bonus: 90
+          duration: 8
+          condition: enemy_has_debuff
+          data_state: fusion=50
+        - type: debuff
+          target: final_damage_reduction
+          value: 20
+          duration: 1
+          trigger: on_hit
+          data_state: fusion=50
   解体化形:
     school: Demon
     skill_text: |
@@ -1177,6 +1195,11 @@ books:
     affix_text: |
       【星猿幻杀】：本技能每段攻击必定给目标附加一层【镇杀】：每叠加两层便会消耗并造成目标x%最大气血值伤害
       x=10
+    exclusive_affix_text: |
+      1. 本神通造成伤害时，目标每有1层`减益`状态，会使本次额外造成目标x%最大气血值的真实伤害，最多造成y%最大气血值的真实伤害
+      *注*：10层能达到最大气血值的真实伤害
+       2. 在`神通悟境`的条件下：本神通附加自身已损气血的伤害提高z%，并使造成的伤害提升w%
+      融合50重：x=2.1, y=21, z=50, w=75
     skill:
       - type: self_hp_cost
         value: 1500
@@ -1194,6 +1217,18 @@ books:
           value: 10
           state: 镇杀
           trigger_stack: 2
+    exclusive_affix:
+      name: 索心真诀
+      effects:
+        - type: per_debuff_stack_true_damage
+          per_stack: 2.1
+          max: 21
+          data_state: fusion=50
+        - type: conditional_buff
+          condition: enlightenment_max
+          percent_lost_hp_increase: 50
+          damage_increase: 75
+          data_state: fusion=50
   十方真魄:
     school: Body
     skill_text: |

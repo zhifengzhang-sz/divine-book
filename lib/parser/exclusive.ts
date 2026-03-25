@@ -25,7 +25,7 @@ export interface ExclusiveAffixEntry {
 }
 
 /** Normalize name variants between 专属词缀.md and 主书.md / BOOK_TABLE */
-const NAME_NORMALIZE: Record<string, string> = {
+export const NAME_NORMALIZE: Record<string, string> = {
 	天剎真魔: "天刹真魔",
 	焚圣真魔咒: "梵圣真魔咒",
 	惊蛰化龙: "惊蜇化龙",

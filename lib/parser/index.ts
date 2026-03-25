@@ -12,6 +12,7 @@ import * as ohm from "ohm-js";
 import type { ParsedBook } from "../data/types.js";
 import type { Effect, EffectWithMeta } from "./schema/effects.js";
 import { emitBooks, formatYaml } from "./emit.js";
+import { NAME_NORMALIZE, parseExclusiveAffix } from "./exclusive.js";
 import {
 	type RawBookEntry,
 	type SplitCell,
@@ -177,7 +178,17 @@ function parseBook(entry: RawBookEntry, exclusiveText: string, exclusiveAffixNam
 			if (i === 0) return line;
 			return acc + (line.startsWith("【") ? "\n" : " ") + line;
 		}, "");
-		const exclEffects = parseEntry(entry.name, exclDesc, "exclusiveAffix");
+		let exclEffects = parseEntry(entry.name, exclDesc, "exclusiveAffix");
+		// Fallback to compound parser if grammar parse returns empty
+		if (exclEffects.length === 0) {
+			try {
+				const compoundResult = parseExclusiveAffix(
+					{ bookName: entry.name, school: entry.school, affixName: exclusiveAffixName, rawText: exclusiveText, cell: exclCell },
+					{},
+				);
+				exclEffects = compoundResult.effects;
+			} catch { /* no compound parser — that's fine, effects stay empty */ }
+		}
 		const resolvedExcl = resolveTiers(exclEffects, exclCell.tiers.map(t => ({
 			enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars,
 		})));
@@ -208,7 +219,8 @@ export async function parseMainSkills(mainMd: string, exclusiveMd: string): Prom
 		if (!line.startsWith("|") || line.includes("---") || line.includes("功法")) continue;
 		const cells = line.split("|").slice(1, -1).map(c => c.trim());
 		if (cells.length >= 3) {
-			const bookName = cells[0].replace(/`/g, "");
+			const rawName = cells[0].replace(/`/g, "");
+			const bookName = NAME_NORMALIZE[rawName] ?? rawName;
 			const affixName = cells[1].replace(/[【】]/g, "").trim();
 			exclusiveMap[bookName] = { name: affixName, text: cells[2] };
 		}

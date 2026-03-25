@@ -1501,6 +1501,59 @@ export const ChanceSchema = z.object({
 	effect: z.string(),
 }).passthrough() satisfies z.ZodType<Chance>;
 
+/** 皓月剑诀, 惊蜇化龙 exclusive (compound parser). Conditional stat boost at enlightenment threshold */
+export interface ConditionalBuff {
+	type: "conditional_buff";
+	condition: string;
+	percent_max_hp_increase?: V;
+	percent_lost_hp_increase?: V;
+	damage_increase?: V;
+	[k: string]: unknown;
+}
+export const ConditionalBuffSchema = z.object({
+	type: z.literal("conditional_buff"),
+	condition: z.string(),
+	percent_max_hp_increase: V_Schema.optional(),
+	percent_lost_hp_increase: V_Schema.optional(),
+	damage_increase: V_Schema.optional(),
+}).passthrough() satisfies z.ZodType<ConditionalBuff>;
+
+/** 周天星元, 天刹真魔 exclusive (compound parser). Conditional debuff on target */
+export interface ConditionalDebuffCompound {
+	type: "conditional_debuff";
+	condition?: string;
+	name?: string;
+	target?: string;
+	value?: V;
+	multiplier?: V;
+	duration?: V;
+	[k: string]: unknown;
+}
+export const ConditionalDebuffCompoundSchema = z.object({
+	type: z.literal("conditional_debuff"),
+	condition: z.string().optional(),
+	name: z.string().optional(),
+	target: z.string().optional(),
+	value: V_Schema.optional(),
+	multiplier: V_Schema.optional(),
+	duration: V_Schema.optional(),
+}).passthrough() satisfies z.ZodType<ConditionalDebuffCompound>;
+
+/** 天刹真魔 exclusive (compound parser). Conditional heal buff */
+export interface ConditionalHealBuff {
+	type: "conditional_heal_buff";
+	condition: string;
+	value: V;
+	duration?: V;
+	[k: string]: unknown;
+}
+export const ConditionalHealBuffSchema = z.object({
+	type: z.literal("conditional_heal_buff"),
+	condition: z.string(),
+	value: V_Schema,
+	duration: V_Schema.optional(),
+}).passthrough() satisfies z.ZodType<ConditionalHealBuff>;
+
 // ══════════════════════════════════════════════════════════
 // §13 Union type
 // ══════════════════════════════════════════════════════════
@@ -1608,7 +1661,11 @@ export type Effect =
 	| IgnoreDamageReduction
 	| SkillDamageIncreaseAffix
 	| CrossSlotDebuff
-	| Chance;
+	| Chance
+	// Compound parser types (legacy exclusive affixes)
+	| ConditionalBuff
+	| ConditionalDebuffCompound
+	| ConditionalHealBuff;
 
 // All schemas for discriminated union (per_hit_escalation handled separately)
 const allSchemas = [
@@ -1640,6 +1697,7 @@ const allSchemas = [
 	DotDamageIncreaseSchema, DotFrequencyIncreaseSchema, ConditionalDamageDebuffSchema,
 	SelfHpFloorSchema, EnlightenmentBonusSchema, IgnoreDamageReductionSchema,
 	SkillDamageIncreaseAffixSchema, CrossSlotDebuffSchema, ChanceSchema,
+	ConditionalBuffSchema, ConditionalDebuffCompoundSchema, ConditionalHealBuffSchema,
 ] as const;
 
 /** Validates a single effect object. Handles per_hit_escalation specially (shared type string). */
