@@ -1259,10 +1259,11 @@ books:
           per_stack: 2.1
           max: 21
           data_state: fusion=50
-        - type: conditional_buff
-          condition: enlightenment_max
-          percent_lost_hp_increase: 50
-          damage_increase: 75
+        - type: self_lost_hp_damage
+          value: 50
+          data_state: fusion=50
+        - type: damage_increase
+          value: 75
           data_state: fusion=50
   十方真魄:
     school: Body

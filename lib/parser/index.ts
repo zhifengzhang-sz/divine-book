@@ -12,7 +12,7 @@ import * as ohm from "ohm-js";
 import type { ParsedBook } from "../data/types.js";
 import type { Effect, EffectWithMeta } from "./schema/effects.js";
 import { emitBooks, formatYaml } from "./emit.js";
-import { NAME_NORMALIZE, parseExclusiveAffix } from "./exclusive.js";
+import { NAME_NORMALIZE } from "./exclusive.js";
 import {
 	type RawBookEntry,
 	type SplitCell,
@@ -86,7 +86,7 @@ export function cleanText(raw: string): string {
 		.replace(/`/g, "")                        // strip backticks
 		.replace(/^【[^】]+】[：:]/, "")           // strip affix name prefix
 		.replace(/\\([*])/g, "$1")                 // unescape \* → *
-		.replace(/\*注\*[：:][^）\n]*/g, "")       // strip *注*：... notes
+		.replace(/\*注\*[：:][^\n]*/g, "")         // strip *注*：... notes (to end of line)
 		.replace(/（最高不超过\d+级）/g, "")         // strip （最高不超过3级）
 		.replace(/（\d+层[^）]*达到[^）]*）/g, "")   // strip （25层达到最大提升伤害）
 		.replace(/（持续伤害效果受[^）]*）/g, "")     // strip （持续伤害效果受一半伤害加成）
@@ -173,22 +173,14 @@ function parseBook(entry: RawBookEntry, exclusiveText: string, exclusiveAffixNam
 	let exclusiveAffix: ParsedBook["exclusiveAffix"];
 	if (exclusiveText.trim()) {
 		const exclCell = splitCell(exclusiveText);
-		// Join descriptions: \n for lines starting with 【 (multi-line states), space otherwise
-		const exclDesc = exclCell.description.reduce((acc, line, i) => {
+		// Filter editorial notes before joining, then join:
+		// \n for lines starting with 【 (multi-line states), space otherwise
+		const exclLines = exclCell.description.filter(l => !/^\*注\*/.test(l.trim()));
+		const exclDesc = exclLines.reduce((acc, line, i) => {
 			if (i === 0) return line;
 			return acc + (line.startsWith("【") ? "\n" : " ") + line;
 		}, "");
-		let exclEffects = parseEntry(entry.name, exclDesc, "exclusiveAffix");
-		// Fallback to compound parser if grammar parse returns empty
-		if (exclEffects.length === 0) {
-			try {
-				const compoundResult = parseExclusiveAffix(
-					{ bookName: entry.name, school: entry.school, affixName: exclusiveAffixName, rawText: exclusiveText, cell: exclCell },
-					{},
-				);
-				exclEffects = compoundResult.effects;
-			} catch { /* no compound parser — that's fine, effects stay empty */ }
-		}
+		const exclEffects = parseEntry(entry.name, exclDesc, "exclusiveAffix");
 		const resolvedExcl = resolveTiers(exclEffects, exclCell.tiers.map(t => ({
 			enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars,
 		})));
