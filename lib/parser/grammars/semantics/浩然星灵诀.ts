@@ -58,6 +58,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				hp_threshold: varRef1.extractVar,
 				value: varRef2.extractVar,
 				max: varRef3.extractVar,
+				basis: "final_damage_bonus",
 			};
 			return [effect];
 		},

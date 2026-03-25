@@ -58,6 +58,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				damage_base: "self_max_hp",
 				per_hit: true,
 				condition: "cleanse_excess",
+				next_skill_count: 3,
 			};
 			return [effect];
 		},

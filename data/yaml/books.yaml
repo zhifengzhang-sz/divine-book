@@ -399,6 +399,7 @@ books:
           hp_threshold: 10
           value: 100
           max: 50
+          basis: final_damage_bonus
     exclusive_affix:
       name: 龙象护身
       effects:
@@ -761,6 +762,7 @@ books:
         damage_base: self_max_hp
         per_hit: true
         condition: cleanse_excess
+        next_skill_count: 3
     exclusive_affix:
       name: 九雷真解
       effects:

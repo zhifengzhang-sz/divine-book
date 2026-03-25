@@ -257,6 +257,8 @@ export interface ConditionalDamage {
 	condition: string;
 	/** 通天剑诀: per % hp loss */
 	per_step?: V;
+	/** 九天真雷诀: "接下来的三个神通" — number of next skills affected */
+	next_skill_count?: number;
 }
 export const ConditionalDamageSchema = z.object({
 	type: z.literal("conditional_damage"),
@@ -265,6 +267,7 @@ export const ConditionalDamageSchema = z.object({
 	per_hit: z.boolean().optional(),
 	condition: z.string(),
 	per_step: V_Schema.optional(),
+	next_skill_count: z.number().optional(),
 }).passthrough() satisfies z.ZodType<ConditionalDamage>;
 
 // ══════════════════════════════════════════════════════════
@@ -1210,7 +1213,7 @@ export const PercentMaxHpAffixSchema = z.object({
 	trigger_stack: V_Schema,
 }).passthrough() satisfies z.ZodType<PercentMaxHpAffix>;
 
-/** 浩然星灵诀, 玉书天戈符. "气血阈值条件伤害缩放" */
+/** 浩然星灵诀, 玉书天戈符. Conditional stat-scaling damage */
 export interface ConditionalHpScaling {
 	type: "conditional_hp_scaling";
 	/** threshold % */
@@ -1221,6 +1224,8 @@ export interface ConditionalHpScaling {
 	max?: V;
 	/** 玉书天戈符: per step */
 	per_step?: V;
+	/** Scaling basis: "hp" (玉书天戈符) or "final_damage_bonus" (浩然星灵诀) */
+	basis?: string;
 }
 export const ConditionalHpScalingSchema = z.object({
 	type: z.literal("conditional_hp_scaling"),
@@ -1228,6 +1233,7 @@ export const ConditionalHpScalingSchema = z.object({
 	value: V_Schema,
 	max: V_Schema.optional(),
 	per_step: V_Schema.optional(),
+	basis: z.string().optional(),
 }).passthrough() satisfies z.ZodType<ConditionalHpScaling>;
 
 /** 元磁神光. "每层增益状态提升伤害" */
