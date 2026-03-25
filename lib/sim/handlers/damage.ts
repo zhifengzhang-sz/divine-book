@@ -3,14 +3,65 @@
  * self_lost_hp_damage
  */
 
+import type {
+	BaseAttack,
+	PercentMaxHpDamage,
+} from "../../parser/schema/千锋聚灵剑.js";
+import type {
+	FlatExtraDamage,
+	PerEnemyLostHp,
+	PerSelfLostHp,
+} from "../../parser/schema/通用词缀.js";
+import type { PercentCurrentHpDamage } from "../../parser/schema/无极御剑诀.js";
+import type { PerBuffStackDamage } from "../../parser/schema/元磁神光.js";
+import type { PerDebuffStackTrueDamage } from "../../parser/schema/惊蜇化龙.js";
+import type { ConditionalDamage as ConditionalDamage_TT } from "../../parser/schema/通天剑诀.js";
+import type { ConditionalDamage as ConditionalDamage_JT } from "../../parser/schema/九天真雷诀.js";
+// ^ Not all conditional_damage conditions have schemas yet. The handler
+// supports conditions beyond those two schemas, so we widen the union.
+import type { PerDebuffStackDamage as PerDebuffStackDamage_TL } from "../../parser/schema/天轮魔经.js";
+import type { PerDebuffStackDamage as PerDebuffStackDamage_TM } from "../../parser/schema/天魔降临咒.js";
+import type { PerDebuffStackDamage as PerDebuffStackDamage_JT2 } from "../../parser/schema/解体化形.js";
 import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
 
+/**
+ * self_lost_hp_damage has many variants across books. No single schema covers
+ * all fields the handler needs, so we define the handler-level union here.
+ * Fields are string | number (V) because schemas use V for variable-bearing
+ * fields; at runtime values are always number.
+ */
+type V = string | number;
+interface SelfLostHpDamage {
+	type: "self_lost_hp_damage";
+	value: V;
+	per_hit?: true;
+	self_heal?: true;
+	parent?: string;
+	tick_interval?: V;
+	includes_hp_spent?: boolean;
+	every_n_hits?: V;
+	next_skill_hits?: V;
+}
+
+type ConditionalDamage =
+	| ConditionalDamage_TT
+	| ConditionalDamage_JT
+	| {
+			type: "conditional_damage";
+			value: V;
+			condition: string;
+	  };
+type PerDebuffStackDamage =
+	| PerDebuffStackDamage_TL
+	| PerDebuffStackDamage_TM
+	| PerDebuffStackDamage_JT2;
+
 // base_attack: { hits, total, data_state }
 // Provides the base damage percent and hit count for the damage chain.
-register("base_attack", (effect) => ({
-	basePercent: effect.total as number,
-	hitsOverride: effect.hits as number,
+register<BaseAttack>("base_attack", (effect) => ({
+	basePercent: Number(effect.total),
+	hitsOverride: effect.hits,
 }));
 
 // percent_max_hp_damage: { value, cap_vs_monster?, data_state }
@@ -18,8 +69,8 @@ register("base_attack", (effect) => ({
 // TARGET's maxHP, goes through DR. Source doesn't know target's state,
 // so we emit a PERCENT_MAX_HP_HIT carrying the percentage. The target
 // resolves it using their own maxHp.
-register("percent_max_hp_damage", (effect, _ctx) => {
-	const percent = effect.value as number;
+register<PercentMaxHpDamage>("percent_max_hp_damage", (effect, _ctx) => {
+	const percent = Number(effect.value);
 	return {
 		perHitEffects: () => [
 			{
@@ -32,27 +83,30 @@ register("percent_max_hp_damage", (effect, _ctx) => {
 
 // flat_extra_damage: { value }
 // Flat extra damage added to the damage chain (e.g., 斩岳: 2000% ATK).
-register("flat_extra_damage", (effect, ctx) => ({
-	flatExtra: ((effect.value as number) / 100) * ctx.atk,
+register<FlatExtraDamage>("flat_extra_damage", (effect, ctx) => ({
+	flatExtra: (Number(effect.value) / 100) * ctx.atk,
 }));
 
 // self_lost_hp_damage: { value, per_hit?, self_heal?, parent?, tick_interval?,
-//                        includes_hp_spent?, every_n_hits?, name?, next_skill_hits? }
+//                        includes_hp_spent?, every_n_hits?, next_skill_hits? }
 // Deals value% of caster's lost HP (maxHP - currentHP) as extra damage.
 // Variants:
 //   Simple:   flatExtra = value% × lostHP (split across all hits)
 //   per_hit:  perHitEffects → HP_DAMAGE per hit
 //   self_heal: heals self for value% × lostHP instead of dealing damage
 //   parent + tick_interval: reactive listener, fires on parent state's per_tick
-register("self_lost_hp_damage", (effect, ctx) => {
-	const percent = effect.value as number;
+register<SelfLostHpDamage>("self_lost_hp_damage", (effect, ctx) => {
+	const percent = Number(effect.value);
 	const lostHp = ctx.sourcePlayer.maxHp - ctx.sourcePlayer.hp;
 
 	// Reactive form: register a listener on a parent state
 	if (effect.parent) {
-		const parent = effect.parent as string;
-		const tickInterval = effect.tick_interval as number | undefined;
-		const _includesHpSpent = (effect.includes_hp_spent as boolean) ?? false;
+		const parent = effect.parent;
+		const tickInterval =
+			effect.tick_interval !== undefined
+				? Number(effect.tick_interval)
+				: undefined;
+		const _includesHpSpent = effect.includes_hp_spent ?? false;
 
 		// Create the named state if it has a tick_interval (per-tick form)
 		const intents = [];
@@ -132,8 +186,8 @@ register("self_lost_hp_damage", (effect, ctx) => {
 
 // percent_current_hp_damage: { value, per_prior_hit?, accumulation? }
 // Per-hit %currentHP damage on the target.
-register("percent_current_hp_damage", (effect) => {
-	const percent = effect.value as number;
+register<PercentCurrentHpDamage>("percent_current_hp_damage", (effect) => {
+	const percent = Number(effect.value);
 	return {
 		perHitEffects: () => [
 			{
@@ -147,9 +201,9 @@ register("percent_current_hp_damage", (effect) => {
 
 // per_enemy_lost_hp: { per_percent, value, parent? }
 // Bonus damage scaling with enemy's lost HP%.
-register("per_enemy_lost_hp", (effect, ctx) => {
-	const perPercent = effect.per_percent as number;
-	const valuePer = effect.value as number;
+register<PerEnemyLostHp>("per_enemy_lost_hp", (effect, ctx) => {
+	const perPercent = Number(effect.per_percent);
+	const valuePer = Number(effect.value);
 	const lostPercent =
 		((ctx.targetPlayer.maxHp - ctx.targetPlayer.hp) / ctx.targetPlayer.maxHp) *
 		100;
@@ -159,12 +213,13 @@ register("per_enemy_lost_hp", (effect, ctx) => {
 	};
 });
 
-// per_buff_stack_damage: { per_n_stacks, value, max }
+// per_buff_stack_damage: { per_stack, value, max }
 // Bonus damage per N buff stacks on self.
-register("per_buff_stack_damage", (effect, ctx) => {
-	const perN = (effect.per_n_stacks as number) ?? 1;
-	const valuePer = effect.value as number;
-	const maxPercent = (effect.max as number) ?? valuePer * 10;
+// FIELD FIX: handler previously read `per_n_stacks`; schema uses `per_stack`.
+register<PerBuffStackDamage>("per_buff_stack_damage", (effect, ctx) => {
+	const perN = Number(effect.per_stack) || 1;
+	const valuePer = Number(effect.value);
+	const maxPercent = Number(effect.max) || valuePer * 10;
 	// Count actual buff stacks on self
 	const buffStacks = ctx.sourcePlayer.states
 		.filter((s) => s.kind === "buff")
@@ -178,30 +233,34 @@ register("per_buff_stack_damage", (effect, ctx) => {
 
 // per_debuff_stack_true_damage: { per_stack, max }
 // True damage per debuff stack on target, bypasses DR.
-register("per_debuff_stack_true_damage", (effect, ctx) => {
-	const perStack = effect.per_stack as number;
-	const maxPercent = (effect.max as number) ?? perStack * 10;
-	// Count actual debuff stacks on target
-	const debuffStacks = ctx.targetPlayer.states
-		.filter((s) => s.kind === "debuff")
-		.reduce((sum, s) => sum + s.stacks, 0);
-	const bonus = Math.min(debuffStacks * perStack, maxPercent);
-	if (bonus <= 0) return {};
-	return {
-		intents: [
-			{
-				type: "HP_DAMAGE" as const,
-				percent: bonus,
-				basis: "max" as const,
-			},
-		],
-	};
-});
+register<PerDebuffStackTrueDamage>(
+	"per_debuff_stack_true_damage",
+	(effect, ctx) => {
+		const perStack = Number(effect.per_stack);
+		const maxPercent = Number(effect.max) || perStack * 10;
+		// Count actual debuff stacks on target
+		const debuffStacks = ctx.targetPlayer.states
+			.filter((s) => s.kind === "debuff")
+			.reduce((sum, s) => sum + s.stacks, 0);
+		const bonus = Math.min(debuffStacks * perStack, maxPercent);
+		if (bonus <= 0) return {};
+		return {
+			intents: [
+				{
+					type: "HP_DAMAGE" as const,
+					percent: bonus,
+					basis: "max" as const,
+				},
+			],
+		};
+	},
+);
 
-// per_self_lost_hp: { per_percent }
+// per_self_lost_hp: { value }
 // Damage bonus per N% of own lost HP.
-register("per_self_lost_hp", (effect, ctx) => {
-	const perPercent = effect.per_percent as number;
+// FIELD FIX: handler previously read `per_percent`; schema uses `value`.
+register<PerSelfLostHp>("per_self_lost_hp", (effect, ctx) => {
+	const perPercent = Number(effect.value);
 	const lostPercent =
 		((ctx.sourcePlayer.maxHp - ctx.sourcePlayer.hp) / ctx.sourcePlayer.maxHp) *
 		100;
@@ -217,9 +276,9 @@ register("per_self_lost_hp", (effect, ctx) => {
 // Conditions: self_hp_above_20, target_has_debuff, target_controlled, etc.
 // Simplified: we evaluate the condition at cast time; complex conditions
 // that depend on target state use conservative estimates.
-register("conditional_damage", (effect, ctx) => {
-	const value = effect.value as number;
-	const condition = effect.condition as string;
+register<ConditionalDamage>("conditional_damage", (effect, ctx) => {
+	const value = Number(effect.value);
+	const condition = effect.condition;
 
 	let conditionMet = false;
 	switch (condition) {
@@ -259,19 +318,22 @@ register("conditional_damage", (effect, ctx) => {
 	};
 });
 
-// per_debuff_stack_damage: { per_n_stacks, value, max?, max_stacks?, parent? }
+// per_debuff_stack_damage: { per_n_stacks?, per_stack?, value, max?, parent? }
 // Bonus damage scaling with debuff stacks on target.
 // value% ATK extra per per_n_stacks debuffs, capped at max%.
 // Since we don't know target state at cast time, this is a reactive effect
 // when parent is specified, or an estimate when direct.
-register("per_debuff_stack_damage", (effect, ctx) => {
-	const perN = (effect.per_n_stacks as number) ?? 1;
-	const valuePer = effect.value as number;
-	const maxPercent =
-		(effect.max as number) ??
-		((effect.max_stacks as number)
-			? (effect.max_stacks as number) * valuePer
-			: valuePer * 10);
+register<PerDebuffStackDamage>("per_debuff_stack_damage", (effect, ctx) => {
+	const perN =
+		("per_n_stacks" in effect && effect.per_n_stacks !== undefined
+			? Number(effect.per_n_stacks)
+			: 0) ||
+		("per_stack" in effect && effect.per_stack !== undefined
+			? Number(effect.per_stack)
+			: 0) ||
+		1;
+	const valuePer = Number(effect.value);
+	const maxPercent = Number(effect.max) || valuePer * 10;
 
 	// Count actual debuff stacks on target
 	const debuffStacks = ctx.targetPlayer.states

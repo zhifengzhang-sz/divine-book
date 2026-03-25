@@ -1,10 +1,19 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	AllStateDuration,
+	CounterBuff,
+	Effect,
+	LifestealWithParent,
+	SelfHpCost,
+	StateAdd,
+} from "../../schema/疾风九变.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			hpCost,
@@ -15,24 +24,31 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			stateBody,
 		) {
+			const stateAddEffect: StateAdd = {
+				type: "state_add",
+				state: stateAdd.extractVar,
+			};
 			return [
 				...hpCost.toEffects(),
 				...baseAttack.toEffects(),
-				{ type: "state_add", state: stateAdd.extractVar },
+				stateAddEffect,
 				...stateBody.toEffects(),
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
-			return [{ type: "self_hp_cost", value: varRef.extractVar }];
+			const effect: SelfHpCost = {
+				type: "self_hp_cost",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		baseAttack(_dmbzc, cnHit, _g, varRef, _p, _a) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		stateAdd(_verb, stateName) {
 			return stateName.extractVar;
@@ -51,28 +67,30 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p2,
 			_yssl,
 		) {
-			return [
-				{
-					type: "counter_buff",
-					reflect_received_damage: reflectVar.extractVar,
-					reflect_percent_lost_hp: lostHpVar.extractVar,
-				},
-			];
+			const effect: CounterBuff = {
+				type: "counter_buff",
+				reflect_received_damage: reflectVar.extractVar,
+				reflect_percent_lost_hp: lostHpVar.extractVar,
+			};
+			return [effect];
 		},
 		duration(_cx, _varRef, _m) {
 			return [];
 		},
 		primaryAffix(_huifu, stateName, _zcsh, varRef, _p, _dqxz) {
-			return [
-				{
-					type: "lifesteal_with_parent",
-					state: stateName.extractVar,
-					value: varRef.extractVar,
-				},
-			];
+			const effect: LifestealWithParent = {
+				type: "lifesteal_with_parent",
+				state: stateName.extractVar,
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix(_sbstcjdsyztcxsjyc, varRef, _p) {
-			return [{ type: "all_state_duration", value: varRef.extractVar }];
+			const effect: AllStateDuration = {
+				type: "all_state_duration",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

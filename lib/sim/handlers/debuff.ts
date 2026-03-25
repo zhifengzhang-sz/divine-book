@@ -1,10 +1,14 @@
 /**
- * Debuff handlers: debuff, counter_debuff, conditional_debuff,
+ * Debuff handlers: debuff, heal_reduction, counter_debuff, conditional_debuff,
  * attack_reduction, lethal_rate_reduction, crit_damage_reduction,
  * crit_rate_reduction, enemy_skill_damage_reduction, cross_slot_debuff,
  * counter_debuff_upgrade, debuff_stack_chance, debuff_stack_increase
  */
 
+import type { CounterDebuffUpgrade } from "../../parser/schema/大罗幻诀.js";
+import type { DebuffStackChance } from "../../parser/schema/周天星元.js";
+import type { DebuffStackIncrease } from "../../parser/schema/天轮魔经.js";
+import type { HealReduction } from "../../parser/schema/千锋聚灵剑.js";
 import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
 
@@ -26,6 +30,31 @@ register("debuff", (effect) => {
 		stacks: 1,
 		maxStacks: (effect.max_stacks as number) ?? 1,
 		dispellable: (effect.dispellable as boolean) ?? true,
+	};
+
+	return {
+		intents: [{ type: "APPLY_STATE" as const, state }],
+	};
+});
+
+// heal_reduction — schema: lib/parser/schema/千锋聚灵剑.ts (HealReduction)
+// 对敌方添加【灵涸】：治疗量降低x%，无法被驱散
+register<HealReduction>("heal_reduction", (effect) => {
+	const state: StateInstance = {
+		name: effect.state,
+		kind: "debuff",
+		source: "",
+		target: "opponent",
+		effects: [
+			{
+				stat: "healing_received",
+				value: -(effect.value as number),
+			},
+		],
+		remainingDuration: (effect.duration as number) ?? 0,
+		stacks: 1,
+		maxStacks: 1,
+		dispellable: !effect.undispellable,
 	};
 
 	return {
@@ -118,11 +147,11 @@ register("conditional_debuff", (effect, _ctx) => {
 	};
 });
 
-// debuff_stack_chance: { value }
-register("debuff_stack_chance", () => ({}));
+// debuff_stack_chance — schema: lib/parser/schema/周天星元.ts (DebuffStackChance)
+register<DebuffStackChance>("debuff_stack_chance", () => ({}));
 
-// debuff_stack_increase: { value }
-register("debuff_stack_increase", () => ({}));
+// debuff_stack_increase — schema: lib/parser/schema/天轮魔经.ts (DebuffStackIncrease)
+register<DebuffStackIncrease>("debuff_stack_increase", () => ({}));
 
 // attack_reduction: { value, parent }
 // Reduces opponent's ATK via on_attacked listener.
@@ -287,12 +316,13 @@ register("enemy_skill_damage_reduction", (effect) => {
 	};
 });
 
-// counter_debuff_upgrade: { on_attacked_chance, parent }
+// counter_debuff_upgrade — schema: lib/parser/schema/大罗幻诀.ts (CounterDebuffUpgrade)
 // Upgrades the proc chance of an existing counter_debuff.
 // Modeled as an additional on_attacked listener with higher chance.
-register("counter_debuff_upgrade", (effect) => {
-	const parent = (effect.parent as string) ?? "counter_debuff_upgrade";
-	const chance = (effect.on_attacked_chance as number) ?? 60;
+// Field mapping: legacy parent → schema state, legacy on_attacked_chance → schema value
+register<CounterDebuffUpgrade>("counter_debuff_upgrade", (effect) => {
+	const parent = effect.state;
+	const chance = (effect.value as number) ?? 60;
 	return {
 		listeners: [
 			{

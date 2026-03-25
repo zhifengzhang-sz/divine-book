@@ -1,10 +1,22 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	Chance,
+	ConditionalDamageControlled,
+	Debuff,
+	Effect,
+	SelfHpCost,
+	SelfLostHpDamage,
+	Shield,
+	ShieldStrength,
+	StateAddPerHit,
+} from "../../schema/煞影千幻.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			hpCost,
@@ -28,22 +40,33 @@ export function addSemantics(s: ohm.Semantics): void {
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
-			return [{ type: "self_hp_cost", value: varRef.extractVar }];
+			const effect: SelfHpCost = {
+				type: "self_hp_cost",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		baseAttack(_dmbzc, cnHit, _g, varRef, _p, _a) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		selfLostHpDmg(_ewdmbzc, varRef, _p, _yssl) {
-			return [{ type: "self_lost_hp_damage", value: varRef.extractVar }];
+			const effect: SelfLostHpDamage = {
+				type: "self_lost_hp_damage",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		shield(_wzsftj, varRef, _p, _zdqxzdhd) {
-			return [{ type: "shield", value: varRef.extractVar }];
+			const effect: Shield = {
+				type: "shield",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		shieldDur(_hdcx, _varRef, _m) {
 			return [];
@@ -59,27 +82,24 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			debuffBody,
 		) {
-			return [
-				{
-					type: "state_add",
-					state: stateName.extractVar,
-					count: countVar.extractVar,
-					per_hit: true,
-					undispellable: true,
-				},
-				...debuffBody.toEffects(),
-			];
+			const stateEffect: StateAddPerHit = {
+				type: "state_add",
+				state: stateName.extractVar,
+				count: countVar.extractVar,
+				per_hit: true,
+				undispellable: true,
+			};
+			return [stateEffect, ...debuffBody.toEffects()];
 		},
 		debuffBody(_jd, varRef, _p, _zzshjm, _sep, _cx, durVar, _m) {
-			return [
-				{
-					type: "debuff",
-					name: "落星",
-					target: "final_damage_reduction",
-					value: varRef.extractVar,
-					duration: durVar.extractVar,
-				},
-			];
+			const effect: Debuff = {
+				type: "debuff",
+				name: "落星",
+				target: "final_damage_reduction",
+				value: varRef.extractVar,
+				duration: durVar.extractVar,
+			};
+			return [effect];
 		},
 		primaryAffix(
 			_hddhdtsz,
@@ -92,10 +112,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p2,
 			_dglbxhqxz,
 		) {
-			return [
-				{ type: "shield_strength", value: varRef1.extractVar },
-				{ type: "chance", value: varRef2.extractVar, effect: "no_hp_cost" },
-			];
+			const shieldEffect: ShieldStrength = {
+				type: "shield_strength",
+				value: varRef1.extractVar,
+			};
+			const chanceEffect: Chance = {
+				type: "chance",
+				value: varRef2.extractVar,
+				effect: "no_hp_cost",
+			};
+			return [shieldEffect, chanceEffect];
 		},
 		exclusiveAffix(
 			_bstzcshshi,
@@ -106,9 +132,11 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef,
 			_p,
 		) {
-			return [
-				{ type: "conditional_damage_controlled", value: varRef.extractVar },
-			];
+			const effect: ConditionalDamageControlled = {
+				type: "conditional_damage_controlled",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

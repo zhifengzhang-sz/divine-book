@@ -1,16 +1,25 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	Effect,
+	HealReduction,
+	SelfBuffExtra,
+	StateRef,
+	TripleStatBuff,
+} from "../../schema/甲元仙符.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
 
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(_pre, baseAttack, _sep, stateClause) {
 			return [...baseAttack.toEffects(), ...stateClause.toEffects()];
 		},
 		baseAttack(_zc, varRef, _pct, _atkli) {
-			return [{ type: "base_attack", hits: 1, total: varRef.extractVar }];
+			const effect: BaseAttack = { type: "base_attack", hits: 1, total: varRef.extractVar };
+			return [effect];
 		},
 		stateClause(
 			_gap,
@@ -22,32 +31,28 @@ export function addSemantics(s: ohm.Semantics): void {
 			_sep2,
 			_duration,
 		) {
-			return [
-				{ type: "state_ref", state: stateName.extractVar },
-				...tripleBuff.toEffects(),
-			];
+			const ref: StateRef = { type: "state_ref", state: stateName.extractVar };
+			return [ref, ...tripleBuff.toEffects()];
 		},
 		tripleStatBuff(_tszs, varRef, _pct, _gkljcszjczdqxz) {
-			return [
-				{
-					type: "self_buff",
-					attack_bonus: varRef.extractVar,
-					defense_bonus: varRef.extractVar,
-					hp_bonus: varRef.extractVar,
-				},
-			];
+			const effect: TripleStatBuff = {
+				type: "self_buff",
+				attack_bonus: varRef.extractVar,
+				defense_bonus: varRef.extractVar,
+				hp_bonus: varRef.extractVar,
+			};
+			return [effect];
 		},
 		duration(_cx, _varRef, _miao) {
 			return [];
 		},
 		primaryAffix(stateName, _ztewszshdz, varRef, _pct, _zljc) {
-			return [
-				{
-					type: "self_buff",
-					name: stateName.extractVar,
-					healing_bonus: varRef.extractVar,
-				},
-			];
+			const effect: SelfBuffExtra = {
+				type: "self_buff",
+				name: stateName.extractVar,
+				healing_bonus: varRef.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix(
 			_pre,
@@ -69,16 +74,15 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef3,
 			_pct3,
 		) {
-			return [
-				{
-					type: "heal_reduction",
-					value: varRef1.extractVar,
-					state: stateName.extractVar,
-					duration: durVar.extractVar,
-					enhanced_value: varRef3.extractVar,
-					hp_threshold: varRef2.extractVar,
-				},
-			];
+			const effect: HealReduction = {
+				type: "heal_reduction",
+				value: varRef1.extractVar,
+				state: stateName.extractVar,
+				duration: durVar.extractVar,
+				enhanced_value: varRef3.extractVar,
+				hp_threshold: varRef2.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

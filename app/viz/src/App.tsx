@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Metric,
 	type TimeSeries,
@@ -16,8 +16,9 @@ import {
 	fmt,
 	theme as T,
 } from "./components.tsx";
-import { ConfigPanel } from "./ConfigPanel.tsx";
-import { AffixBrowser } from "./AffixBrowser.tsx";
+import { ConfigPanel, initConfigData } from "./ConfigPanel.tsx";
+import { AffixBrowser, initAffixBrowserData } from "./AffixBrowser.tsx";
+import { type GameData, loadGameData } from "./data-loader.ts";
 import { Icon, getEffectIcon, getStateIcon } from "./rpg-icons.tsx";
 import { type SimConfig, runSimulation } from "./runSim.ts";
 import type {
@@ -503,15 +504,28 @@ function SimView({ data }: { data: SimulationData }) {
 // ── App ─────────────────────────────────────────────────────────────
 
 export function App() {
+	const [gameData, setGameData] = useState<GameData | null>(null);
+	const [loadError, setLoadError] = useState("");
 	const [simData, setSimData] = useState<SimulationData | null>(null);
 	const [showAffixBrowser, setShowAffixBrowser] = useState(false);
 	const [simError, setSimError] = useState("");
 	const [runCount, setRunCount] = useState(0);
 
+	useEffect(() => {
+		loadGameData()
+			.then((data) => {
+				initConfigData(data);
+				initAffixBrowserData(data);
+				setGameData(data);
+			})
+			.catch((e) => setLoadError((e as Error).message));
+	}, []);
+
 	const handleRun = (config: SimConfig) => {
+		if (!gameData) return;
 		setSimError("");
 		try {
-			const data = runSimulation(config);
+			const data = runSimulation(config, gameData);
 			setRunCount((c) => c + 1);
 			setSimData(data);
 		} catch (e) {
@@ -519,6 +533,13 @@ export function App() {
 			setSimData(null);
 		}
 	};
+
+	if (loadError) {
+		return <div style={{ color: T.red, padding: 24 }}>Failed to load game data: {loadError}</div>;
+	}
+	if (!gameData) {
+		return <div style={{ color: T.text, padding: 24 }}>Loading game data...</div>;
+	}
 
 	return (
 		<div style={{ fontFamily: T.body, backgroundImage: `url('${ASSETS.fantasyBg}')`, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed", color: T.text, minHeight: "100vh", padding: 24 }}>

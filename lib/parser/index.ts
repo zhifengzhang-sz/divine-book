@@ -143,7 +143,7 @@ function resolveTiers(effects: EffectRow[], tiers: TierSpec[]): EffectRow[] {
 
 // ── Parse one book ──────────────────────────────────────
 
-function parseBook(entry: RawBookEntry, exclusiveText: string): ParsedBook {
+function parseBook(entry: RawBookEntry, exclusiveText: string, exclusiveAffixName = "exclusive"): ParsedBook {
 	const skillCell = splitCell(entry.skillText);
 	const affixCell = splitCell(entry.affixText);
 
@@ -180,7 +180,7 @@ function parseBook(entry: RawBookEntry, exclusiveText: string): ParsedBook {
 		const resolvedExcl = resolveTiers(exclEffects, exclCell.tiers.map(t => ({
 			enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars,
 		})));
-		exclusiveAffix = { name: "exclusive", effects: resolvedExcl };
+		exclusiveAffix = { name: exclusiveAffixName, effects: resolvedExcl };
 	}
 
 	return {
@@ -201,18 +201,22 @@ export async function parseMainSkills(mainMd: string, exclusiveMd: string): Prom
 
 	const bookEntries = readMainSkillTables(mainMd);
 
-	// Build exclusive affix map
-	const exclusiveMap: Record<string, string> = {};
+	// Build exclusive affix map: bookName → { name, text }
+	const exclusiveMap: Record<string, { name: string; text: string }> = {};
 	for (const line of exclusiveMd.split("\n")) {
 		if (!line.startsWith("|") || line.includes("---") || line.includes("功法")) continue;
 		const cells = line.split("|").slice(1, -1).map(c => c.trim());
-		if (cells.length >= 3) exclusiveMap[cells[0].replace(/`/g, "")] = cells[2];
+		if (cells.length >= 3) {
+			const bookName = cells[0].replace(/`/g, "");
+			const affixName = cells[1].replace(/[【】]/g, "").trim();
+			exclusiveMap[bookName] = { name: affixName, text: cells[2] };
+		}
 	}
 
 	const books = new Map<string, ParsedBook>();
 	for (const entry of bookEntries) {
-		const exclText = exclusiveMap[entry.name] ?? "";
-		books.set(entry.name, parseBook(entry, exclText));
+		const excl = exclusiveMap[entry.name];
+		books.set(entry.name, parseBook(entry, excl?.text ?? "", excl?.name ?? "exclusive"));
 	}
 
 	return books;

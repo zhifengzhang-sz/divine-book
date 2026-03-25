@@ -9,9 +9,8 @@ import { selectTiers, validatePlayerConfig } from "../../../lib/sim/config.js";
 import { playerMachine } from "../../../lib/sim/player.js";
 import { SeededRNG } from "../../../lib/sim/rng.js";
 import type { PlayerState, StateChangeEvent } from "../../../lib/sim/types.js";
-import affixesData from "./affixes-data.json";
-import booksData from "./books-data.json";
 import combatConfig from "./combat-config.json";
+import type { GameData } from "./data-loader.ts";
 import manifest from "./manifest.json";
 import type { SimulationData } from "./types.ts";
 
@@ -72,6 +71,7 @@ type BookDataEntry = {
 function buildVerification(
 	playerConfig: PlayerBookConfig,
 	booksYamlBooks: Record<string, BookDataEntry>,
+	affixes: GameData["affixes"],
 	_rng: SeededRNG,
 ) {
 	const bookData = booksYamlBooks[playerConfig.platform];
@@ -106,13 +106,6 @@ function buildVerification(
 		const auxProg = auxProgs[i] ?? prog;
 		// Look up affix effects
 		let raw: Record<string, unknown>[] | undefined;
-		const affixes = affixesData as {
-			universal: Record<string, { effects: Record<string, unknown>[] }>;
-			school: Record<
-				string,
-				Record<string, { effects: Record<string, unknown>[] }>
-			>;
-		};
 		if (affixes.universal[name]) raw = affixes.universal[name].effects;
 		if (!raw) {
 			for (const school of Object.values(affixes.school)) {
@@ -154,9 +147,9 @@ function buildVerification(
 	};
 }
 
-export function runSimulation(config: SimConfig): SimulationData {
-	const booksYaml = booksData as Parameters<typeof validatePlayerConfig>[1];
-	const affixesYaml = affixesData as Parameters<typeof validatePlayerConfig>[2];
+export function runSimulation(config: SimConfig, gameData: GameData): SimulationData {
+	const booksYaml = gameData.books as Parameters<typeof validatePlayerConfig>[1];
+	const affixesYaml = gameData.affixes as Parameters<typeof validatePlayerConfig>[2];
 	const { formulas, seed } = config;
 	const progressionA = config.playerA.progression;
 	const progressionB = config.playerB.progression;
@@ -291,8 +284,8 @@ export function runSimulation(config: SimConfig): SimulationData {
 	const bFinal = playerB.getSnapshot().context.state;
 
 	const allBooks = booksYaml.books as unknown as Record<string, BookDataEntry>;
-	const verA = buildVerification(config.playerA, allBooks, rng);
-	const verB = buildVerification(config.playerB, allBooks, rng);
+	const verA = buildVerification(config.playerA, allBooks, gameData.affixes, rng);
+	const verB = buildVerification(config.playerB, allBooks, gameData.affixes, rng);
 
 	return {
 		verification: verA && verB ? { a: verA, b: verB } : undefined,

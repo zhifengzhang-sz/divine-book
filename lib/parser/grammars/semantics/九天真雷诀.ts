@@ -1,11 +1,18 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	ConditionalDamage,
+	Effect,
+	OnBuffDebuffShield,
+	SelfCleanse,
+} from "../../schema/九天真雷诀.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
 
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			baseAttack,
@@ -22,16 +29,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			];
 		},
 		baseAttack(_zc, cnHit, _gongji, varRef, _pct, _atkli) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		selfCleanse(_gap, _qszs, varRef, _gfmzt) {
-			return [{ type: "self_cleanse", count: varRef.extractVar }];
+			const effect: SelfCleanse = { type: "self_cleanse", count: varRef.extractVar };
+			return [effect];
 		},
 		conditionalDamage(
 			_rjh,
@@ -45,15 +52,14 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct,
 			_zszdqxzdsh,
 		) {
-			return [
-				{
-					type: "conditional_damage",
-					value: varRef.extractVar,
-					damage_base: "self_max_hp",
-					per_hit: true,
-					condition: "cleanse_excess",
-				},
-			];
+			const effect: ConditionalDamage = {
+				type: "conditional_damage",
+				value: varRef.extractVar,
+				damage_base: "self_max_hp",
+				per_hit: true,
+				condition: "cleanse_excess",
+			};
+			return [effect];
 		},
 		exclusiveAffix(
 			_bstmcsh,
@@ -65,13 +71,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct,
 			_dlfsh,
 		) {
-			return [
-				{
-					type: "on_buff_debuff_shield",
-					trigger_kind: "增益/减益/护盾",
-					value: varRef.extractVar,
-				},
-			];
+			const effect: OnBuffDebuffShield = {
+				type: "on_buff_debuff_shield",
+				trigger_kind: "增益/减益/护盾",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

@@ -1,10 +1,21 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	DamageIncrease,
+	Effect,
+	PerDebuffStackTrueDamage,
+	PercentMaxHpAffix,
+	SelfBuff,
+	SelfHpCost,
+	SelfLostHpDamage,
+	SelfLostHpDamageIncrease,
+} from "../../schema/惊蜇化龙.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			hpCost,
@@ -25,22 +36,33 @@ export function addSemantics(s: ohm.Semantics): void {
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
-			return [{ type: "self_hp_cost", value: varRef.extractVar }];
+			const effect: SelfHpCost = {
+				type: "self_hp_cost",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		baseAttack(_dmbzc, cnHit, _g, varRef, _p, _a) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		selfLostHpDmg(_ewdmbzc, varRef, _p, _yssl) {
-			return [{ type: "self_lost_hp_damage", value: varRef.extractVar }];
+			const effect: SelfLostHpDamage = {
+				type: "self_lost_hp_damage",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		skillDmgBuff(_tszs, varRef, _p, _stshjs) {
-			return [{ type: "self_buff", skill_damage_increase: varRef.extractVar }];
+			const effect: SelfBuff = {
+				type: "self_buff",
+				skill_damage_increase: varRef.extractVar,
+			};
+			return [effect];
 		},
 		duration(_cx, _varRef, _m) {
 			return [];
@@ -56,14 +78,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p,
 			_zdqxzsh,
 		) {
-			return [
-				{
-					type: "percent_max_hp_affix",
-					value: varRef.extractVar,
-					state: stateName.extractVar,
-					trigger_stack: cnNum.extractVar,
-				},
-			];
+			const effect: PercentMaxHpAffix = {
+				type: "percent_max_hp_affix",
+				value: varRef.extractVar,
+				state: stateName.extractVar,
+				trigger_stack: cnNum.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix(part1, _sep, part2) {
 			return [...part1.toEffects(), ...part2.toEffects()];
@@ -85,13 +106,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p3,
 			_zdqxz2,
 		) {
-			return [
-				{
-					type: "per_debuff_true_damage",
-					value: varRef2.extractVar,
-					max: varRef3.extractVar,
-				},
-			];
+			const effect: PerDebuffStackTrueDamage = {
+				type: "per_debuff_stack_true_damage",
+				per_stack: varRef2.extractVar,
+				max: varRef3.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix_2(
 			_zstwdtjx,
@@ -104,10 +124,15 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef2,
 			_p2,
 		) {
-			return [
-				{ type: "self_lost_hp_damage", value: varRef1.extractVar },
-				{ type: "damage_increase", value: varRef2.extractVar },
-			];
+			const lostHpEffect: SelfLostHpDamageIncrease = {
+				type: "self_lost_hp_damage",
+				value: varRef1.extractVar,
+			};
+			const dmgEffect: DamageIncrease = {
+				type: "damage_increase",
+				value: varRef2.extractVar,
+			};
+			return [lostHpEffect, dmgEffect];
 		},
 		preamble(_) {
 			return [];

@@ -66,12 +66,16 @@ books:
       effects:
         - type: per_hit_escalation
           value: 25
+          stat: skill_bonus
+          parent: this
           data_state: enlightenment=3
         - type: per_hit_escalation
           value: 42.5
+          stat: skill_bonus
+          parent: this
           data_state: enlightenment=10
     exclusive_affix:
-      name: exclusive
+      name: 天哀灵涸
       effects:
         - type: heal_reduction
           value: 80
@@ -101,7 +105,7 @@ books:
           - enlightenment=10
           - fusion=83
       - type: summon
-        value: 54
+        inherit_stats: 54
         duration: 16
         trigger: on_cast
         damage_taken_multiplier: 400
@@ -112,11 +116,11 @@ books:
       name: 幻象剑灵
       effects:
         - type: summon_buff
-          damage_taken: 120
-          damage_dealt: 200
+          damage_taken_reduction_to: 120
+          damage_increase: 200
           data_state: fusion=50
     exclusive_affix:
-      name: exclusive
+      name: 玄心剑魄
       effects:
         - type: dot
           state: 噬心
@@ -127,7 +131,7 @@ books:
             - enlightenment=0
             - fusion=50
         - type: on_dispel
-          value: 3300
+          damage: 3300
           stun_duration: 2
           data_state:
             - enlightenment=0
@@ -141,7 +145,7 @@ books:
             - enlightenment=10
             - fusion=83
         - type: on_dispel
-          value: 18000
+          damage: 18000
           stun_duration: 3
           data_state:
             - enlightenment=10
@@ -190,7 +194,7 @@ books:
           interval: 0.5
           value: 攻击力的伤害
     exclusive_affix:
-      name: exclusive
+      name: 追神真诀
       effects:
         - type: dot_extra_per_tick
           value: 26.5
@@ -246,9 +250,9 @@ books:
           - enlightenment=10
           - fusion=50
       - type: periodic_escalation
-        hits: 2
+        every_n_hits: 2
         multiplier: 1.4
-        max: 10
+        max_stacks: 10
         data_state:
           - enlightenment=10
           - fusion=50
@@ -256,11 +260,11 @@ books:
       name: 雷阵剑影
       effects:
         - type: extended_dot
-          duration: 6.5
+          extra_seconds: 6.5
           interval: 0.5
           data_state: fusion=50
     exclusive_affix:
-      name: exclusive
+      name: 仙露护元
       effects:
         - type: buff_duration
           value: 300
@@ -293,7 +297,7 @@ books:
           per_step: 5
           value: 10
     exclusive_affix:
-      name: exclusive
+      name: 神威冲云
       effects:
         - type: ignore_damage_reduction
           data_state: fusion=50
@@ -331,7 +335,7 @@ books:
           value: 30
           duration: 16
     exclusive_affix:
-      name: exclusive
+      name: 天威煌煌
       effects:
         - type: next_skill_buff
           value: 88
@@ -359,7 +363,7 @@ books:
         accumulation: cross_skill
         per_prior_hit: true
     exclusive_affix:
-      name: exclusive
+      name: 无极剑阵
       effects:
         - type: skill_damage_increase_affix
           value: 555
@@ -396,7 +400,7 @@ books:
           value: 100
           max: 50
     exclusive_affix:
-      name: exclusive
+      name: 龙象护身
       effects:
         - type: buff_strength
           value: 300
@@ -429,7 +433,7 @@ books:
           value: 7
           per_state_stack: 天狼之啸
     exclusive_affix:
-      name: exclusive
+      name: 真极穿空
       effects:
         - type: buff_stack_increase
           value: 100
@@ -527,7 +531,7 @@ books:
           trigger: per_tick
           data_state: fusion=50
     exclusive_affix:
-      name: exclusive
+      name: 奇能诡道
       effects:
         - type: debuff_stack_chance
           value: 20
@@ -661,7 +665,7 @@ books:
             - enlightenment=8
             - fusion=51
     exclusive_affix:
-      name: exclusive
+      name: 天倾灵枯
       effects:
         - type: heal_reduction
           value: 31
@@ -695,7 +699,7 @@ books:
         - type: lifesteal
           value: 75
     exclusive_affix:
-      name: exclusive
+      name: 仙灵汲元
       effects:
         - type: lifesteal
           value: 55
@@ -726,7 +730,7 @@ books:
           per_step: 3
           value: 3
     exclusive_affix:
-      name: exclusive
+      name: 天人合一
       effects:
         - type: enlightenment_bonus
           value: 1
@@ -754,7 +758,7 @@ books:
         condition: cleanse_excess
         per_hit: true
     exclusive_affix:
-      name: exclusive
+      name: 九雷真解
       effects:
         - type: on_buff_debuff_shield
           trigger_kind: 增益/减益/护盾
@@ -800,7 +804,7 @@ books:
           state: 结魂锁链
           value: 4
     exclusive_affix:
-      name: exclusive
+      name: 引灵摘魂
       effects:
         - type: conditional_damage_debuff
           value: 104
@@ -834,7 +838,7 @@ books:
           value: 14
           duration: 12
     exclusive_affix:
-      name: exclusive
+      name: 心魔惑言
       effects:
         - type: debuff_stack_increase
           value: 100
@@ -899,7 +903,7 @@ books:
           timing: pre_cast
           per_debuff_stack: true
     exclusive_affix:
-      name: exclusive
+      name: 心逐神随
       effects:
         - type: probability_multiplier
           chance_4x: 11
@@ -951,18 +955,18 @@ books:
           - enlightenment=0
           - fusion=20
       - type: dot
+        name: 噬心之咒
         tick_interval: 0.5
         percent_current_hp: 2
         duration: 4
-        name: 噬心之咒
         data_state:
           - enlightenment=0
           - fusion=20
       - type: dot
+        name: 断魂之咒
         tick_interval: 0.5
         percent_lost_hp: 2
         duration: 4
-        name: 断魂之咒
         data_state:
           - enlightenment=0
           - fusion=20
@@ -986,18 +990,18 @@ books:
           - enlightenment=10
           - fusion=50
       - type: dot
+        name: 噬心之咒
         tick_interval: 0.5
         percent_current_hp: 7
         duration: 4
-        name: 噬心之咒
         data_state:
           - enlightenment=10
           - fusion=50
       - type: dot
+        name: 断魂之咒
         tick_interval: 0.5
         percent_lost_hp: 7
         duration: 4
-        name: 断魂之咒
         data_state:
           - enlightenment=10
           - fusion=50
@@ -1035,7 +1039,7 @@ books:
             - enlightenment=10
             - fusion=52
     exclusive_affix:
-      name: exclusive
+      name: 古魔之魂
       effects:
         - type: dot_damage_increase
           value: 104
@@ -1073,7 +1077,7 @@ books:
           trigger_stack: 2
           source_state: 贪妄业火
     exclusive_affix:
-      name: exclusive
+      name: 天魔真解
       effects:
         - type: dot_frequency_increase
           value: 50.5
@@ -1106,7 +1110,7 @@ books:
           state: 无相魔劫
           value: 65
     exclusive_affix:
-      name: exclusive
+      name: 无相魔威
       effects:
         - type: debuff
           name: 魔劫
@@ -1160,7 +1164,7 @@ books:
             - enlightenment=1
             - fusion=51
     exclusive_affix:
-      name: exclusive
+      name: 怒血战意
       effects:
         - type: per_self_lost_hp
           value: 2
@@ -1228,7 +1232,7 @@ books:
           cooldown: 25
           max_times: 1
     exclusive_affix:
-      name: exclusive
+      name: 破釜沉舟
       effects:
         - type: damage_increase
           value: 380
@@ -1263,7 +1267,7 @@ books:
           state: 极怒
           value: 82
     exclusive_affix:
-      name: exclusive
+      name: 真言不灭
       effects:
         - type: all_state_duration
           value: 55
@@ -1308,7 +1312,7 @@ books:
           value: 30
           effect: no_hp_cost
     exclusive_affix:
-      name: exclusive
+      name: 乘胜逐北
       effects:
         - type: conditional_damage_controlled
           value: 100
@@ -1350,7 +1354,7 @@ books:
         - type: self_hp_floor
           value: 10
     exclusive_affix:
-      name: exclusive
+      name: 玉石俱焚
       effects:
         - type: on_shield_expire
           value: 100
@@ -1376,7 +1380,7 @@ books:
         next_skill_hits: 8
         per_hit: true
     exclusive_affix:
-      name: exclusive
+      name: 天煞破虚
       effects:
         - type: periodic_dispel
           interval: 1

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import affixesData from "./affixes-data.json";
-import booksData from "./books-data.json";
+import type { GameData } from "./data-loader.ts";
 import {
 	Pill,
 	StatInput,
@@ -79,7 +78,17 @@ type BookEntry = {
 	primary_affix?: { name: string; effects: EffectEntry[] };
 	exclusive_affix?: { name: string; effects: EffectEntry[] };
 };
-const allBooksData = (booksData as { books: Record<string, BookEntry> }).books;
+// Set by initConfigData() when GameData loads
+let allBooksData: Record<string, BookEntry> = {};
+let allAffixesDataRefRef: {
+	universal: Record<string, { text?: string; effects: EffectEntry[] }>;
+	school: Record<string, Record<string, { text?: string; effects: EffectEntry[] }>>;
+} = { universal: {}, school: {} };
+
+export function initConfigData(gameData: GameData): void {
+	allBooksData = (gameData.books as { books: Record<string, BookEntry> }).books;
+	allAffixesDataRefRef = gameData.affixes as typeof allAffixesDataRefRef;
+}
 
 /** Extract unique tier options from a list of effects */
 function getTierOptionsFromEffects(
@@ -428,17 +437,13 @@ interface AffixSelection {
 	fusion: number;
 }
 
-const allAffixesData = affixesData as {
-	universal: Record<string, { text?: string; effects: EffectEntry[] }>;
-	school: Record<string, Record<string, { text?: string; effects: EffectEntry[] }>>;
-};
 
 /** Look up an affix's effects from affixes-data.json or exclusive affixes in books-data */
 function lookupAffixEffects(name: string): EffectEntry[] | undefined {
 	// Universal
-	if (allAffixesData.universal[name]) return allAffixesData.universal[name].effects;
+	if (allAffixesDataRef.universal[name]) return allAffixesDataRef.universal[name].effects;
 	// School
-	for (const school of Object.values(allAffixesData.school)) {
+	for (const school of Object.values(allAffixesDataRef.school)) {
 		if (school[name]) return school[name].effects;
 	}
 	// Exclusive (from books data)
@@ -451,9 +456,9 @@ function lookupAffixEffects(name: string): EffectEntry[] | undefined {
 /** Look up an affix's raw text */
 function lookupAffixText(name: string): string | undefined {
 	// Universal
-	if (allAffixesData.universal[name]?.text) return allAffixesData.universal[name].text;
+	if (allAffixesDataRef.universal[name]?.text) return allAffixesDataRef.universal[name].text;
 	// School
-	for (const school of Object.values(allAffixesData.school)) {
+	for (const school of Object.values(allAffixesDataRef.school)) {
 		if (school[name]?.text) return school[name].text;
 	}
 	// Exclusive — raw text is in the book's exclusive_affix_text
@@ -494,6 +499,18 @@ function AffixPickerDialog({
 	const [sel, setSel] = useState<AffixSelection>({ ...current });
 	const affixList = getAffixesForCategory(sel.category);
 
+	/** When an affix is selected, snap to the best available tier */
+	const selectAffix = (name: string) => {
+		const tierOpts = name ? getAffixTierOptions(name) : [];
+		const snapped = snapToTier(tierOpts, sel.enlightenment ?? 0, sel.fusion ?? 0);
+		setSel({
+			...sel,
+			name,
+			enlightenment: snapped?.enlightenment ?? sel.enlightenment ?? 0,
+			fusion: snapped?.fusion ?? sel.fusion ?? 0,
+		});
+	};
+
 	return (
 		<div style={overlayStyle} onClick={onCancel}>
 			<div
@@ -507,7 +524,7 @@ function AffixPickerDialog({
 					<select
 						value={sel.category}
 						onChange={(e) =>
-							setSel({ category: e.target.value, name: "" })
+							setSel({ ...sel, category: e.target.value, name: "" })
 						}
 						style={selectStyle}
 					>
@@ -523,9 +540,7 @@ function AffixPickerDialog({
 					<label style={labelStyle}>词缀 (affix)</label>
 					<select
 						value={sel.name}
-						onChange={(e) =>
-							setSel({ ...sel, name: e.target.value })
-						}
+						onChange={(e) => selectAffix(e.target.value)}
 						style={selectStyle}
 					>
 						<option value="">(none)</option>

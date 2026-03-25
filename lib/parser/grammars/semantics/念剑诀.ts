@@ -1,11 +1,24 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	BuffDuration,
+	Effect,
+	ExclusiveAffixEffect,
+	ExtendedDot,
+	PeriodicEscalation,
+	PrimaryAffixEffect,
+	SkillEffect,
+	Untargetable,
+} from "../../schema/念剑诀.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
 
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<(SkillEffect | PrimaryAffixEffect | ExclusiveAffixEffect)[]>(
+		"toEffects",
+		{
 		skillDescription(
 			_pre,
 			untargetable,
@@ -22,16 +35,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			];
 		},
 		untargetable(_zai, varRef, _mnbkbxz) {
-			return [{ type: "untargetable", value: varRef.extractVar }];
+			const effect: Untargetable = { type: "untargetable", value: varRef.extractVar };
+			return [effect];
 		},
 		baseAttack(_zc, cnHit, _gongji, varRef, _pct, _atkli) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		periodicEscalation(
 			_gap1,
@@ -48,14 +61,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			maxVar,
 			_ci,
 		) {
-			return [
-				{
-					type: "periodic_escalation",
-					hits: hitsVar.extractVar,
-					multiplier: multVar.extractVar,
-					max: maxVar.extractVar,
-				},
-			];
+			const effect: PeriodicEscalation = {
+				type: "periodic_escalation",
+				every_n_hits: hitsVar.extractVar,
+				multiplier: multVar.extractVar,
+				max_stacks: maxVar.extractVar,
+			};
+			return [effect];
 		},
 		primaryAffix(
 			_gap,
@@ -67,16 +79,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			intervalVar,
 			_mzcycsh,
 		) {
-			return [
-				{
-					type: "extended_dot",
-					duration: durVar.extractVar,
-					interval: intervalVar.extractVar,
-				},
-			];
+			const effect: ExtendedDot = {
+				type: "extended_dot",
+				extra_seconds: durVar.extractVar,
+				interval: intervalVar.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix(_lit, varRef, _p) {
-			return [{ type: "buff_duration", value: varRef.extractVar }];
+			const effect: BuffDuration = { type: "buff_duration", value: varRef.extractVar };
+			return [effect];
 		},
 		preamble(_) {
 			return [];

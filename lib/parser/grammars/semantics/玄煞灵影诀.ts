@@ -1,10 +1,22 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	Effect,
+	ExclusiveAffixEffect,
+	PerSelfLostHp,
+	PrimaryAffixEffect,
+	SelfHpCost,
+	SelfLostHpDamage,
+	SelfLostHpDamageAffix,
+	SkillEffect,
+	StateAdd,
+} from "../../schema/玄煞灵影诀.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			baseAttack,
@@ -16,20 +28,23 @@ export function addSemantics(s: ohm.Semantics): void {
 			_mods,
 			_period2,
 		) {
+			const stateAddEffect: StateAdd = {
+				type: "state_add",
+				state: stateAdd.extractVar,
+			};
 			return [
 				...baseAttack.toEffects(),
-				{ type: "state_add", state: stateAdd.extractVar },
+				stateAddEffect,
 				...stateBody.toEffects(),
 			];
 		},
 		baseAttack(_zc, cnHit, _g, varRef, _p, _a) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		stateAdd(_verb, stateName) {
 			return stateName.extractVar;
@@ -38,18 +53,20 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [...hpCostDot.toEffects(), ...selfLostHpDot.toEffects()];
 		},
 		hpCostDot(_zsmssl, varRef, _p, _ddqqxz) {
-			return [
-				{ type: "self_hp_cost", value: varRef.extractVar, tick_interval: 1 },
-			];
+			const effect: SelfHpCost = {
+				type: "self_hp_cost",
+				value: varRef.extractVar,
+				tick_interval: 1,
+			};
+			return [effect];
 		},
 		selfLostHpDamageDot(_mmdmbzc, varRef, _p, _yslqxzhqjxhqdsh) {
-			return [
-				{
-					type: "self_lost_hp_damage",
-					value: varRef.extractVar,
-					tick_interval: 1,
-				},
-			];
+			const effect: SelfLostHpDamage = {
+				type: "self_lost_hp_damage",
+				value: varRef.extractVar,
+				tick_interval: 1,
+			};
+			return [effect];
 		},
 		stateModifiers(_sn, _yj, _sep, _zddj, _v, _c) {
 			return [];
@@ -65,16 +82,19 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p,
 			_zsyslqxzhqjxhqzdsh,
 		) {
-			return [
-				{
-					type: "self_lost_hp_damage",
-					value: varRef.extractVar,
-					every_n_hits: hitsVar.extractVar,
-				},
-			];
+			const effect: SelfLostHpDamageAffix = {
+				type: "self_lost_hp_damage",
+				value: varRef.extractVar,
+				every_n_hits: hitsVar.extractVar,
+			};
+			return [effect];
 		},
 		exclusiveAffix(_bstzcshshi, _sep, _zsmdss, _sep2, _hsbcshts, varRef, _p) {
-			return [{ type: "per_self_lost_hp", value: varRef.extractVar }];
+			const effect: PerSelfLostHp = {
+				type: "per_self_lost_hp",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

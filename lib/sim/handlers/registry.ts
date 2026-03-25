@@ -4,12 +4,23 @@
  * index.ts imports handler modules and re-exports `resolve`.
  */
 
-import type { Handler } from "./types.js";
+import type { EffectRow } from "../../data/types.js";
+import type { Handler, HandlerContext, HandlerResult } from "./types.js";
 
 const registry = new Map<string, Handler>();
 
-export function register(type: string, handler: Handler): void {
-	registry.set(type, handler);
+/**
+ * Register a handler with schema-typed effect.
+ * Use the generic form for schema-typed handlers:
+ *   register<HealReduction>("heal_reduction", (effect) => { ... })
+ * Use the untyped form for legacy handlers (to be migrated):
+ *   register("debuff", (effect) => { ... })
+ */
+export function register<E extends { type: string } = EffectRow>(
+	type: E extends EffectRow ? string : E["type"],
+	handler: (effect: E, ctx: HandlerContext) => HandlerResult,
+): void {
+	registry.set(type as string, handler as Handler);
 }
 
 export function getHandler(type: string): Handler | undefined {

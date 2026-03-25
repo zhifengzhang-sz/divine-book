@@ -1,24 +1,43 @@
 import type * as ohm from "ohm-js";
-
+import type {
+	DamageIncrease,
+	Effect,
+	FinalDmgBonus,
+	HealingIncrease,
+	ProbabilityToCertain,
+} from "../../schema/修为词缀_法修.js";
+import type { RandomBuff } from "../../schema/通用词缀.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		affixDescription(child) {
 			return child.toEffects();
 		},
 		fx_changShengTianZe(_pre, varRef, _p) {
-			return [{ type: "healing_increase", value: varRef.extractVar }];
+			const effect: HealingIncrease = {
+				type: "healing_increase",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		fx_mingWangZhiLu(_bst, _s, _hsbcstdzzshjs, varRef, _p) {
-			return [{ type: "final_dmg_bonus", value: varRef.extractVar }];
+			const effect: FinalDmgBonus = {
+				type: "final_dmg_bonus",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		fx_tianMingYouGui(_sbstd, _s, _bsbstzcdshts, varRef, _p) {
-			return [
-				{ type: "probability_to_certain" },
-				{ type: "damage_increase", value: varRef.extractVar },
-			];
+			const e1: ProbabilityToCertain = {
+				type: "probability_to_certain",
+			};
+			const e2: DamageIncrease = {
+				type: "damage_increase",
+				value: varRef.extractVar,
+			};
+			return [e1, e2];
 		},
 		fx_jingXingTianYou(
 			_bst,
@@ -37,7 +56,11 @@ export function addSemantics(s: ohm.Semantics): void {
 			_v3,
 			_p3,
 		) {
-			return [{ type: "random_buff", attack: v1.extractVar }];
+			const effect: RandomBuff = {
+				type: "random_buff",
+				attack: v1.extractVar,
+			};
+			return [effect];
 		},
 		_terminal() {
 			return [];

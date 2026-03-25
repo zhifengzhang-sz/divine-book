@@ -54,3 +54,20 @@ export interface HandlerResult {
 }
 
 export type Handler = (effect: EffectRow, ctx: HandlerContext) => HandlerResult;
+
+/**
+ * Narrow schema types for sim handlers: replaces `string | number` → `number`.
+ * Schema interfaces use `V = string | number` because they span both unresolved
+ * (variable names) and resolved (numeric) phases. Handlers always receive
+ * resolved data, so all V fields are numbers at runtime.
+ *
+ * Literal string types (e.g., `"self_max_hp"`) are preserved — only the
+ * `string | number` union (V) is narrowed to `number`.
+ */
+export type Resolved<T> = {
+	[K in keyof T]: [string | number] extends [T[K]]
+		? [T[K]] extends [string | number]
+			? number
+			: T[K]
+		: T[K];
+};

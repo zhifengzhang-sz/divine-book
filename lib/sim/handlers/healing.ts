@@ -2,16 +2,19 @@
  * Healing handlers: lifesteal, self_heal, heal_echo_damage
  */
 
+import type { Lifesteal } from "../../parser/schema/星元化岳.js";
+import type { HealEchoDamage } from "../../parser/schema/周天星元.js";
 import type { StateInstance } from "../types.js";
+import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
 
 // lifesteal: { value (percent), parent? }
 // Heals for `value`% of damage dealt.
-register("lifesteal", (effect) => ({
+register<Resolved<Lifesteal>>("lifesteal", (effect) => ({
 	intents: [
 		{
 			type: "LIFESTEAL" as const,
-			percent: effect.value as number,
+			percent: effect.value,
 			damageDealt: 0, // filled in at resolution time
 		},
 	],
@@ -21,6 +24,7 @@ register("lifesteal", (effect) => ({
 // Two forms:
 //   Instant: heals value% ATK immediately → HEAL event
 //   Per-tick: creates a named state that heals per tick
+// Untyped: per-tick form reads `name` not in schema (周天星元.PeriodicHeal)
 register("self_heal", (effect, ctx) => {
 	// Per-tick form: creates a named state with periodic healing
 	if (effect.per_tick !== undefined) {
@@ -71,8 +75,8 @@ register("self_heal", (effect, ctx) => {
 // This is a reactive listener that subscribes to HEAL events.
 // We use the "on_apply" trigger with a special parent "__heal__" convention
 // — the player machine recognizes this and fires it on every HEAL resolution.
-register("heal_echo_damage", (effect, _ctx) => {
-	const ratio = effect.ratio as number;
+register<Resolved<HealEchoDamage>>("heal_echo_damage", (effect, _ctx) => {
+	const ratio = effect.ratio;
 
 	return {
 		listeners: [

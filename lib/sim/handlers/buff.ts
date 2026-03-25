@@ -2,6 +2,10 @@
  * Buff handlers: self_buff, damage_reduction_during_cast
  */
 
+import type { AllStateDuration, DamageReductionDuringCast, NextSkillBuff } from "../../parser/schema/通用词缀.js";
+import type { BuffDuration } from "../../parser/schema/念剑诀.js";
+import type { BuffStackIncrease } from "../../parser/schema/元磁神光.js";
+import type { SelfBuffExtend } from "../../parser/schema/十方真魄.js";
 import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
 
@@ -182,9 +186,9 @@ register("counter_buff", (effect, _ctx) => {
 	};
 });
 
-// damage_reduction_during_cast: { value }
+// damage_reduction_during_cast — schema: lib/parser/schema/通用词缀.ts (DamageReductionDuringCast)
 // Temporary DR buff during cast (e.g., 金汤: 10%).
-register("damage_reduction_during_cast", (effect) => {
+register<DamageReductionDuringCast>("damage_reduction_during_cast", (effect) => {
 	const state: StateInstance = {
 		name: "casting_dr",
 		kind: "buff",
@@ -220,18 +224,18 @@ register("self_damage_taken_increase", (effect) => {
 	};
 });
 
-// next_skill_buff: { value, stat }
+// next_skill_buff — schema: lib/parser/schema/通用词缀.ts (NextSkillBuff)
 // Buff that applies to the next skill cast. In a 1-slot sim, this
 // persists since there's no subsequent cast to consume it.
 // Duration = Infinity (consumed by next cast in multi-slot mode).
-register("next_skill_buff", (effect) => {
-	const stat = (effect.stat as string) ?? "skill_damage_increase";
+// Note: legacy data had a `stat` field; schema only has `value` (always skill_damage_increase).
+register<NextSkillBuff>("next_skill_buff", (effect) => {
 	const state: StateInstance = {
 		name: "next_skill_buff",
 		kind: "buff",
 		source: "",
 		target: "self",
-		effects: [{ stat, value: effect.value as number }],
+		effects: [{ stat: "skill_damage_increase", value: effect.value as number }],
 		remainingDuration: Number.POSITIVE_INFINITY,
 		stacks: 1,
 		maxStacks: 1,
@@ -256,33 +260,33 @@ register("conditional_heal_buff", (effect, ctx) => {
 	};
 });
 
-// self_buff_extend: { value, buff_name }
+// self_buff_extend — schema: lib/parser/schema/十方真魄.ts (SelfBuffExtend)
 // Extends an existing buff's duration by value seconds.
 // Modeled as a zone bonus proportional to the extension (more duration → more total effect).
-register("self_buff_extend", (effect) => {
+register<SelfBuffExtend>("self_buff_extend", (effect) => {
 	const seconds = (effect.value as number) ?? 0;
 	// Extension as a proportional damage increase: typical buff lasts 8-12s,
 	// extending by N seconds ≈ N/10 = x% more buff uptime
 	return { zones: { M_dmg: seconds / 10 } };
 });
 
-// buff_duration: { value }
+// buff_duration — schema: lib/parser/schema/念剑诀.ts (BuffDuration)
 // Increases all buff durations by value%. More uptime → more total effect.
-register("buff_duration", (effect) => {
+register<BuffDuration>("buff_duration", (effect) => {
 	const pct = (effect.value as number) ?? 0;
 	return { zones: { M_dmg: pct / 100 / 3 } };
 });
 
-// buff_stack_increase: { value }
+// buff_stack_increase — schema: lib/parser/schema/元磁神光.ts (BuffStackIncrease)
 // Increases max buff stacks by value%. More stacks → stronger buffs.
-register("buff_stack_increase", (effect) => {
+register<BuffStackIncrease>("buff_stack_increase", (effect) => {
 	const pct = (effect.value as number) ?? 0;
 	return { zones: { M_dmg: pct / 100 / 3 } };
 });
 
-// all_state_duration: { value }
+// all_state_duration — schema: lib/parser/schema/通用词缀.ts (AllStateDuration)
 // Increases all state (buff + debuff) durations by value%.
-register("all_state_duration", (effect) => {
+register<AllStateDuration>("all_state_duration", (effect) => {
 	const pct = (effect.value as number) ?? 0;
 	return { zones: { M_dmg: pct / 100 / 3 } };
 });

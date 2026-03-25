@@ -1,10 +1,22 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	DamageIncrease,
+	Effect,
+	PeriodicCleanse,
+	SelfBuff,
+	SelfBuffExtend,
+	SelfDamageTakenIncrease,
+	SelfHpCost,
+	SelfLostHpDamage,
+	StateAdd,
+} from "../../schema/十方真魄.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			hpCost,
@@ -17,33 +29,45 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			stateBody,
 		) {
+			const stateAddEffect: StateAdd = {
+				type: "state_add",
+				state: stateAdd.extractVar,
+			};
 			return [
 				...hpCost.toEffects(),
 				...baseAttack.toEffects(),
 				...selfLostHpHeal.toEffects(),
-				{ type: "state_add", state: stateAdd.extractVar },
+				stateAddEffect,
 				...stateBody.toEffects(),
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
-			return [{ type: "self_hp_cost", value: varRef.extractVar }];
+			const effect: SelfHpCost = {
+				type: "self_hp_cost",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		baseAttack(_dmbzc, cnHit, _g, varRef, _p, _a) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		selfLostHpWithHeal(_gap, selfLostHp, _sep, _selfHeal) {
-			const effects = selfLostHp.toEffects() as any[];
-			effects[0].self_heal = true;
+			const effects = selfLostHp.toEffects() as Effect[];
+			(effects[0] as SelfLostHpDamage).self_heal = true;
 			return effects;
 		},
 		selfLostHpDmg(_ewdqzc, varRef, _p, _yssl) {
-			return [{ type: "self_lost_hp_damage", value: varRef.extractVar }];
+			const effect: SelfLostHpDamage = {
+				type: "self_lost_hp_damage",
+				value: varRef.extractVar,
+				self_heal: true,
+			};
+			return [effect];
 		},
 		selfEqualHeal(_dehfzsqx) {
 			return [];
@@ -52,14 +76,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			return stateName.extractVar;
 		},
 		stateBody(_cxqjts, varRef, _p, _dgklyshjm, _sep, _cx, durVar, _m) {
-			return [
-				{
-					type: "self_buff",
-					attack_bonus: varRef.extractVar,
-					damage_reduction: varRef.extractVar,
-					duration: durVar.extractVar,
-				},
-			];
+			const effect: SelfBuff = {
+				type: "self_buff",
+				attack_bonus: varRef.extractVar,
+				damage_reduction: varRef.extractVar,
+				duration: durVar.extractVar,
+			};
+			return [effect];
 		},
 		primaryAffix(
 			_yc,
@@ -79,20 +102,19 @@ export function addSemantics(s: ohm.Semantics): void {
 			_ci,
 			_trailing,
 		) {
-			return [
-				{
-					type: "self_buff_extend",
-					value: durVar.extractVar,
-					state: stateName.extractVar,
-				},
-				{
-					type: "periodic_cleanse",
-					chance: chanceVar.extractVar,
-					target: "控制状态",
-					cooldown: cdVar.extractVar,
-					max_times: maxVar.extractVar,
-				},
-			];
+			const extendEffect: SelfBuffExtend = {
+				type: "self_buff_extend",
+				value: durVar.extractVar,
+				state: stateName.extractVar,
+			};
+			const cleanseEffect: PeriodicCleanse = {
+				type: "periodic_cleanse",
+				chance: chanceVar.extractVar,
+				target: "控制状态",
+				cooldown: cdVar.extractVar,
+				max_times: maxVar.extractVar,
+			};
+			return [extendEffect, cleanseEffect];
 		},
 		exclusiveAffix(
 			_bstsfshi,
@@ -105,10 +127,15 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef2,
 			_p2,
 		) {
-			return [
-				{ type: "damage_increase", value: varRef1.extractVar },
-				{ type: "self_damage_taken_increase", value: varRef2.extractVar },
-			];
+			const dmgEffect: DamageIncrease = {
+				type: "damage_increase",
+				value: varRef1.extractVar,
+			};
+			const takenEffect: SelfDamageTakenIncrease = {
+				type: "self_damage_taken_increase",
+				value: varRef2.extractVar,
+			};
+			return [dmgEffect, takenEffect];
 		},
 		preamble(_) {
 			return [];

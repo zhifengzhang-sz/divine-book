@@ -51,7 +51,14 @@ describe("千锋聚灵剑 semantics", () => {
 		expect(match.succeeded()).toBe(true);
 
 		const effects = sem(match).toEffects();
-		expect(effects).toEqual([{ type: "per_hit_escalation", value: "x" }]);
+		expect(effects).toEqual([
+			{
+				type: "per_hit_escalation",
+				value: "x",
+				stat: "skill_bonus",
+				parent: "this",
+			},
+		]);
 	});
 
 	it("exclusiveAffix → HealReduction with state", () => {

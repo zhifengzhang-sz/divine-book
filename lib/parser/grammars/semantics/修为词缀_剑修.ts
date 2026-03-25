@@ -1,15 +1,24 @@
 import type * as ohm from "ohm-js";
-
+import type { Effect, TripleBonus } from "../../schema/修为词缀_剑修.js";
+import type {
+	AttackBonus,
+	GuaranteedResonance,
+	PerHitEscalationAffix,
+} from "../../schema/通用词缀.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		affixDescription(child) {
 			return child.toEffects();
 		},
 		jx_cuiYunZheYue(_pre, varRef, _p, _gkldxg) {
-			return [{ type: "attack_bonus", value: varRef.extractVar }];
+			const effect: AttackBonus = {
+				type: "attack_bonus",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		jx_lingXiJiuChong(
 			_sbstbdhx,
@@ -23,14 +32,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef3,
 			_bei2,
 		) {
-			return [
-				{
-					type: "guaranteed_resonance",
-					base_multiplier: varRef1.extractVar,
-					chance: varRef2.extractVar,
-					upgraded_multiplier: varRef3.extractVar,
-				},
-			];
+			const effect: GuaranteedResonance = {
+				type: "guaranteed_resonance",
+				base_multiplier: varRef1.extractVar,
+				chance: varRef2.extractVar,
+				upgraded_multiplier: varRef3.extractVar,
+			};
+			return [effect];
 		},
 		jx_poSuiWuShuang(
 			_bst,
@@ -48,14 +56,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p3,
 			_dbjsh,
 		) {
-			return [
-				{
-					type: "triple_bonus",
-					attack_bonus: varRef1.extractVar,
-					damage_increase: varRef2.extractVar,
-					crit_damage_increase: varRef3.extractVar,
-				},
-			];
+			const effect: TripleBonus = {
+				type: "triple_bonus",
+				attack_bonus: varRef1.extractVar,
+				damage_increase: varRef2.extractVar,
+				crit_damage_increase: varRef3.extractVar,
+			};
+			return [effect];
 		},
 		jx_xinHuoCuiFeng(
 			_bst,
@@ -72,14 +79,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			maxVar,
 			_p2,
 		) {
-			return [
-				{
-					type: "per_hit_escalation",
-					hits: hitsVar.extractVar,
-					per_hit: perVar.extractVar,
-					max: maxVar.extractVar,
-				},
-			];
+			const effect: PerHitEscalationAffix = {
+				type: "per_hit_escalation",
+				hits: hitsVar.extractVar,
+				per_hit: perVar.extractVar,
+				max: maxVar.extractVar,
+			};
+			return [effect];
 		},
 		_terminal() {
 			return [];

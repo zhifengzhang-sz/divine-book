@@ -6,9 +6,249 @@
  * shield_destroy_dot, hp_cost_avoid_chance
  */
 
+import type { SelfCleanse } from "../../parser/schema/九天真雷诀.js";
+import type { SelfHpFloor } from "../../parser/schema/九重天凤诀.js";
+import type { Summon, SummonBuff } from "../../parser/schema/春黎剑阵.js";
+import type { ShieldDestroyDamage, NoShieldDoubleDamage } from "../../parser/schema/皓月剑诀.js";
+import type {
+	DebuffStrength,
+	ExecuteConditional,
+	ShieldValueIncrease,
+	RandomBuff as SchemaRandomBuff,
+} from "../../parser/schema/通用词缀.js";
+import type { TripleBonus } from "../../parser/schema/修为词缀_剑修.js";
+import type { HealingIncrease } from "../../parser/schema/修为词缀_法修.js";
+import type {
+	HealingToDamage,
+	DamageToShield,
+	RandomDebuff,
+} from "../../parser/schema/修为词缀_魔修.js";
+import type { MinLostHpThreshold } from "../../parser/schema/修为词缀_体修.js";
+import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
 
-// buff_steal: { count }
+// ── Schema-typed handlers ────────────────────────────────────────────
+
+// self_cleanse: { count }
+register<Resolved<SelfCleanse>>("self_cleanse", (effect) => ({
+	intents: [
+		{
+			type: "SELF_CLEANSE" as const,
+			count: effect.count ?? 1,
+		},
+	],
+}));
+
+// self_hp_floor: { value (percent), parent? }
+register<Resolved<SelfHpFloor>>("self_hp_floor", (effect) => ({
+	intents: [
+		{
+			type: "HP_FLOOR" as const,
+			minPercent: effect.value,
+		},
+	],
+}));
+
+// summon: { duration, inherit_stats, damage_taken_multiplier, trigger }
+// Creates a summon as a named state. Damage echo is computed in player machine
+// when BOOK_CAST_HITS fires while 分身 state is active.
+register<Resolved<Summon>>("summon", (effect) => {
+	const duration = effect.duration ?? 16;
+	const inheritStats = effect.inherit_stats ?? 50;
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "分身",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [{ stat: "summon_echo", value: inheritStats }],
+					remainingDuration: duration,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: true,
+				},
+			},
+		],
+	};
+});
+
+// summon_buff: { damage_taken_reduction_to, damage_increase, parent }
+// Buffs the summon's damage output. Stored as state for player machine to read.
+register<Resolved<SummonBuff>>("summon_buff", (effect) => {
+	const damageIncrease = effect.damage_increase ?? 0;
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: "分身_buff",
+					kind: "buff" as const,
+					source: "",
+					target: "self" as const,
+					effects: [
+						{
+							stat: "summon_damage_increase",
+							value: damageIncrease,
+						},
+					],
+					remainingDuration: Number.POSITIVE_INFINITY,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: false,
+					parent: "分身",
+				},
+			},
+		],
+	};
+});
+
+// shield_destroy_damage: { shields_per_hit, percent_max_hp }
+// Per hit: destroy enemy shields + deal %maxHP bonus damage.
+register<Resolved<ShieldDestroyDamage>>("shield_destroy_damage", (effect) => ({
+	perHitEffects: () => [
+		{
+			type: "SHIELD_DESTROY" as const,
+			count: effect.shields_per_hit ?? 1,
+			bonusPercentMaxHp: effect.percent_max_hp ?? 12,
+		},
+	],
+}));
+
+// no_shield_double_damage: { no_shield_double }
+// Doubles damage when target has no shield. Resolved at target in resolveHit.
+register<Resolved<NoShieldDoubleDamage>>("no_shield_double_damage", () => ({
+	perHitEffects: () => [
+		{
+			type: "NO_SHIELD_DOUBLE" as const,
+		},
+	],
+}));
+
+// debuff_strength: { value }
+// Increases debuff effectiveness. Modeled as M_dmg zone.
+register<Resolved<DebuffStrength>>("debuff_strength", (effect) => ({
+	zones: { M_dmg: effect.value / 100 },
+}));
+
+// execute_conditional: { hp_threshold, damage_increase, crit_rate_increase }
+// Bonus damage when target HP below threshold. Assume active.
+register<Resolved<ExecuteConditional>>("execute_conditional", (effect) => ({
+	zones: { M_dmg: (effect.damage_increase ?? 0) / 100 },
+}));
+
+// shield_value_increase: { value }
+// Increases shield value. Modeled as M_dmg zone (indirect survivability).
+register<Resolved<ShieldValueIncrease>>("shield_value_increase", () => ({}));
+
+// triple_bonus: { attack_bonus, damage_increase, crit_damage_increase }
+// Grants all three bonuses simultaneously.
+register<Resolved<TripleBonus>>("triple_bonus", (effect) => ({
+	zones: {
+		S_coeff: (effect.attack_bonus ?? 0) / 100,
+		M_dmg:
+			(effect.damage_increase ?? 0) / 100 +
+			(effect.crit_damage_increase ?? 0) / 100,
+	},
+}));
+
+// healing_increase: { value }
+// Increases healing received. Applied as self buff.
+register<Resolved<HealingIncrease>>("healing_increase", (effect) => ({
+	intents: [
+		{
+			type: "APPLY_STATE" as const,
+			state: {
+				name: "healing_increase",
+				kind: "buff" as const,
+				source: "",
+				target: "self" as const,
+				effects: [
+					{
+						stat: "healing_bonus",
+						value: effect.value,
+					},
+				],
+				remainingDuration: Number.POSITIVE_INFINITY,
+				stacks: 1,
+				maxStacks: 1,
+				dispellable: false,
+			},
+		},
+	],
+}));
+
+// healing_to_damage: { value }
+// Converts healing to damage. Modeled as M_dmg zone.
+register<Resolved<HealingToDamage>>("healing_to_damage", (effect) => ({
+	zones: { M_dmg: effect.value / 100 },
+}));
+
+// damage_to_shield: { value, duration }
+// Converts portion of damage dealt to shield. Modeled as shield grant.
+register<Resolved<DamageToShield>>("damage_to_shield", (effect, ctx) => ({
+	intents: [
+		{
+			type: "SHIELD" as const,
+			value: (effect.value / 100) * ctx.atk,
+			duration: effect.duration ?? 8,
+		},
+	],
+}));
+
+// random_debuff: { attack, crit_rate, crit_damage }
+// Randomly applies one of three debuffs.
+register<Resolved<RandomDebuff>>("random_debuff", (effect, ctx) => {
+	const options = [
+		{
+			name: "random_debuff_atk",
+			stat: "attack_bonus",
+			value: -effect.attack,
+		},
+		{
+			name: "random_debuff_crit_rate",
+			stat: "damage_reduction",
+			value: effect.crit_rate,
+		},
+		{
+			name: "random_debuff_crit_dmg",
+			stat: "damage_reduction",
+			value: effect.crit_damage,
+		},
+	].filter((o) => o.value !== 0 && o.value !== undefined);
+	if (options.length === 0) return {};
+	const pick = options[Math.floor(ctx.rng.next() * options.length)];
+	return {
+		intents: [
+			{
+				type: "APPLY_STATE" as const,
+				state: {
+					name: pick.name,
+					kind: "debuff" as const,
+					source: "",
+					target: "opponent" as const,
+					effects: [{ stat: pick.stat, value: pick.value }],
+					remainingDuration: 8,
+					stacks: 1,
+					maxStacks: 1,
+					dispellable: true,
+				},
+			},
+		],
+	};
+});
+
+// min_lost_hp_threshold: { min_percent, damage_increase }
+// Ensures minimum lost HP% for damage scaling. Grants damage bonus.
+register<Resolved<MinLostHpThreshold>>("min_lost_hp_threshold", (effect) => ({
+	zones: { M_dmg: (effect.damage_increase ?? 0) / 100 },
+}));
+
+// ── Untyped handlers (no matching schema or field mismatches) ────────
+
+// buff_steal: handler reads `count`, schema (天轮魔经.BuffSteal) has `value`
 register("buff_steal", (effect) => ({
 	intents: [
 		{
@@ -18,27 +258,7 @@ register("buff_steal", (effect) => ({
 	],
 }));
 
-// self_cleanse: { count }
-register("self_cleanse", (effect) => ({
-	intents: [
-		{
-			type: "SELF_CLEANSE" as const,
-			count: (effect.count as number) ?? 1,
-		},
-	],
-}));
-
-// self_hp_floor: { value (percent), parent? }
-register("self_hp_floor", (effect) => ({
-	intents: [
-		{
-			type: "HP_FLOOR" as const,
-			minPercent: effect.value as number,
-		},
-	],
-}));
-
-// delayed_burst: { duration, burst_base }
+// delayed_burst: handler reads `burst_base`/`duration`, schema (无相魔劫咒.DelayedBurst) has `burst_damage`/`burst_atk_damage`/`increase`
 register("delayed_burst", (effect, ctx) => {
 	const damage = ((effect.burst_base as number) / 100) * ctx.atk;
 	const delay = effect.duration as number;
@@ -47,12 +267,12 @@ register("delayed_burst", (effect, ctx) => {
 	};
 });
 
-// delayed_burst_increase: { value, parent }
+// delayed_burst_increase: handler reads `parent`, schema (无相魔劫咒.DelayedBurstIncrease) has `state`
 register("delayed_burst_increase", (effect, ctx) => ({
 	flatExtra: ((effect.value as number) / 100) * ctx.atk,
 }));
 
-// periodic_dispel: { count?, interval?, duration?, parent? }
+// periodic_dispel: handler reads `count`/`interval`/`duration`/`parent`, schema variants don't match
 register("periodic_dispel", (effect) => {
 	const count = (effect.count as number) ?? 1;
 	return {
@@ -60,8 +280,7 @@ register("periodic_dispel", (effect) => {
 	};
 });
 
-// periodic_cleanse: { chance, interval, cooldown, max_triggers, parent }
-// Per-tick RNG roll to cleanse all control states, capped at max_triggers.
+// periodic_cleanse: handler reads `chance`/`interval`/`max_triggers`/`parent`, schema (十方真魄.PeriodicCleanse) has `chance`/`target`/`cooldown`/`max_times`
 register("periodic_cleanse", (effect) => {
 	const chance = (effect.chance as number) ?? 30;
 	const interval = (effect.interval as number) ?? 1;
@@ -106,65 +325,7 @@ register("periodic_cleanse", (effect) => {
 	};
 });
 
-// summon: { duration, inherit_stats, damage_taken_multiplier, trigger }
-// Creates a summon as a named state. Damage echo is computed in player machine
-// when BOOK_CAST_HITS fires while 分身 state is active.
-register("summon", (effect) => {
-	const duration = (effect.duration as number) ?? 16;
-	const inheritStats = (effect.inherit_stats as number) ?? 50;
-	return {
-		intents: [
-			{
-				type: "APPLY_STATE" as const,
-				state: {
-					name: "分身",
-					kind: "buff" as const,
-					source: "",
-					target: "self" as const,
-					effects: [{ stat: "summon_echo", value: inheritStats }],
-					remainingDuration: duration,
-					stacks: 1,
-					maxStacks: 1,
-					dispellable: true,
-				},
-			},
-		],
-	};
-});
-
-// summon_buff: { damage_taken_reduction_to, damage_increase, parent }
-// Buffs the summon's damage output. Stored as state for player machine to read.
-register("summon_buff", (effect) => {
-	const damageIncrease = (effect.damage_increase as number) ?? 0;
-	return {
-		intents: [
-			{
-				type: "APPLY_STATE" as const,
-				state: {
-					name: "分身_buff",
-					kind: "buff" as const,
-					source: "",
-					target: "self" as const,
-					effects: [
-						{
-							stat: "summon_damage_increase",
-							value: damageIncrease,
-						},
-					],
-					remainingDuration: Number.POSITIVE_INFINITY,
-					stacks: 1,
-					maxStacks: 1,
-					dispellable: false,
-					parent: "分身",
-				},
-			},
-		],
-	};
-});
-
-// on_dispel: { damage, stun?, parent }
-// Triggers burst damage when a state is dispelled.
-// Registered as a listener on the parent state's on_expire event.
+// on_dispel: handler reads `parent`, not in schema (春黎剑阵.OnDispel)
 register("on_dispel", (effect, _ctx) => {
 	const parent = (effect.parent as string) ?? "on_dispel";
 	const damagePct = effect.damage as number;
@@ -186,8 +347,7 @@ register("on_dispel", (effect, _ctx) => {
 	};
 });
 
-// on_shield_expire: { damage_percent_of_shield }
-// Deals damage when shield expires or is consumed. Fires via shield lifecycle.
+// on_shield_expire: handler reads `damage_percent_of_shield`, schema (九重天凤诀.OnShieldExpire) has `value`
 register("on_shield_expire", (effect) => {
 	const pct = (effect.damage_percent_of_shield as number) ?? 100;
 	return {
@@ -215,9 +375,7 @@ register("on_shield_expire", (effect) => {
 	};
 });
 
-// on_buff_debuff_shield_trigger: { damage_percent }
-// Deals damage when any buff/debuff/shield is applied.
-// Registered as a per-hit effect since it fires on each state application.
+// on_buff_debuff_shield_trigger: type string mismatch (schema type is "on_buff_debuff_shield")
 register("on_buff_debuff_shield_trigger", (effect) => {
 	const pct = (effect.damage_percent as number) ?? 0;
 	return {
@@ -231,8 +389,7 @@ register("on_buff_debuff_shield_trigger", (effect) => {
 	};
 });
 
-// untargetable_state: { duration }
-// Makes player untargetable — hits are discarded entirely in resolveHit.
+// untargetable_state: type string mismatch (schema type is "untargetable"), handler reads `duration`, schema has `value`
 register("untargetable_state", (effect) => ({
 	intents: [
 		{
@@ -252,10 +409,7 @@ register("untargetable_state", (effect) => ({
 	],
 }));
 
-// extended_dot: { extra_seconds, tick_interval, parent }
-// extended_dot: { extra_seconds, tick_interval, parent }
-// Extends a DoT's active duration. More ticks → more total damage.
-// Modeled as M_dmg zone proportional to extension.
+// extended_dot: handler reads `tick_interval`, schema (念剑诀.ExtendedDot) has `interval`
 register("extended_dot", (effect) => {
 	const seconds = (effect.extra_seconds as number) ?? 0;
 	// Extra seconds of DoT ≈ proportional damage increase
@@ -263,30 +417,7 @@ register("extended_dot", (effect) => {
 	return { zones: { M_dmg: seconds / 10 } };
 });
 
-// shield_destroy_damage: { shields_per_hit, percent_max_hp }
-// Per hit: destroy enemy shields + deal %maxHP bonus damage.
-register("shield_destroy_damage", (effect) => ({
-	perHitEffects: () => [
-		{
-			type: "SHIELD_DESTROY" as const,
-			count: (effect.shields_per_hit as number) ?? 1,
-			bonusPercentMaxHp: (effect.percent_max_hp as number) ?? 12,
-		},
-	],
-}));
-
-// no_shield_double_damage: { no_shield_double }
-// Doubles damage when target has no shield. Resolved at target in resolveHit.
-register("no_shield_double_damage", () => ({
-	perHitEffects: () => [
-		{
-			type: "NO_SHIELD_DOUBLE" as const,
-		},
-	],
-}));
-
-// shield_destroy_dot: { tick_interval, per_shield_damage, no_shield_assumed, parent }
-// DoT that deals damage per shield destroyed. Reads actual destroyedShieldsTotal.
+// shield_destroy_dot: handler reads `per_shield_damage`/`no_shield_assumed`/`parent`, schema (皓月剑诀.ShieldDestroyDot) has `value`/`state`/`interval`
 register("shield_destroy_dot", (effect, _ctx) => {
 	const parent = (effect.parent as string) ?? "shield_destroy_dot";
 	const perShield = (effect.per_shield_damage as number) ?? 600;
@@ -316,10 +447,7 @@ register("shield_destroy_dot", (effect, _ctx) => {
 	};
 });
 
-// hp_cost_avoid_chance: { value, parent }
-// hp_cost_avoid_chance: { value, parent }
-// Chance to avoid HP cost. Rolls RNG on each HP_COST event.
-// Modeled as a damage reduction buff (reducing self-damage from HP costs).
+// hp_cost_avoid_chance: no schema exists
 register("hp_cost_avoid_chance", (effect) => {
 	const chance = (effect.value as number) ?? 0;
 	return {
@@ -347,22 +475,7 @@ register("hp_cost_avoid_chance", (effect) => {
 	};
 });
 
-// ── Affix-only effect types ─────────────────────────────────────────
-
-// debuff_strength: { value }
-// Increases debuff effectiveness. Modeled as M_dmg zone.
-register("debuff_strength", (effect) => ({
-	zones: { M_dmg: (effect.value as number) / 100 },
-}));
-
-// execute_conditional: { hp_threshold, damage_increase, crit_rate_increase }
-// Bonus damage when target HP below threshold. Assume active.
-register("execute_conditional", (effect) => ({
-	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
-}));
-
-// random_buff: { attack, crit_damage, damage }
-// Randomly grants one of three buffs.
+// random_buff: handler reads `crit_damage`/`damage`, schema (通用词缀.RandomBuff) only has `attack`
 register("random_buff", (effect, ctx) => {
 	const options = [
 		{ stat: "S_coeff", value: ((effect.attack as number) ?? 0) / 100 },
@@ -374,123 +487,18 @@ register("random_buff", (effect, ctx) => {
 	return { zones: { [pick.stat]: pick.value } };
 });
 
-// shield_value_increase: { value }
-// Increases shield value. Modeled as M_dmg zone (indirect survivability).
-register("shield_value_increase", () => ({}));
-
-// triple_bonus: { attack_bonus, damage_increase, crit_damage_increase }
-// Grants all three bonuses simultaneously.
-register("triple_bonus", (effect) => ({
-	zones: {
-		S_coeff: ((effect.attack_bonus as number) ?? 0) / 100,
-		M_dmg:
-			((effect.damage_increase as number) ?? 0) / 100 +
-			((effect.crit_damage_increase as number) ?? 0) / 100,
-	},
-}));
-
-// healing_increase: { value }
-// Increases healing received. Applied as self buff.
-register("healing_increase", (effect) => ({
-	intents: [
-		{
-			type: "APPLY_STATE" as const,
-			state: {
-				name: "healing_increase",
-				kind: "buff" as const,
-				source: "",
-				target: "self" as const,
-				effects: [
-					{
-						stat: "healing_bonus",
-						value: effect.value as number,
-					},
-				],
-				remainingDuration: Number.POSITIVE_INFINITY,
-				stacks: 1,
-				maxStacks: 1,
-				dispellable: false,
-			},
-		},
-	],
-}));
-
-// final_damage_bonus: { value }
-// Additive M_final zone contribution.
+// final_damage_bonus: type string mismatch (schema type is "final_dmg_bonus")
 register("final_damage_bonus", (effect) => ({
 	zones: { M_final: (effect.value as number) / 100 },
 }));
 
-// probability_to_certain: { damage_increase }
-// Makes probability-based effects certain (always max tier).
-// Also grants damage bonus.
+// probability_to_certain: handler reads `damage_increase`, not in schema (修为词缀_法修.ProbabilityToCertain)
 register("probability_to_certain", (effect) => ({
 	forceSynchroMax: true,
 	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
 }));
 
-// healing_to_damage: { value }
-// Converts healing to damage. Modeled as M_dmg zone.
-register("healing_to_damage", (effect) => ({
-	zones: { M_dmg: (effect.value as number) / 100 },
-}));
-
-// damage_to_shield: { value, duration }
-// Converts portion of damage dealt to shield. Modeled as shield grant.
-register("damage_to_shield", (effect, ctx) => ({
-	intents: [
-		{
-			type: "SHIELD" as const,
-			value: ((effect.value as number) / 100) * ctx.atk,
-			duration: (effect.duration as number) ?? 8,
-		},
-	],
-}));
-
-// random_debuff: { attack, crit_rate, crit_damage }
-// Randomly applies one of three debuffs.
-register("random_debuff", (effect, ctx) => {
-	const options = [
-		{
-			name: "random_debuff_atk",
-			stat: "attack_bonus",
-			value: -(effect.attack as number),
-		},
-		{
-			name: "random_debuff_crit_rate",
-			stat: "damage_reduction",
-			value: effect.crit_rate as number,
-		},
-		{
-			name: "random_debuff_crit_dmg",
-			stat: "damage_reduction",
-			value: effect.crit_damage as number,
-		},
-	].filter((o) => o.value !== 0 && o.value !== undefined);
-	if (options.length === 0) return {};
-	const pick = options[Math.floor(ctx.rng.next() * options.length)];
-	return {
-		intents: [
-			{
-				type: "APPLY_STATE" as const,
-				state: {
-					name: pick.name,
-					kind: "debuff" as const,
-					source: "",
-					target: "opponent" as const,
-					effects: [{ stat: pick.stat, value: pick.value }],
-					remainingDuration: 8,
-					stacks: 1,
-					maxStacks: 1,
-					dispellable: true,
-				},
-			},
-		],
-	};
-});
-
-// min_lost_hp_threshold: { min_percent, damage_increase }
-// Ensures minimum lost HP% for damage scaling. Grants damage bonus.
-register("min_lost_hp_threshold", (effect) => ({
+// enlightenment_bonus: handler reads `damage_increase`, schema (玉书天戈符.EnlightenmentBonus) has `value`
+register("enlightenment_bonus", (effect) => ({
 	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
 }));

@@ -4,9 +4,8 @@
  */
 
 import { useState } from "react";
-import affixesData from "./affixes-data.json";
+import type { GameData } from "./data-loader.ts";
 import taxonomyData from "./affix-taxonomy.json";
-import booksData from "./books-data.json";
 import {
 	btnStyle,
 	dialogStyle,
@@ -43,16 +42,25 @@ interface DisplayEntry extends TaxonomyAffix {
 const CATEGORIES = (taxonomyData as { categories: Record<string, CategoryDef> }).categories;
 const TAXONOMY_AFFIXES = (taxonomyData as { affixes: TaxonomyAffix[] }).affixes;
 
-const allAffixes = affixesData as {
-	universal: Record<string, { text?: string; effects: { type: string; [k: string]: unknown }[] }>;
-	school: Record<string, Record<string, { text?: string; effects: { type: string; [k: string]: unknown }[] }>>;
-};
-const allBooks = (booksData as { books: Record<string, {
+type AffixEffects = { text?: string; effects: { type: string; [k: string]: unknown }[] };
+type BookAffixEntry = {
 	affix_text?: string;
 	exclusive_affix_text?: string;
 	primary_affix?: { name: string; effects: { type: string; [k: string]: unknown }[] };
 	exclusive_affix?: { name: string; effects: { type: string; [k: string]: unknown }[] };
-}> }).books;
+};
+
+// Set by initAffixBrowserData() when GameData loads
+let allAffixes: {
+	universal: Record<string, AffixEffects>;
+	school: Record<string, Record<string, AffixEffects>>;
+} = { universal: {}, school: {} };
+let allBooks: Record<string, BookAffixEntry> = {};
+
+export function initAffixBrowserData(gameData: GameData): void {
+	allAffixes = gameData.affixes as typeof allAffixes;
+	allBooks = (gameData.books as { books: Record<string, BookAffixEntry> }).books;
+}
 
 /** Resolve full display data for a taxonomy entry */
 function resolveEntry(t: TaxonomyAffix): DisplayEntry {

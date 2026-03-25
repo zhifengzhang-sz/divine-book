@@ -1,11 +1,22 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	CrossSlotDebuff,
+	DebuffStackChance,
+	Effect,
+	HealEchoDamage,
+	PeriodicHeal,
+	SelfHeal,
+	Shield,
+	StateRef,
+} from "../../schema/周天星元.js";
+import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
 
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		skillDescription(
 			_pre,
 			selfHeal,
@@ -25,25 +36,24 @@ export function addSemantics(s: ohm.Semantics): void {
 			];
 		},
 		selfHeal(_wzshuifu, varRef, _pct, _zdqxz) {
-			return [{ type: "self_heal", value: varRef.extractVar }];
+			const effect: SelfHeal = { type: "self_heal", value: varRef.extractVar };
+			return [effect];
 		},
 		baseAttack(_zc, cnHit, _gongji, varRef, _pct, _atkli) {
-			return [
-				{
-					type: "base_attack",
-					hits: parseCn(cnHit.sourceString.replace("段", "")),
-					total: varRef.extractVar,
-				},
-			];
+			const effect: BaseAttack = {
+				type: "base_attack",
+				hits: parseCn(cnHit.sourceString.replace("段", "")),
+				total: varRef.extractVar,
+			};
+			return [effect];
 		},
 		healEcho(_fjlmqjshfqxzdedsh) {
-			return [{ type: "heal_echo_damage", ratio: 1 }];
+			const effect: HealEchoDamage = { type: "heal_echo_damage", ratio: 1 };
+			return [effect];
 		},
 		stateClause(_gap, stateName, _colon, stateBody) {
-			return [
-				{ type: "state_ref", state: stateName.extractVar },
-				...stateBody.toEffects(),
-			];
+			const ref: StateRef = { type: "state_ref", state: stateName.extractVar };
+			return [ref, ...stateBody.toEffects()];
 		},
 		stateBody(
 			_mmhf,
@@ -56,14 +66,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct2,
 			_dzdqxz,
 		) {
-			return [
-				{
-					type: "self_heal",
-					per_tick: perTickVar.extractVar,
-					total: totalVar.extractVar,
-					tick_interval: 1,
-				},
-			];
+			const effect: PeriodicHeal = {
+				type: "self_heal",
+				per_tick: perTickVar.extractVar,
+				total: totalVar.extractVar,
+				tick_interval: 1,
+			};
+			return [effect];
 		},
 		primaryAffix(
 			_stateName,
@@ -77,21 +86,21 @@ export function addSemantics(s: ohm.Semantics): void {
 			durVar,
 			_miao,
 		) {
-			return [
-				{
-					type: "shield",
-					value: varRef.extractVar,
-					duration: durVar.extractVar,
-					source: "self_max_hp",
-					trigger: "per_tick",
-				},
-			];
+			const effect: Shield = {
+				type: "shield",
+				value: varRef.extractVar,
+				duration: durVar.extractVar,
+				source: "self_max_hp",
+				trigger: "per_tick",
+			};
+			return [effect];
 		},
 		exclusiveAffix(part1, _sep, part2) {
 			return [...part1.toEffects(), ...part2.toEffects()];
 		},
 		exclusiveAffix_1(_pre, _sep, _you, varRef, _pct, _glewdfj1c) {
-			return [{ type: "debuff_stack_chance", value: varRef.extractVar }];
+			const effect: DebuffStackChance = { type: "debuff_stack_chance", value: varRef.extractVar };
+			return [effect];
 		},
 		exclusiveAffix_2(
 			_rbst,
@@ -107,13 +116,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			_sep2,
 			_dchsj,
 		) {
-			return [
-				{
-					type: "cross_slot_debuff",
-					state: stateName.extractVar,
-					value: varRef.extractVar,
-				},
-			];
+			const effect: CrossSlotDebuff = {
+				type: "cross_slot_debuff",
+				state: stateName.extractVar,
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		preamble(_) {
 			return [];

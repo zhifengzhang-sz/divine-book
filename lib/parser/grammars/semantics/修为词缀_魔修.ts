@@ -1,15 +1,26 @@
 import type * as ohm from "ohm-js";
 
+import type {
+	DamageToShield,
+	Effect,
+	ExecuteConditionalCrit,
+	HealingToDamage,
+	RandomDebuff,
+} from "../../schema/修为词缀_魔修.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
-	s.addOperation<any[]>("toEffects", {
+	s.addOperation<Effect[]>("toEffects", {
 		affixDescription(child) {
 			return child.toEffects();
 		},
 		mx_yaoGuangQueXie(_dbstzc, _s, _hddfeewzc, varRef, _p, _dsh) {
-			return [{ type: "healing_to_damage", value: varRef.extractVar }];
+			const effect: HealingToDamage = {
+				type: "healing_to_damage",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		mx_kuiHunJiXia(
 			_bst,
@@ -24,14 +35,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			_s3,
 			_qbdbj,
 		) {
-			return [
-				{
-					type: "execute_conditional",
-					hp_threshold: threshVar.extractVar,
-					damage_increase: dmgVar.extractVar,
-					guaranteed_crit: 1,
-				},
-			];
+			const effect: ExecuteConditionalCrit = {
+				type: "execute_conditional",
+				hp_threshold: threshVar.extractVar,
+				damage_increase: dmgVar.extractVar,
+				guaranteed_crit: 1,
+			};
+			return [effect];
 		},
 		mx_xuanNvHuXin(
 			_bstzcshh,
@@ -45,13 +55,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			durVar,
 			_m,
 		) {
-			return [
-				{
-					type: "damage_to_shield",
-					value: varRef.extractVar,
-					duration: durVar.extractVar,
-				},
-			];
+			const effect: DamageToShield = {
+				type: "damage_to_shield",
+				value: varRef.extractVar,
+				duration: durVar.extractVar,
+			};
+			return [effect];
 		},
 		mx_huoXingWuWang(
 			_bst,
@@ -70,14 +79,13 @@ export function addSemantics(s: ohm.Semantics): void {
 			v3,
 			_p3,
 		) {
-			return [
-				{
-					type: "random_debuff",
-					attack: v1.extractVar,
-					crit_rate: v2.extractVar,
-					crit_damage: v3.extractVar,
-				},
-			];
+			const effect: RandomDebuff = {
+				type: "random_debuff",
+				attack: v1.extractVar,
+				crit_rate: v2.extractVar,
+				crit_damage: v3.extractVar,
+			};
+			return [effect];
 		},
 		_terminal() {
 			return [];

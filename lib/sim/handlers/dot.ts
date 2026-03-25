@@ -1,5 +1,7 @@
 /**
  * DoT handler: dot
+ *
+ * Untyped: handler reads `name`, schema (春黎剑阵.Dot) has `state`.
  */
 
 import { register } from "./registry.js";
