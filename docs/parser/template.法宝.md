@@ -187,20 +187,53 @@ full-rank: 品质：五星，品阶：五十阶
 6. **Definitions capture game jargon** — `## 定义` section for terms specific to this instrument
 7. **Abilities that unlock at higher stars** — noted with `（N星起）` in the ability name
 
-## Structure for Grammar
+## Structure
+
+### Document layout
+
+```
+## 基础属性
+  flavor text
+  ### <named state 1>     ← state name from heading, effects from body
+    - effect lines
+  ### <named state 2>
+    - effect lines
+  ### Tiers               ← reserved heading, not a state
+    N星：var=value, ...
+
+## 定义                    ← keyword definitions used in effect text
+  1. `keyword`：definition
+```
+
+### Named states
+
+Each `### ` heading under `## 基础属性` defines a **named state** of the instrument.
+The heading text IS the state name. The `- ` lines under it are the effects of that state.
+
+For 混铁叉: two named states — `噬魂魔叉` (combat summon) and `狂牛贯日` (stat buffs).
+
+### Definitions
+
+The `## 定义` section defines **keywords** — game-specific terms used in the effect text.
+These are essential for understanding what `魔焰`, `煽风`, `焚天` mean in the effect descriptions.
+The parser captures them as structured data alongside the effects.
+
+### Grammar rule mapping
 
 ```
 法宝.ohm:
-  document = frontmatter "## 基础属性" flavorText ability+ "### Tiers" tierLine+
-             ("## 活动" activity+ "### Tiers" tierLine+)?
-             ("## 定义" definition+)?
+  document = flavorText namedState+ tiersBlock definitionBlock?
 
-  ability = "### " abilityName effectLine+
-  effectLine = "- " effectText
-  tierLine = cnNumber "星：" varAssignment ("," varAssignment)*
-  varAssignment = varRef "=" number
+  namedState = "### " stateHeading "\n" ws effectLine+
+  stateHeading = ~"Tiers" (~"\n" any)+      ← heading text is the state name
+  effectLine = "- " effectText "\n" ws
+
+  tiersBlock = "### Tiers\n" ws tierLine+
+  tierLine = tierLabel "：" varAssignment ("," varAssignment)*
+
+  definitionBlock = "## 定义\n" ws definitionEntry+
+  definitionEntry = N. `keyword`：definition text
 ```
 
-The grammar matches the template structure. Effect text within each `effectLine` uses the same
-shared vocabulary (varRef, stateName, etc.) and produces effect types compatible with the
-combat simulator.
+One grammar for ALL instruments. The grammar matches the template structure.
+Semantics extract: state names, effect text per state, tier values, keyword definitions.
