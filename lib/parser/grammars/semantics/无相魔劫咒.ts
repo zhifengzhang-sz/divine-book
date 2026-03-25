@@ -33,10 +33,13 @@ export function addSemantics(s: ohm.Semantics): void {
 				};
 				return [effect];
 			},
-			stateApply(_gap, _sfmzt, stateName, _sep, _cx, _durVar, _m, _period) {
+			stateApply(_gap, _sfmzt, stateName, _sep, _cx, durNode, _m, _period) {
+				const durMatch = durNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+				const dur = durMatch ? Number(durMatch[1]) : undefined;
 				const effect: StateRef = {
 					type: "state_ref",
 					state: stateName.extractVar,
+					...(dur !== undefined && { duration: dur }),
 				};
 				return [effect];
 			},

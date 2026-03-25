@@ -1150,6 +1150,7 @@ books:
         total: 1500
       - type: state_ref
         state: 无相魔劫
+        duration: 12
       - type: delayed_burst
         name: 无相魔劫
         increase: 10

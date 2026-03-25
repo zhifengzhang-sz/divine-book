@@ -607,10 +607,13 @@ export interface StateRef {
 	type: "state_ref";
 	/** state name */
 	state: V;
+	/** 无相魔劫咒: "持续12秒" */
+	duration?: V;
 }
 export const StateRefSchema = z.object({
 	type: z.literal("state_ref"),
 	state: V_Schema,
+	duration: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<StateRef>;
 
 /** "为自身/对其 添加N层 【name】" */
