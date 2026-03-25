@@ -1,10 +1,11 @@
 import type * as ohm from "ohm-js";
-import type { Effect, TripleBonus } from "../../schema/修为词缀_剑修.js";
 import type {
 	AttackBonus,
+	Effect,
 	GuaranteedResonance,
 	PerHitEscalationAffix,
-} from "../../schema/通用词缀.js";
+	TripleBonus,
+} from "../../schema/修为词缀_剑修.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

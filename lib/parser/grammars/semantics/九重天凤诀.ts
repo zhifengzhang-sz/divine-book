@@ -1,16 +1,16 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	Effect,
 	OnShieldExpire,
 	PeriodicDispel,
 	SelfBuff,
-	SelfHpCostPerHit,
+	SelfHpCost,
 	SelfHpFloor,
 	SelfLostHpDamage,
-	StateAddPerHit,
+	StateAdd,
 } from "../../schema/九重天凤诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -58,12 +58,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			_c,
 			stateName,
 		) {
-			const costEffect: SelfHpCostPerHit = {
+			const costEffect: SelfHpCost = {
 				type: "self_hp_cost",
 				value: costVar.extractVar,
 				per_hit: true,
 			};
-			const stateEffect: StateAddPerHit = {
+			const stateEffect: StateAdd = {
 				type: "state_add",
 				state: stateName.extractVar,
 				count: countVar.extractVar,

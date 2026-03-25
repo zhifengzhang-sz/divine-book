@@ -7,7 +7,9 @@
 
 import { readFileSync } from "node:fs";
 import { parse as parseYaml } from "yaml";
-import type { BookData, EffectRow } from "../data/types.js";
+import type { BookData } from "../data/types.js";
+import type { Effect, EffectWithMeta } from "../parser/schema/effects.js";
+import { parseEffect } from "../parser/schema/effects.js";
 import type { ArenaConfig, PlayerConfig, ProgressionConfig } from "./types.js";
 
 // ── YAML Loading ────────────────────────────────────────────────────
@@ -17,13 +19,54 @@ export interface BooksYaml {
 }
 
 export interface AffixesYaml {
-	universal: Record<string, { effects: EffectRow[] }>;
-	school: Record<string, Record<string, { effects: EffectRow[] }>>;
+	universal: Record<string, { effects: EffectWithMeta[] }>;
+	school: Record<string, Record<string, { effects: EffectWithMeta[] }>>;
 }
 
 export function loadBooksYaml(path = "data/yaml/books.yaml"): BooksYaml {
 	const raw = readFileSync(path, "utf-8");
-	return parseYaml(raw) as BooksYaml;
+	const data = parseYaml(raw) as BooksYaml;
+
+	// Validate every effect through Zod schema
+	for (const [bookName, book] of Object.entries(data.books)) {
+		if (book.skill) {
+			book.skill = book.skill.map((e, i) => {
+				try {
+					return parseEffect(e) as EffectWithMeta;
+				} catch (err) {
+					throw new Error(
+						`Zod validation failed for ${bookName}.skill[${i}]: ${(err as Error).message}`,
+					);
+				}
+			});
+		}
+		if (book.primary_affix) {
+			book.primary_affix.effects = book.primary_affix.effects.map((e, i) => {
+				try {
+					return parseEffect(e) as EffectWithMeta;
+				} catch (err) {
+					throw new Error(
+						`Zod validation failed for ${bookName}.primary_affix[${i}]: ${(err as Error).message}`,
+					);
+				}
+			});
+		}
+		if (book.exclusive_affix) {
+			book.exclusive_affix.effects = book.exclusive_affix.effects.map(
+				(e, i) => {
+					try {
+						return parseEffect(e) as EffectWithMeta;
+					} catch (err) {
+						throw new Error(
+							`Zod validation failed for ${bookName}.exclusive_affix[${i}]: ${(err as Error).message}`,
+						);
+					}
+				},
+			);
+		}
+	}
+
+	return data;
 }
 
 export function loadAffixesYaml(path = "data/yaml/affixes.yaml"): AffixesYaml {
@@ -108,12 +151,12 @@ function validateHandlerCoverage(
 	affixes: AffixesYaml,
 	_progression: ProgressionConfig,
 ): void {
-	const allEffects: EffectRow[] = [];
-	if (bookData.skill) allEffects.push(...bookData.skill);
+	const allEffects: EffectWithMeta[] = [];
+	if (bookData.skill) allEffects.push(...(bookData.skill as EffectWithMeta[]));
 	if (bookData.primary_affix)
-		allEffects.push(...bookData.primary_affix.effects);
+		allEffects.push(...(bookData.primary_affix.effects as EffectWithMeta[]));
 	if (bookData.exclusive_affix)
-		allEffects.push(...bookData.exclusive_affix.effects);
+		allEffects.push(...(bookData.exclusive_affix.effects as EffectWithMeta[]));
 
 	// Aux affix effects
 	for (const opName of [slot.op1, slot.op2]) {
@@ -207,18 +250,18 @@ function meetsRequirements(
  * Returns the highest tier per effect type.
  */
 export function selectTiers(
-	effects: EffectRow[],
+	effects: EffectWithMeta[],
 	progression: ProgressionConfig,
-): EffectRow[] {
+): EffectWithMeta[] {
 	// Group by type — effects of the same type are different tiers
-	const byType = new Map<string, EffectRow[]>();
+	const byType = new Map<string, EffectWithMeta[]>();
 	for (const effect of effects) {
 		const group = byType.get(effect.type) ?? [];
 		group.push(effect);
 		byType.set(effect.type, group);
 	}
 
-	const selected: EffectRow[] = [];
+	const selected: EffectWithMeta[] = [];
 	for (const [, tiers] of byType) {
 		// Filter to usable tiers, then pick the highest (last matching)
 		const usable = tiers.filter((t) =>

@@ -4,6 +4,7 @@
  */
 
 import { createActor } from "xstate";
+import type { EffectWithMeta } from "../../../lib/parser/schema/effects.js";
 import { SimulationClock } from "../../../lib/sim/clock.js";
 import { selectTiers, validatePlayerConfig } from "../../../lib/sim/config.js";
 import { playerMachine } from "../../../lib/sim/player.js";
@@ -88,12 +89,12 @@ function buildVerification(
 	const activeEffects: { type: string; params: Record<string, unknown> }[] = [];
 	for (const source of sources) {
 		const tiered = selectTiers(
-			source as { type: string; [k: string]: unknown }[],
+			source as unknown as EffectWithMeta[],
 			prog,
 		);
 		for (const effect of tiered) {
 			const { type, data_state, ...params } = effect;
-			activeEffects.push({ type: type as string, params });
+			activeEffects.push({ type, params });
 		}
 	}
 
@@ -128,12 +129,12 @@ function buildVerification(
 		}
 		if (raw) {
 			const tiered = selectTiers(
-				raw as { type: string; [k: string]: unknown }[],
+				raw as unknown as EffectWithMeta[],
 				auxProg,
 			);
 			for (const effect of tiered) {
 				const { type, data_state, ...params } = effect;
-				activeEffects.push({ type: type as string, params });
+				activeEffects.push({ type, params });
 			}
 		}
 	}

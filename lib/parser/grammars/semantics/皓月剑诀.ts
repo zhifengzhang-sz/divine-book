@@ -1,19 +1,19 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	DamageIncrease,
 	DotExtraPerTick,
 	Effect,
 	ExclusiveAffixEffect,
 	NoShieldDoubleDamage,
-	PercentMaxHpDamageIncrease,
+	PercentMaxHpDamage,
 	PrimaryAffixEffect,
 	ShieldDestroyDamage,
 	ShieldDestroyDot,
 	SkillEffect,
 	StateRef,
 } from "../../schema/皓月剑诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -118,7 +118,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		exclusiveAffix_2(_bstg, varRef1, _pct1, _sep, _bing, varRef2, _pct2) {
-			const e1: PercentMaxHpDamageIncrease = { type: "percent_max_hp_damage", value: varRef1.extractVar };
+			const e1: PercentMaxHpDamage = { type: "percent_max_hp_damage", value: varRef1.extractVar };
 			const e2: DamageIncrease = { type: "damage_increase", value: varRef2.extractVar };
 			return [e1, e2];
 		},

@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import type { EffectRow } from "../../data/types.js";
+import type { EffectWithMeta } from "../../parser/schema/effects.js";
 import { SeededRNG } from "../rng.js";
 import type { PlayerState } from "../types.js";
 import { resolve as resolveRaw } from "./index.js";
 import type { HandlerContext, HandlerResult } from "./types.js";
 
 /** Unwrap resolve result — tests expect the HandlerResult directly */
-function resolve(effect: EffectRow, ctx: HandlerContext): HandlerResult {
+function resolve(effect: EffectWithMeta, ctx: HandlerContext): HandlerResult {
 	const { result, error } = resolveRaw(effect, ctx);
 	if (error) throw new Error(error);
 	return result;
@@ -43,7 +43,7 @@ function makeCtx(overrides?: Partial<HandlerContext>): HandlerContext {
 
 describe("base_attack", () => {
 	test("returns basePercent and hits", () => {
-		const effect: EffectRow = { type: "base_attack", hits: 6, total: 20265 };
+		const effect: EffectWithMeta = { type: "base_attack", hits: 6, total: 20265 };
 		const result = resolve(effect, makeCtx());
 		expect(result).not.toBeNull();
 		expect(result?.basePercent).toBe(20265);
@@ -53,7 +53,7 @@ describe("base_attack", () => {
 
 describe("percent_max_hp_damage", () => {
 	test("returns perHitEffects with PERCENT_MAX_HP_HIT (target resolves)", () => {
-		const effect: EffectRow = { type: "percent_max_hp_damage", value: 27 };
+		const effect: EffectWithMeta = { type: "percent_max_hp_damage", value: 27 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.perHitEffects).toBeDefined();
 		const events = result?.perHitEffects?.(0);
@@ -67,7 +67,7 @@ describe("percent_max_hp_damage", () => {
 
 describe("flat_extra_damage", () => {
 	test("returns flatExtra scaled by ATK", () => {
-		const effect: EffectRow = { type: "flat_extra_damage", value: 2000 };
+		const effect: EffectWithMeta = { type: "flat_extra_damage", value: 2000 };
 		const result = resolve(effect, makeCtx({ atk: 1000 }));
 		// 2000% / 100 * 1000 = 20000
 		expect(result?.flatExtra).toBe(20000);
@@ -76,7 +76,7 @@ describe("flat_extra_damage", () => {
 
 describe("debuff", () => {
 	test("produces APPLY_STATE with debuff kind", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "debuff",
 			target: "healing_received",
 			value: -80,
@@ -100,7 +100,7 @@ describe("debuff", () => {
 
 describe("self_buff", () => {
 	test("produces APPLY_STATE with buff kind", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "self_buff",
 			attack_bonus: 70,
 			defense_bonus: 70,
@@ -121,7 +121,7 @@ describe("self_buff", () => {
 
 describe("dot", () => {
 	test("produces APPLY_DOT", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "dot",
 			name: "噬心",
 			duration: 8,
@@ -143,7 +143,7 @@ describe("dot", () => {
 
 describe("shield_strength", () => {
 	test("produces SHIELD scaled by ATK", () => {
-		const effect: EffectRow = { type: "shield_strength", value: 50 };
+		const effect: EffectWithMeta = { type: "shield_strength", value: 50 };
 		const result = resolve(effect, makeCtx({ atk: 1000 }));
 		expect(result?.intents).toHaveLength(1);
 		const intent = result?.intents?.[0];
@@ -155,7 +155,7 @@ describe("shield_strength", () => {
 
 describe("lifesteal", () => {
 	test("produces LIFESTEAL with percent", () => {
-		const effect: EffectRow = { type: "lifesteal", value: 75 };
+		const effect: EffectWithMeta = { type: "lifesteal", value: 75 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.intents).toHaveLength(1);
 		expect(result?.intents?.[0]).toMatchObject({
@@ -167,7 +167,7 @@ describe("lifesteal", () => {
 
 describe("self_heal (instant)", () => {
 	test("produces HEAL scaled by ATK", () => {
-		const effect: EffectRow = { type: "self_heal", value: 20 };
+		const effect: EffectWithMeta = { type: "self_heal", value: 20 };
 		const result = resolve(effect, makeCtx({ atk: 1000 }));
 		expect(result?.intents).toHaveLength(1);
 		expect(result?.intents?.[0]).toMatchObject({
@@ -179,7 +179,7 @@ describe("self_heal (instant)", () => {
 
 describe("self_heal (per_tick)", () => {
 	test("produces APPLY_STATE + listener registration", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "self_heal",
 			per_tick: 12.5,
 			total: 250,
@@ -205,7 +205,7 @@ describe("self_heal (per_tick)", () => {
 
 describe("heal_echo_damage", () => {
 	test("produces listener registration", () => {
-		const effect: EffectRow = { type: "heal_echo_damage", ratio: 1 };
+		const effect: EffectWithMeta = { type: "heal_echo_damage", ratio: 1 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.listeners).toHaveLength(1);
 		expect(result?.listeners?.[0].parent).toBe("__heal__");
@@ -214,7 +214,7 @@ describe("heal_echo_damage", () => {
 
 describe("self_hp_cost", () => {
 	test("produces HP_COST", () => {
-		const effect: EffectRow = { type: "self_hp_cost", value: 10 };
+		const effect: EffectWithMeta = { type: "self_hp_cost", value: 10 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.intents).toHaveLength(1);
 		expect(result?.intents?.[0]).toMatchObject({
@@ -227,11 +227,11 @@ describe("self_hp_cost", () => {
 
 describe("per_hit_escalation", () => {
 	test("skill_bonus produces M_skill per hit", () => {
-		const effect: EffectRow = {
+		const effect = {
 			type: "per_hit_escalation",
 			value: 42.5,
 			stat: "skill_bonus",
-		};
+		} as unknown as EffectWithMeta;
 		const result = resolve(effect, makeCtx());
 		expect(result?.perHitEscalation).toBeDefined();
 		expect(result?.perHitEscalation?.(0)).toEqual({ M_skill: 0 });
@@ -240,12 +240,12 @@ describe("per_hit_escalation", () => {
 	});
 
 	test("damage with max cap", () => {
-		const effect: EffectRow = {
+		const effect = {
 			type: "per_hit_escalation",
 			value: 5,
 			stat: "damage",
 			max: 50,
-		};
+		} as unknown as EffectWithMeta;
 		const result = resolve(effect, makeCtx());
 		expect(result?.perHitEscalation?.(0)).toEqual({ M_dmg: 0 });
 		expect(result?.perHitEscalation?.(5)).toEqual({ M_dmg: 0.25 });
@@ -255,7 +255,7 @@ describe("per_hit_escalation", () => {
 
 describe("guaranteed_resonance", () => {
 	test("produces spDamage", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "guaranteed_resonance",
 			base_multiplier: 1.2,
 			chance: 25,
@@ -271,7 +271,7 @@ describe("guaranteed_resonance", () => {
 
 describe("probability_multiplier", () => {
 	test("produces M_synchro zone", () => {
-		const effect: EffectRow = {
+		const effect: EffectWithMeta = {
 			type: "probability_multiplier",
 			chance_4x: 60,
 			chance_3x: 80,
@@ -286,7 +286,7 @@ describe("probability_multiplier", () => {
 
 describe("damage_increase", () => {
 	test("produces M_dmg zone", () => {
-		const effect: EffectRow = { type: "damage_increase", value: 36 };
+		const effect: EffectWithMeta = { type: "damage_increase", value: 36 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.zones?.M_dmg).toBe(0.36);
 	});
@@ -294,7 +294,7 @@ describe("damage_increase", () => {
 
 describe("skill_damage_increase", () => {
 	test("produces M_skill zone", () => {
-		const effect: EffectRow = { type: "skill_damage_increase", value: 555 };
+		const effect = { type: "skill_damage_increase", value: 555 } as unknown as EffectWithMeta;
 		const result = resolve(effect, makeCtx());
 		expect(result?.zones?.M_skill).toBe(5.55);
 	});
@@ -302,7 +302,7 @@ describe("skill_damage_increase", () => {
 
 describe("unknown type", () => {
 	test("throws MissingHandlerError", () => {
-		const effect: EffectRow = { type: "totally_unknown_effect" };
+		const effect = { type: "totally_unknown_effect" } as unknown as EffectWithMeta;
 		expect(() => resolve(effect, makeCtx())).toThrow(
 			"No handler for effect type",
 		);

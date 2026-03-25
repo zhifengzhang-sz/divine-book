@@ -5,7 +5,7 @@
  * then re-exports the resolve function.
  */
 
-import type { EffectRow } from "../../data/types.js";
+import type { EffectWithMeta } from "../../parser/schema/effects.js";
 import { getHandler, hasHandler, registeredTypes } from "./registry.js";
 import type { HandlerContext, HandlerResult } from "./types.js";
 
@@ -37,7 +37,7 @@ export class MissingHandlerError extends Error {
  * If the handler is missing, result is empty and error describes the gap.
  */
 export function resolve(
-	effect: EffectRow,
+	effect: EffectWithMeta,
 	ctx: HandlerContext,
 ): { result: HandlerResult; error?: string } {
 	const handler = getHandler(effect.type);

@@ -3,12 +3,12 @@ import type * as ohm from "ohm-js";
 import type {
 	BaseAttack,
 	CounterBuff,
-	DebuffOnHit,
+	Debuff,
 	Effect,
 	ExclusiveAffixEffect,
 	PrimaryAffixEffect,
+	SelfBuff,
 	SelfBuffExtra,
-	SelfBuffHealing,
 	SkillEffect,
 	StateAdd,
 } from "../../schema/天刹真魔.js";
@@ -129,7 +129,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				durVar,
 				_m,
 			) {
-				const effect: SelfBuffHealing = {
+				const effect: SelfBuff = {
 					type: "self_buff",
 					healing_bonus: varRef.extractVar,
 					duration: durVar.extractVar,
@@ -151,7 +151,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				durVar,
 				_m,
 			) {
-				const effect: DebuffOnHit = {
+				const effect: Debuff = {
 					type: "debuff",
 					target: "final_damage_reduction",
 					value: varRef.extractVar,

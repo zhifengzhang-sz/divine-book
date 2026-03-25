@@ -3,11 +3,11 @@
  *
  * Reads 通用词缀.md (universal) and 修为词缀.md (school) —
  * 2-column tables (词缀 | 效果描述).
- * Parses each affix into typed EffectRow[] using the generic
+ * Parses each affix into typed Effect[] using the generic
  * affix pipeline (same AFFIX_EXTRACTORS as exclusive affixes).
  */
 
-import { cleanEffects, type EffectRow, formatEffect } from "./emit.js";
+import { cleanEffects, type EffectWithMeta, formatEffect } from "./emit.js";
 import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
 // import { runPipeline } from "./pipeline.js"; // TODO: rewire
 
@@ -123,7 +123,7 @@ function stripBackticks(text: string): string {
 
 export interface AffixData {
 	text?: string;
-	effects: EffectRow[];
+	effects: EffectWithMeta[];
 }
 
 export interface CommonAffixResult {

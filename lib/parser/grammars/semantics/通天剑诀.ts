@@ -1,6 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	ConditionalDamage,
 	CritDmgBonus,
 	DamageIncrease,
@@ -11,7 +12,6 @@ import type {
 	SelfDamageTakenIncrease,
 	SkillEffect,
 } from "../../schema/通天剑诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

@@ -2,13 +2,13 @@ import type * as ohm from "ohm-js";
 
 import type {
 	AllStateDuration,
+	BaseAttack,
 	CounterBuff,
 	Effect,
 	LifestealWithParent,
 	SelfHpCost,
 	StateAdd,
 } from "../../schema/疾风九变.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

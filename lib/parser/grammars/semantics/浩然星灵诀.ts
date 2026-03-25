@@ -1,13 +1,13 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	BuffStrength,
 	ConditionalHpScaling,
 	Effect,
 	SelfBuff,
 	StateRef,
 } from "../../schema/浩然星灵诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

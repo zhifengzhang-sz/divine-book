@@ -1,17 +1,16 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	Effect,
 	ExclusiveAffixEffect,
 	PerSelfLostHp,
 	PrimaryAffixEffect,
 	SelfHpCost,
 	SelfLostHpDamage,
-	SelfLostHpDamageAffix,
 	SkillEffect,
 	StateAdd,
 } from "../../schema/玄煞灵影诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -82,7 +81,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p,
 			_zsyslqxzhqjxhqzdsh,
 		) {
-			const effect: SelfLostHpDamageAffix = {
+			const effect: SelfLostHpDamage = {
 				type: "self_lost_hp_damage",
 				value: varRef.extractVar,
 				every_n_hits: hitsVar.extractVar,

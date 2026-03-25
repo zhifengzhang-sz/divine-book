@@ -3,7 +3,7 @@
  *
  * Both left untyped:
  * - shield_strength: handler reads `duration`, schema (煞影千幻.ShieldStrength) only has `value`
- * - shield: handler reads `parent` (from EffectRow), not present in schema (周天星元.Shield)
+ * - shield: handler reads `parent` (from Effect), not present in schema (周天星元.Shield)
  */
 
 import { register } from "./registry.js";

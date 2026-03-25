@@ -41,7 +41,7 @@ register("debuff", (effect) => {
 // 对敌方添加【灵涸】：治疗量降低x%，无法被驱散
 register<HealReduction>("heal_reduction", (effect) => {
 	const state: StateInstance = {
-		name: effect.state,
+		name: effect.state as string,
 		kind: "debuff",
 		source: "",
 		target: "opponent",
@@ -321,7 +321,7 @@ register("enemy_skill_damage_reduction", (effect) => {
 // Modeled as an additional on_attacked listener with higher chance.
 // Field mapping: legacy parent → schema state, legacy on_attacked_chance → schema value
 register<CounterDebuffUpgrade>("counter_debuff_upgrade", (effect) => {
-	const parent = effect.state;
+	const parent = effect.state as string;
 	const chance = (effect.value as number) ?? 60;
 	return {
 		listeners: [

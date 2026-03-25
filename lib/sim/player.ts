@@ -21,7 +21,7 @@ import {
 	sendTo,
 	setup,
 } from "xstate";
-import type { EffectRow } from "../data/types.js";
+import type { EffectWithMeta } from "../parser/schema/effects.js";
 import { bookMachine, extractHits } from "./book-machine.js";
 import { type AffixesYaml, type BooksYaml, selectTiers } from "./config.js";
 import type { SeededRNG } from "./rng.js";
@@ -129,15 +129,15 @@ function resolveAffixEffects(
 	slot: BookSlot,
 	booksYaml: BooksYaml,
 	affixesYaml: AffixesYaml,
-): EffectRow[] {
-	const result: EffectRow[] = [];
+): EffectWithMeta[] {
+	const result: EffectWithMeta[] = [];
 	const ops: { name?: string; progression?: ProgressionConfig }[] = [
 		{ name: slot.op1, progression: slot.op1Progression },
 		{ name: slot.op2, progression: slot.op2Progression },
 	];
 	for (const op of ops) {
 		if (!op.name) continue;
-		let raw: EffectRow[] | undefined;
+		let raw: EffectWithMeta[] | undefined;
 		// Check universal affixes
 		if (affixesYaml.universal[op.name]) {
 			raw = affixesYaml.universal[op.name].effects;

@@ -7,15 +7,15 @@
 
 import type {
 	BookData,
-	EffectRow,
 	ParsedBook,
 	StateDef,
 } from "../data/types.js";
+import type { EffectWithMeta } from "./schema/effects.js";
 
 export type {
 	AffixSection,
 	BookData,
-	EffectRow,
+	EffectWithMeta,
 	StateDef,
 } from "../data/types.js";
 
@@ -68,9 +68,9 @@ export function emitBooks(
 /**
  * Clean effect rows: remove undefined values, ensure correct types.
  */
-export function cleanEffects(effects: EffectRow[]): EffectRow[] {
+export function cleanEffects(effects: EffectWithMeta[]): EffectWithMeta[] {
 	return effects.map((e) => {
-		const clean: EffectRow = { type: e.type };
+		const clean: EffectWithMeta = { type: e.type } as EffectWithMeta;
 		for (const [k, v] of Object.entries(e)) {
 			if (v !== undefined) {
 				clean[k] = v;
@@ -180,7 +180,7 @@ function formatStateDef(name: string, def: StateDef, indent: number): string[] {
 	return lines;
 }
 
-export function formatEffect(effect: EffectRow, indent: number): string[] {
+export function formatEffect(effect: EffectWithMeta, indent: number): string[] {
 	const pad = " ".repeat(indent);
 	const lines: string[] = [];
 	const entries = Object.entries(effect);

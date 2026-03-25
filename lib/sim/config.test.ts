@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { EffectRow } from "../data/types.js";
+import type { EffectWithMeta } from "../parser/schema/effects.js";
 import {
 	ConfigValidationError,
 	loadAffixesYaml,
@@ -13,15 +13,17 @@ import type { PlayerConfig } from "./types.js";
 
 describe("selectTiers", () => {
 	test("selects highest matching tier", () => {
-		const effects: EffectRow[] = [
-			{ type: "base_attack", total: 1500, data_state: "enlightenment=0" },
+		const effects: EffectWithMeta[] = [
+			{ type: "base_attack", hits: 6, total: 1500, data_state: "enlightenment=0" },
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 11265,
 				data_state: ["enlightenment=1", "fusion=20"],
 			},
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 20265,
 				data_state: ["enlightenment=10", "fusion=51"],
 			},
@@ -35,15 +37,17 @@ describe("selectTiers", () => {
 	});
 
 	test("selects middle tier when highest not met", () => {
-		const effects: EffectRow[] = [
-			{ type: "base_attack", total: 1500, data_state: "enlightenment=0" },
+		const effects: EffectWithMeta[] = [
+			{ type: "base_attack", hits: 6, total: 1500, data_state: "enlightenment=0" },
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 11265,
 				data_state: ["enlightenment=1", "fusion=20"],
 			},
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 20265,
 				data_state: ["enlightenment=10", "fusion=51"],
 			},
@@ -54,9 +58,10 @@ describe("selectTiers", () => {
 	});
 
 	test("returns empty when no tier matches", () => {
-		const effects: EffectRow[] = [
+		const effects: EffectWithMeta[] = [
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 11265,
 				data_state: ["enlightenment=1", "fusion=20"],
 			},
@@ -66,17 +71,18 @@ describe("selectTiers", () => {
 	});
 
 	test("effects without data_state always match", () => {
-		const effects: EffectRow[] = [{ type: "damage_increase", value: 40 }];
+		const effects: EffectWithMeta[] = [{ type: "damage_increase", value: 40 }];
 		const selected = selectTiers(effects, { enlightenment: 0, fusion: 0 });
 		expect(selected).toHaveLength(1);
 		expect(selected[0].value).toBe(40);
 	});
 
 	test("selects independently per effect type", () => {
-		const effects: EffectRow[] = [
-			{ type: "base_attack", total: 1500, data_state: "enlightenment=0" },
+		const effects: EffectWithMeta[] = [
+			{ type: "base_attack", hits: 6, total: 1500, data_state: "enlightenment=0" },
 			{
 				type: "base_attack",
+				hits: 6,
 				total: 20265,
 				data_state: ["enlightenment=10", "fusion=51"],
 			},

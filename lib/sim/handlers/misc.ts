@@ -53,8 +53,8 @@ register<Resolved<SelfHpFloor>>("self_hp_floor", (effect) => ({
 // Creates a summon as a named state. Damage echo is computed in player machine
 // when BOOK_CAST_HITS fires while 分身 state is active.
 register<Resolved<Summon>>("summon", (effect) => {
-	const duration = effect.duration ?? 16;
-	const inheritStats = effect.inherit_stats ?? 50;
+	const duration = (effect.duration as number) ?? 16;
+	const inheritStats = (effect.inherit_stats as number) ?? 50;
 	return {
 		intents: [
 			{

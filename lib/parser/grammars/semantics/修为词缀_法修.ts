@@ -5,8 +5,8 @@ import type {
 	FinalDmgBonus,
 	HealingIncrease,
 	ProbabilityToCertain,
+	RandomBuff,
 } from "../../schema/修为词缀_法修.js";
-import type { RandomBuff } from "../../schema/通用词缀.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

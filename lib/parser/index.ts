@@ -9,7 +9,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import * as ohm from "ohm-js";
-import type { EffectRow, ParsedBook } from "../data/types.js";
+import type { ParsedBook } from "../data/types.js";
+import type { Effect, EffectWithMeta } from "./schema/effects.js";
 import { emitBooks, formatYaml } from "./emit.js";
 import {
 	type RawBookEntry,
@@ -92,7 +93,7 @@ export function cleanText(raw: string): string {
 		.trim();
 }
 
-export function parseEntry(grammarName: string, text: string, entryPoint: string): EffectRow[] {
+export function parseEntry(grammarName: string, text: string, entryPoint: string): Effect[] {
 	// Strip dashes from name (raw data has 新-青元剑诀, grammar has 新青元剑诀)
 	const g = grammars[grammarName] ?? grammars[grammarName.replace(/-/g, "")];
 	if (!g) { console.warn(`No grammar: ${grammarName}`); return []; }
@@ -111,13 +112,13 @@ export function parseEntry(grammarName: string, text: string, entryPoint: string
 
 // ── Resolve tiers ───────────────────────────────────────
 
-function resolveTiers(effects: EffectRow[], tiers: TierSpec[]): EffectRow[] {
-	if (tiers.length === 0) return effects;
+function resolveTiers(effects: Effect[], tiers: TierSpec[]): EffectWithMeta[] {
+	if (tiers.length === 0) return effects as EffectWithMeta[];
 
-	const resolved: EffectRow[] = [];
+	const resolved: EffectWithMeta[] = [];
 	for (const tier of tiers) {
 		if (tier.locked) {
-			resolved.push(...effects.map(e => ({ ...e, data_state: "locked" })));
+			resolved.push(...effects.map(e => ({ ...e, data_state: "locked" }) as EffectWithMeta));
 			continue;
 		}
 		const dataState = buildDataState(tier);
@@ -128,7 +129,7 @@ function resolveTiers(effects: EffectRow[], tiers: TierSpec[]): EffectRow[] {
 				if (typeof v === "string" || typeof v === "number") fields[k] = v;
 			}
 			const resolvedFields = resolveFields(fields, tier.vars);
-			const row: EffectRow = { type: effect.type, ...resolvedFields };
+			const row: EffectWithMeta = { ...effect, ...resolvedFields };
 			if (dataState) row.data_state = dataState;
 			// Preserve non-string/number fields (booleans, arrays, objects)
 			for (const [k, v] of Object.entries(effect)) {

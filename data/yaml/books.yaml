@@ -81,10 +81,10 @@ books:
           value: 80
           state: 灵涸
           duration: 8
+          undispellable: true
           data_state:
             - enlightenment=12
             - fusion=52
-          undispellable: true
   春黎剑阵:
     school: Sword
     skill_text: |
@@ -691,8 +691,8 @@ books:
         total: 1500
       - type: echo_damage
         value: 25
-        duration: 8
         ignore_damage_bonus: true
+        duration: 8
     primary_affix:
       name: 天龙轮转
       effects:
@@ -755,8 +755,8 @@ books:
       - type: conditional_damage
         value: 4
         damage_base: self_max_hp
-        condition: cleanse_excess
         per_hit: true
+        condition: cleanse_excess
     exclusive_affix:
       name: 九雷真解
       effects:
@@ -900,8 +900,8 @@ books:
         - type: attack_bonus
           value: 13
           max_stacks: 30
-          timing: pre_cast
           per_debuff_stack: true
+          timing: pre_cast
     exclusive_affix:
       name: 心逐神随
       effects:
@@ -1377,8 +1377,8 @@ books:
         state: 破虚
       - type: self_lost_hp_damage
         value: 10
-        next_skill_hits: 8
         per_hit: true
+        next_skill_hits: 8
     exclusive_affix:
       name: 天煞破虚
       effects:
@@ -1386,5 +1386,5 @@ books:
           interval: 1
           duration: 10
           damage_percent_of_skill: 25.5
-          data_state: fusion=50
           no_buff_double: true
+          data_state: fusion=50

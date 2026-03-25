@@ -1,12 +1,12 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	ConditionalDamage,
 	Effect,
 	OnBuffDebuffShield,
 	SelfCleanse,
 } from "../../schema/九天真雷诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

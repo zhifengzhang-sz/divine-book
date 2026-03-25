@@ -1,15 +1,14 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
+	Debuff,
 	Effect,
 	ExclusiveAffixEffect,
 	NextSkillBuff,
 	PrimaryAffixEffect,
-	SkillCooldownDebuff,
-	SkillDamageDebuff,
 	SkillEffect,
 } from "../../schema/新青元剑诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -33,7 +32,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return skillCooldown.toEffects();
 		},
 		skillCooldown(_sqxyg, varRef, _mlqsj) {
-			const effect: SkillCooldownDebuff = {
+			const effect: Debuff = {
 				type: "debuff",
 				name: "神通封印",
 				target: "next_skill_cooldown",
@@ -44,7 +43,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		primaryAffix(_sdfst, varRef, _pct, _sep, _cx, durVar, _miao) {
-			const effect: SkillDamageDebuff = {
+			const effect: Debuff = {
 				type: "debuff",
 				target: "skill_damage",
 				value: varRef.extractVar,

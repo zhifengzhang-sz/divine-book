@@ -2,7 +2,7 @@
  * Layer: Exclusive Affix Parser
  *
  * Reads 专属词缀.md — a 3-column table (功法 | 词缀 | 效果描述).
- * Parses each affix's Chinese prose into typed EffectRow[] using
+ * Parses each affix's Chinese prose into typed EffectWithMeta[] using
  * per-book parsers, consistent with primary affix parsing in split.ts.
  *
  * Named states in exclusive affixes are merged into the book's
@@ -10,7 +10,7 @@
  * is captured alongside the mechanical effects.
  */
 
-import type { EffectRow } from "./emit.js";
+import type { EffectWithMeta } from "./schema/effects.js";
 import { SCHOOL_MAP, type SplitCell, splitCell } from "./md-table.js";
 // import { runPipeline } from "./pipeline.js"; // TODO: rewire
 // import type { StateRegistry } from "./state-builder.js"; // TODO: rewire
@@ -95,7 +95,7 @@ export function readExclusiveAffixTable(
 export function parseExclusiveAffix(
 	entry: ExclusiveAffixEntry,
 	stateRegistry: any,
-): { name: string; effects: EffectRow[] } {
+): { name: string; effects: EffectWithMeta[] } {
 	const parser = EXCLUSIVE_PARSER_TABLE[entry.bookName];
 	if (!parser) {
 		throw new Error(
@@ -121,7 +121,7 @@ export function parseExclusiveAffix(
 	return { name: entry.affixName, effects };
 }
 
-type ExclusiveParser = (cell: SplitCell) => EffectRow[];
+type ExclusiveParser = (cell: SplitCell) => EffectWithMeta[];
 
 // ─── Exclusive affix parser table ───────────────────────────────
 //
@@ -138,9 +138,9 @@ function multiTierEffects(
 	emitTier: (
 		vars: Record<string, number>,
 		ds: ReturnType<typeof buildDataState>,
-	) => EffectRow[],
-): EffectRow[] {
-	const effects: EffectRow[] = [];
+	) => EffectWithMeta[],
+): EffectWithMeta[] {
+	const effects: EffectWithMeta[] = [];
 	for (const tier of cell.tiers) {
 		effects.push(...emitTier(tier.vars, buildDataState(tier)));
 	}
@@ -160,37 +160,37 @@ const compound_春黎剑阵: ExclusiveParser = (cell) =>
 			tick_interval: 1,
 			damage_per_tick: v.x,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 		{
 			type: "on_dispel",
 			damage: v.y,
 			stun: v.z,
 			parent: "噬心",
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_皓月剑诀: ExclusiveParser = (cell) =>
 	multiTierEffects(cell, (v, d) => [
-		{ type: "dot_extra_per_tick", value: v.x, ...ds(d) } as EffectRow,
+		{ type: "dot_extra_per_tick", value: v.x, ...ds(d) } as unknown as EffectWithMeta,
 		{
 			type: "conditional_buff",
 			condition: "enlightenment_10",
 			percent_max_hp_increase: v.y,
 			damage_increase: v.z,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_周天星元: ExclusiveParser = (cell) =>
 	multiTierEffects(cell, (v, d) => [
-		{ type: "debuff_stack_chance", value: v.x, ...ds(d) } as EffectRow,
+		{ type: "debuff_stack_chance", value: v.x, ...ds(d) } as unknown as EffectWithMeta,
 		{
 			type: "conditional_debuff",
 			name: "逆转阴阳",
 			multiplier: v.y,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_天刹真魔: ExclusiveParser = (cell) =>
@@ -201,7 +201,7 @@ const compound_天刹真魔: ExclusiveParser = (cell) =>
 			value: v.x,
 			duration: 8,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 		{
 			type: "conditional_debuff",
 			condition: "enlightenment",
@@ -210,7 +210,7 @@ const compound_天刹真魔: ExclusiveParser = (cell) =>
 			value: -v.y,
 			duration: 1,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_无相魔劫咒: ExclusiveParser = (cell) =>
@@ -222,7 +222,7 @@ const compound_无相魔劫咒: ExclusiveParser = (cell) =>
 			value: -v.x,
 			duration: 8,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 		{
 			type: "conditional_damage",
 			value: v.y,
@@ -230,7 +230,7 @@ const compound_无相魔劫咒: ExclusiveParser = (cell) =>
 			escalated_value: v.z,
 			parent: "魔劫",
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_惊蜇化龙: ExclusiveParser = (cell) =>
@@ -240,20 +240,20 @@ const compound_惊蜇化龙: ExclusiveParser = (cell) =>
 			per_stack: v.x,
 			max: v.y,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 		{
 			type: "conditional_buff",
 			condition: "enlightenment_max",
 			percent_lost_hp_increase: v.z,
 			damage_increase: v.w,
 			...ds(d),
-		} as EffectRow,
+		} as unknown as EffectWithMeta,
 	]);
 
 const compound_通天剑诀: ExclusiveParser = (cell) =>
 	multiTierEffects(cell, (v, d) => [
-		{ type: "ignore_damage_reduction", ...ds(d) } as EffectRow,
-		{ type: "damage_increase", value: v.x, ...ds(d) } as EffectRow,
+		{ type: "ignore_damage_reduction", ...ds(d) } as unknown as EffectWithMeta,
+		{ type: "damage_increase", value: v.x, ...ds(d) } as unknown as EffectWithMeta,
 	]);
 
 // ── Parser assignment table ────────────────────────────────────

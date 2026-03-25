@@ -5,7 +5,7 @@ import type {
 	ExclusiveAffixEffect,
 	HealReduction,
 	PercentMaxHpDamage,
-	PerHitEscalation,
+	PerHitEscalationBook,
 	PrimaryAffixEffect,
 	SkillEffect,
 } from "../../schema/千锋聚灵剑.js";
@@ -43,7 +43,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				return varRef.extractVar;
 			},
 			primaryAffix(_pre, _sep, _xydts, varRef, _pct, _stjc) {
-				const effect: PerHitEscalation = {
+				const effect: PerHitEscalationBook = {
 					type: "per_hit_escalation",
 					value: varRef.extractVar,
 					stat: "skill_bonus",

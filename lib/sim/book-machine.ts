@@ -10,7 +10,8 @@
  */
 
 import { type AnyActorRef, enqueueActions, sendTo, setup } from "xstate";
-import type { BookData, EffectRow } from "../data/types.js";
+import type { BookData } from "../data/types.js";
+import type { EffectWithMeta } from "../parser/schema/effects.js";
 import { processBook } from "./book.js";
 import type { SimulationClock } from "./clock.js";
 import { selectTiers } from "./config.js";
@@ -26,7 +27,7 @@ import type {
 
 interface BookMachineContext {
 	bookData: BookData;
-	affixEffects: EffectRow[];
+	affixEffects: EffectWithMeta[];
 	bookSlot: BookSlot;
 	progression: ProgressionConfig;
 	rng: SeededRNG;
@@ -38,7 +39,7 @@ interface BookMachineContext {
 
 export interface BookMachineInput {
 	bookData: BookData;
-	affixEffects: EffectRow[];
+	affixEffects: EffectWithMeta[];
 	bookSlot: BookSlot;
 	progression: ProgressionConfig;
 	rng: SeededRNG;

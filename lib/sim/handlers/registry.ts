@@ -4,7 +4,7 @@
  * index.ts imports handler modules and re-exports `resolve`.
  */
 
-import type { EffectRow } from "../../data/types.js";
+import type { EffectWithMeta } from "../../parser/schema/effects.js";
 import type { Handler, HandlerContext, HandlerResult } from "./types.js";
 
 const registry = new Map<string, Handler>();
@@ -16,8 +16,8 @@ const registry = new Map<string, Handler>();
  * Use the untyped form for legacy handlers (to be migrated):
  *   register("debuff", (effect) => { ... })
  */
-export function register<E extends { type: string } = EffectRow>(
-	type: E extends EffectRow ? string : E["type"],
+export function register<E extends { type: string } = EffectWithMeta>(
+	type: E extends EffectWithMeta ? string : E["type"],
 	handler: (effect: E, ctx: HandlerContext) => HandlerResult,
 ): void {
 	registry.set(type as string, handler as Handler);

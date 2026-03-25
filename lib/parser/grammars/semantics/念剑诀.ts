@@ -1,6 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	BuffDuration,
 	Effect,
 	ExclusiveAffixEffect,
@@ -10,7 +11,6 @@ import type {
 	SkillEffect,
 	Untargetable,
 } from "../../schema/念剑诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

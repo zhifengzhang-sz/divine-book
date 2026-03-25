@@ -5,9 +5,8 @@ import type {
 	CounterDebuff,
 	CounterDebuffUpgrade,
 	CrossSlotDebuff,
-	DotCurrentHp,
+	Dot,
 	DotDamageIncrease,
-	DotLostHp,
 	Effect,
 	ExclusiveAffixEffect,
 	PrimaryAffixEffect,
@@ -92,7 +91,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				return [];
 			},
 			childBlock(stateName, _colon, childBody) {
-				const effects = childBody.toEffects() as (DotCurrentHp | DotLostHp)[];
+				const effects = childBody.toEffects() as Dot[];
 				for (const e of effects) e.name = stateName.extractVar;
 				return effects;
 			},
@@ -108,7 +107,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				durVar,
 				_m,
 			) {
-				const effect: DotCurrentHp = {
+				const effect: Dot = {
 					type: "dot",
 					name: "", // filled in by childBlock
 					tick_interval: intervalVar.extractVar,
@@ -129,7 +128,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				durVar,
 				_m,
 			) {
-				const effect: DotLostHp = {
+				const effect: Dot = {
 					type: "dot",
 					name: "", // filled in by childBlock
 					tick_interval: intervalVar.extractVar,

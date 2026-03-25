@@ -1,16 +1,15 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	CrossSlotDebuff,
 	DebuffStackChance,
 	Effect,
 	HealEchoDamage,
-	PeriodicHeal,
 	SelfHeal,
 	Shield,
 	StateRef,
 } from "../../schema/周天星元.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -66,7 +65,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct2,
 			_dzdqxz,
 		) {
-			const effect: PeriodicHeal = {
+			const effect: SelfHeal = {
 				type: "self_heal",
 				per_tick: perTickVar.extractVar,
 				total: totalVar.extractVar,

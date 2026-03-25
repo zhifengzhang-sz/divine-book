@@ -1,12 +1,11 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	EchoDamage,
 	Effect,
 	Lifesteal,
-	LifestealExclusive,
 } from "../../schema/星元化岳.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -52,7 +51,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		exclusiveAffix(_pre, _sep, _hsbcsthdz, varRef, _pct, _dxxjg) {
-			const effect: LifestealExclusive = { type: "lifesteal", value: varRef.extractVar };
+			const effect: Lifesteal = { type: "lifesteal", value: varRef.extractVar };
 			return [effect];
 		},
 		preamble(_) {

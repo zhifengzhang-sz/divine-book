@@ -6,7 +6,8 @@
  * 2. Listener registrations (from effects with parent="<state_name>")
  */
 
-import type { BookData, EffectRow } from "../data/types.js";
+import type { BookData } from "../data/types.js";
+import type { EffectWithMeta } from "../parser/schema/effects.js";
 import { selectTiers } from "./config.js";
 import { buildHitEvents } from "./damage-chain.js";
 import { resolve } from "./handlers/index.js";
@@ -32,7 +33,7 @@ export interface BookResult {
  */
 export function processBook(
 	bookData: BookData,
-	affixEffects: EffectRow[],
+	affixEffects: EffectWithMeta[],
 	ctx: HandlerContext,
 	progression: { enlightenment: number; fusion: number },
 ): BookResult {
@@ -40,12 +41,12 @@ export function processBook(
 	// then merge. Tier dedup is only meaningful within a single source —
 	// effects of the same type from different sources must NOT be deduped.
 	// Tier-select book's own sources (skill, primary_affix, exclusive_affix)
-	const sources: EffectRow[][] = [];
+	const sources: EffectWithMeta[][] = [];
 	if (bookData.skill) sources.push(bookData.skill);
 	if (bookData.primary_affix) sources.push(bookData.primary_affix.effects);
 	if (bookData.exclusive_affix) sources.push(bookData.exclusive_affix.effects);
 
-	const allTiered: EffectRow[] = [];
+	const allTiered: EffectWithMeta[] = [];
 	for (const source of sources) {
 		allTiered.push(...selectTiers(source, progression));
 	}
@@ -53,8 +54,8 @@ export function processBook(
 	if (affixEffects.length > 0) allTiered.push(...affixEffects);
 
 	// Separate direct vs reactive by parent field
-	const directTiered: EffectRow[] = [];
-	const reactiveRaw: EffectRow[] = [];
+	const directTiered: EffectWithMeta[] = [];
+	const reactiveRaw: EffectWithMeta[] = [];
 	for (const effect of allTiered) {
 		const parent = effect.parent as string | undefined;
 		if (!parent || parent === "this") {
@@ -117,7 +118,7 @@ export function processBook(
  * Build a listener registration from a reactive effect.
  */
 function buildListenerRegistration(
-	effect: EffectRow,
+	effect: EffectWithMeta,
 	book: string,
 ): ListenerRegistration | null {
 	const parent = effect.parent as string;

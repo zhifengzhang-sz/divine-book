@@ -1,11 +1,12 @@
 import type * as ohm from "ohm-js";
-import type { Effect, MinLostHpThreshold } from "../../schema/修为词缀_体修.js";
 import type {
 	DamageReductionDuringCast,
+	Effect,
 	FlatExtraDamage,
+	MinLostHpThreshold,
 	PerEnemyLostHp,
 	ShieldValueIncrease,
-} from "../../schema/通用词缀.js";
+} from "../../schema/修为词缀_体修.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

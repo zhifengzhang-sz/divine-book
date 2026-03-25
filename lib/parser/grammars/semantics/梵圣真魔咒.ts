@@ -2,9 +2,8 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DotCurrentHp,
+	Dot,
 	DotFrequencyIncrease,
-	DotLostHp,
 	Effect,
 	ExclusiveAffixEffect,
 	PrimaryAffixEffect,
@@ -46,7 +45,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				return dot.toEffects();
 			},
 			dotCurrentHp(_mmdmbzc, varRef, _p, _dqqxzdsh) {
-				const effect: DotCurrentHp = {
+				const effect: Dot = {
 					type: "dot",
 					tick_interval: "1",
 					percent_current_hp: varRef.extractVar,
@@ -72,7 +71,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				_p,
 				_yslqxzsh,
 			) {
-				const effect: DotLostHp = {
+				const effect: Dot = {
 					type: "dot",
 					name: state2.extractVar,
 					tick_interval: "1",

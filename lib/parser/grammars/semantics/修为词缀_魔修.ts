@@ -3,7 +3,7 @@ import type * as ohm from "ohm-js";
 import type {
 	DamageToShield,
 	Effect,
-	ExecuteConditionalCrit,
+	ExecuteConditional,
 	HealingToDamage,
 	RandomDebuff,
 } from "../../schema/修为词缀_魔修.js";
@@ -35,7 +35,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_s3,
 			_qbdbj,
 		) {
-			const effect: ExecuteConditionalCrit = {
+			const effect: ExecuteConditional = {
 				type: "execute_conditional",
 				hp_threshold: threshVar.extractVar,
 				damage_increase: dmgVar.extractVar,

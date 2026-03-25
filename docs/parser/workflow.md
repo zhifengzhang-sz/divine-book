@@ -121,8 +121,8 @@ Both read from `data/raw/` and write to `data/yaml/`. The simulator loads these 
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart LR
     subgraph "Raw Data"
-        MAIN["data/raw/主書.md"]
-        EXCL["data/raw/專屬詞綴.md"]
+        MAIN["data/raw/主书.md"]
+        EXCL["data/raw/专属词缀.md"]
     end
 
     subgraph "Parse (per book)"
@@ -148,9 +148,9 @@ flowchart LR
 **Text cleaning** (before grammar match):
 - Strip backticks (raw data uses `` `增益` `` for emphasis)
 - Strip `【name】：` prefix from affix text
-- Strip editorial notes: `（最高不超过N級）`, `（N層達到最大...）`, `（數據為沒有悟境的情況）`
+- Strip editorial notes: `（最高不超过N级）`, `（N层达到最大...）`, `（数据为没有悟境的情况）`
 - Unescape `\*` → `*`
-- Book name dash: `新-青元剣訣` → lookup as `新青元剣訣`
+- Book name dash: `新-青元剑诀` → lookup as `新青元剑诀`
 
 **Tier resolution**:
 - Each tier line like `悟0境：x=1500, y=11` defines variable values
@@ -165,15 +165,15 @@ flowchart LR
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
 flowchart LR
     subgraph "Raw Data"
-        UNI["data/raw/通用詞綴.md"]
-        SCH["data/raw/修為詞綴.md"]
+        UNI["data/raw/通用词缀.md"]
+        SCH["data/raw/修为词缀.md"]
     end
 
     subgraph "Parse"
         UNI --> UENTRY["16 universal<br/>AffixEntry"]
         SCH --> SENTRY["17 school<br/>AffixEntry (4 schools)"]
-        UENTRY --> UMATCH["grammar.match<br/>通用詞綴"]
-        SENTRY --> SMATCH["grammar.match<br/>修為詞綴_劍修 / ..."]
+        UENTRY --> UMATCH["grammar.match<br/>通用词缀"]
+        SENTRY --> SMATCH["grammar.match<br/>修为词缀_剑修 / ..."]
     end
 
     subgraph "Resolve"
@@ -185,7 +185,7 @@ flowchart LR
     TIERS --> OUT["affixes.yaml"]
 ```
 
-School name mapping: `Sword→剣修, Spell→法修, Demon→魔修, Body→體修`
+School name mapping: `Sword→剑修, Spell→法修, Demon→魔修, Body→体修`
 
 ---
 
@@ -230,8 +230,8 @@ flowchart TB
 Many books share effect types (e.g., `BaseAttack` appears in all 28). When multiple books use the same type with the same fields, they import from the first schema that defined it:
 
 ```typescript
-// lib/parser/schema/春黎剣陣.ts
-export { BaseAttack } from "./千鋒聚靈劍.js";
+// lib/parser/schema/春黎剑阵.ts
+export { BaseAttack } from "./千锋聚灵剑.js";
 ```
 
 If a book uses a variation with different fields, it defines a new interface.

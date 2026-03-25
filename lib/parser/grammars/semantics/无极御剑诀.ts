@@ -1,14 +1,14 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
+	Debuff,
 	Effect,
-	EnemySkillDamageReduction,
 	ExclusiveAffixEffect,
 	PercentCurrentHpDamage,
 	SkillDamageIncreaseAffix,
 	SkillEffect,
 } from "../../schema/无极御剑诀.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -49,7 +49,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_stshjm,
 		) {
 			const e1: SkillDamageIncreaseAffix = { type: "skill_damage_increase_affix", value: varRef1.extractVar };
-			const e2: EnemySkillDamageReduction = {
+			const e2: Debuff = {
 				type: "debuff",
 				target: "enemy_skill_damage_reduction",
 				value: varRef2.extractVar,

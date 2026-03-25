@@ -1,12 +1,12 @@
 /**
- * Handler types — pure functions that translate EffectRow → HandlerResult.
+ * Handler types — pure functions that translate Effect → HandlerResult.
  *
  * Handlers do not produce events directly. They return zone contributions
  * and intent event declarations. The book function (book.ts) collects
  * these and builds the actual events.
  */
 
-import type { EffectRow } from "../../data/types.js";
+import type { EffectWithMeta } from "../../parser/schema/effects.js";
 import type {
 	IntentEvent,
 	ListenerRegistration,
@@ -53,7 +53,7 @@ export interface HandlerResult {
 	listeners?: ListenerRegistration[];
 }
 
-export type Handler = (effect: EffectRow, ctx: HandlerContext) => HandlerResult;
+export type Handler = (effect: EffectWithMeta, ctx: HandlerContext) => HandlerResult;
 
 /**
  * Narrow schema types for sim handlers: replaces `string | number` → `number`.

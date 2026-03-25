@@ -1,13 +1,12 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	Effect,
 	HealReduction,
-	SelfBuffExtra,
+	SelfBuff,
 	StateRef,
-	TripleStatBuff,
 } from "../../schema/甲元仙符.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -35,7 +34,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [ref, ...tripleBuff.toEffects()];
 		},
 		tripleStatBuff(_tszs, varRef, _pct, _gkljcszjczdqxz) {
-			const effect: TripleStatBuff = {
+			const effect: SelfBuff = {
 				type: "self_buff",
 				attack_bonus: varRef.extractVar,
 				defense_bonus: varRef.extractVar,
@@ -47,7 +46,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [];
 		},
 		primaryAffix(stateName, _ztewszshdz, varRef, _pct, _zljc) {
-			const effect: SelfBuffExtra = {
+			const effect: SelfBuff = {
 				type: "self_buff",
 				name: stateName.extractVar,
 				healing_bonus: varRef.extractVar,

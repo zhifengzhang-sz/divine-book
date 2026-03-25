@@ -2,7 +2,7 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DebuffComplex,
+	Debuff,
 	DelayedBurst,
 	DelayedBurstIncrease,
 	Effect,
@@ -94,7 +94,7 @@ export function addSemantics(s: ohm.Semantics): void {
 					damage_increase: string | number;
 					enhanced_damage_increase: string | number;
 				};
-				const effect: DebuffComplex = {
+				const effect: Debuff = {
 					type: "debuff",
 					name: stateName.extractVar,
 					duration: durVar.extractVar,

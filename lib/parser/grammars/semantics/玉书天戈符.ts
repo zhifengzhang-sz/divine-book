@@ -1,13 +1,13 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	ConditionalHpScaling,
 	DamageIncrease,
 	Effect,
 	EnlightenmentBonus,
 	PercentMaxHpDamage,
 } from "../../schema/玉书天戈符.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {

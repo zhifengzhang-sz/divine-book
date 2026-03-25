@@ -21,7 +21,6 @@ Divine Book (灵書) — combat simulator for a Chinese RPG. Parses skill/affix 
 
 - `docs/parser/design.ohm.md` — parser architecture (why)
 - `docs/parser/impl.ohm.md` — implementation spec (what)
-- `docs/parser/impl.ohm.effects.md` — effect reference: raw text → output → grammar → semantic
 - `data/raw/` — source of truth for game data (Chinese prose)
 
 ## Schema migration

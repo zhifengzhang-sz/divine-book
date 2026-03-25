@@ -1,6 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	DamageIncrease,
 	Effect,
 	PerDebuffStackTrueDamage,
@@ -8,9 +9,7 @@ import type {
 	SelfBuff,
 	SelfHpCost,
 	SelfLostHpDamage,
-	SelfLostHpDamageIncrease,
 } from "../../schema/惊蜇化龙.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -124,7 +123,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef2,
 			_p2,
 		) {
-			const lostHpEffect: SelfLostHpDamageIncrease = {
+			const lostHpEffect: SelfLostHpDamage = {
 				type: "self_lost_hp_damage",
 				value: varRef1.extractVar,
 			};

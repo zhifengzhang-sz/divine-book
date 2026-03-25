@@ -1,6 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
+	BaseAttack,
 	Chance,
 	ConditionalDamageControlled,
 	Debuff,
@@ -9,9 +10,8 @@ import type {
 	SelfLostHpDamage,
 	Shield,
 	ShieldStrength,
-	StateAddPerHit,
+	StateAdd,
 } from "../../schema/煞影千幻.js";
-import type { BaseAttack } from "../../schema/千锋聚灵剑.js";
 import { addExtractVar, parseCn } from "./shared.js";
 
 export function addSemantics(s: ohm.Semantics): void {
@@ -82,7 +82,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			debuffBody,
 		) {
-			const stateEffect: StateAddPerHit = {
+			const stateEffect: StateAdd = {
 				type: "state_add",
 				state: stateName.extractVar,
 				count: countVar.extractVar,

@@ -8,12 +8,16 @@
  * Parser writes this shape. Simulator reads it. Neither depends on the other.
  */
 
-/** A single effect row — type + arbitrary fields */
-export type EffectRow = { type: string; [k: string]: unknown };
+import type { Effect, EffectWithMeta } from "../parser/schema/effects.js";
+
+export type { Effect, EffectWithMeta };
+
+/** @deprecated Use Effect from schema/effects.ts instead */
+export type EffectRow = EffectWithMeta;
 
 export interface AffixSection {
 	name: string;
-	effects: EffectRow[];
+	effects: EffectWithMeta[];
 }
 
 export interface StateDef {
@@ -38,9 +42,9 @@ export interface ParsedBook {
 	affixText?: string;
 	exclusiveAffixText?: string;
 	states?: Record<string, StateDef>;
-	skill: EffectRow[];
-	primaryAffix?: { name: string; effects: EffectRow[] };
-	exclusiveAffix?: { name: string; effects: EffectRow[] };
+	skill: EffectWithMeta[];
+	primaryAffix?: { name: string; effects: EffectWithMeta[] };
+	exclusiveAffix?: { name: string; effects: EffectWithMeta[] };
 }
 
 /** Per-book parsed data — one entry in books.yaml */
@@ -53,7 +57,7 @@ export interface BookData {
 	/** Raw exclusive affix description from source prose (专属词缀.md) */
 	exclusive_affix_text?: string;
 	states?: Record<string, StateDef>;
-	skill?: EffectRow[];
+	skill?: EffectWithMeta[];
 	primary_affix?: AffixSection;
 	exclusive_affix?: AffixSection;
 }
