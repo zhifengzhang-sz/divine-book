@@ -28,10 +28,18 @@ export function addSemantics(s: ohm.Semantics): void {
 			_sep,
 			tripleBuff,
 			_sep2,
-			_duration,
+			durNode,
 		) {
 			const ref: StateRef = { type: "state_ref", state: stateName.extractVar };
-			return [ref, ...tripleBuff.toEffects()];
+			const effects = tripleBuff.toEffects() as Effect[];
+			const durMatch = durNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+			const dur = durMatch ? Number(durMatch[1]) : undefined;
+			for (const e of effects) {
+				if (e.type === "self_buff" && dur !== undefined) {
+					(e as SelfBuff).duration = dur;
+				}
+			}
+			return [ref, ...effects];
 		},
 		tripleStatBuff(_tszs, varRef, _pct, _gkljcszjczdqxz) {
 			const effect: SelfBuff = {

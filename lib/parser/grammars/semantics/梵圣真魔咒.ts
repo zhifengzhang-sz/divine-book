@@ -41,8 +41,16 @@ export function addSemantics(s: ohm.Semantics): void {
 				};
 				return [effect];
 			},
-			stateBody(dot, _sep, _dur) {
-				return dot.toEffects();
+			stateBody(dot, _sep, durNode) {
+				const effects = dot.toEffects() as SkillEffect[];
+				const durMatch = durNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+				const dur = durMatch ? Number(durMatch[1]) : undefined;
+				for (const e of effects) {
+					if (e.type === "dot" && dur !== undefined) {
+						(e as Dot).duration = dur;
+					}
+				}
+				return effects;
 			},
 			dotCurrentHp(_mmdmbzc, varRef, _p, _dqqxzdsh) {
 				const effect: Dot = {

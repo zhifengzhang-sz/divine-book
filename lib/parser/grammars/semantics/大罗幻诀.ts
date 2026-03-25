@@ -28,16 +28,23 @@ export function addSemantics(s: ohm.Semantics): void {
 				_colon,
 				mainBody,
 				_period,
-				_mainDur,
+				mainDurNode,
 				_ws,
 				child1,
 				_ws2,
 				child2,
 			) {
 				const states = mainBody.toEffects() as CounterDebuff[];
+				const durMatch = mainDurNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+				const dur = durMatch ? Number(durMatch[1]) : undefined;
+				const stateAddEffect: StateAdd = {
+					type: "state_add",
+					state: stateAdd.extractVar,
+					...(dur !== undefined && { duration: dur }),
+				};
 				return [
 					...baseAttack.toEffects(),
-					{ type: "state_add", state: stateAdd.extractVar } satisfies StateAdd,
+					stateAddEffect,
 					...states,
 					...child1.toEffects(),
 					...child2.toEffects(),
@@ -54,8 +61,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			stateAdd(_verb, stateName) {
 				return stateName.extractVar;
 			},
-			mainBody(counterDebuff, _sep, _maxStacks) {
-				return counterDebuff.toEffects();
+			mainBody(counterDebuff, _sep, maxStacksNode) {
+				const effects = counterDebuff.toEffects() as CounterDebuff[];
+				const stackMatch = maxStacksNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+				const maxStacks = stackMatch ? Number(stackMatch[1]) : undefined;
+				if (maxStacks !== undefined) {
+					for (const e of effects) {
+						e.max_stacks = maxStacks;
+					}
+				}
+				return effects;
 			},
 			counterDebuff(
 				_sdshshi,

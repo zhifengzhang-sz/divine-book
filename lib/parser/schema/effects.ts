@@ -500,6 +500,8 @@ export interface CounterDebuff {
 	name: V;
 	/** child state names (may be stripped during YAML serialization) */
 	states?: V[];
+	/** 最多叠加N层 */
+	max_stacks?: V;
 }
 export const CounterDebuffSchema = z.object({
 	type: z.literal("counter_debuff"),
@@ -508,6 +510,7 @@ export const CounterDebuffSchema = z.object({
 	count: V_Schema,
 	name: V_Schema,
 	states: z.array(V_Schema).optional(),
+	max_stacks: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<CounterDebuff>;
 
 /** 天刹真魔, 疾风九变. "受到伤害时..." */
@@ -523,6 +526,8 @@ export interface CounterBuff {
 	reflect_received_damage?: V;
 	/** 疾风九变: reflect % of lost HP */
 	reflect_percent_lost_hp?: V;
+	/** 持续N秒 */
+	duration?: V;
 }
 export const CounterBuffSchema = z.object({
 	type: z.literal("counter_buff"),
@@ -531,6 +536,7 @@ export const CounterBuffSchema = z.object({
 	no_healing_bonus: z.boolean().optional(),
 	reflect_received_damage: V_Schema.optional(),
 	reflect_percent_lost_hp: V_Schema.optional(),
+	duration: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<CounterBuff>;
 
 /** 春黎剑阵. "创建分身，继承V%属性" */
@@ -615,6 +621,8 @@ export interface StateAdd {
 	per_hit?: boolean;
 	/** 煞影千幻: cannot be dispelled */
 	undispellable?: boolean;
+	/** 持续N秒 */
+	duration?: V;
 }
 export const StateAddSchema = z.object({
 	type: z.literal("state_add"),
@@ -622,6 +630,7 @@ export const StateAddSchema = z.object({
 	count: V_Schema.optional(),
 	per_hit: z.boolean().optional(),
 	undispellable: z.boolean().optional(),
+	duration: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<StateAdd>;
 
 // ══════════════════════════════════════════════════════════

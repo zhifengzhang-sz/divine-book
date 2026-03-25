@@ -27,15 +27,23 @@ export function addSemantics(s: ohm.Semantics): void {
 			_s3,
 			shield,
 			_s4,
-			_shieldDur,
+			shieldDurNode,
 			_s5,
 			stateAddClause,
 		) {
+			const shieldEffects = shield.toEffects() as Effect[];
+			const durMatch = shieldDurNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+			const dur = durMatch ? Number(durMatch[1]) : undefined;
+			for (const e of shieldEffects) {
+				if (e.type === "shield" && dur !== undefined) {
+					(e as Shield).duration = dur;
+				}
+			}
 			return [
 				...hpCost.toEffects(),
 				...baseAttack.toEffects(),
 				...selfLostHp.toEffects(),
-				...shield.toEffects(),
+				...shieldEffects,
 				...stateAddClause.toEffects(),
 			];
 		},

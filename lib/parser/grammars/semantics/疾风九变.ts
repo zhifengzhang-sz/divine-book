@@ -53,8 +53,16 @@ export function addSemantics(s: ohm.Semantics): void {
 		stateAdd(_verb, stateName) {
 			return stateName.extractVar;
 		},
-		stateBody(counterBuff, _sep, _dur) {
-			return counterBuff.toEffects();
+		stateBody(counterBuff, _sep, durNode) {
+			const effects = counterBuff.toEffects() as Effect[];
+			const durMatch = durNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+			const dur = durMatch ? Number(durMatch[1]) : undefined;
+			for (const e of effects) {
+				if (e.type === "counter_buff" && dur !== undefined) {
+					(e as CounterBuff).duration = dur;
+				}
+			}
+			return effects;
 		},
 		counterBuffReflect(
 			_mmdmb,

@@ -25,13 +25,21 @@ export function addSemantics(s: ohm.Semantics): void {
 			_s3,
 			skillDmg,
 			_s4,
-			_dur,
+			durNode,
 		) {
+			const effects = skillDmg.toEffects() as Effect[];
+			const durMatch = durNode.sourceString.match(/(\d+(?:\.\d+)?)/);
+			const dur = durMatch ? Number(durMatch[1]) : undefined;
+			for (const e of effects) {
+				if (e.type === "self_buff" && dur !== undefined) {
+					(e as SelfBuff).duration = dur;
+				}
+			}
 			return [
 				...hpCost.toEffects(),
 				...baseAttack.toEffects(),
 				...selfLostHp.toEffects(),
-				...skillDmg.toEffects(),
+				...effects,
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
