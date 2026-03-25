@@ -1020,12 +1020,22 @@ export const ExtendedDotSchema = z.object({
 /** 天刹真魔. "在状态下额外获得增益" */
 export interface SelfBuffExtra {
 	type: "self_buff_extra";
-	/** source state */
+	/** source state (【不灭魔体】) */
 	state: V;
-	/** target state to buff */
+	/** target state to debuff (【天人五衰】) */
 	target_state: V;
-	/** crit rate bonus */
+	/** rotation interval in seconds (每3秒轮流) */
+	interval?: V;
+	/** 致命率 x% */
 	crit_rate: V;
+	/** 暴击伤害 x% */
+	crit_damage?: V;
+	/** 暴击率 x% (second crit stat in rotation) */
+	crit_rate_2?: V;
+	/** 攻击力 y% */
+	attack?: V;
+	/** 最终伤害减免 y% */
+	final_damage_reduction?: V;
 	/** duration in seconds */
 	duration: V;
 }
@@ -1033,7 +1043,12 @@ export const SelfBuffExtraSchema = z.object({
 	type: z.literal("self_buff_extra"),
 	state: V_Schema,
 	target_state: V_Schema,
+	interval: V_Schema.optional(),
 	crit_rate: V_Schema,
+	crit_damage: V_Schema.optional(),
+	crit_rate_2: V_Schema.optional(),
+	attack: V_Schema.optional(),
+	final_damage_reduction: V_Schema.optional(),
 	duration: V_Schema,
 }).passthrough() satisfies z.ZodType<SelfBuffExtra>;
 

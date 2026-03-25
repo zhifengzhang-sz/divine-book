@@ -70,19 +70,18 @@ export function addSemantics(s: ohm.Semantics): void {
 				_yus,
 				conjStateNames,
 			) {
-				const states: string[] = [firstName.extractVar];
+				const stateNames: string[] = [firstName.extractVar];
 				for (const child of conjStateNames.children) {
-					states.push(child.extractVar);
+					stateNames.push(child.extractVar);
 				}
-				const effect: CounterDebuff = {
+				// Emit one counter_debuff per state — raw text says each triggers independently
+				return stateNames.map((name): CounterDebuff => ({
 					type: "counter_debuff",
 					trigger: "on_attacked",
 					chance: chanceVar.extractVar,
 					count: countVar.extractVar,
-					name: states[0],
-					states,
-				};
-				return [effect];
+					name,
+				}));
 			},
 			maxStacks(_gzzddj, _varRef, _c) {
 				return [];

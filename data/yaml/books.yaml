@@ -192,7 +192,7 @@ books:
         - type: shield_destroy_dot
           state: 寂灭剑心
           interval: 0.5
-          value: 攻击力的伤害
+          value: 600
     exclusive_affix:
       name: 追神真诀
       effects:
@@ -877,7 +877,12 @@ books:
         - type: self_buff_extra
           state: 不灭魔体
           target_state: 天人五衰
+          interval: 3
           crit_rate: 50
+          crit_damage: 50
+          crit_rate_2: 50
+          attack: 23
+          final_damage_reduction: 23
           duration: 15
     exclusive_affix:
       name: 魔骨明心
@@ -972,6 +977,14 @@ books:
         data_state:
           - enlightenment=0
           - fusion=20
+      - type: counter_debuff
+        trigger: on_attacked
+        chance: 30
+        count: 1
+        name: 断魂之咒
+        data_state:
+          - enlightenment=0
+          - fusion=20
       - type: dot
         name: 噬心之咒
         tick_interval: 0.5
@@ -1004,6 +1017,14 @@ books:
         chance: 30
         count: 1
         name: 噬心之咒
+        data_state:
+          - enlightenment=10
+          - fusion=50
+      - type: counter_debuff
+        trigger: on_attacked
+        chance: 30
+        count: 1
+        name: 断魂之咒
         data_state:
           - enlightenment=10
           - fusion=50

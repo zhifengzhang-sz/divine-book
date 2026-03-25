@@ -95,12 +95,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			_mei,
 			intervalVar,
 			_mdmbzc,
-			_ymhd,
-			_xgs,
 			dmgVar,
 			_pct,
 			_gkldsh,
-			_parenOpt,
+			_lp,
+			_gapTo,
+			_rp,
 		) {
 			const effect: ShieldDestroyDot = {
 				type: "shield_destroy_dot",
