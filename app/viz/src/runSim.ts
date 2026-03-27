@@ -7,6 +7,11 @@ import { createActor } from "xstate";
 import type { EffectWithMeta } from "../../../lib/parser/schema/effects.js";
 import { SimulationClock } from "../../../lib/sim/clock.js";
 import { selectTiers, validatePlayerConfig } from "../../../lib/sim/config.js";
+import {
+	invokedTypes,
+	registeredTypes,
+	resetCoverage,
+} from "../../../lib/sim/handlers/index.js";
 import { playerMachine } from "../../../lib/sim/player.js";
 import { SeededRNG } from "../../../lib/sim/rng.js";
 import type { PlayerState, StateChangeEvent } from "../../../lib/sim/types.js";
@@ -191,6 +196,7 @@ export function runSimulation(config: SimConfig, gameData: GameData): Simulation
 	validatePlayerConfig(playerConfigA, booksYaml, affixesYaml);
 	validatePlayerConfig(playerConfigB, booksYaml, affixesYaml);
 
+	resetCoverage();
 	const clock = new SimulationClock();
 	const rng = new SeededRNG(seed);
 
@@ -290,6 +296,10 @@ export function runSimulation(config: SimConfig, gameData: GameData): Simulation
 
 	return {
 		verification: verA && verB ? { a: verA, b: verB } : undefined,
+		coverage: {
+			registered: registeredTypes(),
+			invoked: invokedTypes(),
+		},
 		config: {
 			playerA: {
 				label: "A",

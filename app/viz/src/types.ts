@@ -11,11 +11,17 @@ export interface BookVerification {
 	listeners: number;
 }
 
+export interface HandlerCoverage {
+	registered: string[];
+	invoked: string[];
+}
+
 export interface SimulationData {
 	verification?: {
 		a: BookVerification;
 		b: BookVerification;
 	};
+	coverage?: HandlerCoverage;
 	config: {
 		playerA: {
 			label: string;

@@ -24,6 +24,21 @@ import type {
 	RandomDebuff,
 } from "../../parser/schema/修为词缀_魔修.js";
 import type { MinLostHpThreshold } from "../../parser/schema/修为词缀_体修.js";
+import type {
+	BuffSteal,
+	DelayedBurst,
+	DelayedBurstIncrease,
+	ExtendedDot,
+	FinalDmgBonus,
+	OnBuffDebuffShield,
+	OnDispel,
+	OnShieldExpire,
+	PeriodicCleanse,
+	PeriodicDispel,
+	ProbabilityToCertain,
+	ShieldDestroyDot,
+	Untargetable,
+} from "../../parser/schema/effects.js";
 import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
 
@@ -249,7 +264,7 @@ register<Resolved<MinLostHpThreshold>>("min_lost_hp_threshold", (effect) => ({
 // ── Untyped handlers (no matching schema or field mismatches) ────────
 
 // buff_steal: handler reads `count`, schema (天轮魔经.BuffSteal) has `value`
-register("buff_steal", (effect) => ({
+register<BuffSteal>("buff_steal", (effect) => ({
 	intents: [
 		{
 			type: "BUFF_STEAL" as const,
@@ -259,7 +274,7 @@ register("buff_steal", (effect) => ({
 }));
 
 // delayed_burst: handler reads `burst_base`/`duration`, schema (无相魔劫咒.DelayedBurst) has `burst_damage`/`burst_atk_damage`/`increase`
-register("delayed_burst", (effect, ctx) => {
+register<DelayedBurst>("delayed_burst", (effect, ctx) => {
 	const damage = ((effect.burst_base as number) / 100) * ctx.atk;
 	const delay = effect.duration as number;
 	return {
@@ -268,12 +283,12 @@ register("delayed_burst", (effect, ctx) => {
 });
 
 // delayed_burst_increase: handler reads `parent`, schema (无相魔劫咒.DelayedBurstIncrease) has `state`
-register("delayed_burst_increase", (effect, ctx) => ({
+register<DelayedBurstIncrease>("delayed_burst_increase", (effect, ctx) => ({
 	flatExtra: ((effect.value as number) / 100) * ctx.atk,
 }));
 
 // periodic_dispel: handler reads `count`/`interval`/`duration`/`parent`, schema variants don't match
-register("periodic_dispel", (effect) => {
+register<PeriodicDispel>("periodic_dispel", (effect) => {
 	const count = (effect.count as number) ?? 1;
 	return {
 		intents: [{ type: "DISPEL" as const, count }],
@@ -281,7 +296,7 @@ register("periodic_dispel", (effect) => {
 });
 
 // periodic_cleanse: handler reads `chance`/`interval`/`max_triggers`/`parent`, schema (十方真魄.PeriodicCleanse) has `chance`/`target`/`cooldown`/`max_times`
-register("periodic_cleanse", (effect) => {
+register<PeriodicCleanse>("periodic_cleanse", (effect) => {
 	const chance = (effect.chance as number) ?? 30;
 	const interval = (effect.interval as number) ?? 1;
 	const maxTriggers = (effect.max_triggers as number) ?? 1;
@@ -326,7 +341,7 @@ register("periodic_cleanse", (effect) => {
 });
 
 // on_dispel: handler reads `parent`, not in schema (春黎剑阵.OnDispel)
-register("on_dispel", (effect, _ctx) => {
+register<OnDispel>("on_dispel", (effect, _ctx) => {
 	const parent = (effect.parent as string) ?? "on_dispel";
 	const damagePct = effect.damage as number;
 	return {
@@ -348,7 +363,7 @@ register("on_dispel", (effect, _ctx) => {
 });
 
 // on_shield_expire: handler reads `damage_percent_of_shield`, schema (九重天凤诀.OnShieldExpire) has `value`
-register("on_shield_expire", (effect) => {
+register<OnShieldExpire>("on_shield_expire", (effect) => {
 	const pct = (effect.damage_percent_of_shield as number) ?? 100;
 	return {
 		listeners: [
@@ -375,8 +390,8 @@ register("on_shield_expire", (effect) => {
 	};
 });
 
-// on_buff_debuff_shield_trigger: type string mismatch (schema type is "on_buff_debuff_shield")
-register("on_buff_debuff_shield_trigger", (effect) => {
+// on_buff_debuff_shield: trigger damage per buff/debuff/shield event
+register<OnBuffDebuffShield>("on_buff_debuff_shield", (effect) => {
 	const pct = (effect.damage_percent as number) ?? 0;
 	return {
 		perHitEffects: () => [
@@ -389,8 +404,8 @@ register("on_buff_debuff_shield_trigger", (effect) => {
 	};
 });
 
-// untargetable_state: type string mismatch (schema type is "untargetable"), handler reads `duration`, schema has `value`
-register("untargetable_state", (effect) => ({
+// untargetable: makes self untargetable for duration
+register<Untargetable>("untargetable", (effect) => ({
 	intents: [
 		{
 			type: "APPLY_STATE" as const,
@@ -410,7 +425,7 @@ register("untargetable_state", (effect) => ({
 }));
 
 // extended_dot: handler reads `tick_interval`, schema (念剑诀.ExtendedDot) has `interval`
-register("extended_dot", (effect) => {
+register<ExtendedDot>("extended_dot", (effect) => {
 	const seconds = (effect.extra_seconds as number) ?? 0;
 	// Extra seconds of DoT ≈ proportional damage increase
 	// Typical DoT lasts 8-18s, so extra_seconds/10 is approximate bonus
@@ -418,7 +433,7 @@ register("extended_dot", (effect) => {
 });
 
 // shield_destroy_dot: handler reads `per_shield_damage`/`no_shield_assumed`/`parent`, schema (皓月剑诀.ShieldDestroyDot) has `value`/`state`/`interval`
-register("shield_destroy_dot", (effect, _ctx) => {
+register<ShieldDestroyDot>("shield_destroy_dot", (effect, _ctx) => {
 	const parent = (effect.parent as string) ?? "shield_destroy_dot";
 	const perShield = (effect.per_shield_damage as number) ?? 600;
 	const noShieldAssumed = (effect.no_shield_assumed as number) ?? 2;
@@ -447,58 +462,14 @@ register("shield_destroy_dot", (effect, _ctx) => {
 	};
 });
 
-// hp_cost_avoid_chance: no schema exists
-register("hp_cost_avoid_chance", (effect) => {
-	const chance = (effect.value as number) ?? 0;
-	return {
-		intents: [
-			{
-				type: "APPLY_STATE" as const,
-				state: {
-					name: "hp_cost_avoid",
-					kind: "buff" as const,
-					source: "",
-					target: "self" as const,
-					effects: [
-						{
-							stat: "damage_reduction",
-							value: chance,
-						},
-					],
-					remainingDuration: Number.POSITIVE_INFINITY,
-					stacks: 1,
-					maxStacks: 1,
-					dispellable: false,
-				},
-			},
-		],
-	};
-});
-
-// random_buff: handler reads `crit_damage`/`damage`, schema (通用词缀.RandomBuff) only has `attack`
-register("random_buff", (effect, ctx) => {
-	const options = [
-		{ stat: "S_coeff", value: ((effect.attack as number) ?? 0) / 100 },
-		{ stat: "M_dmg", value: ((effect.crit_damage as number) ?? 0) / 100 },
-		{ stat: "M_dmg", value: ((effect.damage as number) ?? 0) / 100 },
-	].filter((o) => o.value > 0);
-	if (options.length === 0) return {};
-	const pick = options[Math.floor(ctx.rng.next() * options.length)];
-	return { zones: { [pick.stat]: pick.value } };
-});
-
-// final_damage_bonus: type string mismatch (schema type is "final_dmg_bonus")
-register("final_damage_bonus", (effect) => ({
+// final_dmg_bonus: final damage multiplier
+register<FinalDmgBonus>("final_dmg_bonus", (effect) => ({
 	zones: { M_final: (effect.value as number) / 100 },
 }));
 
 // probability_to_certain: handler reads `damage_increase`, not in schema (修为词缀_法修.ProbabilityToCertain)
-register("probability_to_certain", (effect) => ({
+register<ProbabilityToCertain>("probability_to_certain", (effect) => ({
 	forceSynchroMax: true,
 	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
 }));
 
-// enlightenment_bonus: handler reads `damage_increase`, schema (玉书天戈符.EnlightenmentBonus) has `value`
-register("enlightenment_bonus", (effect) => ({
-	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
-}));

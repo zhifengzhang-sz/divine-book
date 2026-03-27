@@ -2,17 +2,26 @@
  * Buff handlers: self_buff, damage_reduction_during_cast
  */
 
+import type {
+	ConditionalBuff,
+	ConditionalHealBuff,
+	CounterBuff,
+	SelfBuff,
+	SelfBuffExtra,
+	SelfDamageTakenIncrease,
+} from "../../parser/schema/effects.js";
 import type { AllStateDuration, DamageReductionDuringCast, NextSkillBuff } from "../../parser/schema/通用词缀.js";
 import type { BuffDuration } from "../../parser/schema/念剑诀.js";
 import type { BuffStackIncrease } from "../../parser/schema/元磁神光.js";
 import type { SelfBuffExtend } from "../../parser/schema/十方真魄.js";
 import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
+import type { Resolved } from "./types.js";
 
 // self_buff: { attack_bonus?, defense_bonus?, final_damage_bonus?,
 //              skill_damage_increase?, duration, name? }
 // Creates a buff state on self with stat modifiers.
-register("self_buff", (effect) => {
+register<SelfBuff>("self_buff", (effect) => {
 	const effects: { stat: string; value: number }[] = [];
 	const statFields = [
 		"attack_bonus",
@@ -50,7 +59,7 @@ register("self_buff", (effect) => {
 // Adds extra stat effects to an existing self_buff by name.
 // At cast time, we don't have a reference to the existing buff — just apply
 // a new buff with the same name so it stacks or refreshes.
-register("self_buff_extra", (effect) => {
+register<SelfBuffExtra>("self_buff_extra", (effect) => {
 	const buffName = (effect.buff_name as string) ?? "self_buff";
 	const effects: { stat: string; value: number }[] = [];
 	const statFields = [
@@ -86,7 +95,7 @@ register("self_buff_extra", (effect) => {
 
 // conditional_buff: { condition, percent_max_hp_increase?, damage_increase?, ... }
 // Applies a buff conditionally. Checks condition against actual game state.
-register("conditional_buff", (effect, _ctx) => {
+register<ConditionalBuff>("conditional_buff", (effect, _ctx) => {
 	const condition = (effect.condition as string) ?? "";
 	let conditionMet = true;
 	switch (condition) {
@@ -130,7 +139,7 @@ register("conditional_buff", (effect, _ctx) => {
 
 // counter_buff: { name, heal_on_damage_taken?, reflect_received_damage?, duration? }
 // On-attacked reactive buff. Creates a named state and registers an on_attacked listener.
-register("counter_buff", (effect, _ctx) => {
+register<CounterBuff>("counter_buff", (effect, _ctx) => {
 	const name = (effect.name as string) ?? "counter_buff";
 	const duration = (effect.duration as number) ?? Number.POSITIVE_INFINITY;
 
@@ -207,7 +216,7 @@ register<DamageReductionDuringCast>("damage_reduction_during_cast", (effect) => 
 
 // self_damage_taken_increase: { value, duration }
 // Debuff on self: increases damage taken. Used by body school tradeoffs.
-register("self_damage_taken_increase", (effect) => {
+register<SelfDamageTakenIncrease>("self_damage_taken_increase", (effect) => {
 	const state: StateInstance = {
 		name: "self_damage_taken_increase",
 		kind: "debuff",
@@ -229,13 +238,13 @@ register("self_damage_taken_increase", (effect) => {
 // persists since there's no subsequent cast to consume it.
 // Duration = Infinity (consumed by next cast in multi-slot mode).
 // Note: legacy data had a `stat` field; schema only has `value` (always skill_damage_increase).
-register<NextSkillBuff>("next_skill_buff", (effect) => {
+register<Resolved<NextSkillBuff>>("next_skill_buff", (effect) => {
 	const state: StateInstance = {
 		name: "next_skill_buff",
 		kind: "buff",
 		source: "",
 		target: "self",
-		effects: [{ stat: "skill_damage_increase", value: effect.value as number }],
+		effects: [{ stat: "skill_damage_increase", value: effect.value }],
 		remainingDuration: Number.POSITIVE_INFINITY,
 		stacks: 1,
 		maxStacks: 1,
@@ -248,7 +257,7 @@ register<NextSkillBuff>("next_skill_buff", (effect) => {
 
 // conditional_heal_buff: { condition, value, duration }
 // Heals and/or buffs when condition is met.
-register("conditional_heal_buff", (effect, ctx) => {
+register<ConditionalHealBuff>("conditional_heal_buff", (effect, ctx) => {
 	const value = effect.value as number;
 	return {
 		intents: [

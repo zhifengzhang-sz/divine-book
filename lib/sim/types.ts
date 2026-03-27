@@ -103,6 +103,8 @@ export interface HitEvent {
 	damage: number;
 	spDamage: number;
 	perHitEffects?: IntentEvent[];
+	/** Handler types that contributed to this hit's damage chain */
+	handlerTypes?: string[];
 }
 
 export interface PercentMaxHpHitEvent {
@@ -191,6 +193,16 @@ export interface NoShieldDoubleEvent {
 	type: "NO_SHIELD_DOUBLE";
 }
 
+// ── Event Provenance ────────────────────────────────────────────────
+
+/** Traces which handler produced an event — for debugging verification mismatches. */
+export interface EventSource {
+	/** Handler type string, e.g., "base_attack" */
+	handler: string;
+	/** Book name that triggered this handler */
+	book: string;
+}
+
 // ── State-Change Events (design §4.1, emitted via emit) ────────────
 
 export type StateChangeEvent =
@@ -237,6 +249,7 @@ export interface HpChangeEvent {
 	prev: number;
 	next: number;
 	cause: string;
+	source?: EventSource;
 	t: number;
 }
 
@@ -255,6 +268,7 @@ export interface ShieldChangeEvent {
 	prev: number;
 	next: number;
 	cause: string;
+	source?: EventSource;
 	t: number;
 }
 
@@ -271,6 +285,7 @@ export interface StateApplyEvent {
 	type: "STATE_APPLY";
 	player: string;
 	state: StateInstance;
+	source?: EventSource;
 	t: number;
 }
 

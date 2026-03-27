@@ -8,6 +8,7 @@ import type { EffectWithMeta } from "../../parser/schema/effects.js";
 import type { Handler, HandlerContext, HandlerResult } from "./types.js";
 
 const registry = new Map<string, Handler>();
+const invoked = new Set<string>();
 
 /**
  * Register a handler with schema-typed effect.
@@ -24,7 +25,9 @@ export function register<E extends { type: string } = EffectWithMeta>(
 }
 
 export function getHandler(type: string): Handler | undefined {
-	return registry.get(type);
+	const handler = registry.get(type);
+	if (handler) invoked.add(type);
+	return handler;
 }
 
 export function hasHandler(type: string): boolean {
@@ -33,4 +36,14 @@ export function hasHandler(type: string): boolean {
 
 export function registeredTypes(): string[] {
 	return [...registry.keys()];
+}
+
+/** Return which registered handlers were invoked since last reset. */
+export function invokedTypes(): string[] {
+	return [...invoked];
+}
+
+/** Reset invocation tracking (call between sim runs). */
+export function resetCoverage(): void {
+	invoked.clear();
 }

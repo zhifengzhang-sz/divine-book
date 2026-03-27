@@ -25,6 +25,8 @@ export interface HandlerContext {
 }
 
 export interface HandlerResult {
+	/** Which handler produced this result (set by resolve(), not by handlers) */
+	handlerType?: string;
 	/** Base damage percent from base_attack (e.g., 20265) */
 	basePercent?: number;
 	/** Number of hits — overrides ctx.hits if set */

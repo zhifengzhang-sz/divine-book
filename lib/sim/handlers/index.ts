@@ -48,7 +48,9 @@ export function resolve(
 		};
 	}
 	try {
-		return { result: handler(effect, ctx) };
+		const result = handler(effect, ctx);
+		result.handlerType = effect.type;
+		return { result };
 	} catch (e) {
 		return {
 			result: {},
@@ -57,4 +59,4 @@ export function resolve(
 	}
 }
 
-export { hasHandler, registeredTypes };
+export { hasHandler, registeredTypes, invokedTypes, resetCoverage } from "./registry.js";

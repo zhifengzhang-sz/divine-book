@@ -6,12 +6,10 @@
  * - shield: handler reads `parent` (from Effect), not present in schema (周天星元.Shield)
  */
 
+import type { Shield, ShieldStrength } from "../../parser/schema/effects.js";
 import { register } from "./registry.js";
 
-// shield_strength: { value }
-// Increases shield value. The `value` is a percentage of some source.
-// In the context of the damage chain, this produces a SHIELD intent.
-register("shield_strength", (effect, ctx) => ({
+register<ShieldStrength>("shield_strength", (effect, ctx) => ({
 	intents: [
 		{
 			type: "SHIELD" as const,
@@ -26,7 +24,7 @@ register("shield_strength", (effect, ctx) => ({
 // Two forms:
 //   Direct:  immediate SHIELD intent
 //   Reactive (parent + trigger=per_tick): periodic shield via listener
-register("shield", (effect, ctx) => {
+register<Shield>("shield", (effect, ctx) => {
 	const percent = effect.value as number;
 	const duration = (effect.duration as number) ?? 0;
 	const source = effect.source as string | undefined;

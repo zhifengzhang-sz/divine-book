@@ -18,6 +18,11 @@ import type { DotDamageIncrease } from "../../parser/schema/大罗幻诀.js";
 import type { DotFrequencyIncrease } from "../../parser/schema/梵圣真魔咒.js";
 import type { DotExtraPerTick } from "../../parser/schema/皓月剑诀.js";
 import type { PeriodicEscalation } from "../../parser/schema/念剑诀.js";
+import type {
+	CritDmgBonus,
+	EnlightenmentBonus,
+	SkillDamageIncreaseAffix,
+} from "../../parser/schema/effects.js";
 import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
 
@@ -47,10 +52,9 @@ register<Resolved<DamageIncrease>>("damage_increase", (effect) => ({
 	zones: { M_dmg: effect.value / 100 },
 }));
 
-// skill_damage_increase: { value }
+// skill_damage_increase_affix — schema: lib/parser/schema/effects.ts (SkillDamageIncreaseAffix)
 // Additive contribution to the M_skill zone.
-// Untyped: type string mismatch (schema type is "skill_damage_increase_affix")
-register("skill_damage_increase", (effect) => ({
+register<SkillDamageIncreaseAffix>("skill_damage_increase_affix", (effect) => ({
 	zones: { M_skill: (effect.value as number) / 100 },
 }));
 
@@ -65,7 +69,7 @@ register<Resolved<AttackBonus>>("attack_bonus", (effect) => ({
 // crit_damage_bonus: { value }
 // Additive M_dmg zone bonus (crit damage modeled as damage increase).
 // Untyped: type string mismatch (schema type is "crit_dmg_bonus")
-register("crit_damage_bonus", (effect) => ({
+register<CritDmgBonus>("crit_dmg_bonus", (effect) => ({
 	zones: { M_dmg: (effect.value as number) / 100 },
 }));
 
@@ -105,8 +109,8 @@ register<Resolved<DotExtraPerTick>>("dot_extra_per_tick", (effect, ctx) => ({
 // enlightenment_bonus: { value, damage_increase }
 // Bonus based on enlightenment level. Treat as damage increase.
 // Untyped: handler reads `damage_increase`, schema (玉书天戈符.EnlightenmentBonus) has `value`
-register("enlightenment_bonus", (effect) => ({
-	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+register<EnlightenmentBonus>("enlightenment_bonus", (effect) => ({
+	zones: { M_dmg: ((effect.value as number) ?? 0) / 100 },
 }));
 
 // periodic_escalation: { every_n_hits, multiplier, max_stacks }

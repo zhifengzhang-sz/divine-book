@@ -23,8 +23,10 @@ export function buildHitEvents(
 		[];
 	let perHitEffectsFn: ((k: number) => IntentEvent[]) | undefined;
 	let forceSynchroMax = false;
+	const handlerTypes: string[] = [];
 
 	for (const r of results) {
+		if (r.handlerType) handlerTypes.push(r.handlerType);
 		if (r.basePercent !== undefined) basePercent = r.basePercent;
 		if (r.hitsOverride !== undefined) hits = r.hitsOverride;
 		if (r.flatExtra !== undefined) flatExtra += r.flatExtra;
@@ -82,6 +84,7 @@ export function buildHitEvents(
 			damage,
 			spDamage: perHitSp,
 			perHitEffects: perHitEffectsFn?.(k),
+			handlerTypes: handlerTypes.length > 0 ? handlerTypes : undefined,
 		});
 	}
 

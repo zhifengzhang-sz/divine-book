@@ -729,6 +729,9 @@ function resolveHit(
 					prev: prevHp,
 					next: s.hp,
 					cause: `hit_${hit.hitIndex}`,
+					source: hit.handlerTypes
+						? { handler: hit.handlerTypes.join("+"), book: "" }
+						: undefined,
 					t,
 				}),
 			);

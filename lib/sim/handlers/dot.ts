@@ -4,12 +4,13 @@
  * Untyped: handler reads `name`, schema (春黎剑阵.Dot) has `state`.
  */
 
+import type { Dot } from "../../parser/schema/effects.js";
 import { register } from "./registry.js";
 
-// dot: { name, duration, tick_interval, damage_per_tick, data_state }
+// dot — schema: lib/parser/schema/effects.ts (Dot)
 // Creates a periodic damage debuff on the opponent.
 // damage_per_tick is in %ATK units (e.g., 550 = 550% ATK).
-register("dot", (effect, ctx) => ({
+register<Dot>("dot", (effect, ctx) => ({
 	intents: [
 		{
 			type: "APPLY_DOT" as const,

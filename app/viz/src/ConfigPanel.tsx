@@ -122,8 +122,13 @@ function getTierOptionsFromEffects(
 
 function getTierOptions(platform: string): TierOption[] {
 	const book = allBooksData[platform];
-	if (!book?.skill) return [];
-	return getTierOptionsFromEffects(book.skill);
+	if (!book) return [];
+	const allEffects: EffectEntry[] = [
+		...(book.skill ?? []),
+		...(book.primary_affix?.effects ?? []),
+		...(book.exclusive_affix?.effects ?? []),
+	];
+	return getTierOptionsFromEffects(allEffects);
 }
 
 function getAffixTierOptions(affixName: string): TierOption[] {

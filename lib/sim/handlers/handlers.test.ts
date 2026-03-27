@@ -292,9 +292,9 @@ describe("damage_increase", () => {
 	});
 });
 
-describe("skill_damage_increase", () => {
+describe("skill_damage_increase_affix", () => {
 	test("produces M_skill zone", () => {
-		const effect = { type: "skill_damage_increase", value: 555 } as unknown as EffectWithMeta;
+		const effect = { type: "skill_damage_increase_affix", value: 555 } as unknown as EffectWithMeta;
 		const result = resolve(effect, makeCtx());
 		expect(result?.zones?.M_skill).toBe(5.55);
 	});

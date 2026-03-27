@@ -235,6 +235,10 @@ export interface DelayedBurst {
 	burst_damage: V;
 	/** + % attack power */
 	burst_atk_damage: V;
+	/** base burst damage as % of ATK (handler alias for burst_atk_damage) */
+	burst_base?: V;
+	/** duration in seconds */
+	duration?: V;
 }
 export const DelayedBurstSchema = z.object({
 	type: z.literal("delayed_burst"),
@@ -242,6 +246,8 @@ export const DelayedBurstSchema = z.object({
 	increase: V_Schema,
 	burst_damage: V_Schema,
 	burst_atk_damage: V_Schema,
+	burst_base: V_Schema.optional(),
+	duration: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<DelayedBurst>;
 
 /** 九天真雷诀, 通天剑诀. Conditional bonus damage */
@@ -337,6 +343,8 @@ export const DotSchema = z.object({
 /** 周天星元. "恢复共V%最大气血值" */
 export interface SelfHeal {
 	type: "self_heal";
+	/** state name (for per-tick form) */
+	name?: string;
 	/** total heal value */
 	value?: V;
 	/** per-second healing */
@@ -365,6 +373,8 @@ export interface Shield {
 	source?: "self_max_hp";
 	/** 周天星元 灵鹤 */
 	trigger?: "per_tick";
+	/** parent state for reactive registration */
+	parent?: string;
 }
 export const ShieldSchema = z.object({
 	type: z.literal("shield"),
@@ -407,6 +417,8 @@ export interface SelfBuff {
 	max_stacks?: V;
 	/** 天刹真魔: "enemy_has_debuff" */
 	condition?: string;
+	/** Allow dynamic stat field iteration in handler */
+	[k: string]: unknown;
 }
 export const SelfBuffSchema = z.object({
 	type: z.literal("self_buff"),
@@ -440,6 +452,10 @@ export interface Debuff {
 	value?: V;
 	/** duration in seconds */
 	duration?: V;
+	/** 最多叠加N层 */
+	max_stacks?: V;
+	/** 可驱散 (default true) */
+	dispellable?: boolean;
 	/** 新青元剑诀: sequenced cooldown */
 	sequenced?: boolean;
 	/** 天刹真魔: "on_hit" */
@@ -457,6 +473,8 @@ export const DebuffSchema = z.object({
 	target: z.string().optional(),
 	value: V_Schema.optional(),
 	duration: V_Schema.optional(),
+	max_stacks: V_Schema.optional(),
+	dispellable: z.boolean().optional(),
 	sequenced: z.boolean().optional(),
 	trigger: z.string().optional(),
 	heal_reduction: V_Schema.optional(),
@@ -473,10 +491,13 @@ export interface BuffSteal {
 	type: "buff_steal";
 	/** N个 — number to steal */
 	value: V;
+	/** handler alias for value — number of buffs to steal */
+	count?: V;
 }
 export const BuffStealSchema = z.object({
 	type: z.literal("buff_steal"),
 	value: V_Schema,
+	count: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<BuffSteal>;
 
 /** 念剑诀. "N秒内不可被选中" */
@@ -484,10 +505,13 @@ export interface Untargetable {
 	type: "untargetable";
 	/** N秒 — duration */
 	value: V;
+	/** duration in seconds (handler alias for value) */
+	duration?: V;
 }
 export const UntargetableSchema = z.object({
 	type: z.literal("untargetable"),
 	value: V_Schema,
+	duration: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<Untargetable>;
 
 /** 大罗幻诀. "受到伤害时，各有N%概率添加N层..." */
@@ -497,6 +521,8 @@ export interface CounterDebuff {
 	trigger: string;
 	/** N% — probability */
 	chance: V;
+	/** legacy alias for chance (handler reads this) */
+	on_attacked_chance?: V;
 	/** N层 — stacks to add */
 	count: V;
 	/** state name */
@@ -505,6 +531,10 @@ export interface CounterDebuff {
 	states?: V[];
 	/** 最多叠加N层 */
 	max_stacks?: V;
+	/** 持续N秒 */
+	duration?: V;
+	/** parent state for reactive registration */
+	parent?: string;
 }
 export const CounterDebuffSchema = z.object({
 	type: z.literal("counter_debuff"),
@@ -519,6 +549,8 @@ export const CounterDebuffSchema = z.object({
 /** 天刹真魔, 疾风九变. "受到伤害时..." */
 export interface CounterBuff {
 	type: "counter_buff";
+	/** state name */
+	name?: string;
 	/** "on_attacked" */
 	trigger?: string;
 	/** 天刹真魔: heal on damage taken */
@@ -889,9 +921,12 @@ export const TripleBonusSchema = z.object({
 /** 修为_法修. "概率类效果必定触发" */
 export interface ProbabilityToCertain {
 	type: "probability_to_certain";
+	/** bonus damage increase % when probability becomes certain */
+	damage_increase?: V;
 }
 export const ProbabilityToCertainSchema = z.object({
 	type: z.literal("probability_to_certain"),
+	damage_increase: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<ProbabilityToCertain>;
 
 /** 修为_法修, 通天剑诀, 皓月剑诀, 玉书天戈符, 十方真魄, 惊蜇化龙. "伤害提升x%" */
@@ -1010,12 +1045,21 @@ export interface ShieldDestroyDot {
 	interval: V;
 	/** damage per tick */
 	value: V;
+	/** parent state name (handler alias for state) */
+	parent?: string;
+	/** damage % ATK per destroyed shield */
+	per_shield_damage?: V;
+	/** assumed shield count when none destroyed */
+	no_shield_assumed?: V;
 }
 export const ShieldDestroyDotSchema = z.object({
 	type: z.literal("shield_destroy_dot"),
 	state: V_Schema,
 	interval: V_Schema,
 	value: V_Schema,
+	parent: z.string().optional(),
+	per_shield_damage: V_Schema.optional(),
+	no_shield_assumed: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<ShieldDestroyDot>;
 
 /** 念剑诀. "持续伤害延长N秒" */
@@ -1053,6 +1097,8 @@ export interface SelfBuffExtra {
 	final_damage_reduction?: V;
 	/** duration in seconds */
 	duration: V;
+	/** generic handler reads buff_name, max_stacks, stat fields dynamically */
+	[k: string]: unknown;
 }
 export const SelfBuffExtraSchema = z.object({
 	type: z.literal("self_buff_extra"),
@@ -1092,6 +1138,12 @@ export interface PeriodicCleanse {
 	cooldown: V;
 	/** max triggers */
 	max_times: V;
+	/** tick interval in seconds (handler alias for cooldown) */
+	interval?: V;
+	/** max number of triggers (handler alias for max_times) */
+	max_triggers?: V;
+	/** parent state name this effect is attached to */
+	parent?: string;
 }
 export const PeriodicCleanseSchema = z.object({
 	type: z.literal("periodic_cleanse"),
@@ -1099,6 +1151,9 @@ export const PeriodicCleanseSchema = z.object({
 	target: z.string(),
 	cooldown: V_Schema,
 	max_times: V_Schema,
+	interval: V_Schema.optional(),
+	max_triggers: V_Schema.optional(),
+	parent: z.string().optional(),
 }).passthrough() satisfies z.ZodType<PeriodicCleanse>;
 
 /** 疾风九变. "附带吸血效果" */
@@ -1120,6 +1175,8 @@ export interface ShieldStrength {
 	type: "shield_strength";
 	/** x% */
 	value: V;
+	/** 持续N秒 */
+	duration?: V;
 }
 export const ShieldStrengthSchema = z.object({
 	type: z.literal("shield_strength"),
@@ -1348,11 +1405,14 @@ export interface OnDispel {
 	damage: V;
 	/** stun duration */
 	stun_duration: V;
+	/** parent state name this effect is attached to */
+	parent?: string;
 }
 export const OnDispelSchema = z.object({
 	type: z.literal("on_dispel"),
 	damage: V_Schema,
 	stun_duration: V_Schema,
+	parent: z.string().optional(),
 }).passthrough() satisfies z.ZodType<OnDispel>;
 
 /** 九重天凤诀, 天煞破虚诀. "定期驱散敌方增益" */
@@ -1383,10 +1443,13 @@ export interface OnShieldExpire {
 	type: "on_shield_expire";
 	/** damage % of shield value */
 	value: V;
+	/** damage as % of shield value (handler alias for value) */
+	damage_percent_of_shield?: V;
 }
 export const OnShieldExpireSchema = z.object({
 	type: z.literal("on_shield_expire"),
 	value: V_Schema,
+	damage_percent_of_shield: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<OnShieldExpire>;
 
 /** 九天真雷诀. "增益/减益/护盾触发伤害" */
@@ -1396,11 +1459,14 @@ export interface OnBuffDebuffShield {
 	trigger_kind: string;
 	/** x% */
 	value: V;
+	/** damage as % of max HP per trigger (handler alias) */
+	damage_percent?: V;
 }
 export const OnBuffDebuffShieldSchema = z.object({
 	type: z.literal("on_buff_debuff_shield"),
 	trigger_kind: z.string(),
 	value: V_Schema,
+	damage_percent: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<OnBuffDebuffShield>;
 
 /** 解体化形. "概率倍增伤害" */
@@ -1509,6 +1575,8 @@ export interface CrossSlotDebuff {
 	duration?: V;
 	/** trigger type */
 	trigger?: string;
+	/** parent state for reactive registration */
+	parent?: string;
 }
 export const CrossSlotDebuffSchema = z.object({
 	type: z.literal("cross_slot_debuff"),

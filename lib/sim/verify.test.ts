@@ -11,7 +11,13 @@ import { SimulationClock } from "./clock.js";
 import { loadAffixesYaml, loadBooksYaml } from "./config.js";
 import { playerMachine } from "./player.js";
 import { SeededRNG } from "./rng.js";
-import type { HpChangeEvent, PlayerState, StateChangeEvent } from "./types.js";
+import type {
+	EventSource,
+	HpChangeEvent,
+	PlayerState,
+	StateApplyEvent,
+	StateChangeEvent,
+} from "./types.js";
 
 const booksYaml = loadBooksYaml();
 const affixesYaml = loadAffixesYaml();
@@ -197,6 +203,97 @@ describe("SP shield (consumable pool)", () => {
 		// HP should take the remainder
 		const hpChange = events2.find((e) => e.type === "HP_CHANGE");
 		expect(hpChange).toBeDefined();
+	});
+});
+
+// ── 新-青元剑诀: formula verification + provenance ──────────────────
+
+describe("新-青元剑诀: damage formula + provenance", () => {
+	const clockA = new SimulationClock();
+	const clockB = new SimulationClock();
+
+	// 新-青元剑诀 skill: base_attack hits=6, total=1500
+	// No zone modifiers from skill alone, so D_hit = (1500/6/100) * ATK * (1-DR)
+	const EXPECTED_PER_HIT_RAW = (1500 / 6 / 100) * ATK; // = 2500 per hit before DR
+	const EXPECTED_PER_HIT_MITIGATED = EXPECTED_PER_HIT_RAW * (1 - DR);
+
+	const caster = createActor(playerMachine, {
+		input: {
+			label: "A",
+			initialState: makeState(),
+			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: 1.0 },
+			bookSlots: [
+				{
+					slot: 1,
+					platform: "新-青元剑诀",
+					progression: { enlightenment: 0, fusion: 0 },
+				},
+			],
+			booksYaml,
+			affixesYaml,
+			clock: clockA,
+			rng: new SeededRNG(42),
+			maxChainDepth: 10,
+		},
+		clock: clockA,
+	});
+	// Target with SP=0 so no shield complication
+	const target = createActor(playerMachine, {
+		input: {
+			label: "B",
+			initialState: makeState({ sp: 0, shield: 0 }),
+			formulas: { dr_constant: DR_CONSTANT, sp_shield_ratio: 1.0 },
+			bookSlots: [],
+			booksYaml,
+			affixesYaml,
+			clock: clockB,
+			rng: new SeededRNG(99),
+			maxChainDepth: 10,
+		},
+		clock: clockB,
+	});
+
+	const targetEvents: StateChangeEvent[] = [];
+	target.on("*", (ev: StateChangeEvent) => targetEvents.push(ev));
+
+	caster.start();
+	target.start();
+	caster.send({ type: "SET_OPPONENT", ref: target });
+	caster.send({ type: "CAST_SLOT", slot: 1 });
+	clockA.drain();
+
+	const hpChanges = targetEvents.filter(
+		(e) => e.type === "HP_CHANGE",
+	) as HpChangeEvent[];
+
+	test("produces 6 HP_CHANGE events (6 hits)", () => {
+		expect(hpChanges.length).toBe(6);
+	});
+
+	test("each hit matches hand-calculated damage (1500%/6 ATK after DR)", () => {
+		for (const hpChange of hpChanges) {
+			const actual = hpChange.prev - hpChange.next;
+			expect(actual).toBeCloseTo(EXPECTED_PER_HIT_MITIGATED, 0);
+		}
+	});
+
+	test("HP_CHANGE events carry handler provenance", () => {
+		const withSource = hpChanges.filter(
+			(e) => (e as HpChangeEvent & { source?: EventSource }).source,
+		);
+		expect(withSource.length).toBeGreaterThan(0);
+		const src = (withSource[0] as HpChangeEvent & { source: EventSource }).source;
+		expect(src.handler).toContain("base_attack");
+	});
+
+	test("target receives debuff (神通封印)", () => {
+		const stateApplies = targetEvents.filter(
+			(e) => e.type === "STATE_APPLY",
+		) as StateApplyEvent[];
+		const debuff = stateApplies.find(
+			(e) => e.state.kind === "debuff",
+		);
+		expect(debuff).toBeDefined();
 	});
 });
 

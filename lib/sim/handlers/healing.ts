@@ -4,6 +4,7 @@
 
 import type { Lifesteal } from "../../parser/schema/星元化岳.js";
 import type { HealEchoDamage } from "../../parser/schema/周天星元.js";
+import type { SelfHeal } from "../../parser/schema/effects.js";
 import type { StateInstance } from "../types.js";
 import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
@@ -25,7 +26,7 @@ register<Resolved<Lifesteal>>("lifesteal", (effect) => ({
 //   Instant: heals value% ATK immediately → HEAL event
 //   Per-tick: creates a named state that heals per tick
 // Untyped: per-tick form reads `name` not in schema (周天星元.PeriodicHeal)
-register("self_heal", (effect, ctx) => {
+register<SelfHeal>("self_heal", (effect, ctx) => {
 	// Per-tick form: creates a named state with periodic healing
 	if (effect.per_tick !== undefined) {
 		const name = effect.name as string;

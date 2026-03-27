@@ -9,27 +9,34 @@ import type { CounterDebuffUpgrade } from "../../parser/schema/大罗幻诀.js";
 import type { DebuffStackChance } from "../../parser/schema/周天星元.js";
 import type { DebuffStackIncrease } from "../../parser/schema/天轮魔经.js";
 import type { HealReduction } from "../../parser/schema/千锋聚灵剑.js";
+import type {
+	ConditionalDebuffCompound,
+	CounterDebuff,
+	CrossSlotDebuff,
+	Debuff,
+} from "../../parser/schema/effects.js";
 import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
+import type { Resolved } from "./types.js";
 
-// debuff: { target (stat), value, duration, dispellable?, name?, max_stacks? }
+// debuff — schema: lib/parser/schema/effects.ts (Debuff)
 // Creates a debuff state on the opponent.
-register("debuff", (effect) => {
+register<Debuff>("debuff", (effect) => {
 	const state: StateInstance = {
-		name: (effect.name as string) ?? "debuff",
+		name: effect.name ?? "debuff",
 		kind: "debuff",
 		source: "",
 		target: "opponent",
 		effects: [
 			{
-				stat: effect.target as string,
-				value: effect.value as number,
+				stat: effect.target ?? "debuff",
+				value: (effect.value as number) ?? 0,
 			},
 		],
 		remainingDuration: (effect.duration as number) ?? 0,
 		stacks: 1,
 		maxStacks: (effect.max_stacks as number) ?? 1,
-		dispellable: (effect.dispellable as boolean) ?? true,
+		dispellable: effect.dispellable ?? true,
 	};
 
 	return {
@@ -64,7 +71,7 @@ register<HealReduction>("heal_reduction", (effect) => {
 
 // counter_debuff: { name, duration, on_attacked_chance, parent? }
 // Applies a debuff to the opponent when this player is attacked.
-register("counter_debuff", (effect) => {
+register<CounterDebuff>("counter_debuff", (effect) => {
 	const name = (effect.name as string) ?? "counter_debuff";
 	const duration = (effect.duration as number) ?? 8;
 	const chance = (effect.on_attacked_chance as number) ?? 100;
@@ -106,7 +113,7 @@ register("counter_debuff", (effect) => {
 
 // conditional_debuff: { name, multiplier?, target?, value?, duration?, condition? }
 // Applies a debuff conditionally. Checks condition against game state.
-register("conditional_debuff", (effect, _ctx) => {
+register<ConditionalDebuffCompound>("conditional_debuff", (effect, _ctx) => {
 	const condition = (effect.condition as string) ?? "";
 	if (condition === "enlightenment") {
 		// Progression-gated — already filtered by tier selection
@@ -153,169 +160,6 @@ register<DebuffStackChance>("debuff_stack_chance", () => ({}));
 // debuff_stack_increase — schema: lib/parser/schema/天轮魔经.ts (DebuffStackIncrease)
 register<DebuffStackIncrease>("debuff_stack_increase", () => ({}));
 
-// attack_reduction: { value, parent }
-// Reduces opponent's ATK via on_attacked listener.
-register("attack_reduction", (effect) => {
-	const parent = (effect.parent as string) ?? "attack_reduction";
-	return {
-		listeners: [
-			{
-				parent,
-				trigger: "on_attacked" as const,
-				handler: () => [
-					{
-						type: "APPLY_STATE" as const,
-						state: {
-							name: "attack_reduction",
-							kind: "debuff" as const,
-							source: "",
-							target: "opponent" as const,
-							effects: [
-								{
-									stat: "attack_bonus",
-									value: effect.value as number,
-								},
-							],
-							remainingDuration: 8,
-							stacks: 1,
-							maxStacks: 1,
-							dispellable: true,
-						},
-					},
-				],
-			},
-		],
-	};
-});
-
-// lethal_rate_reduction: { value, parent }
-// Modeled as on_attacked DR debuff.
-register("lethal_rate_reduction", (effect) => {
-	const parent = (effect.parent as string) ?? "lethal_rate_reduction";
-	return {
-		listeners: [
-			{
-				parent,
-				trigger: "on_attacked" as const,
-				handler: () => [
-					{
-						type: "APPLY_STATE" as const,
-						state: {
-							name: "lethal_rate_reduction",
-							kind: "debuff" as const,
-							source: "",
-							target: "opponent" as const,
-							effects: [
-								{
-									stat: "damage_reduction",
-									value: Math.abs(effect.value as number),
-								},
-							],
-							remainingDuration: 8,
-							stacks: 1,
-							maxStacks: 1,
-							dispellable: true,
-						},
-					},
-				],
-			},
-		],
-	};
-});
-
-// crit_damage_reduction: { value, parent }
-register("crit_damage_reduction", (effect) => {
-	const parent = (effect.parent as string) ?? "crit_damage_reduction";
-	return {
-		listeners: [
-			{
-				parent,
-				trigger: "on_attacked" as const,
-				handler: () => [
-					{
-						type: "APPLY_STATE" as const,
-						state: {
-							name: "crit_damage_reduction",
-							kind: "debuff" as const,
-							source: "",
-							target: "opponent" as const,
-							effects: [
-								{
-									stat: "damage_reduction",
-									value: Math.abs(effect.value as number),
-								},
-							],
-							remainingDuration: 8,
-							stacks: 1,
-							maxStacks: 1,
-							dispellable: true,
-						},
-					},
-				],
-			},
-		],
-	};
-});
-
-// crit_rate_reduction: { value, parent }
-// Reduces opponent's crit rate. Crit not fully modeled — apply as
-// a small damage reduction to approximate the DPS impact.
-register("crit_rate_reduction", (effect) => {
-	const parent = (effect.parent as string) ?? "crit_rate_reduction";
-	return {
-		listeners: [
-			{
-				parent,
-				trigger: "on_attacked" as const,
-				handler: () => [
-					{
-						type: "APPLY_STATE" as const,
-						state: {
-							name: "crit_rate_reduction",
-							kind: "debuff" as const,
-							source: "",
-							target: "opponent" as const,
-							effects: [
-								{
-									stat: "damage_reduction",
-									value: Math.abs((effect.value as number) ?? 0) / 5,
-								},
-							],
-							remainingDuration: 8,
-							stacks: 1,
-							maxStacks: 1,
-							dispellable: true,
-						},
-					},
-				],
-			},
-		],
-	};
-});
-
-// enemy_skill_damage_reduction: { value }
-register("enemy_skill_damage_reduction", (effect) => {
-	const state: StateInstance = {
-		name: "enemy_skill_damage_reduction",
-		kind: "debuff",
-		source: "",
-		target: "opponent",
-		effects: [
-			{
-				stat: "skill_damage_increase",
-				value: -(effect.value as number),
-			},
-		],
-		remainingDuration: Number.POSITIVE_INFINITY,
-		stacks: 1,
-		maxStacks: 1,
-		dispellable: false,
-	};
-	return {
-		intents: [{ type: "APPLY_STATE" as const, state }],
-	};
-});
-
 // counter_debuff_upgrade — schema: lib/parser/schema/大罗幻诀.ts (CounterDebuffUpgrade)
 // Upgrades the proc chance of an existing counter_debuff.
 // Modeled as an additional on_attacked listener with higher chance.
@@ -354,7 +198,7 @@ register<CounterDebuffUpgrade>("counter_debuff_upgrade", (effect) => {
 
 // cross_slot_debuff: { target, value, duration, name, trigger, parent }
 // Debuff applied via on_attacked listener on a parent state.
-register("cross_slot_debuff", (effect) => {
+register<CrossSlotDebuff>("cross_slot_debuff", (effect) => {
 	const parent = (effect.parent as string) ?? "cross_slot_debuff";
 	const name = (effect.name as string) ?? "cross_slot_debuff";
 	const duration = (effect.duration as number) ?? 8;
