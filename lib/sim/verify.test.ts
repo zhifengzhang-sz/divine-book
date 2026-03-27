@@ -212,9 +212,9 @@ describe("新-青元剑诀: damage formula + provenance", () => {
 	const clockA = new SimulationClock();
 	const clockB = new SimulationClock();
 
-	// 新-青元剑诀 skill: base_attack hits=6, total=1500
-	// No zone modifiers from skill alone, so D_hit = (1500/6/100) * ATK * (1-DR)
-	const EXPECTED_PER_HIT_RAW = (1500 / 6 / 100) * ATK; // = 2500 per hit before DR
+	// 新-青元剑诀 skill: base_attack hits=6, total=15225 (at 悟0境/融合40重)
+	// No zone modifiers from skill alone, so D_hit = (15225/6/100) * ATK * (1-DR)
+	const EXPECTED_PER_HIT_RAW = (15225 / 6 / 100) * ATK;
 	const EXPECTED_PER_HIT_MITIGATED = EXPECTED_PER_HIT_RAW * (1 - DR);
 
 	const caster = createActor(playerMachine, {
@@ -226,7 +226,7 @@ describe("新-青元剑诀: damage formula + provenance", () => {
 				{
 					slot: 1,
 					platform: "新-青元剑诀",
-					progression: { enlightenment: 0, fusion: 0 },
+					progression: { enlightenment: 0, fusion: 40 },
 				},
 			],
 			booksYaml,

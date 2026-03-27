@@ -115,12 +115,13 @@ export function splitCell(text: string): SplitCell {
  * Returns null if it's not a tier line.
  */
 function parseTierLine(line: string): TierLine | null {
-	// Check for locked tiers: "悟0境，此功能未解锁" / "悟0境，此词缀未解锁"
-	const lockedMatch = line.match(/悟(\d+)境[，,]此(?:功能|词缀)未解锁/);
+	// Check for locked tiers: "悟0境，此功能未解锁" / "悟0境，此词缀未解锁" / "悟0境，融合40重：此词缀未解锁"
+	const lockedMatch = line.match(/悟(\d+)境[，,](?:融合(\d+)重[，,：:])?此(?:功能|词缀)未解锁/);
 	if (lockedMatch) {
 		return {
 			raw: line,
 			enlightenment: Number(lockedMatch[1]),
+			fusion: lockedMatch[2] ? Number(lockedMatch[2]) : undefined,
 			locked: true,
 			vars: {},
 		};

@@ -159,7 +159,8 @@ function parseBook(entry: RawBookEntry, exclusiveText: string, exclusiveAffixNam
 	// Parse primary affix
 	const affixDesc = affixCell.description.join("");
 	let primaryAffix: ParsedBook["primaryAffix"];
-	if (affixDesc.trim()) {
+	const allAffixTiersLocked = affixCell.tiers.length > 0 && affixCell.tiers.every(t => t.locked);
+	if (affixDesc.trim() && !allAffixTiersLocked) {
 		const affixEffects = parseEntry(entry.name, affixDesc, "primaryAffix");
 		const resolvedAffix = resolveTiers(affixEffects, affixCell.tiers.map(t => ({
 			enlightenment: t.enlightenment, fusion: t.fusion, locked: t.locked, vars: t.vars,

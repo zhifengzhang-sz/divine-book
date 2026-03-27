@@ -5,10 +5,9 @@ books:
     school: Sword
     skill_text: |
       剑破天地，对范围内目标造成六段共计x%攻击力的灵法伤害，并每段攻击造成目标y%最大气血值的伤害（对怪物伤害不超过自身z%攻击力）
-      悟0境：x=1500, y=11, z=2200
-      悟1境，融合20重：x=11265, y=15, z=3000
-      悟3境，融合32重：x=14865, y=19, z=3800
-      悟10境，融合51重：x=20265, y=27, z=5400
+      悟1境，融合20重，修炼16阶：x=11265, y=15, z=3000
+      悟3境，融合32重，修炼16阶：x=14865, y=19, z=3800
+      悟10境，融合51重，修炼16阶：x=20265, y=27, z=5400
     affix_text: |
       【惊神剑光】：本神通每段攻击造成伤害后，下一段提升x%神通加成
       悟3境：x=25
@@ -17,14 +16,6 @@ books:
       本神通施放后，会对敌方添加持续8秒的【灵涸】：治疗量降低x%，且无法被驱散
       悟12境，融合52重：x=80
     skill:
-      - type: base_attack
-        hits: 6
-        total: 1500
-        data_state: enlightenment=0
-      - type: percent_max_hp_damage
-        value: 11
-        cap_vs_monster: 2200
-        data_state: enlightenment=0
       - type: base_attack
         hits: 6
         total: 11265
@@ -89,7 +80,7 @@ books:
     school: Sword
     skill_text: |
       剑化万千，破空位移向前，对范围内目标造成五段共计x%攻击力的灵法伤害，并创建一个持续存在16秒的分身，继承自身y%的属性。主角释放神通后分身会攻击敌方，分身受到的伤害为自身的z%
-      悟10境，融合83重： x=22305, y=54, z=400
+      悟10境，融合83重，修炼24阶： x=22305, y=54, z=400
     affix_text: |
       【幻象剑灵】：分身受到伤害降低至自身的x%， 造成的伤害增加y%
       融合重数>=50: x=120, y=200
@@ -154,7 +145,7 @@ books:
     school: Sword
     skill_text: |
       剑墓既出，天地低昂，一剑出，诸天寂灭。对范围内目标造成十段共计x%攻击力的灵法伤害，神通释放时自身获得增益状态【寂灭剑心】：每段伤害命中时湮灭敌方1个护盾，并额外造成y%敌方最大气血值的伤害（对怪物最多造成z%攻击力的伤害）；对无盾目标造成双倍伤害（对怪物最多造成w%攻击力的伤害）；【寂灭剑心】上限1层，持续4秒
-      悟10境，融合57重： x=22305, y=12, z=2400, w=4800
+      悟10境，融合57重，修炼24阶： x=22305, y=12, z=2400, w=4800
     affix_text: |
       【碎魂剑意】：【寂灭剑心】每0.5秒对目标造成`湮灭护盾`的总个数\*600%攻击力的伤害（若触发`湮灭护盾`效果时敌方无护盾加持，则计算湮灭2个护盾）
     exclusive_affix_text: |
@@ -230,7 +221,7 @@ books:
     school: Sword
     skill_text: |
       剑影无形，人剑合一，自身化为轰雷剑意，方寸之间位移数次，在4秒内不可被选中。同时降下轰雷剑阵，对范围内目标造成八段共x%攻击力的灵法伤害，轰雷剑阵每造成2次伤害时，剑阵接下来的伤害提升y倍，单次伤害至多被该效果重复加成10次
-      悟10境，融合50重： x=22305, y=1.4
+      悟10境，融合50重，修炼24阶： x=22305, y=1.4
     affix_text: |
       【雷阵剑影】：技能结束后雷阵不会马上消失，将额外持续存在x秒，每0.5秒造成一次伤害
       融合50重： x=6.5
@@ -273,29 +264,39 @@ books:
     school: Sword
     skill_text: |
       以真火灌注灵剑，破空而出，对范围内目标造成六段共x%攻击力的灵法伤害，并使本神通暴击伤害提高y%，释放后自身8秒内受到伤害提高z%
-      x=1500, y=100, z=50
+      悟4境，融合59重，修炼16阶：x=20265, y=350, z=50
     affix_text: |
       【焚心剑芒】：敌方当前气血值每损失x%，本神通伤害额外增加y%
-      x=5, y=10
+      融合59重：x=5, y=40
     exclusive_affix_text: |
       使本神通无视敌方所有伤害减免效果，并提升x%伤害
       融合50重：x=36
     skill:
       - type: base_attack
         hits: 6
-        total: 1500
+        total: 20265
+        data_state:
+          - enlightenment=4
+          - fusion=59
       - type: crit_dmg_bonus
-        value: 100
+        value: 350
+        data_state:
+          - enlightenment=4
+          - fusion=59
       - type: self_damage_taken_increase
         duration: 8
         value: 50
+        data_state:
+          - enlightenment=4
+          - fusion=59
     primary_affix:
       name: 焚心剑芒
       effects:
         - type: conditional_damage
           condition: enemy_hp_loss
           per_step: 5
-          value: 10
+          value: 40
+          data_state: fusion=59
     exclusive_affix:
       name: 神威冲云
       effects:
@@ -308,10 +309,10 @@ books:
     school: Sword
     skill_text: |
       剑破万法，降下剑阵对范围内目标造成六段共x%攻击力的灵法伤害，并依敌方神通装配顺序，使其下一个未释放的神通进入8秒冷却时间
-      x=1500
+      悟0境，融合40重，修炼8阶：x=15225
     affix_text: |
       【追命剑阵】：使敌方的神通伤害降低x%，持续16秒
-      x=30
+      悟0境，融合40重：此词缀未解锁
     exclusive_affix_text: |
       本神通施放后，使下一个施放的神通额外获得x%的`神通伤害加深`
       融合20重：x=88
@@ -320,20 +321,19 @@ books:
     skill:
       - type: base_attack
         hits: 6
-        total: 1500
+        total: 15225
+        data_state:
+          - enlightenment=0
+          - fusion=40
       - type: debuff
         name: 神通封印
         target: next_skill_cooldown
         value: 8
         duration: 8
         sequenced: true
-    primary_affix:
-      name: 追命剑阵
-      effects:
-        - type: debuff
-          target: skill_damage
-          value: 30
-          duration: 16
+        data_state:
+          - enlightenment=0
+          - fusion=40
     exclusive_affix:
       name: 天威煌煌
       effects:
@@ -350,18 +350,27 @@ books:
     school: Sword
     skill_text: |
       万剑归一，引灵剑之力，造成五段共计x%攻击力的灵法伤害， 神通命中时此前敌方每被神通多段攻击命中一次，额外附加y%目标当前气血值的伤害
-      x=1500, y=1.5
+      悟0境，融合10重，修炼8阶：x=6225, y=2.2
+    affix_text: |
+      【剑引无极】：附加目标当前气血值伤害提高x%
+      悟0境，融合10重：此词缀未解锁
     exclusive_affix_text: |
       本神通攻击目标时提升x%`神通伤害`，但目标对本神通提升y%`神通伤害减免`
       融合50重：x=555, y=350
     skill:
       - type: base_attack
         hits: 5
-        total: 1500
+        total: 6225
+        data_state:
+          - enlightenment=0
+          - fusion=10
       - type: percent_current_hp_damage
-        value: 1.5
+        value: 2.2
         accumulation: cross_skill
         per_prior_hit: true
+        data_state:
+          - enlightenment=0
+          - fusion=10
     exclusive_affix:
       name: 无极剑阵
       effects:
