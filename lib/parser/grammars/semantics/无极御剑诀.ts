@@ -2,10 +2,12 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
+	DamageIncrease,
 	Debuff,
 	Effect,
 	ExclusiveAffixEffect,
 	PercentCurrentHpDamage,
+	PrimaryAffixEffect,
 	SkillDamageIncreaseAffix,
 	SkillEffect,
 } from "../../schema/无极御剑诀.js";
@@ -14,11 +16,21 @@ import { addExtractVar, parseCn } from "./shared.js";
 export function addSemantics(s: ohm.Semantics): void {
 	addExtractVar(s);
 
-	s.addOperation<(SkillEffect | ExclusiveAffixEffect)[]>(
+	s.addOperation<(SkillEffect | PrimaryAffixEffect | ExclusiveAffixEffect)[]>(
 		"toEffects",
 		{
 		skillDescription(_pre, baseAttack, _sep, _sp, crossSkillDmg) {
 			return [...baseAttack.toEffects(), ...crossSkillDmg.toEffects()];
+		},
+		primaryAffix(boost) {
+			return boost.toEffects();
+		},
+		percentMaxHpBonus(_fjmb, varRef, _pct) {
+			const effect: DamageIncrease = {
+				type: "damage_increase",
+				value: varRef.extractVar,
+			};
+			return [effect];
 		},
 		baseAttack(_zc, cnHit, _gongji, varRef, _pct, _atkli) {
 			const effect: BaseAttack = {

@@ -334,6 +334,14 @@ books:
         data_state:
           - enlightenment=0
           - fusion=40
+    primary_affix:
+      name: 追命剑阵
+      effects:
+        - type: debuff
+          target: skill_damage
+          value: x
+          duration: 16
+          data_state: locked
     exclusive_affix:
       name: 天威煌煌
       effects:
@@ -371,6 +379,12 @@ books:
         data_state:
           - enlightenment=0
           - fusion=10
+    primary_affix:
+      name: 剑引无极
+      effects:
+        - type: damage_increase
+          value: x
+          data_state: locked
     exclusive_affix:
       name: 无极剑阵
       effects:

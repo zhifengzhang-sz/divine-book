@@ -11,7 +11,11 @@
 
   crossSkillDamage = "神通命中时此前敌方每被神通多段攻击命中一次" "，" "额外附加" varRef "%" "目标当前气血值的伤害"
 
-  // ── Primary affix: NONE
+  // ── Primary affix【剑引无极】─────────────────────────
+  // Raw: 附加目标当前气血值伤害提高x%
+  primaryAffix = percentMaxHpBonus
+  percentMaxHpBonus = "附加目标当前气血值伤害提高" varRef "%"
+
   // ── Exclusive affix【无极剑阵】─────────────────────────
   // Raw: 本神通攻击目标时提升x%神通伤害，但目标对本神通提升y%神通伤害减免
 
