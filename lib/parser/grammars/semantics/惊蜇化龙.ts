@@ -131,13 +131,15 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef2,
 			_p2,
 		) {
-			const lostHpEffect: SelfLostHpDamage = {
-				type: "self_lost_hp_damage",
+			const lostHpEffect = {
+				type: "self_lost_hp_damage" as const,
 				value: varRef1.extractVar,
+				requires_enlightenment: true,
 			};
-			const dmgEffect: DamageIncrease = {
-				type: "damage_increase",
+			const dmgEffect = {
+				type: "damage_increase" as const,
 				value: varRef2.extractVar,
+				requires_enlightenment: true,
 			};
 			return [lostHpEffect, dmgEffect];
 		},

@@ -1,8 +1,3 @@
----
-initial date: 2026-2-25
-dates of modification: [2026-2-25, 2026-3-9]
----
-
 <style>
 body {
   max-width: none !important;
@@ -94,96 +89,18 @@ strong {
 }
 </style>
 
-# Usage: Parser
+# Parser Usage
 
-**Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
-
-> **Operational guide for the code parser** — Stage 3 of the Divine Book data pipeline. Covers installation, CLI usage, quality gates, and integration with the upstream extraction pipeline.
-
----
-
-## Prerequisites
-
-- [Bun](https://bun.sh) v1.2+
-
-```
-bun install
-```
-
-## Running the Parser
-
-```
-bun app/parse.ts <normalized-data.md> <output-dir>
-```
-
-| Argument | Description |
-|:---|:---|
-| `<normalized-data.md>` | Path to a `normalized.data.md` file (English headers) |
-| `<output-dir>` | Directory for the generated YAML files |
-
-The parser does not read `keyword.map.md` at runtime. The keyword map's influence is indirect: it constrains the extraction agent's output (which becomes `normalized.data.md`) and it is transcribed into the Zod schema (`lib/schemas/effect.ts`) at design time. See [impl.parser.md](impl.parser.md) §1 for details.
-
-The default paths are available via the npm script:
-
-```
-bun run parse
-```
-
-This expands to:
-
-```
-bun app/parse.ts data/normalized/normalized.data.md data/yaml
-```
-
-## Output
-
-The parser produces two YAML files:
-
-### `effects.yaml`
-
-Three top-level keys:
-
-| Key | Structure | Content |
-|:---|:---|:---|
-| `books` | `Record<name, BookData>` | 28 books, each with `school`, optional `skill`, `primary_affix`, and `exclusive_affix` |
-| `universal_affixes` | `Record<name, EffectRow[]>` | 16 universal affixes |
-| `school_affixes` | `Record<school, Record<name, EffectRow[]>>` | 17 school affixes across 4 schools |
-
-Every effect row is validated against the Zod schema (`lib/schemas/effect.ts`) during parsing. If any row fails validation, the parser prints warnings to stderr and exits with code 1.
-
-### `groups.yaml`
-
-Effect type classification extracted from keyword.map.md's section structure (§0–§13):
-
-| Key | Structure | Content |
-|:---|:---|:---|
-| `groups` | `EffectGroup[]` | 14 groups, each with `id`, `section`, `label`, and `types` list |
-
-Each effect type appears in exactly one group. The group assignment is determined by the keyword.map.md section it is defined in.
-
-## Quality Gates
-
-| Command | What it runs |
-|:---|:---|
-| `bun run check` | `tsc --noEmit` + `biome check app/ lib/` |
-| `bun run test` | 37 unit + integration tests |
-
-Both must pass clean before any change to `app/` or `lib/` is committed.
-
-## Related Documentation
-
-| Document | Role |
-|:---|:---|
-| [note.data.md](note.data.md) | Pipeline quick reference — layers, commands, agents, full workflow |
-| [impl.parser.md](impl.parser.md) | Implementation details — logical flow, components, test coverage |
-| [design.md](design.md) | System design — containers, components, boundaries |
-| [keyword.map.md](../../data/keyword/keyword.map.md) | Effect type vocabulary — the schema's source of truth |
-
----
-
-## Document History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | 2026-02-25 | Initial parser usage guide |
-| 1.1 | 2026-03-09 | Fixed CLI signature: parser takes 2 args (no keyword-map.md). Added note on indirect keyword.map relationship. |
+> **Deprecated.** This described the old imperative parser CLI (pre-March 2026).
+>
+> Current commands:
+> ```bash
+> bun run parse              # regenerate books.yaml + affixes.yaml
+> bun run parse:books        # books only
+> bun run parse:affixes      # affixes only
+> bun run rag "query"        # RAG retrieval for book construction
+> bun run check              # typecheck + lint
+> bun test                   # all tests (including grammar tests)
+> ```
+>
+> For parser architecture, see `docs/parser/`.

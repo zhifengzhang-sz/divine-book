@@ -1,6 +1,6 @@
 export type {
 	BuffStrength,
-	ConditionalHpScaling,
+	ConditionalStatScaling,
 	SelfBuff,
 	StateRef,
 	BaseAttack,

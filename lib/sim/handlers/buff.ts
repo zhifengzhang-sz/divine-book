@@ -270,13 +270,10 @@ register<ConditionalHealBuff>("conditional_heal_buff", (effect, ctx) => {
 });
 
 // self_buff_extend — schema: lib/parser/schema/十方真魄.ts (SelfBuffExtend)
-// Extends an existing buff's duration by value seconds.
-// Modeled as a zone bonus proportional to the extension (more duration → more total effect).
-register<SelfBuffExtend>("self_buff_extend", (effect) => {
-	const seconds = (effect.value as number) ?? 0;
-	// Extension as a proportional damage increase: typical buff lasts 8-12s,
-	// extending by N seconds ≈ N/10 = x% more buff uptime
-	return { zones: { M_dmg: seconds / 10 } };
+// Extends an existing buff's duration. No damage contribution to current cast —
+// duration extension affects sustained uptime across future casts.
+register<SelfBuffExtend>("self_buff_extend", () => {
+	return {};
 });
 
 // buff_duration — schema: lib/parser/schema/念剑诀.ts (BuffDuration)

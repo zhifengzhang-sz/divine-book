@@ -1,11 +1,12 @@
 元磁神光 <: Base {
   // ── Skill ─────────────────────────────────────────────
   // Note: "攻击力的伤害" not "攻击力的灵法伤害"
+  // Raw: ...自身每次受到神通攻击时获得一层【天狼之啸】：提升y%伤害加深，最多叠加z层，持续12秒
   skillDescription = preamble baseAttack "，" stateClause
   preamble = (~"造成" any)*
   baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的伤害"
   cnHitCount = cnNumber "段"
-  stateClause = gapTo<"获得"> "获得" "一层" stateName "：" stateBody
+  stateClause = "自身每次受到神通攻击时获得" "一层" stateName "：" stateBody
   stateBody = "提升" varRef "%" "伤害加深" "，" "最多叠加" varRef "层" "，" "持续" varRef "秒"
 
   // ── Primary affix【天狼战意】

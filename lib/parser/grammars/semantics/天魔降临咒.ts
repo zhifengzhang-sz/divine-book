@@ -29,11 +29,25 @@ export function addSemantics(s: ohm.Semantics): void {
 				_colon,
 				stateBody,
 				_ws,
-				_stateMods,
+				_stateName2,
+				_permanent,
+				_comma,
+				_sp,
+				_zddj,
+				maxStacksVar,
+				_ceng,
 			) {
+				const sa = stateAdd.toEffects() as any[];
+				// Attach permanent + max_stacks to the state_add effect
+				for (const e of sa) {
+					if (e.type === "state_add") {
+						e.permanent = true;
+						e.max_stacks = maxStacksVar.extractVar;
+					}
+				}
 				return [
 					...baseAttack.toEffects(),
-					...stateAdd.toEffects(),
+					...sa,
 					...stateBody.toEffects(),
 				];
 			},
@@ -96,9 +110,6 @@ export function addSemantics(s: ohm.Semantics): void {
 					parent: "结魂锁链",
 				};
 				return [effect];
-			},
-			stateModifiers(_sn, _yj, _sep, _sp, _zddj, _v, _c) {
-				return [];
 			},
 			primaryAffix(
 				_dfcy,

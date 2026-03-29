@@ -87,9 +87,7 @@ export function cleanText(raw: string): string {
 		.replace(/^【[^】]+】[：:]/, "")           // strip affix name prefix
 		.replace(/\\([*])/g, "$1")                 // unescape \* → *
 		.replace(/\*注\*[：:][^\n]*/g, "")         // strip *注*：... notes (to end of line)
-		.replace(/（最高不超过\d+级）/g, "")         // strip （最高不超过3级）
-		.replace(/（\d+层[^）]*达到[^）]*）/g, "")   // strip （25层达到最大提升伤害）
-		.replace(/（持续伤害效果受[^）]*）/g, "")     // strip （持续伤害效果受一半伤害加成）
+		.replace(/（\d+层[^）]*达到[^）]*）/g, "")   // strip （25层达到最大提升伤害） — purely informational
 		.replace(/\s*（数据为[^）]*）/g, "")
 		.trim();
 }

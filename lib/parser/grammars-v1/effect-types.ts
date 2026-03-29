@@ -490,9 +490,9 @@ interface PercentMaxHpAffix {
 	type: "percent_max_hp_affix";
 	value: VarRef;
 }
-interface ConditionalHpScaling {
-	type: "conditional_hp_scaling";
-	hp_threshold: VarRef;
+interface ConditionalStatScaling {
+	type: "conditional_stat_scaling";
+	threshold: VarRef;
 	per_step: VarRef;
 	value: VarRef;
 }
@@ -672,7 +672,7 @@ export type Effect =
 	| PerStolenBuffDebuff
 	| DelayedBurstIncrease
 	| PercentMaxHpAffix
-	| ConditionalHpScaling
+	| ConditionalStatScaling
 	| PerBuffStackDamage
 	// Exclusive affixes
 	| Lifesteal

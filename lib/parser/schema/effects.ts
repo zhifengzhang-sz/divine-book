@@ -54,7 +54,7 @@ export const BaseAttackSchema = z.object({
 /** 千锋聚灵剑, 皓月剑诀, 玉书天戈符, 天轮魔经. "V%最大气血值的伤害" */
 export interface PercentMaxHpDamage {
 	type: "percent_max_hp_damage";
-	/** y% — damage as % of target's max HP */
+	/** y% — damage as % of max HP */
 	value: V;
 	/** 对怪物不超过z%攻击力 */
 	cap_vs_monster?: V;
@@ -62,6 +62,8 @@ export interface PercentMaxHpDamage {
 	per_hit?: boolean;
 	/** 天轮魔经: triggered on steal */
 	trigger?: string;
+	/** 玉书天戈符: "自身最大气血值" vs default target */
+	source?: "self" | "target";
 }
 export const PercentMaxHpDamageSchema = z.object({
 	type: z.literal("percent_max_hp_damage"),
@@ -69,6 +71,7 @@ export const PercentMaxHpDamageSchema = z.object({
 	cap_vs_monster: V_Schema.optional(),
 	per_hit: z.boolean().optional(),
 	trigger: z.string().optional(),
+	source: z.enum(["self", "target"]).optional(),
 }).passthrough() satisfies z.ZodType<PercentMaxHpDamage>;
 
 /** 无极御剑诀. "额外附加V%目标当前气血值的伤害" */
@@ -183,6 +186,8 @@ export interface PerDebuffStackDamage {
 	parent?: string;
 	/** 天轮魔经: per stack value */
 	per_stack?: V;
+	/** 天轮魔经: "持续伤害效果受一半伤害加成" */
+	dot_half_bonus?: boolean;
 }
 export const PerDebuffStackDamageSchema = z.object({
 	type: z.literal("per_debuff_stack_damage"),
@@ -191,6 +196,7 @@ export const PerDebuffStackDamageSchema = z.object({
 	per_n_stacks: z.number().optional(),
 	parent: z.string().optional(),
 	per_stack: V_Schema.optional(),
+	dot_half_bonus: z.boolean().optional(),
 }).passthrough() satisfies z.ZodType<PerDebuffStackDamage>;
 
 /** 惊蜇化龙. "每层...真实伤害" */
@@ -641,11 +647,17 @@ export interface StateRef {
 	state: V;
 	/** 无相魔劫咒: "持续12秒" */
 	duration?: V;
+	/** 皓月剑诀: "上限1层" */
+	max_stacks?: V;
+	/** 元磁神光: "自身每次受到神通攻击时" */
+	trigger?: string;
 }
 export const StateRefSchema = z.object({
 	type: z.literal("state_ref"),
 	state: V_Schema,
 	duration: V_Schema.optional(),
+	max_stacks: V_Schema.optional(),
+	trigger: z.string().optional(),
 }).passthrough() satisfies z.ZodType<StateRef>;
 
 /** "为自身/对其 添加N层 【name】" */
@@ -661,6 +673,10 @@ export interface StateAdd {
 	undispellable?: boolean;
 	/** 持续N秒 */
 	duration?: V;
+	/** 玄煞灵影诀, 天刹真魔: "战斗状态内永久生效" */
+	permanent?: boolean;
+	/** 玄煞灵影诀: "最多叠加N层" */
+	max_stacks?: V;
 }
 export const StateAddSchema = z.object({
 	type: z.literal("state_add"),
@@ -669,6 +685,8 @@ export const StateAddSchema = z.object({
 	per_hit: z.boolean().optional(),
 	undispellable: z.boolean().optional(),
 	duration: V_Schema.optional(),
+	permanent: z.boolean().optional(),
+	max_stacks: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<StateAdd>;
 
 // ══════════════════════════════════════════════════════════
@@ -788,15 +806,32 @@ export const DotExtraPerTickSchema = z.object({
 	value: V_Schema,
 }).passthrough() satisfies z.ZodType<DotExtraPerTick>;
 
-/** 福荫, 修为_剑修, 修为_法修. "获得任意1个加成：攻击x%、致命伤害x%、伤害x%" */
+/** 皓月剑诀 exclusive. "本神通附加目标最大气血的伤害提高y%" — boosts existing max-HP-based damage */
+export interface PercentMaxHpBoost {
+	type: "percent_max_hp_boost";
+	/** y% — boost to existing max-HP-based damage */
+	value: V;
+}
+export const PercentMaxHpBoostSchema = z.object({
+	type: z.literal("percent_max_hp_boost"),
+	value: V_Schema,
+}).passthrough() satisfies z.ZodType<PercentMaxHpBoost>;
+
+/** 福荫, 修为_法修. "获得任意1个加成：攻击x%、致命伤害x%、伤害x%" */
 export interface RandomBuff {
 	type: "random_buff";
-	/** x% — all three options share same variable */
+	/** 攻击提升x% */
 	attack: V;
+	/** 致命伤害提升x% */
+	crit_damage: V;
+	/** 造成的伤害提升x% */
+	damage_increase: V;
 }
 export const RandomBuffSchema = z.object({
 	type: z.literal("random_buff"),
 	attack: V_Schema,
+	crit_damage: V_Schema,
+	damage_increase: V_Schema,
 }).passthrough() satisfies z.ZodType<RandomBuff>;
 
 /** 战意, 玄煞灵影诀 exclusive. "自身每多损失1%气血，伤害提升x%" */
@@ -1085,12 +1120,12 @@ export interface SelfBuffExtra {
 	target_state: V;
 	/** rotation interval in seconds (每3秒轮流) */
 	interval?: V;
-	/** 致命率 x% */
-	crit_rate: V;
+	/** 致命率 x% (lethal rate — distinct from 暴击率 crit rate) */
+	lethal_rate: V;
 	/** 暴击伤害 x% */
 	crit_damage?: V;
-	/** 暴击率 x% (second crit stat in rotation) */
-	crit_rate_2?: V;
+	/** 暴击率 x% */
+	crit_rate?: V;
 	/** 攻击力 y% */
 	attack?: V;
 	/** 最终伤害减免 y% */
@@ -1105,9 +1140,9 @@ export const SelfBuffExtraSchema = z.object({
 	state: V_Schema,
 	target_state: V_Schema,
 	interval: V_Schema.optional(),
-	crit_rate: V_Schema,
+	lethal_rate: V_Schema,
 	crit_damage: V_Schema.optional(),
-	crit_rate_2: V_Schema.optional(),
+	crit_rate: V_Schema.optional(),
 	attack: V_Schema.optional(),
 	final_damage_reduction: V_Schema.optional(),
 	duration: V_Schema,
@@ -1274,10 +1309,10 @@ export const PercentMaxHpAffixSchema = z.object({
 }).passthrough() satisfies z.ZodType<PercentMaxHpAffix>;
 
 /** 浩然星灵诀, 玉书天戈符. Conditional stat-scaling damage */
-export interface ConditionalHpScaling {
-	type: "conditional_hp_scaling";
-	/** threshold % */
-	hp_threshold: V;
+export interface ConditionalStatScaling {
+	type: "conditional_stat_scaling";
+	/** 浩然星灵诀: "每拥有x%最终伤害加深"; 玉书天戈符: "当前气血高于x%" */
+	threshold: V;
 	/** damage value */
 	value: V;
 	/** 浩然星灵诀: cap */
@@ -1287,14 +1322,14 @@ export interface ConditionalHpScaling {
 	/** Scaling basis: "hp" (玉书天戈符) or "final_damage_bonus" (浩然星灵诀) */
 	basis?: string;
 }
-export const ConditionalHpScalingSchema = z.object({
-	type: z.literal("conditional_hp_scaling"),
-	hp_threshold: V_Schema,
+export const ConditionalStatScalingSchema = z.object({
+	type: z.literal("conditional_stat_scaling"),
+	threshold: V_Schema,
 	value: V_Schema,
 	max: V_Schema.optional(),
 	per_step: V_Schema.optional(),
 	basis: z.string().optional(),
-}).passthrough() satisfies z.ZodType<ConditionalHpScaling>;
+}).passthrough() satisfies z.ZodType<ConditionalStatScaling>;
 
 /** 元磁神光. "每层增益状态提升伤害" */
 export interface PerBuffStackDamage {
@@ -1530,15 +1565,18 @@ export const SelfHpFloorSchema = z.object({
 	value: V_Schema,
 }).passthrough() satisfies z.ZodType<SelfHpFloor>;
 
-/** 玉书天戈符. "悟境等级加1，伤害提升x%" */
+/** 玉书天戈符. "悟境等级加1（最高不超过3级），伤害提升x%" */
 export interface EnlightenmentBonus {
 	type: "enlightenment_bonus";
-	/** x% */
+	/** N级 — enlightenment levels to add */
 	value: V;
+	/** 最高不超过N级 */
+	max?: V;
 }
 export const EnlightenmentBonusSchema = z.object({
 	type: z.literal("enlightenment_bonus"),
 	value: V_Schema,
+	max: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<EnlightenmentBonus>;
 
 /** 通天剑诀. "无视伤害减免" */
@@ -1708,6 +1746,7 @@ export type Effect =
 	| DamageReductionDuringCast
 	| ExecuteConditional
 	| DotExtraPerTick
+	| PercentMaxHpBoost
 	| RandomBuff
 	| PerSelfLostHp
 	| PerEnemyLostHp
@@ -1740,7 +1779,7 @@ export type Effect =
 	| PerStolenBuffDebuff
 	| DelayedBurstIncrease
 	| PercentMaxHpAffix
-	| ConditionalHpScaling
+	| ConditionalStatScaling
 	| PerBuffStackDamage
 	| BuffStackIncrease
 	| DebuffStackIncrease
@@ -1781,7 +1820,7 @@ const allSchemas = [
 	StateRefSchema, StateAddSchema, DebuffStrengthSchema, BuffStrengthSchema,
 	AllStateDurationSchema, ConditionalDamageControlledSchema,
 	DamageReductionDuringCastSchema, ExecuteConditionalSchema, DotExtraPerTickSchema,
-	RandomBuffSchema, PerSelfLostHpSchema, PerEnemyLostHpSchema,
+	PercentMaxHpBoostSchema, RandomBuffSchema, PerSelfLostHpSchema, PerEnemyLostHpSchema,
 	ShieldValueIncreaseSchema, NextSkillBuffSchema, AttackBonusSchema,
 	GuaranteedResonanceSchema, TripleBonusSchema, ProbabilityToCertainSchema,
 	DamageIncreaseSchema, FinalDmgBonusSchema, HealingIncreaseSchema,
@@ -1791,7 +1830,7 @@ const allSchemas = [
 	PeriodicCleanseSchema, LifestealWithParentSchema, ShieldStrengthSchema,
 	CounterDebuffUpgradeSchema, DotPermanentMaxHpSchema, PerDebuffDamageUpgradeSchema,
 	PerStolenBuffDebuffSchema, DelayedBurstIncreaseSchema, PercentMaxHpAffixSchema,
-	ConditionalHpScalingSchema, PerBuffStackDamageSchema, BuffStackIncreaseSchema,
+	ConditionalStatScalingSchema, PerBuffStackDamageSchema, BuffStackIncreaseSchema,
 	DebuffStackIncreaseSchema, DebuffStackChanceSchema, BuffDurationSchema,
 	HealReductionSchema, LifestealSchema, OnDispelSchema, PeriodicDispelSchema,
 	OnShieldExpireSchema, OnBuffDebuffShieldSchema, ProbabilityMultiplierSchema,

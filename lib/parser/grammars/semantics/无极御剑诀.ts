@@ -3,7 +3,6 @@ import type * as ohm from "ohm-js";
 import type {
 	BaseAttack,
 	DamageIncrease,
-	Debuff,
 	Effect,
 	ExclusiveAffixEffect,
 	PercentCurrentHpDamage,
@@ -61,10 +60,9 @@ export function addSemantics(s: ohm.Semantics): void {
 			_stshjm,
 		) {
 			const e1: SkillDamageIncreaseAffix = { type: "skill_damage_increase_affix", value: varRef1.extractVar };
-			const e2: Debuff = {
-				type: "debuff",
-				target: "enemy_skill_damage_reduction",
-				value: varRef2.extractVar,
+			const e2 = {
+				type: "self_buff" as const,
+				damage_reduction_multiplier: varRef2.extractVar,
 			};
 			return [e1, e2];
 		},

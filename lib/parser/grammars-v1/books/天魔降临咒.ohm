@@ -6,7 +6,7 @@
   //
   // Note: newline before state modifiers, stray "i" in raw, space before "最多"
 
-  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateModifiers
+  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateName "战斗状态内永久生效" "，" " "? "最多叠加" varRef "层"
   preamble = (~"造成" any)*
 
   baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
@@ -28,9 +28,6 @@
       "，" " "? "最多提升至" varRef "%"
 
   ws = (" " | "\n" | "\r")*
-
-  // "【结魂锁链】战斗状态内永久生效， 最多叠加1层"
-  stateModifiers = stateName "战斗状态内永久生效" "，" " "? "最多叠加" varRef "层"
 
   // ── Primary affix【魔念生息】
   // Raw: 敌方处于【结魂锁链】下，每秒受到x%最大气血值的伤害，

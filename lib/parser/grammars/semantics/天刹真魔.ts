@@ -27,11 +27,18 @@ export function addSemantics(s: ohm.Semantics): void {
 				_colon,
 				stateBody,
 				_ws,
-				_mods,
+				_stateName2,
+				_permanent,
 			) {
+				const sa = stateAdd.toEffects() as any[];
+				for (const e of sa) {
+					if (e.type === "state_add") {
+						e.permanent = true;
+					}
+				}
 				return [
 					...baseAttack.toEffects(),
-					...stateAdd.toEffects(),
+					...sa,
 					...stateBody.toEffects(),
 				];
 			},
@@ -63,9 +70,6 @@ export function addSemantics(s: ohm.Semantics): void {
 				return [effect];
 			},
 			noHealingBonus(_lit) {
-				return [];
-			},
-			stateModifiers(_sn, _yj) {
 				return [];
 			},
 			primaryAffix(
@@ -108,9 +112,9 @@ export function addSemantics(s: ohm.Semantics): void {
 					state: state1.extractVar,
 					target_state: state2.extractVar,
 					interval: intervalVar.extractVar,
-					crit_rate: v1.extractVar,
+					lethal_rate: v1.extractVar,
 					crit_damage: v2.extractVar,
-					crit_rate_2: v3.extractVar,
+					crit_rate: v3.extractVar,
 					attack: v4.extractVar,
 					final_damage_reduction: v5.extractVar,
 					duration: durVar.extractVar,

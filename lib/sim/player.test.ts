@@ -157,54 +157,45 @@ describe("HIT resolution", () => {
 // ── DEATH (absorbing boundary) ──────────────────────────────────────
 
 describe("DEATH", () => {
-	test("emits DEATH on CHECK_DEATH after HP reaches 0", () => {
+	test("emits DEATH automatically when HP reaches 0", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
-		// Death is deferred — no DEATH yet
-		expect(events.some((e) => e.type === "DEATH")).toBe(false);
-		// CHECK_DEATH triggers the transition
-		actor.send({ type: "CHECK_DEATH" });
+		// Death fires automatically via CHECK_DEATH sent from resolveHit
 		expect(events.some((e) => e.type === "DEATH")).toBe(true);
 	});
 
-	test("machine enters final state after CHECK_DEATH", () => {
+	test("machine enters final state after lethal hit", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
-		expect(actor.getSnapshot().status).toBe("active");
-		actor.send({ type: "CHECK_DEATH" });
 		expect(actor.getSnapshot().status).toBe("done");
 	});
 
-	test("processes events before CHECK_DEATH even at HP<=0", () => {
+	test("second hit is ignored after lethal first hit", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
-		// Both hits resolve even though first one brings HP to 0.
-		// Second hit is accepted (not dropped) but HP_CHANGE is suppressed
-		// because HP is already 0 (prev === next).
+		// First hit kills — triggers CHECK_DEATH → dead state.
+		// Second hit is ignored because machine is in final state.
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
 		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
 
 		const hpChanges = events.filter((e) => e.type === "HP_CHANGE");
 		expect(hpChanges).toHaveLength(1);
-
-		actor.send({ type: "CHECK_DEATH" });
 		expect(events.some((e) => e.type === "DEATH")).toBe(true);
 	});
 
-	test("ignores events after CHECK_DEATH", () => {
+	test("ignores events after death", () => {
 		const { actor } = createPlayer("B", { hp: 100, sp: 0, shield: 0 });
 		actor.start();
 		const events = collectEvents(actor);
 
 		actor.send({ type: "HIT", hitIndex: 0, damage: 1e9, spDamage: 0 });
-		actor.send({ type: "CHECK_DEATH" });
 		// After dead (final state), further events are ignored
 		actor.send({ type: "HIT", hitIndex: 1, damage: 1e9, spDamage: 0 });
 
@@ -346,9 +337,9 @@ describe("CAST_SLOT", () => {
 		const hpChanges = targetEvents.filter((e) => e.type === "HP_CHANGE");
 		expect(hpChanges.length).toBeGreaterThan(0);
 
-		// Target should also have received debuff (灵涸) — requires enlightenment=12, fusion=52
+		// Exclusive affix (灵涸) NOT applied — main book only uses skill + primary affix
 		const stateApply = targetEvents.filter((e) => e.type === "STATE_APPLY");
-		expect(stateApply.length).toBeGreaterThan(0);
+		expect(stateApply.length).toBe(0);
 	});
 });
 

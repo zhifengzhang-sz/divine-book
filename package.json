@@ -9,7 +9,8 @@
     "parse:books": "bun app/parse-main-skills.ts -o data/yaml/books.yaml",
     "parse:affixes": "bun app/parse-affixes.ts -o data/yaml/affixes.yaml",
     "viz": "bun app/viz/serve.ts",
-    "parser-viz": "bun app/parser-viz/serve.ts"
+    "parser-viz": "bun app/parser-viz/serve.ts",
+    "rag": "bun scripts/rag.ts"
   },
   "dependencies": {
     "ohm-js": "^17.5.0",

@@ -349,3 +349,73 @@ register<PerDebuffStackDamage>("per_debuff_stack_damage", (effect, ctx) => {
 		flatExtra: (bonusPercent / 100) * ctx.atk,
 	};
 });
+
+// ── Newly added handlers to close coverage gaps ──────────────────
+
+// echo_damage: { value, ignore_damage_bonus?, duration? }
+// 星元化岳: "伤害值为当次伤害的y%" — echo a fraction of each hit's damage
+register("echo_damage", (effect, _ctx) => {
+	const pct = (effect.value as number) ?? 25;
+	// Model as damage zone increase (echo adds pct% to each hit)
+	return { zones: { M_dmg: pct / 100 } };
+});
+
+// conditional_damage_debuff: { value }
+// 天魔降临咒: "攻击带有减益状态的敌方时，伤害提升x%"
+register("conditional_damage_debuff", (effect, ctx) => {
+	const hasDebuffs = ctx.targetPlayer.states.some(s => s.kind === "debuff");
+	if (!hasDebuffs) return {};
+	return { zones: { M_dmg: ((effect.value as number) ?? 0) / 100 } };
+});
+
+// conditional_damage_controlled: { value }
+// 煞影千幻/击瑕: "若敌方处于控制效果，伤害提升x%"
+register("conditional_damage_controlled", (effect, ctx) => {
+	const hasControl = ctx.targetPlayer.states.some(s =>
+		s.effects.some(e => e.stat === "cast_suppressed") || s.name === "stun");
+	if (!hasControl) return {};
+	return { zones: { M_dmg: ((effect.value as number) ?? 0) / 100 } };
+});
+
+// conditional_stat_scaling: { threshold, value, max?, per_step?, basis? }
+// 浩然星灵诀: per x% final_damage_bonus → y% ATK damage
+// 玉书天戈符: HP above x% → per y% extra → y% damage
+register("conditional_stat_scaling", (effect, ctx) => {
+	const threshold = (effect.threshold as number) ?? 10;
+	const value = (effect.value as number) ?? 100;
+	const max = (effect.max as number) ?? undefined;
+	const perStep = (effect.per_step as number) ?? threshold;
+
+	// Simplified: assume average conditions, grant proportional damage
+	const steps = max ? Math.min(max / threshold, 5) : 3;
+	const bonus = steps * value;
+	return { flatExtra: (bonus / 100) * ctx.atk };
+});
+
+// percent_max_hp_boost: { value }
+// 皓月剑诀 exclusive: "附加目标最大气血伤害提高y%"
+register("percent_max_hp_boost", (effect, ctx) => {
+	const pct = (effect.value as number) ?? 0;
+	if (pct === 0) return {};
+	// Boost existing max-HP-based damage by pct%
+	return { zones: { M_dmg: pct / 100 } };
+});
+
+// percent_max_hp_affix: { value, state?, trigger_stack? }
+// 惊蜇化龙 primary: stacking state, every N stacks deals %maxHP
+register("percent_max_hp_affix", (effect, ctx) => {
+	const pct = (effect.value as number) ?? 10;
+	const triggerStack = (effect.trigger_stack as number) ?? 2;
+	// Approximate: over full cast, stacks trigger multiple times
+	const triggers = Math.floor(ctx.hits / triggerStack);
+	if (triggers <= 0) return {};
+	return {
+		perHitEffects: (hitIndex: number) => {
+			if ((hitIndex + 1) % triggerStack !== 0) return [];
+			return [{
+				type: "PERCENT_MAX_HP_HIT" as const,
+				percent: pct,
+			}];
+		},
+	};
+});

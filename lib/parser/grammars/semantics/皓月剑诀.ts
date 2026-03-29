@@ -7,7 +7,7 @@ import type {
 	Effect,
 	ExclusiveAffixEffect,
 	NoShieldDoubleDamage,
-	PercentMaxHpDamage,
+	PercentMaxHpBoost,
 	PrimaryAffixEffect,
 	ShieldDestroyDamage,
 	ShieldDestroyDot,
@@ -33,22 +33,19 @@ export function addSemantics(s: ohm.Semantics): void {
 			};
 			return [effect];
 		},
-		stateClause(_gap, _huode, stateName, _colon, stateBody) {
-			const effects = stateBody.toEffects() as any[];
-			const ref: StateRef = { type: "state_ref", state: stateName.extractVar };
-			return [ref, ...effects];
-		},
-		stateBody(
-			_perHit,
-			shieldDestroy,
-			_sep1,
-			noShieldDouble,
-			_sep2,
-			_stateName,
-			_maxStacks,
-			_sep3,
-			_duration,
+		stateClause(
+			_gap, _huode, stateName, _colon, stateEffects,
+			_sep, _stateName2, _sx, maxStacksVar, _ceng, _comma, _cx, durationVar, _miao,
 		) {
+			const ref: StateRef = {
+				type: "state_ref",
+				state: stateName.extractVar,
+				duration: durationVar.extractVar,
+				max_stacks: maxStacksVar.extractVar,
+			};
+			return [ref, ...stateEffects.toEffects()];
+		},
+		stateEffects(_perHit, shieldDestroy, _sep, noShieldDouble) {
 			return [...shieldDestroy.toEffects(), ...noShieldDouble.toEffects()];
 		},
 		perHit(_lit) {
@@ -84,12 +81,6 @@ export function addSemantics(s: ohm.Semantics): void {
 		capVsMonster(_dgwzdzc, varRef, _pct, _gkldsh) {
 			return varRef.extractVar;
 		},
-		maxStacks(_sx, _varRef, _ceng) {
-			return [];
-		},
-		duration(_cx, _varRef, _miao) {
-			return [];
-		},
 		primaryAffix(
 			stateName,
 			_mei,
@@ -98,15 +89,16 @@ export function addSemantics(s: ohm.Semantics): void {
 			dmgVar,
 			_pct,
 			_gkldsh,
-			_lp,
-			_gapTo,
-			_rp,
+			_noShieldPre,
+			noShieldVar,
+			_noShieldPost,
 		) {
 			const effect: ShieldDestroyDot = {
 				type: "shield_destroy_dot",
 				state: stateName.extractVar,
 				interval: intervalVar.extractVar,
 				value: dmgVar.extractVar,
+				no_shield_assumed: noShieldVar.extractVar,
 			};
 			return [effect];
 		},
@@ -118,7 +110,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		exclusiveAffix_2(_bstg, varRef1, _pct1, _sep, _bing, varRef2, _pct2) {
-			const e1: PercentMaxHpDamage = { type: "percent_max_hp_damage", value: varRef1.extractVar };
+			const e1: PercentMaxHpBoost = { type: "percent_max_hp_boost", value: varRef1.extractVar };
 			const e2: DamageIncrease = { type: "damage_increase", value: varRef2.extractVar };
 			return [e1, e2];
 		},

@@ -1,5 +1,5 @@
 export type {
-	ConditionalHpScaling,
+	ConditionalStatScaling,
 	DamageIncrease,
 	EnlightenmentBonus,
 	PercentMaxHpDamage,

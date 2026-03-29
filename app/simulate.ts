@@ -64,6 +64,141 @@ if (hasFlag("list")) {
 	process.exit(0);
 }
 
+// ── --sweep ──────────────────────────────────────────────────────────
+
+if (hasFlag("sweep")) {
+	const platform = getArg("a");
+	const opponent = getArg("b") ?? "千锋聚灵剑+通明+斩岳";
+	if (!platform) {
+		console.error('Usage: bun app/simulate.ts --sweep --a "十方真魄" --b "千锋聚灵剑+通明+斩岳"');
+		process.exit(1);
+	}
+
+	// Collect all affixes with source tracking for construction constraints
+	interface AffixEntry { name: string; kind: "universal" | "school" | "exclusive"; sourceBook?: string }
+	const allAffixes: AffixEntry[] = [];
+	for (const n of Object.keys(affixesYaml.universal))
+		allAffixes.push({ name: n, kind: "universal" });
+	for (const m of Object.values(affixesYaml.school))
+		for (const n of Object.keys(m as Record<string, unknown>))
+			allAffixes.push({ name: n, kind: "school" });
+	for (const [bookName, book] of Object.entries(booksYaml.books))
+		if (book.exclusive_affix)
+			allAffixes.push({ name: book.exclusive_affix.name, kind: "exclusive", sourceBook: bookName });
+
+	// Construction constraint: is this pair valid for the given main book?
+	function isValidPair(main: string, a: AffixEntry, b: AffixEntry): boolean {
+		// Rule 1: main book's own exclusive is unavailable (main book is in 主位, not 辅助位)
+		if (a.kind === "exclusive" && a.sourceBook === main) return false;
+		if (b.kind === "exclusive" && b.sourceBook === main) return false;
+		// Rule 2: two exclusives from the same book is impossible (each aux is a different book)
+		if (a.kind === "exclusive" && b.kind === "exclusive" && a.sourceBook === b.sourceBook) return false;
+		// Rule 3: same affix twice is impossible
+		if (a.name === b.name) return false;
+		return true;
+	}
+
+	const topN = Number(getArg("top") ?? "20");
+	const sweepHp = Number(getArg("hp") ?? "1e8");
+	const sweepAtk = Number(getArg("atk") ?? String(sweepHp / 100));
+	const sweepSp = Number(getArg("sp") ?? String(sweepHp / 10));
+	const sweepDef = Number(getArg("def") ?? String(sweepAtk));
+	const sweepSeed = Number(getArg("seed") ?? "42");
+	const sweepProg = { enlightenment: 10, fusion: 51 };
+
+	const sweepConfig = {
+		entity: { hp: sweepHp, atk: sweepAtk, sp: sweepSp, def: sweepDef, spRegen: sweepSp / 100 },
+		formulas: { dr_constant: sweepAtk * 10, sp_shield_ratio: 1.0 },
+	};
+
+	function runSim(aSpec: string, bSpec: string): { aHp: number; bHp: number; bDmgTaken: number; ttk: number } {
+		const clockS = new SimulationClock();
+		const rngS = new SeededRNG(sweepSeed);
+		const parseSpec = (s: string) => { const p = s.split("+").map(x => x.trim()); return { platform: p[0], op1: p[1], op2: p[2] }; };
+		const slotAS = { slot: 1, ...parseSpec(aSpec), progression: sweepProg };
+		const slotBS = { slot: 1, ...parseSpec(bSpec), progression: sweepProg };
+
+		try {
+			validatePlayerConfig({ ...sweepConfig, books: [slotAS] }, booksYaml, affixesYaml);
+			validatePlayerConfig({ ...sweepConfig, books: [slotBS] }, booksYaml, affixesYaml);
+		} catch { return { aHp: 0, bHp: sweepHp, bDmgTaken: 0, ttk: Infinity }; }
+
+		const mkPlayer = (label: string, slot: typeof slotAS) => createActor(playerMachine, {
+			input: {
+				label, initialState: {
+					hp: sweepHp, maxHp: sweepHp, sp: sweepSp, maxSp: sweepSp,
+					spRegen: sweepSp / 100, shield: 0, shields: [], destroyedShieldsTotal: 0,
+					atk: sweepAtk, baseAtk: sweepAtk, def: sweepDef, baseDef: sweepDef,
+					states: [], alive: true,
+				} as PlayerState, formulas: sweepConfig.formulas,
+				bookSlots: [slot], booksYaml, affixesYaml,
+				clock: clockS, rng: rngS, maxChainDepth: 10,
+			}, clock: clockS,
+		});
+
+		const pA = mkPlayer("A", slotAS);
+		const pB = mkPlayer("B", slotBS);
+		pA.start(); pB.start();
+		pA.send({ type: "SET_OPPONENT", ref: pB });
+		pB.send({ type: "SET_OPPONENT", ref: pA });
+
+		const CAST_GAP = 25_000;
+		const MAX_TIME = 300_000;
+		let ttkMs = MAX_TIME;
+
+		for (let t = 0; t <= MAX_TIME; t += CAST_GAP) {
+			if (t > 0) clockS.advanceTo(t);
+			const aAlive = pA.getSnapshot().context.state.alive;
+			const bAlive = pB.getSnapshot().context.state.alive;
+			if (!aAlive || !bAlive) { ttkMs = t; break; }
+			pA.send({ type: "CAST_SLOT", slot: 1 });
+			pB.send({ type: "CAST_SLOT", slot: 1 });
+			clockS.advanceTo(t + CAST_GAP - 1);
+		}
+
+		const aFin = pA.getSnapshot().context.state;
+		const bFin = pB.getSnapshot().context.state;
+		pA.stop(); pB.stop();
+		return { aHp: aFin.hp, bHp: bFin.hp, bDmgTaken: sweepHp - bFin.hp, ttk: ttkMs / 1000 };
+	}
+
+	// Enumerate valid pairs only
+	const validPairs: [AffixEntry, AffixEntry][] = [];
+	for (let i = 0; i < allAffixes.length; i++) {
+		for (let j = i + 1; j < allAffixes.length; j++) {
+			if (isValidPair(platform, allAffixes[i], allAffixes[j])) {
+				validPairs.push([allAffixes[i], allAffixes[j]]);
+			}
+		}
+	}
+
+	console.log(`Sweeping ${platform} affix pairs vs ${opponent}`);
+	console.log(`  ${allAffixes.length} affixes, ${validPairs.length} valid pairs (construction rules applied)\n`);
+
+	const results: { op1: string; k1: string; op2: string; k2: string; bDmgTaken: number; aHp: number; ttk: number }[] = [];
+
+	for (const [a, b] of validPairs) {
+		const spec = `${platform}+${a.name}+${b.name}`;
+		const r = runSim(spec, opponent);
+		results.push({ op1: a.name, k1: a.kind, op2: b.name, k2: b.kind, bDmgTaken: r.bDmgTaken, aHp: r.aHp, ttk: r.ttk });
+	}
+
+	results.sort((a, b) => b.bDmgTaken - a.bDmgTaken);
+
+	console.log(`Top ${topN} by damage dealt to opponent:\n`);
+	console.log("Rank | Affix 1 (type) + Affix 2 (type)                        | Dmg Dealt | Self HP% | TTK");
+	console.log("-----|--------------------------------------------------------|-----------|----------|----");
+	for (let i = 0; i < Math.min(topN, results.length); i++) {
+		const r = results[i];
+		const pctSelf = (r.aHp / sweepHp * 100).toFixed(1);
+		const pctDmg = (r.bDmgTaken / sweepHp * 100).toFixed(1);
+		const label = `${r.op1}(${r.k1}) + ${r.op2}(${r.k2})`;
+		console.log(`${String(i + 1).padStart(4)} | ${label.padEnd(54)} | ${pctDmg.padStart(8)}% | ${pctSelf.padStart(7)}% | ${r.ttk === Infinity ? " ∞" : String(r.ttk.toFixed(0)).padStart(3)}s`);
+	}
+
+	process.exit(0);
+}
+
 // ── Config ──────────────────────────────────────────────────────────
 
 function parseBookArg(raw: string): {
@@ -92,13 +227,14 @@ const speed = Number(getArg("speed") ?? "1");
 const instant = hasFlag("instant");
 const seed = Number(getArg("seed") ?? "42");
 const hp = Number(getArg("hp") ?? "1e8");
-const atk = Number(getArg("atk") ?? "1000");
-const def = Number(getArg("def") ?? "9e5");
-const sp = Number(getArg("sp") ?? "5000");
+const atk = Number(getArg("atk") ?? String(hp / 100));  // HP = 100 × ATK
+const sp = Number(getArg("sp") ?? String(hp / 10));      // HP = 10 × SP
+const def = Number(getArg("def") ?? String(atk));         // DEF ≈ ATK
+const spRegen = Number(getArg("spRegen") ?? String(sp / 100));
 
 const playerConfig = {
-	entity: { hp, atk, sp, def, spRegen: 100 },
-	formulas: { dr_constant: 1e6, sp_shield_ratio: 1.0 },
+	entity: { hp, atk, sp, def, spRegen },
+	formulas: { dr_constant: atk * 10, sp_shield_ratio: 1.0 },
 };
 
 const progression = { enlightenment: 10, fusion: 51 };
@@ -170,13 +306,28 @@ playerB.on("*", (ev: StateChangeEvent) => events.push({ ...ev, player: "B" }));
 playerA.start();
 playerB.start();
 
-// Wire opponent refs — players send intents directly to each other
-playerA.getSnapshot().context.opponentRef = playerB;
-playerB.getSnapshot().context.opponentRef = playerA;
+// Wire opponent refs via SET_OPPONENT event (not direct context mutation)
+playerA.send({ type: "SET_OPPONENT", ref: playerB });
+playerB.send({ type: "SET_OPPONENT", ref: playerA });
 
-// Arena is just a clock — send CAST_SLOT, players handle everything
-playerA.send({ type: "CAST_SLOT", slot: 1 });
-playerB.send({ type: "CAST_SLOT", slot: 1 });
+// Combat loop: cast every 25 seconds until someone dies or 5 minutes
+const CAST_GAP = 25_000;
+const MAX_TIME = 300_000;
+
+for (let t = 0; t <= MAX_TIME; t += CAST_GAP) {
+	// Advance clock to this cast time — fires pending ticks, expiries, hit deliveries
+	if (t > 0) clock.advanceTo(t);
+
+	const aAlive = playerA.getSnapshot().context.state.alive;
+	const bAlive = playerB.getSnapshot().context.state.alive;
+	if (!aAlive || !bAlive) break;
+
+	playerA.send({ type: "CAST_SLOT", slot: 1 });
+	playerB.send({ type: "CAST_SLOT", slot: 1 });
+
+	// Advance to just before next cast — processes all hit delivery (1s gaps) and state events
+	clock.advanceTo(t + CAST_GAP - 1);
+}
 
 // ── Format event for display ────────────────────────────────────────
 

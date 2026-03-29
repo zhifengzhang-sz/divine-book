@@ -4,7 +4,7 @@
   //      自身每秒损失y%的当前气血值，并每秒对目标造成自身z%已损气血值和期间消耗气血的伤害。
   //      【怒意滔天】战斗状态内永久生效，最多叠加1层。
 
-  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody "。" stateModifiers "。"?
+  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody "。" stateName "战斗状态内永久生效" "，" "最多叠加" varRef "层" "。"?
   preamble = (~"造成" any)*
 
   baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
@@ -15,8 +15,6 @@
   stateBody = hpCostDot "，并" selfLostHpDamageDot
   hpCostDot = "自身每秒损失" varRef "%" "的当前气血值"
   selfLostHpDamageDot = "每秒对目标造成自身" varRef "%" "已损气血值和期间消耗气血的伤害"
-
-  stateModifiers = stateName "战斗状态内永久生效" "，" "最多叠加" varRef "层"
 
   // ── Primary affix【星猿之怒】
   primaryAffix = stateName "每造成" varRef "次伤害" "，" "额外附加" varRef "%" "自身已损气血值和期间消耗气血值的伤害"

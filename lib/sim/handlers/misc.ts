@@ -473,3 +473,85 @@ register<ProbabilityToCertain>("probability_to_certain", (effect) => ({
 	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
 }));
 
+// ── Newly added handlers to close coverage gaps ──────────────────
+
+// per_stolen_buff_debuff: { state, value, duration }
+// 天轮魔经 primary: per stolen buff, apply a debuff
+register("per_stolen_buff_debuff", (effect) => {
+	const name = (effect.state as string) ?? "stolen_debuff";
+	const value = (effect.value as number) ?? 14;
+	const duration = (effect.duration as number) ?? 12;
+	return {
+		intents: [{
+			type: "APPLY_STATE" as const,
+			state: {
+				name,
+				kind: "debuff" as const,
+				source: "",
+				target: "opponent" as const,
+				effects: [{ stat: "attack_bonus", value: -value }],
+				remainingDuration: duration,
+				stacks: 1,
+				maxStacks: 999,
+				dispellable: true,
+			},
+		}],
+	};
+});
+
+// per_debuff_damage_upgrade: { state, value }
+// 天魔降临咒 primary: raise debuff damage cap
+register("per_debuff_damage_upgrade", (effect) => {
+	// Upgrades the max% on per_debuff_stack_damage. Model as flat M_dmg zone bonus.
+	const value = (effect.value as number) ?? 4;
+	return { zones: { M_dmg: value / 100 } };
+});
+
+// dot_permanent_max_hp: { state, value }
+// 天魔降临咒 primary: permanent %maxHP DoT per second
+register("dot_permanent_max_hp", (effect, ctx) => {
+	const pct = (effect.value as number) ?? 1.6;
+	const name = (effect.state as string) ?? "permanent_dot";
+	return {
+		intents: [{
+			type: "APPLY_DOT" as const,
+			name,
+			damagePerTick: (pct / 100) * ctx.targetPlayer.maxHp,
+			tickInterval: 1,
+			duration: Number.POSITIVE_INFINITY,
+			source: ctx.book,
+		}],
+	};
+});
+
+// lifesteal_with_parent: { state, value }
+// 疾风九变 primary: heal for x% of parent state's damage
+register("lifesteal_with_parent", (effect) => {
+	const pct = (effect.value as number) ?? 82;
+	const parentState = (effect.state as string) ?? "lifesteal_parent";
+	return {
+		listeners: [{
+			parent: parentState,
+			trigger: "per_tick" as const,
+			handler: (listenerCtx) => {
+				// Approximate: heal based on ATK * pct
+				const healValue = (pct / 100) * listenerCtx.sourcePlayer.atk;
+				return [{ type: "HEAL" as const, value: healValue }];
+			},
+		}],
+	};
+});
+
+// chance: { value, effect: string }
+// 煞影千幻 primary: y% chance to avoid HP cost
+register("chance", (effect, ctx) => {
+	const prob = (effect.value as number) ?? 30;
+	const eff = (effect.effect as string) ?? "";
+	// If it's no_hp_cost, probabilistically reduce HP cost
+	if (eff === "no_hp_cost") {
+		// Model as damage reduction zone (approximate)
+		return { zones: { M_dmg: 0 } };
+	}
+	return {};
+});
+

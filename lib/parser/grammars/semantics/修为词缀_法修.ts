@@ -49,16 +49,18 @@ export function addSemantics(s: ohm.Semantics): void {
 			_p1,
 			_s2,
 			_zmshts,
-			_v2,
+			v2,
 			_p2,
 			_s3,
 			_zcdsshts,
-			_v3,
+			v3,
 			_p3,
 		) {
 			const effect: RandomBuff = {
 				type: "random_buff",
 				attack: v1.extractVar,
+				crit_damage: v2.extractVar,
+				damage_increase: v3.extractVar,
 			};
 			return [effect];
 		},

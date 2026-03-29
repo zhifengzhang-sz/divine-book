@@ -5,7 +5,7 @@
   //      并等额恢复自身气血，同时为自身添加【怒灵降世】：
   //      持续期间提升自身w%的攻击力与伤害减免，持续4秒
 
-  skillDescription = preamble hpCost "，" baseAttack "，" selfLostHpWithHeal "，同时" stateAdd "：" stateBody
+  skillDescription = preamble hpCost "，" baseAttack "，" selfLostHpWithHeal "，同时" stateAdd "：" stateBuffBody "，" "持续" varRef "秒"
   preamble = (~hpCost any)*
 
   hpCost = "消耗自身" varRef "%" "当前气血值"
@@ -20,8 +20,8 @@
 
   stateAdd = "为自身添加" stateName
 
-  // "持续期间提升自身w%的攻击力与伤害减免，持续4秒"
-  stateBody = "持续期间提升自身" varRef "%" "的攻击力与伤害减免" "，" "持续" varRef "秒"
+  // "持续期间提升自身w%的攻击力与伤害减免"
+  stateBuffBody = "持续期间提升自身" varRef "%" "的攻击力与伤害减免"
 
   // ── Primary affix【星猿弃天】
   // Raw: 延长x秒【怒灵降世】持续时间，并且每秒有y%概率驱散自身所有控制状态，25秒内最多触发1次驱散状态

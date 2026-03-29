@@ -162,6 +162,8 @@ books:
           - fusion=57
       - type: state_ref
         state: 寂灭剑心
+        duration: 4
+        max_stacks: 1
         data_state:
           - enlightenment=10
           - fusion=57
@@ -184,6 +186,7 @@ books:
           state: 寂灭剑心
           interval: 0.5
           value: 600
+          no_shield_assumed: 2
     exclusive_affix:
       name: 追神真诀
       effects:
@@ -192,7 +195,7 @@ books:
           data_state:
             - enlightenment=0
             - fusion=50
-        - type: percent_max_hp_damage
+        - type: percent_max_hp_boost
           value: 0
           data_state:
             - enlightenment=0
@@ -207,7 +210,7 @@ books:
           data_state:
             - enlightenment=10
             - fusion=50
-        - type: percent_max_hp_damage
+        - type: percent_max_hp_boost
           value: 50
           data_state:
             - enlightenment=10
@@ -391,9 +394,8 @@ books:
         - type: skill_damage_increase_affix
           value: 555
           data_state: fusion=50
-        - type: debuff
-          target: enemy_skill_damage_reduction
-          value: 350
+        - type: self_buff
+          damage_reduction_multiplier: 350
           data_state: fusion=50
   浩然星灵诀:
     school: Spell
@@ -418,8 +420,8 @@ books:
     primary_affix:
       name: 天鹤祈瑞
       effects:
-        - type: conditional_hp_scaling
-          hp_threshold: 10
+        - type: conditional_stat_scaling
+          threshold: 10
           value: 100
           max: 50
           basis: final_damage_bonus
@@ -446,6 +448,7 @@ books:
         total: 1500
       - type: state_ref
         state: 天狼之啸
+        trigger: on_attacked_by_skill
       - type: self_buff
         damage_increase: 8
         max_stacks: 3
@@ -750,11 +753,12 @@ books:
       - type: percent_max_hp_damage
         value: 21
         per_hit: true
+        source: self
     primary_affix:
       name: 天灵怒威
       effects:
-        - type: conditional_hp_scaling
-          hp_threshold: 20
+        - type: conditional_stat_scaling
+          threshold: 20
           per_step: 3
           value: 3
     exclusive_affix:
@@ -762,6 +766,7 @@ books:
       effects:
         - type: enlightenment_bonus
           value: 1
+          max: 3
           data_state: fusion=50
         - type: damage_increase
           value: 5
@@ -811,6 +816,8 @@ books:
         total: 1500
       - type: state_add
         state: 结魂锁链
+        permanent: true
+        max_stacks: 1
       - type: self_buff
         name: 结魂锁链
         damage_reduction: 5.2
@@ -876,6 +883,7 @@ books:
           value: 5.5
           max: 27.5
           per_stack: 5
+          dot_half_bonus: true
           data_state: fusion=50
   天刹真魔:
     school: Demon
@@ -896,6 +904,7 @@ books:
         total: 1500
       - type: state_add
         state: 不灭魔体
+        permanent: true
       - type: counter_buff
         trigger: on_attacked
         heal_on_damage_taken: 8
@@ -907,9 +916,9 @@ books:
           state: 不灭魔体
           target_state: 天人五衰
           interval: 3
-          crit_rate: 50
+          lethal_rate: 50
           crit_damage: 50
-          crit_rate_2: 50
+          crit_rate: 50
           attack: 23
           final_damage_reduction: 23
           duration: 15
@@ -1215,6 +1224,8 @@ books:
           - fusion=51
       - type: state_add
         state: 怒意滔天
+        permanent: true
+        max_stacks: 1
         data_state:
           - enlightenment=1
           - fusion=51
@@ -1285,9 +1296,11 @@ books:
           data_state: fusion=50
         - type: self_lost_hp_damage
           value: 50
+          requires_enlightenment: true
           data_state: fusion=50
         - type: damage_increase
           value: 75
+          requires_enlightenment: true
           data_state: fusion=50
   十方真魄:
     school: Body
@@ -1311,6 +1324,7 @@ books:
         self_heal: true
       - type: state_add
         state: 怒灵降世
+        duration: 4
       - type: self_buff
         attack_bonus: 20
         damage_reduction: 20

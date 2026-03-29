@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { processBook } from "./book.js";
-import { loadAffixesYaml, loadBooksYaml } from "./config.js";
+import { loadAffixesYaml, loadBooksYaml, selectTiers } from "./config.js";
 import { SeededRNG } from "./rng.js";
 import type { PlayerState } from "./types.js";
 
@@ -64,12 +64,17 @@ describe("processBook", () => {
 		}
 	});
 
-	test("千锋聚灵剑 exclusive affix produces APPLY_STATE debuff", () => {
+	test("千锋聚灵剑 exclusive affix produces APPLY_STATE debuff when passed as aux", () => {
 		const bookData = books.books["千锋聚灵剑"];
 		const player = makePlayerState();
+		// Exclusive affixes come via aux slot, not from the main book
+		const exclusiveEffects = selectTiers(
+			bookData.exclusive_affix?.effects ?? [],
+			{ enlightenment: 12, fusion: 52 },
+		);
 		const result = processBook(
 			bookData,
-			[],
+			exclusiveEffects,
 			{
 				sourcePlayer: player,
 				targetPlayer: player,

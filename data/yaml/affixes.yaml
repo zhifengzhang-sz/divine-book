@@ -5,11 +5,15 @@ universal:
   咒书:
     text: |
       使本神通添加的`减益效果`强度提升x%
-      融合50重：x=20
+      悟0境，融合50重：x=20
+      悟3境，融合52重：x=69
     effects:
       - type: "debuff_strength"
         value: 20
-        data_state: "fusion=50"
+        data_state: ["enlightenment=0","fusion=50"]
+      - type: "debuff_strength"
+        value: 69
+        data_state: ["enlightenment=3","fusion=52"]
   清灵:
     text: |
       使本神通添加的`增益效果`强度提升x%
@@ -29,11 +33,15 @@ universal:
   击瑕:
     text: |
       本神通施放时，若敌方处于`控制效果`，则使本次伤害提升x%
-      融合50重：x=40
+      悟0境，融合50重：x=40
+      悟3境，融合52重：x=138
     effects:
       - type: "conditional_damage_controlled"
         value: 40
-        data_state: "fusion=50"
+        data_state: ["enlightenment=0","fusion=50"]
+      - type: "conditional_damage_controlled"
+        value: 138
+        data_state: ["enlightenment=3","fusion=52"]
   破竹:
     text: |
       本神通施放时，每造成1段伤害，剩余`段数伤害`提升x%，最多提升y%
@@ -65,11 +73,19 @@ universal:
   鬼印:
     text: |
       当本神通所添加的持续伤害触发时，额外造成目标x%已损失气血值的伤害
-      融合50重：x=2
+      悟0境，融合50重：x=2
+      悟1境，融合54重：x=4.45
+      悟3境，融合52重：x=4.45
     effects:
       - type: "dot_extra_per_tick"
         value: 2
-        data_state: "fusion=50"
+        data_state: ["enlightenment=0","fusion=50"]
+      - type: "dot_extra_per_tick"
+        value: 4.45
+        data_state: ["enlightenment=1","fusion=54"]
+      - type: "dot_extra_per_tick"
+        value: 4.45
+        data_state: ["enlightenment=3","fusion=52"]
   福荫:
     text: |
       本神通施放时，会使本次神通获得以下任意1个加成：攻击提升x%、致命伤害提升x%、造成的伤害提升x%
@@ -77,6 +93,8 @@ universal:
     effects:
       - type: "random_buff"
         attack: 20
+        crit_damage: 20
+        damage_increase: 20
         data_state: "fusion=50"
   战意:
     text: |
@@ -89,11 +107,15 @@ universal:
   斩岳:
     text: |
       本神通施放时，会使本次神通额外造成x%攻击力的伤害
-      融合50重：x=2000
+      悟0境，融合50重：x=2000
+      悟3境，融合52重：x=11800
     effects:
       - type: "flat_extra_damage"
         value: 2000
-        data_state: "fusion=50"
+        data_state: ["enlightenment=0","fusion=50"]
+      - type: "flat_extra_damage"
+        value: 11800
+        data_state: ["enlightenment=3","fusion=52"]
   吞海:
     text: |
       本神通施放时，敌方每多损失1%最大值气血值，会使本次伤害提升x%
@@ -114,11 +136,15 @@ universal:
   灵威:
     text: |
       本神通施放后，使下一个施放的神通释放时额外获得x%的`神通伤害加深`
-      融合50重：x=118
+      悟0境，融合50重：x=118
+      悟1境，融合54重：x=118
     effects:
       - type: "next_skill_buff"
         value: 118
-        data_state: "fusion=50"
+        data_state: ["enlightenment=0","fusion=50"]
+      - type: "next_skill_buff"
+        value: 118
+        data_state: ["enlightenment=1","fusion=54"]
   摧山:
     text: |
       本神通施放时，会使本次神通提升x%攻击力的效果
@@ -182,11 +208,15 @@ school:
     长生天则:
       text: |
         使本神通的所有治疗效果提升x%
-        融合50重：x=50
+        悟0境，融合50重：x=50
+        悟1境，融合54重：x=295
       effects:
         - type: "healing_increase"
           value: 50
-          data_state: "fusion=50"
+          data_state: ["enlightenment=0","fusion=50"]
+        - type: "healing_increase"
+          value: 295
+          data_state: ["enlightenment=1","fusion=54"]
     明王之路:
       text: |
         本神通施放时，会使本次神通的`最终伤害加深`提升x%
@@ -212,6 +242,8 @@ school:
       effects:
         - type: "random_buff"
           attack: 55
+          crit_damage: 55
+          damage_increase: 55
           data_state: "fusion=50"
   魔修:
     瑶光却邪:

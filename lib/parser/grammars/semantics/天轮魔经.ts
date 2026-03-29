@@ -84,6 +84,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				_zdts,
 				varRef4,
 				_p4,
+				_dotHalf,
 			) {
 				const stackInc: DebuffStackIncrease = {
 					type: "debuff_stack_increase",
@@ -94,8 +95,12 @@ export function addSemantics(s: ohm.Semantics): void {
 					value: varRef3.extractVar,
 					max: varRef4.extractVar,
 					per_stack: varRef2.extractVar,
+					dot_half_bonus: true,
 				};
 				return [stackInc, perStack];
+			},
+			dotHalfBonus(_lit) {
+				return [];
 			},
 			preamble(_) {
 				return [];

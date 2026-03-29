@@ -11,7 +11,6 @@
   primaryAffix = "当前气血高于" varRef "%" "时获得伤害加成" "，" "每额外高出" varRef "%" "气血值获得" varRef "%" "伤害加成"
 
   // ── Exclusive affix【天人合一】
-  // Raw: 使本神通的悟境等级加1，并使本神通造成的伤害提升x%
-  // Note: parenthetical "（最高不超过3级）" stripped by caller
-  exclusiveAffix = "使本神通的悟境等级加" varRef "，" "并使本神通造成的伤害提升" varRef "%"
+  // Raw: 使本神通的悟境等级加1（最高不超过3级），并使本神通造成的伤害提升x%
+  exclusiveAffix = "使本神通的悟境等级加" varRef "（最高不超过" varRef "级）" "，" "并使本神通造成的伤害提升" varRef "%"
 }

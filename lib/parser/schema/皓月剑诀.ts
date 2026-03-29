@@ -2,6 +2,7 @@ export type {
 	DamageIncrease,
 	DotExtraPerTick,
 	NoShieldDoubleDamage,
+	PercentMaxHpBoost,
 	PercentMaxHpDamage,
 	ShieldDestroyDamage,
 	ShieldDestroyDot,
@@ -10,15 +11,12 @@ export type {
 	Effect,
 } from "./effects.js";
 
-import type { PercentMaxHpDamage } from "./effects.js";
-
-export type PercentMaxHpDamageIncrease = PercentMaxHpDamage;
-
 import type {
 	BaseAttack,
 	DamageIncrease,
 	DotExtraPerTick,
 	NoShieldDoubleDamage,
+	PercentMaxHpBoost,
 	ShieldDestroyDamage,
 	ShieldDestroyDot,
 	StateRef,
@@ -26,4 +24,4 @@ import type {
 
 export type SkillEffect = BaseAttack | StateRef | ShieldDestroyDamage | NoShieldDoubleDamage;
 export type PrimaryAffixEffect = ShieldDestroyDot;
-export type ExclusiveAffixEffect = DotExtraPerTick | PercentMaxHpDamage | DamageIncrease;
+export type ExclusiveAffixEffect = DotExtraPerTick | PercentMaxHpBoost | DamageIncrease;

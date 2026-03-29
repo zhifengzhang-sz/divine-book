@@ -119,7 +119,9 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 		}
 	});
 
-	test("target receives healing_received debuff via APPLY_STATE", () => {
+	test("exclusive affix NOT applied when book is in main slot", () => {
+		// Construction model: main book = skill + primary affix only.
+		// Exclusive affix (天哀灵涸) only appears when used as aux slot.
 		const stateApplies = targetEvents.filter((e) => e.type === "STATE_APPLY");
 		const healDebuff = stateApplies.find(
 			(e) =>
@@ -129,7 +131,7 @@ describe("Full cast: 千锋聚灵剑 → target via sendTo", () => {
 					(eff: { stat: string }) => eff.stat === "healing_received",
 				),
 		);
-		expect(healDebuff).toBeDefined();
+		expect(healDebuff).toBeUndefined();
 	});
 
 	test("target survives one cast at ATK=1000 (DR mitigates %maxHP)", () => {

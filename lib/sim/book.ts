@@ -40,11 +40,13 @@ export function processBook(
 	// Gather effects per-source, apply tier selection within each source,
 	// then merge. Tier dedup is only meaningful within a single source —
 	// effects of the same type from different sources must NOT be deduped.
-	// Tier-select book's own sources (skill, primary_affix, exclusive_affix)
+	//
+	// Construction model: main book contributes skill + primary_affix only.
+	// The exclusive_affix is NOT included here — it only appears when the
+	// book is used as an aux slot (resolved via resolveAffixEffects).
 	const sources: EffectWithMeta[][] = [];
 	if (bookData.skill) sources.push(bookData.skill);
 	if (bookData.primary_affix) sources.push(bookData.primary_affix.effects);
-	if (bookData.exclusive_affix) sources.push(bookData.exclusive_affix.effects);
 
 	const allTiered: EffectWithMeta[] = [];
 	for (const source of sources) {

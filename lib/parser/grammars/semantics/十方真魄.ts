@@ -27,18 +27,29 @@ export function addSemantics(s: ohm.Semantics): void {
 			_s3,
 			stateAdd,
 			_colon,
-			stateBody,
+			stateBuffBody,
+			_comma,
+			_cx,
+			durVar,
+			_miao,
 		) {
 			const stateAddEffect: StateAdd = {
 				type: "state_add",
 				state: stateAdd.extractVar,
+				duration: durVar.extractVar,
 			};
+			const buffEffects = stateBuffBody.toEffects() as Effect[];
+			for (const e of buffEffects) {
+				if (e.type === "self_buff") {
+					(e as SelfBuff).duration = durVar.extractVar;
+				}
+			}
 			return [
 				...hpCost.toEffects(),
 				...baseAttack.toEffects(),
 				...selfLostHpHeal.toEffects(),
 				stateAddEffect,
-				...stateBody.toEffects(),
+				...buffEffects,
 			];
 		},
 		hpCost(_xhzs, varRef, _p, _dqqxz) {
@@ -75,12 +86,11 @@ export function addSemantics(s: ohm.Semantics): void {
 		stateAdd(_verb, stateName) {
 			return stateName.extractVar;
 		},
-		stateBody(_cxqjts, varRef, _p, _dgklyshjm, _sep, _cx, durVar, _m) {
+		stateBuffBody(_cxqjts, varRef, _p, _dgklyshjm) {
 			const effect: SelfBuff = {
 				type: "self_buff",
 				attack_bonus: varRef.extractVar,
 				damage_reduction: varRef.extractVar,
-				duration: durVar.extractVar,
 			};
 			return [effect];
 		},

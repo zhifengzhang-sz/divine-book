@@ -24,12 +24,19 @@ export function addSemantics(s: ohm.Semantics): void {
 			_colon,
 			stateBody,
 			_period,
-			_mods,
+			_stateName2,
+			_permanent,
+			_comma,
+			_zddj,
+			maxStacksVar,
+			_ceng,
 			_period2,
 		) {
 			const stateAddEffect: StateAdd = {
 				type: "state_add",
 				state: stateAdd.extractVar,
+				permanent: true,
+				max_stacks: maxStacksVar.extractVar,
 			};
 			return [
 				...baseAttack.toEffects(),
@@ -66,9 +73,6 @@ export function addSemantics(s: ohm.Semantics): void {
 				tick_interval: 1,
 			};
 			return [effect];
-		},
-		stateModifiers(_sn, _yj, _sep, _zddj, _v, _c) {
-			return [];
 		},
 		primaryAffix(
 			_stateName,

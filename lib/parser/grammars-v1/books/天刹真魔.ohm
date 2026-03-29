@@ -5,7 +5,7 @@
   //
   // Note: newline before state modifiers
 
-  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateModifiers
+  skillDescription = preamble baseAttack "，并" stateAdd "：" stateBody ws stateName "战斗状态内永久生效"
   preamble = (~"造成" any)*
 
   baseAttack = "造成" cnHitCount "共" varRef "%" "攻击力的灵法伤害"
@@ -19,9 +19,6 @@
   noHealingBonus = "该效果不受治疗加成影响"
 
   ws = (" " | "\n" | "\r")*
-
-  // "【不灭魔体】战斗状态内永久生效"
-  stateModifiers = stateName "战斗状态内永久生效"
 
   // ── Primary affix【魔妄吞天】
   // Raw: 在【不灭魔体】状态下受到攻击时，为目标附加【天人五衰】：

@@ -295,7 +295,7 @@ export const playerMachine = setup({
 				},
 				HP_DAMAGE: {
 					actions: enqueueActions(({ context, event, enqueue }) => {
-						resolveHpDamage(context, event as HpDamageEvent, enqueue);
+						resolveHpDamage(context, event as HpDamageEvent, enqueue, self);
 					}),
 				},
 				APPLY_STATE: {
@@ -519,6 +519,10 @@ export const playerMachine = setup({
 									t,
 								}),
 							);
+							if (context.state.hp <= 0) {
+								enqueue(sendTo(self, { type: "CHECK_DEATH" }));
+								return; // Dead — stop scheduling ticks
+							}
 						}
 
 						// Schedule next tick (self-scheduling pattern)
@@ -648,10 +652,14 @@ function resolveHit(
 	const f = ctx.formulas;
 	const t = ctx.clock.now();
 
-	// 1. DR
+	// 1. DR — base + buff DR, then multiplied by DR multiplier (无极剑阵)
 	const baseDR = s.def / (s.def + f.dr_constant);
 	const buffDR = sumStatEffects(s.states, "damage_reduction") / 100;
-	const totalDR = Math.min(Math.max(baseDR + buffDR, 0), 1);
+	const finalDR = sumStatEffects(s.states, "final_damage_reduction") / 100;
+	const additiveDR = baseDR + buffDR + finalDR;
+	// "增加350%伤害减免" = increase existing DR by 350% (multiplicative)
+	const drMultiplier = 1 + sumStatEffects(s.states, "damage_reduction_multiplier") / 100;
+	const totalDR = Math.min(Math.max(additiveDR * drMultiplier, 0), 1);
 	const mitigated = hit.damage * (1 - totalDR);
 
 	// 2. SP → shield: "消耗灵力值产生护盾抵挡伤害"
@@ -735,6 +743,10 @@ function resolveHit(
 					t,
 				}),
 			);
+			if (s.hp <= 0) {
+				enqueue(sendTo(self, { type: "CHECK_DEATH" }));
+				return; // Dead — skip remaining hit processing
+			}
 		}
 	}
 
@@ -773,7 +785,7 @@ function resolveHit(
 			} else if (effect.type === "HIT") {
 				resolveHit(ctx, effect, enqueue, self);
 			} else if (effect.type === "HP_DAMAGE") {
-				resolveHpDamage(ctx, effect, enqueue);
+				resolveHpDamage(ctx, effect, enqueue, self);
 			} else if (effect.type === "SHIELD_DESTROY") {
 				// Destroy enemy shields and deal bonus %maxHP damage
 				const count = effect.count ?? 1;
@@ -829,6 +841,7 @@ function resolveHpDamage(
 	ctx: PlayerContext,
 	ev: HpDamageEvent,
 	enqueue: Enqueue,
+	self: Self,
 ): void {
 	const s = ctx.state;
 	let basis: number;
@@ -856,6 +869,9 @@ function resolveHpDamage(
 			t: ctx.clock.now(),
 		}),
 	);
+	if (s.hp <= 0) {
+		enqueue(sendTo(self, { type: "CHECK_DEATH" }));
+	}
 }
 
 function resolveHeal(

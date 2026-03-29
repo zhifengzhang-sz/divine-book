@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>School Effect Distribution — Radar</title>
+<style>
+  body {
+    background: #282c34;
+    color: #abb2bf;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
+  }
+  h1 { color: #fff; font-size: 20px; margin-bottom: 4px; }
+  .subtitle { color: #5c6370; font-size: 13px; margin-bottom: 20px; }
+  .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
+  .card {
+    background: #2c313a;
+    border: 1px solid #4b5263;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .card h2 { color: #e5c07b; font-size: 15px; margin: 0 0 4px 0; }
+  .card .identity { color: #5c6370; font-size: 12px; margin: 0 0 8px 0; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .legend {
+    display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; justify-content: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .overlay-container { margin-top: 32px; }
+</style>
+</head>
+<body>
+
+<h1>School Effect Distribution</h1>
+<p class="subtitle">Radar chart per school — 11 taxonomies, normalized to max across all schools</p>
+
+<div class="container" id="cards"></div>
+
+<div class="overlay-container">
+  <div class="card">
+    <h2>All Schools Overlay</h2>
+    <canvas id="overlay" width="400" height="400"></canvas>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<script>
+const AXES = [
+  "Direct Damage", "Self Buff", "State Mgmt", "Debuff",
+  "Conditional", "DoT", "Cost/Survival", "Counter",
+  "Healing", "Shield", "Escalation"
+];
+
+const DATA = {
+  "Sword 剑修":  { color: "#61afef", identity: "Burst Assassin",    values: [17, 7, 4, 3, 1, 5, 2, 2, 1, 1, 3] },
+  "Spell 法修":  { color: "#c678dd", identity: "Buff Healer",       values: [15, 14, 11, 4, 3, 0, 0, 1, 7, 2, 0] },
+  "Demon 魔修":  { color: "#e06c75", identity: "Attrition Engine",  values: [9, 4, 6, 9, 4, 9, 0, 7, 0, 0, 2] },
+  "Body 体修":   { color: "#98c379", identity: "Berserker",         values: [16, 6, 10, 1, 3, 0, 10, 2, 1, 2, 0] },
+};
+
+// Normalize: find max per axis across all schools
+const maxPerAxis = AXES.map((_, i) => Math.max(...Object.values(DATA).map(d => d.values[i])));
+
+function drawRadar(ctx, cx, cy, r, values, maxVals, color, fill = true) {
+  const n = values.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const val = maxVals[i] === 0 ? 0 : values[i] / maxVals[i];
+    const angle = startAngle + i * angleStep;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+
+  if (fill) {
+    ctx.fillStyle = color + "33";
+    ctx.fill();
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  for (let i = 0; i < n; i++) {
+    const val = maxVals[i] === 0 ? 0 : values[i] / maxVals[i];
+    const angle = startAngle + i * angleStep;
+    const x = cx + r * val * Math.cos(angle);
+    const y = cy + r * val * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+function drawGrid(ctx, cx, cy, r, axes) {
+  const n = axes.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+
+  // Concentric rings
+  for (let ring = 1; ring <= 4; ring++) {
+    const rr = r * ring / 4;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = startAngle + i * angleStep;
+      const x = cx + rr * Math.cos(angle);
+      const y = cy + rr * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "#4b526366";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Spokes + labels
+  ctx.fillStyle = "#abb2bf";
+  ctx.font = "11px -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i < n; i++) {
+    const angle = startAngle + i * angleStep;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x1, y1);
+    ctx.strokeStyle = "#4b526333";
+    ctx.stroke();
+
+    // Label
+    const lx = cx + (r + 20) * Math.cos(angle);
+    const ly = cy + (r + 20) * Math.sin(angle);
+    ctx.fillText(axes[i], lx, ly);
+  }
+}
+
+// Individual cards
+const container = document.getElementById("cards");
+for (const [name, data] of Object.entries(DATA)) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<h2>${name}</h2><p class="identity">${data.identity}</p>`;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 300;
+  canvas.height = 300;
+  card.appendChild(canvas);
+
+  // Value labels below
+  const vals = document.createElement("div");
+  vals.style.cssText = "font-size:11px; color:#5c6370; margin-top:4px;";
+  vals.textContent = data.values.map((v, i) => v > 0 ? `${AXES[i]}:${v}` : null).filter(Boolean).join(" · ");
+  card.appendChild(vals);
+
+  container.appendChild(card);
+
+  const ctx = canvas.getContext("2d");
+  const cx = 150, cy = 155, r = 100;
+  drawGrid(ctx, cx, cy, r, AXES);
+  drawRadar(ctx, cx, cy, r, data.values, maxPerAxis, data.color);
+}
+
+// Overlay
+const oc = document.getElementById("overlay").getContext("2d");
+drawGrid(oc, 200, 205, 140, AXES);
+for (const [name, data] of Object.entries(DATA)) {
+  drawRadar(oc, 200, 205, 140, data.values, maxPerAxis, data.color);
+}
+
+// Legend
+const legend = document.getElementById("legend");
+for (const [name, data] of Object.entries(DATA)) {
+  legend.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${data.color}"></div>${name} — ${data.identity}</div>`;
+}
+</script>
+</body>
+</html>

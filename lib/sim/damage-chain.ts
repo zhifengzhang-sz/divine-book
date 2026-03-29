@@ -66,13 +66,12 @@ export function buildHitEvents(
 			escMdmg += esc.M_dmg ?? 0;
 			escMskill += esc.M_skill ?? 0;
 		}
-		// combat.mechanic.md §5.2: D_skill = D_base × (1+S_coeff) × zones; D_total = D_skill + D_flat
-		let damage = (perHitPercent / 100) * atk * (1 + zones.S_coeff);
+		// impl.combat.md §4.3: D_skill = (D_base × S_coeff + D_flat) × (1+M_dmg) × (1+M_skill) × (1+M_final) × M_synchro
+		let damage = (perHitPercent / 100) * atk * (1 + zones.S_coeff) + perHitFlat;
 		damage *= 1 + zones.M_dmg + escMdmg;
 		damage *= 1 + zones.M_skill + escMskill;
 		damage *= 1 + zones.M_final;
 		damage *= zones.M_synchro;
-		damage += perHitFlat; // D_flat: additive, not scaled by zones
 
 		if (!Number.isFinite(damage)) {
 			throw new Error(`Non-finite damage at hit ${k}: ${damage}`);

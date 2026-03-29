@@ -1,18 +1,16 @@
 export type {
-	Debuff,
 	DamageIncrease,
 	PercentCurrentHpDamage,
+	SelfBuff,
 	SkillDamageIncreaseAffix,
 	BaseAttack,
 	Effect,
 } from "./effects.js";
 
-import type { Debuff, DamageIncrease } from "./effects.js";
+import type { DamageIncrease, SelfBuff, SkillDamageIncreaseAffix } from "./effects.js";
 
-export type EnemySkillDamageReduction = Debuff;
-
-import type { BaseAttack, PercentCurrentHpDamage, SkillDamageIncreaseAffix } from "./effects.js";
+import type { BaseAttack, PercentCurrentHpDamage } from "./effects.js";
 
 export type SkillEffect = BaseAttack | PercentCurrentHpDamage;
 export type PrimaryAffixEffect = DamageIncrease;
-export type ExclusiveAffixEffect = SkillDamageIncreaseAffix | Debuff;
+export type ExclusiveAffixEffect = SkillDamageIncreaseAffix | SelfBuff;

@@ -3,7 +3,7 @@ import type * as ohm from "ohm-js";
 import type {
 	BaseAttack,
 	BuffStrength,
-	ConditionalHpScaling,
+	ConditionalStatScaling,
 	Effect,
 	SelfBuff,
 	StateRef,
@@ -53,9 +53,9 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct3,
 			_zzshjs2,
 		) {
-			const effect: ConditionalHpScaling = {
-				type: "conditional_hp_scaling",
-				hp_threshold: varRef1.extractVar,
+			const effect: ConditionalStatScaling = {
+				type: "conditional_stat_scaling",
+				threshold: varRef1.extractVar,
 				value: varRef2.extractVar,
 				max: varRef3.extractVar,
 				basis: "final_damage_bonus",

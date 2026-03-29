@@ -26,8 +26,12 @@ export function addSemantics(s: ohm.Semantics): void {
 			};
 			return [effect];
 		},
-		stateClause(_gap, _huode, _yiceng, stateName, _colon, stateBody) {
-			const ref: StateRef = { type: "state_ref", state: stateName.extractVar };
+		stateClause(_trigger, _yiceng, stateName, _colon, stateBody) {
+			const ref: StateRef = {
+				type: "state_ref",
+				state: stateName.extractVar,
+				trigger: "on_attacked_by_skill",
+			};
 			return [ref, ...stateBody.toEffects()];
 		},
 		stateBody(
