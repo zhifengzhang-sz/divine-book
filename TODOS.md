@@ -30,53 +30,6 @@ See `docs/parser/impl.ohm.md` for implementation details, `design.ohm.md` v1.2 f
 
 Discovered by raw-data-to-YAML verification audit. All are pre-existing grammar/semantic issues, not caused by the Zod schema refactor.
 
-### 4. CRITICAL: 惊蜇化龙 exclusive affix 【索心真诀】 missing entirely
-- **Priority:** P0
-- **Effort:** M (CC: ~20 min)
-- **Problem:** The entire exclusive affix is absent from YAML. Two clauses with 4 variables (x=2.1, y=21, z=50, w=75) are unparsed: per-debuff-stack true damage + enlightenment-conditional self_lost_hp boost.
-- **Context:** The grammar/semantic for 惊蜇化龙 exclusive affix either doesn't exist or fails to parse. The `exclusive.ts` compound parser table may be missing this entry.
-- **Fix:** Add grammar rule or compound parser for 惊蜇化龙 exclusive affix. Add `per_debuff_stack_true_damage` and `self_lost_hp_damage` effects.
-
-### 5. HIGH: 大罗幻诀 missing counter_debuff for 断魂之咒
-- **Priority:** P1
-- **Effort:** S (CC: ~10 min)
-- **Problem:** Raw text says both 噬心之咒 AND 断魂之咒 trigger on_attacked with 30% chance. YAML only has counter_debuff for 噬心之咒. The 断魂之咒 dot exists but lacks its own trigger.
-- **Context:** Grammar `counterDebuff` rule may only capture the first state name in the conjunction.
-- **Fix:** Grammar should emit two counter_debuff effects (one per curse) from the conjunction "【噬心之咒】与【断魂之咒】".
-
-### 6. HIGH: 天刹真魔 primary affix 【天人五衰】 incomplete
-- **Priority:** P1
-- **Effort:** M (CC: ~15 min)
-- **Problem:** Only `crit_rate: 50` captured. Missing: `crit_damage: 50`, `attack: 23`, `final_damage_reduction: 23`. Also missing "每3秒轮流" (rotate every 3s) mechanic.
-- **Context:** The raw text describes 5 rotating stat reductions applied every 3 seconds. The grammar only extracts the first stat.
-- **Fix:** Update grammar/semantic to capture all 5 stats and the rotation interval. May need a new `rotating_debuff` effect type or extend `self_buff_extra`.
-
-### 7. HIGH: 皓月剑诀 primary affix shield_destroy_dot value is string
-- **Priority:** P1
-- **Effort:** S (CC: ~10 min)
-- **Problem:** `value` field is raw string "攻击力的伤害" instead of numeric 600. The "no shield = count as 2" fallback clause is also missing.
-- **Context:** Grammar doesn't extract the 600% multiplier from "湮灭护盾的总个数*600%攻击力的伤害".
-- **Fix:** Update grammar to parse the multiplier. Add `no_shield_count` field for the fallback.
-
-### 8. MEDIUM: Missing duration fields across multiple books
-- **Priority:** P2
-- **Effort:** M (CC: ~20 min)
-- **Problem:** Duration values stated in raw text are dropped by the parser for several effects:
-  - 甲元仙符 `self_buff` (仙佑): missing `duration: 12`
-  - 惊蜇化龙 `self_buff`: missing `duration: 4`
-  - 疾风九变 `counter_buff` (极怒): missing `duration: 4`
-  - 煞影千幻 `shield`: missing `duration: 8`
-  - 梵圣真魔咒 `dot` (贪妄业火): missing `duration: 8`
-  - 大罗幻诀 `state_add` (罗天魔咒): missing `duration: 8`
-- **Context:** The grammar rules for these effects don't capture the "持续N秒" suffix or the duration is on the state definition rather than the effect.
-- **Fix:** Add optional duration capture to the relevant grammar rules.
-
-### 9. MEDIUM: 大罗幻诀 counter_debuff missing max_stacks
-- **Priority:** P2
-- **Effort:** S (CC: ~5 min)
-- **Problem:** Raw text says "各自最多叠加5层" but counter_debuff has no max_stacks field.
-- **Fix:** Add max_stacks capture to the counter_debuff grammar rule.
-
 ### 10. LOW: 浩然星灵诀 conditional_hp_scaling type name misleading
 - **Priority:** P3
 - **Effort:** S (CC: ~5 min)
@@ -120,5 +73,11 @@ replaces the regex pipeline entirely, eliminating these issues:
 - ~~Fix 斩岳 base_attack vs flat_extra_damage collision~~ — lookbehind `(?<!额外)`
 - ~~Fix 溃魂击瑕 execute_conditional losing guaranteed_crit~~ — added `必定暴击` variant
 - ~~Integrate parser-viz with XState emit() events~~ — server + frontend + theme
+- ~~#4 (P0) 惊蜇化龙 exclusive affix 索心真诀 missing~~ — verified as already-fixed (2026-03-31), YAML has per_debuff_stack_true_damage + self_lost_hp_damage with correct values
+- ~~#5 (P1) 大罗幻诀 missing counter_debuff for 断魂之咒~~ — verified as already-fixed (2026-03-31), YAML emits two counter_debuffs (噬心之咒 + 断魂之咒) with max_stacks: 5
+- ~~#6 (P1) 天刹真魔 天人五衰 incomplete~~ — verified as already-fixed (2026-03-31), YAML captures all 5 stats + interval:3 + duration:15 as self_buff_extra
+- ~~#7 (P1) 皓月剑诀 shield_destroy_dot string value~~ — verified as already-fixed (2026-03-31), YAML has value: 600 (numeric) + no_shield_assumed: 2
+- ~~#8 (P2) Missing durations across 6 books~~ — verified as already-fixed (2026-03-31), all 6 durations present in YAML
+- ~~#9 (P2) 大罗幻诀 counter_debuff missing max_stacks~~ — verified as already-fixed (2026-03-31), YAML has max_stacks: 5
 
 </details>
