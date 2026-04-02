@@ -550,7 +550,7 @@ With enemy immunity:
 ├─ Slots 5-6: Exploit + endure
 ```
 
-This is a **slot reorder** within the chosen theme, not a different theme. See [pvp.md §2](../books/pvp.md) for the full analysis.
+This is a **slot reorder** within the chosen theme, not a different theme. See [剑九.md](../../data/books/剑九.md) for a full construction analysis example.
 
 ---
 

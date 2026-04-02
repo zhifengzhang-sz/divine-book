@@ -341,4 +341,4 @@ flowchart TD
 | [`function.combos.md`](data/function.combos.md) | C3 | Per-function × per-platform combo tables |
 | [`combat.md`](model/combat.md) | C4 | Effect → factor mapping rules |
 | [`impl.combat.md`](model/impl.combat.md) | C4 | Map + combinator implementation spec |
-| [`guide.chain.md`](books/guide.chain.md) | — | How-to guide for the 4-stage analytical process |
+| [`workflow.construct.md`](books/workflow.construct.md) | — | Construction workflow using RAG + sim + Claude reasoning |

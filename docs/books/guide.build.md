@@ -138,9 +138,7 @@ graph TD
 | Expected fight duration? | 1 cycle (24s) or 2+ cycles (48s+) — affects buff timing and cycle-wrap value |
 
 **Examples:**
-- [pvp.md §1.2](pvp.md) — "Against Stronger Opponent": asymmetry features, fight duration ~43s, strategy derivation
-- [pvp.md §2.1](pvp.md) — "Against Opponent with Initial Immunity": immunity window analysis
-- [pvp.md §3.1](pvp.md) — "Standard PvP Meta": equal power, mutual immunity
+- [剑九.md](../../data/books/剑九.md) — "Against Stronger Opponent": dual-channel principle, A/B variation, full slot-by-slot analysis
 
 ---
 
@@ -178,7 +176,7 @@ graph TD
 
 At the extremes (α≈0 or α≈1), the build is forced — few choices. In the middle (α≈0.5-0.6), strategic variance peaks — the most slot variants and adaptive branching options.
 
-**Reference:** [function-themes.md §Theme Selection](../model/function-themes.md) — full decision tree with scenario observables, slot-level adaptations, pre-build inventory.
+**Reference:** [function.themes.md §Theme Selection](../model/function.themes.md) — full decision tree with scenario observables, slot-level adaptations, pre-build inventory.
 
 ---
 
@@ -228,7 +226,7 @@ Moving F_buff to slot 1 wastes buff duration. Moving F_hp_exploit to slot 2 has 
 | 5 | F_hp_exploit | F_truedmg | F_hp_exploit, F_truedmg |
 | 6 | F_burst, F_dot | F_dr_remove | F_burst, F_dot, F_dr_remove |
 
-**Reference:** [function-themes.md §Function Catalog](../model/function-themes.md) — three-tier structure (native platforms, aux affixes, adaptable platforms) for all 13 functions.
+**Reference:** [function.themes.md §Function Catalog](../model/function.themes.md) — three-tier structure (native platforms, aux affixes, adaptable platforms) for all 13 functions.
 
 ---
 
@@ -264,7 +262,7 @@ graph TD
 | `疾风九变` | 1500 | F_counter, F_sustain, F_hp_exploit | 4 alt (counter) |
 | `无相魔劫咒` | 1500 | F_delayed, F_truedmg | — (D_base too low) |
 
-**Reference:** [function-themes.md §Platform × Function Matrix](../model/function-themes.md) — complete platform-to-function mapping with baseline vectors.
+**Reference:** [function.themes.md §Platform × Function Matrix](../model/function.themes.md) — complete platform-to-function mapping with baseline vectors.
 
 ---
 
@@ -310,7 +308,7 @@ The function catalog lists all available aux affixes per function:
 bun app/function-combos.ts --catalog
 ```
 
-**Reference:** [function-themes.md §Function Catalog — Three-Tier Structure](../model/function-themes.md) — aux affixes (core + amplifier) for each function.
+**Reference:** [function.themes.md §Function Catalog — Three-Tier Structure](../model/function.themes.md) — aux affixes (core + amplifier) for each function.
 
 ---
 
@@ -377,7 +375,7 @@ graph TD
 
 Pre-build multiple 灵書 for flex slots. Choose which set to equip before each match based on opponent assessment.
 
-**Reference:** [function-themes.md §Adaptive Strategies](../model/function-themes.md) — decision tree, adaptation variants, pre-build inventory.
+**Reference:** [function.themes.md §Adaptive Strategies](../model/function.themes.md) — decision tree, adaptation variants, pre-build inventory.
 
 ---
 
@@ -385,11 +383,9 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 
 | Example | Scenario | Theme | Doc |
 |:--------|:---------|:------|:----|
-| vs stronger opponent | Asymmetric power, need to survive | Theme 3 (attack + buff + debuff) | [pvp.md §1](pvp.md) |
-| vs opponent with immunity | Early slots wasted → setup first | Theme 3, reordered (buff→debuff→burst) | [pvp.md §2](pvp.md) |
-| Standard meta (mutual immunity) | Equal power, known opponent | Theme 3 with cycle-wrap | [pvp.md §3](pvp.md) |
-| Tool-assisted build (Scenario A) | Defensive, vs stronger | Theme 3 | [pvp.zz.tools.md](../pvp.zz.tools.md) |
-| Tool-assisted build (Scenario B) | Aggressive, vs equal/weaker | Theme 3, slot 4 → self-damage | [pvp.zz.tools.md](../pvp.zz.tools.md) |
+| 剑九 vs stronger (Var A) | Asymmetric power, dual-channel opener | Theme 3 (attack + buff + debuff) | [剑九.md §Variation A](../../data/books/剑九.md) |
+| 剑九 vs stronger (Var B) | Counter-reflection opener vs aggressive enemy | Theme 3, counter variant | [剑九.md §Variation B](../../data/books/剑九.md) |
+| 剑九 vs weaker | Weaker opponent, pure offense | Theme 2 (attack + buff) | [剑九.md §pvp weaker](../../data/books/剑九.md) |
 
 ---
 
@@ -397,11 +393,11 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 
 | Model | What it provides | Doc |
 |:------|:----------------|:----|
-| Function categories | 13 functions, three-tier structure (platform/aux/adaptable) | [function-themes.md](../model/function-themes.md) |
-| Themes & slot assignment | Theme 1-5 spectrum, slot timing, coverage, decision tree | [function-themes.md](../model/function-themes.md) |
+| Function categories | 13 functions, three-tier structure (platform/aux/adaptable) | [function.themes.md](../model/function.themes.md) |
+| Themes & slot assignment | Theme 1-5 spectrum, slot timing, coverage, decision tree | [function.themes.md](../model/function.themes.md) |
 | Combat model (qualitative) | Damage chain, factor zones, multiplicative structure | [combat.qualitative.md](../model/combat.qualitative.md) |
-| Binding quality (BQ) | Affix pair scoring: utilization, platform fit, zone breadth | [impl.binding-quality.md](../model/impl.binding-quality.md) |
-| Time-series model | Temporal factor vectors, summon envelopes, buff duration | [impl.time-series.md](../model/impl.time-series.md) |
+| Binding quality (BQ) | Affix pair scoring: utilization, platform fit, zone breadth | [impl.binding.quality.md](../model/impl.binding.quality.md) |
+| Time-series model | Temporal factor vectors, summon envelopes, buff duration | [impl.time.series.md](../model/impl.time.series.md) |
 | Domain categories | Effect types, target categories, zone mapping | [domain.category.md](../data/domain.category.md) |
 
 ### Tools
@@ -410,6 +406,6 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 |:-----|:--------|:-----------|
 | `bun app/function-combos.ts --catalog` | List aux affixes per function | Step 5 (aux selection) |
 | `bun app/function-combos.ts --fn X --platform Y --top N` | Rank combos for a function × platform | Step 5 (aux ranking) |
-| `bun app/combo-rank.ts --platform X --top N` | Rank all combos for a platform | Step 5 (general ranking) |
-| `bun app/book-vector.ts --platform X --op1 Y --op2 Z` | Time-series factor vectors | Step 5 (temporal analysis) |
+| `bun app/book-vector.ts --book X --json` | Time-series factor vectors | Step 5 (temporal analysis) |
+| `bun scripts/construct-data.ts --character X --scenario Y` | Full context generation | [workflow.construct.md](workflow.construct.md) |
 | `bun app/book-vector-chart.ts --platform X` | HTML chart visualization | Step 5 (visual inspection) |
