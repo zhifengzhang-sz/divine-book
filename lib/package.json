@@ -1,0 +1,18 @@
+{
+  "name": "@divine-book/lib",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./parser": "./parser/index.ts",
+    "./data": "./data/store.ts",
+    "./sim": "./sim/index.ts",
+    "./construct": "./construct/index.ts"
+  },
+  "peerDependencies": {
+    "ohm-js": "^17.5.0",
+    "xstate": "^5.28.0",
+    "yaml": "^2.7.1",
+    "zod": "^4.3.6"
+  }
+}

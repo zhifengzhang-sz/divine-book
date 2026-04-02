@@ -2,6 +2,7 @@
   "name": "divine-book",
   "private": true,
   "type": "module",
+  "workspaces": ["lib"],
   "scripts": {
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test",

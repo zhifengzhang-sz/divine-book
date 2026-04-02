@@ -3,7 +3,7 @@
  * Extracted from app/simulate.ts sweep logic.
  */
 
-import type { AffixesYaml, BooksYaml } from "../sim/config.js";
+import type { AffixesYaml, BooksYaml } from "../data/store.js";
 
 export interface AffixEntry {
 	name: string;

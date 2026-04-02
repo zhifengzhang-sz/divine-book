@@ -7,7 +7,7 @@
  * Implements time-series model §3.1–3.4 at the single-book level.
  */
 
-import type { BooksYaml } from "../sim/config";
+import type { BooksYaml } from "../data/store.js";
 import type { EffectWithMeta } from "../data/types";
 
 // ── Public types ───────────────────────────────────────────────────

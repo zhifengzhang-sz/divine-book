@@ -4,7 +4,7 @@
  * the function, and return the top N combos.
  */
 
-import type { AffixesYaml, BooksYaml } from "../sim/config.js";
+import type { AffixesYaml, BooksYaml } from "../data/store.js";
 import {
 	type AffixEntry,
 	collectAllAffixes,
