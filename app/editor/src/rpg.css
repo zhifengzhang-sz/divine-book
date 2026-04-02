@@ -1,0 +1,289 @@
+/* ── RPG Theme for Divine Book Editor ────────────────────────── */
+
+/* ── Fantasy Background ────────────────────────────────────── */
+
+body {
+  background-image: url('/assets/fantasy_bg.png.webp');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(8, 7, 10, 0.92) 0%,
+    rgba(13, 11, 18, 0.88) 50%,
+    rgba(10, 9, 16, 0.92) 100%
+  );
+  z-index: -1;
+}
+
+/* ── Ornate Panel Borders ──────────────────────────────────── */
+
+.rpg-panel {
+  position: relative;
+  border: 16px solid transparent;
+  border-image: url('/assets/kenney-border.png') 32 fill / 16px / 0 round;
+  filter: drop-shadow(0 0 1px rgba(184, 134, 11, 0.3));
+}
+
+.rpg-card {
+  position: relative;
+  overflow: visible;
+}
+
+.rpg-card::before,
+.rpg-card::after {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background-image: url('/assets/ornate_border.png.webp');
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 2px rgba(184, 134, 11, 0.3));
+  z-index: 1;
+}
+
+.rpg-card::before {
+  top: -3px;
+  left: -3px;
+}
+
+.rpg-card::after {
+  bottom: -3px;
+  right: -3px;
+  transform: rotate(180deg);
+}
+
+/* ── RPG 3D Buttons ────────────────────────────────────────── */
+
+.rpg-btn {
+  background: linear-gradient(180deg, #555 0%, #3a3a3a 40%, #2a2a2a 60%, #1a1a1a 100%);
+  border: 2px solid #5c4033;
+  border-top-color: #7a6050;
+  border-bottom-color: #3a2a1a;
+  color: #ffd700;
+  font-family: 'Inter', sans-serif;
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow:
+    0 3px 0 #0a0a0a,
+    0 4px 4px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -1px 0 rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px black;
+  transition: all 0.15s ease;
+  letter-spacing: 0.3px;
+}
+
+.rpg-btn:hover {
+  background: linear-gradient(180deg, #666 0%, #4a4a4a 40%, #3a3a3a 60%, #2a2a2a 100%);
+  border-color: #ffd700;
+  box-shadow:
+    0 3px 0 #0a0a0a,
+    0 4px 6px rgba(0,0,0,0.6),
+    0 0 12px rgba(255, 215, 0, 0.2),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.rpg-btn:active {
+  background: linear-gradient(180deg, #333 0%, #2a2a2a 40%, #222 60%, #1a1a1a 100%);
+  box-shadow: 0 1px 0 #0a0a0a, inset 0 2px 4px rgba(0,0,0,0.4);
+  transform: translateY(2px);
+}
+
+.rpg-btn-primary {
+  background: linear-gradient(180deg, #6a5a2a 0%, #554a20 40%, #443a18 60%, #332a10 100%);
+  border: 2px solid #b8860b;
+  border-top-color: #d4a020;
+  border-bottom-color: #8a6508;
+  box-shadow:
+    0 3px 0 #1a1200,
+    0 4px 6px rgba(0,0,0,0.6),
+    0 0 8px rgba(184, 134, 11, 0.3),
+    inset 0 1px 0 rgba(255,215,0,0.15);
+  font-weight: 600;
+}
+
+.rpg-btn-primary:hover {
+  background: linear-gradient(180deg, #7a6a30 0%, #655828 40%, #544820 60%, #433818 100%);
+  border-color: #ffd700;
+  box-shadow:
+    0 3px 0 #1a1200,
+    0 4px 8px rgba(0,0,0,0.7),
+    0 0 16px rgba(255, 215, 0, 0.35),
+    inset 0 1px 0 rgba(255,215,0,0.2);
+}
+
+.rpg-btn-green {
+  background: linear-gradient(180deg, #2a5a2a 0%, #204a20 40%, #183a18 60%, #103010 100%);
+  border: 2px solid #2a8a2a;
+  border-top-color: #40a040;
+  border-bottom-color: #186818;
+  color: #7fff7f;
+}
+
+.rpg-btn-green:hover {
+  border-color: #5cbe6c;
+  box-shadow:
+    0 3px 0 #0a0a0a,
+    0 4px 6px rgba(0,0,0,0.6),
+    0 0 10px rgba(92, 190, 108, 0.25),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.rpg-btn-danger {
+  background: linear-gradient(180deg, #5a2a2a 0%, #4a2020 40%, #3a1818 60%, #301010 100%);
+  border: 2px solid #8a2a2a;
+  border-top-color: #a04040;
+  border-bottom-color: #681818;
+  color: #ff7f7f;
+}
+
+.rpg-btn-danger:hover {
+  border-color: #d45454;
+  box-shadow:
+    0 3px 0 #0a0a0a,
+    0 4px 6px rgba(0,0,0,0.6),
+    0 0 10px rgba(212, 84, 84, 0.25),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ── Fancy Scrollbars ──────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #111; border-radius: 4px; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #5c4033, #3a2818); border-radius: 4px; border: 1px solid rgba(184, 134, 11, 0.3); }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #7a5a43, #5c4033); border-color: rgba(184, 134, 11, 0.6); }
+
+/* ── Kenney Dividers ───────────────────────────────────────── */
+
+.rpg-divider {
+  width: 100%;
+  height: 16px;
+  background-image: url('/assets/kenney-divider.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.35;
+  margin: 10px 0;
+  filter: sepia(1) saturate(3) hue-rotate(10deg) brightness(0.7);
+}
+
+/* ── Gold Heading Underline ────────────────────────────────── */
+
+.rpg-heading {
+  font-family: 'Cinzel', serif;
+  color: #ffd700;
+  text-shadow: 2px 2px 4px #000;
+  border-bottom: 2px solid #b8860b;
+  padding-bottom: 6px;
+  display: inline-block;
+  position: relative;
+}
+
+.rpg-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.4), transparent);
+}
+
+/* ── Select Dropdowns ──────────────────────────────────────── */
+
+.rpg-select {
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  border: 2px solid #5c4033;
+  border-top-color: #6a5040;
+  border-bottom-color: #3a2818;
+  color: #ffd700;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  box-shadow: 0 2px 0 #0a0a0a, 0 3px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  text-shadow: 1px 1px 2px black;
+  outline: none;
+  cursor: pointer;
+}
+
+.rpg-select:hover {
+  border-color: #b8860b;
+  box-shadow: 0 2px 0 #0a0a0a, 0 3px 4px rgba(0,0,0,0.5), 0 0 6px rgba(184, 134, 11, 0.15);
+}
+
+.rpg-select option {
+  background: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* ── Textarea RPG Style ────────────────────────────────────── */
+
+.rpg-textarea {
+  background: rgba(10, 8, 14, 0.7);
+  background-image: url('/assets/ui_panel_bg.png.webp');
+  background-size: cover;
+  background-blend-mode: overlay;
+  border: 2px solid #3a2818;
+  border-top-color: #2a1a10;
+  border-bottom-color: #5c4033;
+  color: #d4cec4;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 12px 14px;
+  border-radius: 4px;
+  resize: vertical;
+  outline: none;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+  transition: border-color 0.2s;
+}
+
+.rpg-textarea:focus {
+  border-color: #b8860b88;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 8px rgba(184, 134, 11, 0.1);
+}
+
+/* ── State Badges ──────────────────────────────────────────── */
+
+.rpg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  text-shadow: 1px 1px 2px black;
+}
+
+.rpg-badge-sword { background: rgba(94, 196, 212, 0.12); color: #5ec4d4; border: 1px solid rgba(94, 196, 212, 0.35); }
+.rpg-badge-spell { background: rgba(155, 126, 216, 0.12); color: #9b7ed8; border: 1px solid rgba(155, 126, 216, 0.35); }
+.rpg-badge-demon { background: rgba(212, 84, 84, 0.12); color: #d45454; border: 1px solid rgba(212, 84, 84, 0.35); }
+.rpg-badge-body  { background: rgba(92, 190, 108, 0.12); color: #5cbe6c; border: 1px solid rgba(92, 190, 108, 0.35); }
+
+/* ── Effect Rows ───────────────────────────────────────────── */
+
+.rpg-effect-row {
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  border-left: 3px solid rgba(184, 134, 11, 0.4);
+  margin-bottom: 3px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.rpg-effect-row:hover {
+  border-left-color: rgba(255, 215, 0, 0.7);
+  background: rgba(0, 0, 0, 0.3);
+}

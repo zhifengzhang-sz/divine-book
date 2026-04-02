@@ -1,0 +1,4688 @@
+{
+  "meta": {
+    "character": "剑九",
+    "scenario": "pvp vs stronger",
+    "school": "Sword",
+    "generatedAt": "2026-04-02T00:25:56.409Z"
+  },
+  "platforms": {
+    "千锋聚灵剑": {
+      "school": "Sword",
+      "dBase": 46395,
+      "hits": 6,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 11265,
+          "target": "enemy"
+        },
+        {
+          "type": "percent_max_hp_damage",
+          "value": 15,
+          "target": "enemy"
+        },
+        {
+          "type": "base_attack",
+          "value": 14865,
+          "target": "enemy"
+        },
+        {
+          "type": "percent_max_hp_damage",
+          "value": 19,
+          "target": "enemy"
+        },
+        {
+          "type": "base_attack",
+          "value": 20265,
+          "target": "enemy"
+        },
+        {
+          "type": "percent_max_hp_damage",
+          "value": 27,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "惊神剑光",
+        "effects": [
+          {
+            "type": "per_hit_escalation",
+            "value": 25,
+            "target": "self"
+          },
+          {
+            "type": "per_hit_escalation",
+            "value": 42.5,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "天哀灵涸",
+        "effects": [
+          {
+            "type": "heal_reduction",
+            "value": 80,
+            "duration": 8,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst",
+        "F_exploit"
+      ]
+    },
+    "春黎剑阵": {
+      "school": "Sword",
+      "dBase": 22305,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 22305,
+          "target": "enemy"
+        },
+        {
+          "type": "summon",
+          "duration": 16,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "幻象剑灵",
+        "effects": [
+          {
+            "type": "summon_buff",
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "玄心剑魄",
+        "effects": [
+          {
+            "type": "dot",
+            "duration": 8,
+            "target": "enemy"
+          },
+          {
+            "type": "on_dispel",
+            "value": 3300,
+            "target": "self"
+          },
+          {
+            "type": "dot",
+            "duration": 16,
+            "target": "enemy"
+          },
+          {
+            "type": "on_dispel",
+            "value": 18000,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst"
+      ]
+    },
+    "皓月剑诀": {
+      "school": "Sword",
+      "dBase": 22305,
+      "hits": 10,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 22305,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "duration": 4,
+          "target": "self"
+        },
+        {
+          "type": "shield_destroy_damage",
+          "target": "self"
+        },
+        {
+          "type": "no_shield_double_damage",
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "碎魂剑意",
+        "effects": [
+          {
+            "type": "shield_destroy_dot",
+            "value": 600,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "追神真诀",
+        "effects": [
+          {
+            "type": "dot_extra_per_tick",
+            "value": 26.5,
+            "target": "self"
+          },
+          {
+            "type": "percent_max_hp_boost",
+            "value": 0,
+            "target": "self"
+          },
+          {
+            "type": "damage_increase",
+            "value": 0,
+            "target": "self"
+          },
+          {
+            "type": "dot_extra_per_tick",
+            "value": 26.5,
+            "target": "self"
+          },
+          {
+            "type": "percent_max_hp_boost",
+            "value": 50,
+            "target": "self"
+          },
+          {
+            "type": "damage_increase",
+            "value": 300,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst",
+        "F_exploit",
+        "F_dot"
+      ]
+    },
+    "念剑诀": {
+      "school": "Sword",
+      "dBase": 22305,
+      "hits": 8,
+      "skillEffects": [
+        {
+          "type": "untargetable",
+          "value": 4,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 22305,
+          "target": "enemy"
+        },
+        {
+          "type": "periodic_escalation",
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "雷阵剑影",
+        "effects": [
+          {
+            "type": "extended_dot",
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "仙露护元",
+        "effects": [
+          {
+            "type": "buff_duration",
+            "value": 300,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst",
+        "F_dot"
+      ]
+    },
+    "通天剑诀": {
+      "school": "Sword",
+      "dBase": 20265,
+      "hits": 6,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 20265,
+          "target": "enemy"
+        },
+        {
+          "type": "crit_dmg_bonus",
+          "value": 350,
+          "target": "self"
+        },
+        {
+          "type": "self_damage_taken_increase",
+          "value": 50,
+          "duration": 8,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "焚心剑芒",
+        "effects": [
+          {
+            "type": "conditional_damage",
+            "value": 40,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "神威冲云",
+        "effects": [
+          {
+            "type": "ignore_damage_reduction",
+            "target": "self"
+          },
+          {
+            "type": "damage_increase",
+            "value": 36,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "新-青元剑诀": {
+      "school": "Sword",
+      "dBase": 15225,
+      "hits": 6,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 15225,
+          "target": "enemy"
+        },
+        {
+          "type": "debuff",
+          "name": "神通封印",
+          "value": 8,
+          "duration": 8,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "追命剑阵",
+        "effects": [
+          {
+            "type": "debuff",
+            "value": "x",
+            "duration": 16,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "天威煌煌",
+        "effects": [
+          {
+            "type": "next_skill_buff",
+            "value": 88,
+            "target": "self"
+          },
+          {
+            "type": "next_skill_buff",
+            "value": 108,
+            "target": "self"
+          },
+          {
+            "type": "next_skill_buff",
+            "value": 128,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "无极御剑诀": {
+      "school": "Sword",
+      "dBase": 6225,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 6225,
+          "target": "enemy"
+        },
+        {
+          "type": "percent_current_hp_damage",
+          "value": 2.2,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "剑引无极",
+        "effects": [
+          {
+            "type": "damage_increase",
+            "value": "x",
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "无极剑阵",
+        "effects": [
+          {
+            "type": "skill_damage_increase_affix",
+            "value": 555,
+            "target": "self"
+          },
+          {
+            "type": "self_buff",
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "浩然星灵诀": {
+      "school": "Spell",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 20,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天鹤祈瑞",
+        "effects": [
+          {
+            "type": "conditional_stat_scaling",
+            "value": 100,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "龙象护身",
+        "effects": [
+          {
+            "type": "buff_strength",
+            "value": 300,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "元磁神光": {
+      "school": "Spell",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 12,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天狼战意",
+        "effects": [
+          {
+            "type": "attack_bonus",
+            "value": 7,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "真极穿空",
+        "effects": [
+          {
+            "type": "buff_stack_increase",
+            "value": 100,
+            "target": "self"
+          },
+          {
+            "type": "per_buff_stack_damage",
+            "value": 5.5,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "周天星元": {
+      "school": "Spell",
+      "dBase": 20565,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "self_heal",
+          "value": 20,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "heal_echo_damage",
+          "target": "self"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_heal",
+          "value": 70,
+          "target": "self"
+        },
+        {
+          "type": "self_heal",
+          "value": 20,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 19065,
+          "target": "enemy"
+        },
+        {
+          "type": "heal_echo_damage",
+          "target": "self"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_heal",
+          "value": 250,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天书灵盾",
+        "effects": [
+          {
+            "type": "shield",
+            "value": 3.5,
+            "duration": 16,
+            "target": "self"
+          },
+          {
+            "type": "shield",
+            "value": 4.4,
+            "duration": 16,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "奇能诡道",
+        "effects": [
+          {
+            "type": "debuff_stack_chance",
+            "value": 20,
+            "target": "self"
+          },
+          {
+            "type": "cross_slot_debuff",
+            "value": 0.6,
+            "target": "self"
+          },
+          {
+            "type": "debuff_stack_chance",
+            "value": 93.5,
+            "target": "self"
+          },
+          {
+            "type": "cross_slot_debuff",
+            "value": 0.7,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "甲元仙符": {
+      "school": "Spell",
+      "dBase": 42900,
+      "hits": 1,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": "x",
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 12,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 12,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 20310,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 12,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 21090,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 12,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天光虹露",
+        "effects": [
+          {
+            "type": "self_buff",
+            "name": "仙佑",
+            "target": "self"
+          },
+          {
+            "type": "self_buff",
+            "name": "仙佑",
+            "target": "self"
+          },
+          {
+            "type": "self_buff",
+            "name": "仙佑",
+            "target": "self"
+          },
+          {
+            "type": "self_buff",
+            "name": "仙佑",
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "天倾灵枯",
+        "effects": [
+          {
+            "type": "heal_reduction",
+            "value": 31,
+            "duration": 20,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst",
+        "F_buff",
+        "F_sustain"
+      ]
+    },
+    "星元化岳": {
+      "school": "Spell",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "echo_damage",
+          "value": 25,
+          "duration": 8,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天龙轮转",
+        "effects": [
+          {
+            "type": "lifesteal",
+            "value": 75,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "仙灵汲元",
+        "effects": [
+          {
+            "type": "lifesteal",
+            "value": 55,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "玉书天戈符": {
+      "school": "Spell",
+      "dBase": 1500,
+      "hits": 3,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "percent_max_hp_damage",
+          "value": 21,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "天灵怒威",
+        "effects": [
+          {
+            "type": "conditional_stat_scaling",
+            "value": 3,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "天人合一",
+        "effects": [
+          {
+            "type": "enlightenment_bonus",
+            "value": 1,
+            "target": "self"
+          },
+          {
+            "type": "damage_increase",
+            "value": 5,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "九天真雷诀": {
+      "school": "Spell",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_cleanse",
+          "target": "self"
+        },
+        {
+          "type": "conditional_damage",
+          "value": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": null,
+      "exclusiveAffix": {
+        "name": "九雷真解",
+        "effects": [
+          {
+            "type": "on_buff_debuff_shield",
+            "value": 50.8,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "天魔降临咒": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "name": "结魂锁链",
+          "target": "self"
+        },
+        {
+          "type": "debuff",
+          "name": "结魂锁链",
+          "value": 5.25,
+          "target": "self"
+        },
+        {
+          "type": "per_debuff_stack_damage",
+          "value": 0.5,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔念生息",
+        "effects": [
+          {
+            "type": "dot_permanent_max_hp",
+            "value": 1.6,
+            "target": "enemy"
+          },
+          {
+            "type": "per_debuff_damage_upgrade",
+            "value": 4,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "引灵摘魂",
+        "effects": [
+          {
+            "type": "conditional_damage_debuff",
+            "value": 104,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "天轮魔经": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 7,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "buff_steal",
+          "value": 2,
+          "target": "self"
+        },
+        {
+          "type": "percent_max_hp_damage",
+          "value": 3,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔意震慑",
+        "effects": [
+          {
+            "type": "per_stolen_buff_debuff",
+            "value": 14,
+            "duration": 12,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "心魔惑言",
+        "effects": [
+          {
+            "type": "debuff_stack_increase",
+            "value": 100,
+            "target": "self"
+          },
+          {
+            "type": "per_debuff_stack_damage",
+            "value": 5.5,
+            "target": "enemy"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "天刹真魔": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "counter_buff",
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔妄吞天",
+        "effects": [
+          {
+            "type": "self_buff_extra",
+            "duration": 15,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "魔骨明心",
+        "effects": [
+          {
+            "type": "self_buff",
+            "duration": 8,
+            "target": "self"
+          },
+          {
+            "type": "debuff",
+            "value": 20,
+            "duration": 1,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "解体化形": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "per_debuff_stack_damage",
+          "value": 50,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔神降世",
+        "effects": [
+          {
+            "type": "attack_bonus",
+            "value": 13,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "心逐神随",
+        "effects": [
+          {
+            "type": "probability_multiplier",
+            "target": "self"
+          },
+          {
+            "type": "probability_multiplier",
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "大罗幻诀": {
+      "school": "Demon",
+      "dBase": 21765,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "duration": 8,
+          "target": "self"
+        },
+        {
+          "type": "counter_debuff",
+          "name": "噬心之咒",
+          "target": "self"
+        },
+        {
+          "type": "counter_debuff",
+          "name": "断魂之咒",
+          "target": "self"
+        },
+        {
+          "type": "dot",
+          "name": "噬心之咒",
+          "duration": 4,
+          "target": "enemy"
+        },
+        {
+          "type": "dot",
+          "name": "断魂之咒",
+          "duration": 4,
+          "target": "enemy"
+        },
+        {
+          "type": "base_attack",
+          "value": 20265,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "duration": 8,
+          "target": "self"
+        },
+        {
+          "type": "counter_debuff",
+          "name": "噬心之咒",
+          "target": "self"
+        },
+        {
+          "type": "counter_debuff",
+          "name": "断魂之咒",
+          "target": "self"
+        },
+        {
+          "type": "dot",
+          "name": "噬心之咒",
+          "duration": 4,
+          "target": "enemy"
+        },
+        {
+          "type": "dot",
+          "name": "断魂之咒",
+          "duration": 4,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔魂咒界",
+        "effects": [
+          {
+            "type": "counter_debuff_upgrade",
+            "value": 60,
+            "target": "self"
+          },
+          {
+            "type": "cross_slot_debuff",
+            "name": "命损",
+            "value": 46,
+            "duration": 8,
+            "target": "self"
+          },
+          {
+            "type": "counter_debuff_upgrade",
+            "value": 60,
+            "target": "self"
+          },
+          {
+            "type": "cross_slot_debuff",
+            "name": "命损",
+            "value": 100,
+            "duration": 8,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "古魔之魂",
+        "effects": [
+          {
+            "type": "dot_damage_increase",
+            "value": 104,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_burst",
+        "F_truedmg",
+        "F_dot"
+      ]
+    },
+    "梵圣真魔咒": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 6,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "dot",
+          "duration": 8,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "魔心焚尽",
+        "effects": [
+          {
+            "type": "dot",
+            "name": "瞋痴业火",
+            "duration": 8,
+            "target": "enemy"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "天魔真解",
+        "effects": [
+          {
+            "type": "dot_frequency_increase",
+            "value": 50.5,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "无相魔劫咒": {
+      "school": "Demon",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_ref",
+          "duration": 12,
+          "target": "self"
+        },
+        {
+          "type": "delayed_burst",
+          "name": "无相魔劫",
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "灭劫魔威",
+        "effects": [
+          {
+            "type": "delayed_burst_increase",
+            "value": 65,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "无相魔威",
+        "effects": [
+          {
+            "type": "debuff",
+            "name": "魔劫",
+            "duration": 8,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_delayed",
+        "F_truedmg"
+      ]
+    },
+    "玄煞灵影诀": {
+      "school": "Body",
+      "dBase": 18255,
+      "hits": 4,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 18255,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "self_hp_cost",
+          "value": 4,
+          "target": "self"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 11,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿之怒",
+        "effects": [
+          {
+            "type": "self_lost_hp_damage",
+            "value": 12,
+            "target": "enemy"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "怒血战意",
+        "effects": [
+          {
+            "type": "per_self_lost_hp",
+            "value": 2,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_hp_exploit"
+      ]
+    },
+    "惊蜇化龙": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 8,
+      "skillEffects": [
+        {
+          "type": "self_hp_cost",
+          "value": 1500,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 10,
+          "target": "enemy"
+        },
+        {
+          "type": "self_buff",
+          "duration": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿幻杀",
+        "effects": [
+          {
+            "type": "percent_max_hp_affix",
+            "value": 10,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "索心真诀",
+        "effects": [
+          {
+            "type": "per_debuff_stack_true_damage",
+            "target": "self"
+          },
+          {
+            "type": "self_lost_hp_damage",
+            "value": 50,
+            "target": "enemy"
+          },
+          {
+            "type": "damage_increase",
+            "value": 75,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "十方真魄": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 10,
+      "skillEffects": [
+        {
+          "type": "self_hp_cost",
+          "value": 10,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 16,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "duration": 4,
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿弃天",
+        "effects": [
+          {
+            "type": "self_buff_extend",
+            "value": 3.5,
+            "target": "self"
+          },
+          {
+            "type": "periodic_cleanse",
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "破釜沉舟",
+        "effects": [
+          {
+            "type": "damage_increase",
+            "value": 380,
+            "target": "self"
+          },
+          {
+            "type": "self_damage_taken_increase",
+            "value": 50,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_buff",
+        "F_survive",
+        "F_hp_exploit",
+        "F_sustain"
+      ]
+    },
+    "疾风九变": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 10,
+      "skillEffects": [
+        {
+          "type": "self_hp_cost",
+          "value": 10,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "counter_buff",
+          "duration": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿复灵",
+        "effects": [
+          {
+            "type": "lifesteal_with_parent",
+            "value": 82,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "真言不灭",
+        "effects": [
+          {
+            "type": "all_state_duration",
+            "value": 55,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": [
+        "F_counter",
+        "F_hp_exploit",
+        "F_sustain"
+      ]
+    },
+    "煞影千幻": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 3,
+      "skillEffects": [
+        {
+          "type": "self_hp_cost",
+          "value": 20,
+          "target": "self"
+        },
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 10,
+          "target": "enemy"
+        },
+        {
+          "type": "shield",
+          "value": 12,
+          "duration": 8,
+          "target": "self"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "debuff",
+          "name": "落星",
+          "value": 8,
+          "duration": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿援护",
+        "effects": [
+          {
+            "type": "shield_strength",
+            "value": 21.5,
+            "target": "self"
+          },
+          {
+            "type": "chance",
+            "value": 30,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "乘胜逐北",
+        "effects": [
+          {
+            "type": "conditional_damage_controlled",
+            "value": 100,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "九重天凤诀": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 8,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 25,
+          "target": "enemy"
+        },
+        {
+          "type": "self_hp_cost",
+          "value": 5,
+          "target": "self"
+        },
+        {
+          "type": "state_add",
+          "target": "self"
+        },
+        {
+          "type": "self_buff",
+          "duration": 4,
+          "target": "self"
+        }
+      ],
+      "primaryAffix": {
+        "name": "星猿永生",
+        "effects": [
+          {
+            "type": "periodic_dispel",
+            "target": "self"
+          },
+          {
+            "type": "self_hp_floor",
+            "value": 10,
+            "target": "self"
+          }
+        ]
+      },
+      "exclusiveAffix": {
+        "name": "玉石俱焚",
+        "effects": [
+          {
+            "type": "on_shield_expire",
+            "value": 100,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    },
+    "天煞破虚诀": {
+      "school": "Body",
+      "dBase": 1500,
+      "hits": 5,
+      "skillEffects": [
+        {
+          "type": "base_attack",
+          "value": 1500,
+          "target": "enemy"
+        },
+        {
+          "type": "self_hp_cost",
+          "value": 20,
+          "target": "self"
+        },
+        {
+          "type": "state_ref",
+          "target": "self"
+        },
+        {
+          "type": "self_lost_hp_damage",
+          "value": 10,
+          "target": "enemy"
+        }
+      ],
+      "primaryAffix": null,
+      "exclusiveAffix": {
+        "name": "天煞破虚",
+        "effects": [
+          {
+            "type": "periodic_dispel",
+            "duration": 10,
+            "target": "self"
+          }
+        ]
+      },
+      "archetypes": [],
+      "nativeFunctions": []
+    }
+  },
+  "affixPool": {
+    "universal": [
+      "咒书",
+      "清灵",
+      "业焰",
+      "击瑕",
+      "破竹",
+      "金汤",
+      "怒目",
+      "鬼印",
+      "福荫",
+      "战意",
+      "斩岳",
+      "吞海",
+      "灵盾",
+      "灵威",
+      "摧山",
+      "通明"
+    ],
+    "school": {
+      "剑修": [
+        "摧云折月",
+        "灵犀九重",
+        "破碎无双",
+        "心火淬锋"
+      ],
+      "法修": [
+        "长生天则",
+        "明王之路",
+        "天命有归",
+        "景星天佑"
+      ],
+      "魔修": [
+        "瑶光却邪",
+        "溃魂击瑕",
+        "玄女护心",
+        "祸星无妄"
+      ],
+      "体修": [
+        "金刚护体",
+        "破灭天光",
+        "青云灵盾",
+        "贪狼吞星",
+        "意坠深渊"
+      ]
+    },
+    "exclusive": {
+      "千锋聚灵剑": {
+        "name": "天哀灵涸"
+      },
+      "春黎剑阵": {
+        "name": "玄心剑魄"
+      },
+      "皓月剑诀": {
+        "name": "追神真诀"
+      },
+      "念剑诀": {
+        "name": "仙露护元"
+      },
+      "通天剑诀": {
+        "name": "神威冲云"
+      },
+      "新-青元剑诀": {
+        "name": "天威煌煌"
+      },
+      "无极御剑诀": {
+        "name": "无极剑阵"
+      },
+      "浩然星灵诀": {
+        "name": "龙象护身"
+      },
+      "元磁神光": {
+        "name": "真极穿空"
+      },
+      "周天星元": {
+        "name": "奇能诡道"
+      },
+      "甲元仙符": {
+        "name": "天倾灵枯"
+      },
+      "星元化岳": {
+        "name": "仙灵汲元"
+      },
+      "玉书天戈符": {
+        "name": "天人合一"
+      },
+      "九天真雷诀": {
+        "name": "九雷真解"
+      },
+      "天魔降临咒": {
+        "name": "引灵摘魂"
+      },
+      "天轮魔经": {
+        "name": "心魔惑言"
+      },
+      "天刹真魔": {
+        "name": "魔骨明心"
+      },
+      "解体化形": {
+        "name": "心逐神随"
+      },
+      "大罗幻诀": {
+        "name": "古魔之魂"
+      },
+      "梵圣真魔咒": {
+        "name": "天魔真解"
+      },
+      "无相魔劫咒": {
+        "name": "无相魔威"
+      },
+      "玄煞灵影诀": {
+        "name": "怒血战意"
+      },
+      "惊蜇化龙": {
+        "name": "索心真诀"
+      },
+      "十方真魄": {
+        "name": "破釜沉舟"
+      },
+      "疾风九变": {
+        "name": "真言不灭"
+      },
+      "煞影千幻": {
+        "name": "乘胜逐北"
+      },
+      "九重天凤诀": {
+        "name": "玉石俱焚"
+      },
+      "天煞破虚诀": {
+        "name": "天煞破虚"
+      }
+    }
+  },
+  "functionRankings": {
+    "F_burst": {
+      "千锋聚灵剑": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "春黎剑阵": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "皓月剑诀": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "念剑诀": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "甲元仙符": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "大罗幻诀": [
+        {
+          "aux1": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "击瑕",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "吞海",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        }
+      ]
+    },
+    "F_exploit": {
+      "千锋聚灵剑": [
+        {
+          "aux1": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "皓月剑诀": [
+        {
+          "aux1": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        }
+      ]
+    },
+    "F_buff": {
+      "甲元仙符": [
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "清灵",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "清灵",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "十方真魄": [
+        {
+          "aux1": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "清灵",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "清灵",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "景星天佑",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        }
+      ]
+    },
+    "F_survive": {
+      "十方真魄": [
+        {
+          "aux1": {
+            "name": "金汤",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "金刚护体",
+            "kind": "school"
+          },
+          "score": 4.5,
+          "functionCoverage": [
+            "F_survive"
+          ]
+        }
+      ]
+    },
+    "F_counter": {
+      "疾风九变": [
+        {
+          "aux1": {
+            "name": "清灵",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove"
+          ]
+        }
+      ]
+    },
+    "F_delayed": {
+      "无相魔劫咒": [
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "福荫",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_burst",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        }
+      ]
+    },
+    "F_hp_exploit": {
+      "十方真魄": [
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧云折月",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "破碎无双",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "玄煞灵影诀": [
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧云折月",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "破碎无双",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        }
+      ],
+      "疾风九变": [
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧山",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "通明",
+            "kind": "universal"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_exploit",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "摧云折月",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "灵犀九重",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_hp_exploit"
+          ]
+        },
+        {
+          "aux1": {
+            "name": "战意",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "破碎无双",
+            "kind": "school"
+          },
+          "score": 3.5,
+          "functionCoverage": [
+            "F_burst",
+            "F_dr_remove",
+            "F_hp_exploit"
+          ]
+        }
+      ]
+    },
+    "F_truedmg": {
+      "大罗幻诀": [],
+      "无相魔劫咒": []
+    },
+    "F_dot": {
+      "皓月剑诀": [
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "鬼印",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove"
+          ]
+        }
+      ],
+      "念剑诀": [
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "鬼印",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove"
+          ]
+        }
+      ],
+      "大罗幻诀": [
+        {
+          "aux1": {
+            "name": "业焰",
+            "kind": "universal"
+          },
+          "aux2": {
+            "name": "鬼印",
+            "kind": "universal"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_antiheal",
+            "F_buff",
+            "F_counter",
+            "F_delayed",
+            "F_dot",
+            "F_dr_remove"
+          ]
+        }
+      ]
+    },
+    "F_sustain": {
+      "甲元仙符": [
+        {
+          "aux1": {
+            "name": "长生天则",
+            "kind": "school"
+          },
+          "aux2": {
+            "name": "瑶光却邪",
+            "kind": "school"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_sustain"
+          ]
+        }
+      ],
+      "十方真魄": [
+        {
+          "aux1": {
+            "name": "长生天则",
+            "kind": "school"
+          },
+          "aux2": {
+            "name": "瑶光却邪",
+            "kind": "school"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_sustain"
+          ]
+        }
+      ],
+      "疾风九变": [
+        {
+          "aux1": {
+            "name": "长生天则",
+            "kind": "school"
+          },
+          "aux2": {
+            "name": "瑶光却邪",
+            "kind": "school"
+          },
+          "score": 2.5,
+          "functionCoverage": [
+            "F_sustain"
+          ]
+        }
+      ]
+    }
+  },
+  "timeSeriesVectors": {
+    "千锋聚灵剑": {
+      "factors": {
+        "base_attack": [
+          46395,
+          46395,
+          46395,
+          46395,
+          46395,
+          46395,
+          46395,
+          46395
+        ],
+        "percent_max_hp_damage": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "per_hit_escalation": [
+          67.5,
+          67.5,
+          67.5,
+          67.5,
+          67.5,
+          67.5,
+          67.5,
+          67.5
+        ],
+        "heal_reduction": [
+          80,
+          80,
+          80,
+          80,
+          80,
+          80,
+          80,
+          80
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "春黎剑阵": {
+      "factors": {
+        "base_attack": [
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305,
+          22305
+        ],
+        "summon": [
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54,
+          54
+        ],
+        "summon_buff": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "dot": [
+          3550,
+          3550,
+          3550,
+          3550,
+          3550,
+          3550,
+          3550,
+          3550,
+          3000,
+          3000,
+          3000,
+          3000,
+          3000,
+          3000,
+          3000,
+          3000
+        ],
+        "on_dispel": [
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300,
+          21300
+        ]
+      },
+      "totalDuration": 16,
+      "slotCoverage": 3
+    },
+    "皓月剑诀": {
+      "factors": {
+        "base_attack": [
+          22305,
+          22305,
+          22305,
+          22305
+        ],
+        "state_ref": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "shield_destroy_damage": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "no_shield_double_damage": [
+          4800,
+          4800,
+          4800,
+          4800
+        ],
+        "shield_destroy_dot": [
+          600,
+          600,
+          600,
+          600
+        ],
+        "dot_extra_per_tick": [
+          53,
+          53,
+          53,
+          53
+        ],
+        "percent_max_hp_boost": [
+          50,
+          50,
+          50,
+          50
+        ],
+        "damage_increase": [
+          300,
+          300,
+          300,
+          300
+        ]
+      },
+      "totalDuration": 4,
+      "slotCoverage": 1
+    },
+    "念剑诀": {
+      "factors": {
+        "untargetable": [
+          4
+        ],
+        "base_attack": [
+          22305
+        ],
+        "periodic_escalation": [
+          1.4
+        ],
+        "extended_dot": [
+          0.5
+        ],
+        "buff_duration": [
+          300
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "通天剑诀": {
+      "factors": {
+        "base_attack": [
+          20265,
+          20265,
+          20265,
+          20265,
+          20265,
+          20265,
+          20265,
+          20265
+        ],
+        "crit_dmg_bonus": [
+          350,
+          350,
+          350,
+          350,
+          350,
+          350,
+          350,
+          350
+        ],
+        "self_damage_taken_increase": [
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50,
+          50
+        ],
+        "conditional_damage": [
+          40,
+          40,
+          40,
+          40,
+          40,
+          40,
+          40,
+          40
+        ],
+        "ignore_damage_reduction": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "damage_increase": [
+          36,
+          36,
+          36,
+          36,
+          36,
+          36,
+          36,
+          36
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "新-青元剑诀": {
+      "factors": {
+        "base_attack": [
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225,
+          15225
+        ],
+        "debuff": [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "next_skill_buff": [
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324
+        ]
+      },
+      "totalDuration": 16,
+      "slotCoverage": 3
+    },
+    "无极御剑诀": {
+      "factors": {
+        "base_attack": [
+          6225
+        ],
+        "percent_current_hp_damage": [
+          2.2
+        ],
+        "damage_increase": [
+          1
+        ],
+        "skill_damage_increase_affix": [
+          555
+        ],
+        "self_buff": [
+          1
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "浩然星灵诀": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_ref": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "conditional_stat_scaling": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "buff_strength": [
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300,
+          300
+        ]
+      },
+      "totalDuration": 20,
+      "slotCoverage": 4
+    },
+    "元磁神光": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_ref": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8
+        ],
+        "attack_bonus": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ],
+        "buff_stack_increase": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "per_buff_stack_damage": [
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5
+        ]
+      },
+      "totalDuration": 12,
+      "slotCoverage": 2
+    },
+    "周天星元": {
+      "factors": {
+        "self_heal": [
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360,
+          360
+        ],
+        "base_attack": [
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565,
+          20565
+        ],
+        "heal_echo_damage": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "state_ref": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "shield": [
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9,
+          7.9
+        ],
+        "debuff_stack_chance": [
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5,
+          113.5
+        ],
+        "cross_slot_debuff": [
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998,
+          1.2999999999999998
+        ]
+      },
+      "totalDuration": 16,
+      "slotCoverage": 3
+    },
+    "甲元仙符": {
+      "factors": {
+        "base_attack": [
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901,
+          42901
+        ],
+        "state_ref": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "self_buff": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "heal_reduction": [
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31,
+          31
+        ]
+      },
+      "totalDuration": 20,
+      "slotCoverage": 4
+    },
+    "星元化岳": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "echo_damage": [
+          25,
+          25,
+          25,
+          25,
+          25,
+          25,
+          25,
+          25
+        ],
+        "lifesteal": [
+          130,
+          130,
+          130,
+          130,
+          130,
+          130,
+          130,
+          130
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "玉书天戈符": {
+      "factors": {
+        "base_attack": [
+          1500
+        ],
+        "percent_max_hp_damage": [
+          21
+        ],
+        "conditional_stat_scaling": [
+          3
+        ],
+        "enlightenment_bonus": [
+          1
+        ],
+        "damage_increase": [
+          5
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "九天真雷诀": {
+      "factors": {
+        "base_attack": [
+          1500
+        ],
+        "self_cleanse": [
+          1
+        ],
+        "conditional_damage": [
+          4
+        ],
+        "on_buff_debuff_shield": [
+          50.8
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "天魔降临咒": {
+      "factors": {
+        "base_attack": [
+          1500
+        ],
+        "state_add": [
+          1
+        ],
+        "self_buff": [
+          1
+        ],
+        "debuff": [
+          5.25
+        ],
+        "per_debuff_stack_damage": [
+          0.5
+        ],
+        "dot_permanent_max_hp": [
+          1.6
+        ],
+        "per_debuff_damage_upgrade": [
+          4
+        ],
+        "conditional_damage_debuff": [
+          104
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "天轮魔经": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "buff_steal": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "percent_max_hp_damage": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "per_stolen_buff_debuff": [
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14,
+          14
+        ],
+        "debuff_stack_increase": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ],
+        "per_debuff_stack_damage": [
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5,
+          5.5
+        ]
+      },
+      "totalDuration": 12,
+      "slotCoverage": 2
+    },
+    "天刹真魔": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "counter_buff": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff_extra": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "self_buff": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "debuff": [
+          20,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "totalDuration": 15,
+      "slotCoverage": 3
+    },
+    "解体化形": {
+      "factors": {
+        "base_attack": [
+          1500
+        ],
+        "per_debuff_stack_damage": [
+          50
+        ],
+        "attack_bonus": [
+          13
+        ],
+        "probability_multiplier": [
+          2
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "大罗幻诀": {
+      "factors": {
+        "base_attack": [
+          21765,
+          21765,
+          21765,
+          21765,
+          21765,
+          21765,
+          21765,
+          21765
+        ],
+        "state_add": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "counter_debuff": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "dot": [
+          4,
+          4,
+          4,
+          4,
+          0,
+          0,
+          0,
+          0
+        ],
+        "counter_debuff_upgrade": [
+          120,
+          120,
+          120,
+          120,
+          120,
+          120,
+          120,
+          120
+        ],
+        "cross_slot_debuff": [
+          146,
+          146,
+          146,
+          146,
+          146,
+          146,
+          146,
+          146
+        ],
+        "dot_damage_increase": [
+          104,
+          104,
+          104,
+          104,
+          104,
+          104,
+          104,
+          104
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "梵圣真魔咒": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "dot": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "dot_frequency_increase": [
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5,
+          50.5
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "无相魔劫咒": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_ref": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "delayed_burst": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "delayed_burst_increase": [
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65,
+          65
+        ],
+        "debuff": [
+          105,
+          105,
+          105,
+          105,
+          105,
+          105,
+          105,
+          105,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "totalDuration": 12,
+      "slotCoverage": 2
+    },
+    "玄煞灵影诀": {
+      "factors": {
+        "base_attack": [
+          18255
+        ],
+        "state_add": [
+          1
+        ],
+        "self_hp_cost": [
+          4
+        ],
+        "self_lost_hp_damage": [
+          23
+        ],
+        "per_self_lost_hp": [
+          2
+        ]
+      },
+      "totalDuration": 1,
+      "slotCoverage": 1
+    },
+    "惊蜇化龙": {
+      "factors": {
+        "self_hp_cost": [
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "self_lost_hp_damage": [
+          60,
+          60,
+          60,
+          60
+        ],
+        "self_buff": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "percent_max_hp_affix": [
+          10,
+          10,
+          10,
+          10
+        ],
+        "per_debuff_stack_true_damage": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "damage_increase": [
+          75,
+          75,
+          75,
+          75
+        ]
+      },
+      "totalDuration": 4,
+      "slotCoverage": 1
+    },
+    "十方真魄": {
+      "factors": {
+        "self_hp_cost": [
+          10,
+          10,
+          10,
+          10
+        ],
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "self_lost_hp_damage": [
+          16,
+          16,
+          16,
+          16
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff_extend": [
+          3.5,
+          3.5,
+          3.5,
+          3.5
+        ],
+        "periodic_cleanse": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "damage_increase": [
+          380,
+          380,
+          380,
+          380
+        ],
+        "self_damage_taken_increase": [
+          50,
+          50,
+          50,
+          50
+        ]
+      },
+      "totalDuration": 4,
+      "slotCoverage": 1
+    },
+    "疾风九变": {
+      "factors": {
+        "self_hp_cost": [
+          10,
+          10,
+          10,
+          10
+        ],
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "counter_buff": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "lifesteal_with_parent": [
+          82,
+          82,
+          82,
+          82
+        ],
+        "all_state_duration": [
+          55,
+          55,
+          55,
+          55
+        ]
+      },
+      "totalDuration": 4,
+      "slotCoverage": 1
+    },
+    "煞影千幻": {
+      "factors": {
+        "self_hp_cost": [
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20
+        ],
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "self_lost_hp_damage": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "shield": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "debuff": [
+          8,
+          8,
+          8,
+          8,
+          0,
+          0,
+          0,
+          0
+        ],
+        "shield_strength": [
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5,
+          21.5
+        ],
+        "chance": [
+          30,
+          30,
+          30,
+          30,
+          30,
+          30,
+          30,
+          30
+        ],
+        "conditional_damage_controlled": [
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100
+        ]
+      },
+      "totalDuration": 8,
+      "slotCoverage": 2
+    },
+    "九重天凤诀": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "self_lost_hp_damage": [
+          25,
+          25,
+          25,
+          25
+        ],
+        "self_hp_cost": [
+          5,
+          5,
+          5,
+          5
+        ],
+        "state_add": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_buff": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "periodic_dispel": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_hp_floor": [
+          10,
+          10,
+          10,
+          10
+        ],
+        "on_shield_expire": [
+          100,
+          100,
+          100,
+          100
+        ]
+      },
+      "totalDuration": 4,
+      "slotCoverage": 1
+    },
+    "天煞破虚诀": {
+      "factors": {
+        "base_attack": [
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500,
+          1500
+        ],
+        "self_hp_cost": [
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20
+        ],
+        "state_ref": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "self_lost_hp_damage": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "periodic_dispel": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "totalDuration": 10,
+      "slotCoverage": 2
+    }
+  },
+  "constraints": {
+    "rules": [
+      {
+        "type": "no_duplicate_main_gongfa",
+        "description": "Same 功法 in 主位 across two 灵书 → later skill disabled"
+      },
+      {
+        "type": "no_duplicate_aux_gongfa",
+        "description": "Same 功法 in 辅位 across two 灵書 → later affix disabled"
+      }
+    ],
+    "usedBooks": []
+  }
+}
