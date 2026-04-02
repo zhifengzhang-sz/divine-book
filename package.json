@@ -5,9 +5,11 @@
   "scripts": {
     "check": "tsc --noEmit && biome check app/ lib/",
     "test": "bun test",
-    "parse": "bun app/parse-main-skills.ts -o data/yaml/books.yaml && bun app/parse-affixes.ts -o data/yaml/affixes.yaml && bun scripts/validate-yaml.ts",
-    "parse:books": "bun app/parse-main-skills.ts -o data/yaml/books.yaml",
-    "parse:affixes": "bun app/parse-affixes.ts -o data/yaml/affixes.yaml",
+    "parse": "bun scripts/gen-yaml.ts && bun scripts/validate-yaml.ts",
+    "parse:legacy": "bun app/parse-main-skills.ts -o data/yaml/books.yaml && bun app/parse-affixes.ts -o data/yaml/affixes.yaml && bun scripts/validate-yaml.ts",
+    "migrate": "bun scripts/migrate-to-json.ts",
+    "editor": "bun app/editor/serve.ts",
+    "export-md": "bun scripts/gen-markdown.ts",
     "viz": "bun app/viz/serve.ts",
     "parser-viz": "bun app/parser-viz/serve.ts",
     "rag": "bun scripts/rag.ts"

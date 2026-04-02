@@ -2,7 +2,7 @@
  * Effect Types — the canonical contract between parser and simulator.
  *
  * Every interface here is verified against the semantic actions that produce it
- * and the raw Chinese text it derives from. See docs/parser/effect-catalog.md.
+ * and the raw Chinese text it derives from. See docs/parser/effect.catalog.md.
  *
  * Variable fields use `V = string | number`:
  *   - `string` before tier resolution (variable reference like "x", "y")

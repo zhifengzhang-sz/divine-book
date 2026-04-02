@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Generate affix-taxonomy.yaml — classifies all affixes into
- * 7 behavioral categories from docs/model/affix-taxonomy.md.
+ * 7 behavioral categories from docs/model/affix.taxonomy.md.
  *
  * Reads: data/yaml/affixes.yaml, data/yaml/books.yaml
  * Writes: data/yaml/affix-taxonomy.yaml
@@ -284,7 +284,7 @@ for (const [bookName, book] of Object.entries(books.books)) {
 const lines: string[] = [
 	"# Affix Taxonomy — auto-generated behavioral classification",
 	"# Regenerate with: bun app/gen-affix-taxonomy.ts -o data/yaml/affix-taxonomy.yaml",
-	"# Categories from docs/model/affix-taxonomy.md",
+	"# Categories from docs/model/affix.taxonomy.md",
 	"",
 	"categories:",
 ];

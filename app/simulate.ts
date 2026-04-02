@@ -14,6 +14,11 @@
  */
 
 import { createActor } from "xstate";
+import {
+	type AffixEntry,
+	collectAllAffixes,
+	isValidPair,
+} from "../lib/construct/constraints.js";
 import { SimulationClock } from "../lib/sim/clock.js";
 import {
 	loadAffixesYaml,
@@ -75,28 +80,7 @@ if (hasFlag("sweep")) {
 	}
 
 	// Collect all affixes with source tracking for construction constraints
-	interface AffixEntry { name: string; kind: "universal" | "school" | "exclusive"; sourceBook?: string }
-	const allAffixes: AffixEntry[] = [];
-	for (const n of Object.keys(affixesYaml.universal))
-		allAffixes.push({ name: n, kind: "universal" });
-	for (const m of Object.values(affixesYaml.school))
-		for (const n of Object.keys(m as Record<string, unknown>))
-			allAffixes.push({ name: n, kind: "school" });
-	for (const [bookName, book] of Object.entries(booksYaml.books))
-		if (book.exclusive_affix)
-			allAffixes.push({ name: book.exclusive_affix.name, kind: "exclusive", sourceBook: bookName });
-
-	// Construction constraint: is this pair valid for the given main book?
-	function isValidPair(main: string, a: AffixEntry, b: AffixEntry): boolean {
-		// Rule 1: main book's own exclusive is unavailable (main book is in 主位, not 辅助位)
-		if (a.kind === "exclusive" && a.sourceBook === main) return false;
-		if (b.kind === "exclusive" && b.sourceBook === main) return false;
-		// Rule 2: two exclusives from the same book is impossible (each aux is a different book)
-		if (a.kind === "exclusive" && b.kind === "exclusive" && a.sourceBook === b.sourceBook) return false;
-		// Rule 3: same affix twice is impossible
-		if (a.name === b.name) return false;
-		return true;
-	}
+	const allAffixes = collectAllAffixes(booksYaml, affixesYaml);
 
 	const topN = Number(getArg("top") ?? "20");
 	const sweepHp = Number(getArg("hp") ?? "1e8");
@@ -175,25 +159,43 @@ if (hasFlag("sweep")) {
 	console.log(`Sweeping ${platform} affix pairs vs ${opponent}`);
 	console.log(`  ${allAffixes.length} affixes, ${validPairs.length} valid pairs (construction rules applied)\n`);
 
-	const results: { op1: string; k1: string; op2: string; k2: string; bDmgTaken: number; aHp: number; ttk: number }[] = [];
+	const results: { op1: string; k1: string; src1?: string; op2: string; k2: string; src2?: string; bDmgTaken: number; aHp: number; ttk: number }[] = [];
 
 	for (const [a, b] of validPairs) {
 		const spec = `${platform}+${a.name}+${b.name}`;
 		const r = runSim(spec, opponent);
-		results.push({ op1: a.name, k1: a.kind, op2: b.name, k2: b.kind, bDmgTaken: r.bDmgTaken, aHp: r.aHp, ttk: r.ttk });
+		results.push({ op1: a.name, k1: a.kind, src1: a.sourceBook, op2: b.name, k2: b.kind, src2: b.sourceBook, bDmgTaken: r.bDmgTaken, aHp: r.aHp, ttk: r.ttk });
 	}
 
 	results.sort((a, b) => b.bDmgTaken - a.bDmgTaken);
 
-	console.log(`Top ${topN} by damage dealt to opponent:\n`);
-	console.log("Rank | Affix 1 (type) + Affix 2 (type)                        | Dmg Dealt | Self HP% | TTK");
-	console.log("-----|--------------------------------------------------------|-----------|----------|----");
-	for (let i = 0; i < Math.min(topN, results.length); i++) {
-		const r = results[i];
-		const pctSelf = (r.aHp / sweepHp * 100).toFixed(1);
-		const pctDmg = (r.bDmgTaken / sweepHp * 100).toFixed(1);
-		const label = `${r.op1}(${r.k1}) + ${r.op2}(${r.k2})`;
-		console.log(`${String(i + 1).padStart(4)} | ${label.padEnd(54)} | ${pctDmg.padStart(8)}% | ${pctSelf.padStart(7)}% | ${r.ttk === Infinity ? " ∞" : String(r.ttk.toFixed(0)).padStart(3)}s`);
+	if (hasFlag("json")) {
+		const topResults = results.slice(0, topN).map((r, i) => ({
+			rank: i + 1,
+			affix1: { name: r.op1, kind: r.k1, ...(r.src1 ? { sourceBook: r.src1 } : {}) },
+			affix2: { name: r.op2, kind: r.k2, ...(r.src2 ? { sourceBook: r.src2 } : {}) },
+			damageDealt: r.bDmgTaken,
+			hpPercent: r.bDmgTaken / sweepHp * 100,
+			ttk: r.ttk === Infinity ? null : r.ttk,
+		}));
+		const output = {
+			platform,
+			opponent,
+			stats: { hp: sweepHp, atk: sweepAtk, sp: sweepSp, def: sweepDef },
+			results: topResults,
+		};
+		console.log(JSON.stringify(output, null, 2));
+	} else {
+		console.log(`Top ${topN} by damage dealt to opponent:\n`);
+		console.log("Rank | Affix 1 (type) + Affix 2 (type)                        | Dmg Dealt | Self HP% | TTK");
+		console.log("-----|--------------------------------------------------------|-----------|----------|----");
+		for (let i = 0; i < Math.min(topN, results.length); i++) {
+			const r = results[i];
+			const pctSelf = (r.aHp / sweepHp * 100).toFixed(1);
+			const pctDmg = (r.bDmgTaken / sweepHp * 100).toFixed(1);
+			const label = `${r.op1}(${r.k1}) + ${r.op2}(${r.k2})`;
+			console.log(`${String(i + 1).padStart(4)} | ${label.padEnd(54)} | ${pctDmg.padStart(8)}% | ${pctSelf.padStart(7)}% | ${r.ttk === Infinity ? " ∞" : String(r.ttk.toFixed(0)).padStart(3)}s`);
+		}
 	}
 
 	process.exit(0);

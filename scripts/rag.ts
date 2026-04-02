@@ -394,12 +394,40 @@ function formatAffix(doc: AffixDoc): string {
 }
 
 // ══════════════════════════════════════════════════════════
+// JSON output types
+// ══════════════════════════════════════════════════════════
+
+interface RagJsonOutput {
+	query: string;
+	mode: "general" | "construction";
+	books: Array<{
+		id: string; school: string; hits: number;
+		archetypes: string[];
+		skillEffects: any[];
+		primaryAffix: { name: string; types: string[]; effects: any[] } | null;
+		exclusiveAffix: { name: string; types: string[]; effects: any[] } | null;
+	}>;
+	affixes: Array<{
+		id: string; type: "universal" | "school";
+		school?: string; effects: any[];
+	}>;
+	auxRecommendations?: Array<{
+		bookId: string; score: number; reason: string;
+	}>;
+}
+
+// ══════════════════════════════════════════════════════════
 // Main
 // ══════════════════════════════════════════════════════════
 
-const query = process.argv[2];
+// Parse flags: extract --json and the positional query from argv
+const rawArgs = process.argv.slice(2);
+const jsonMode = rawArgs.includes("--json");
+const positionalArgs = rawArgs.filter(a => a !== "--json");
+const query = positionalArgs[0];
+
 if (!query) {
-	console.error("Usage: bun scripts/rag.ts <query>");
+	console.error("Usage: bun scripts/rag.ts [--json] <query>");
 	console.error("");
 	console.error("Construction model: 灵书 = 1 主位 (main) + 2 辅助位 (aux)");
 	console.error("  Main: skill + 主词缀 (deterministic)");
@@ -408,6 +436,7 @@ if (!query) {
 	console.error('  ! bun run rag "十方真魄配什么词缀"    → main + aux candidates');
 	console.error('  ! bun run rag "体修高爆发怎么搭"       → school build advice');
 	console.error('  ! bun run rag "哪些书有持续伤害"       → search by mechanic');
+	console.error('  ! bun run rag --json "十方真魄配什么词缀"  → JSON output');
 	process.exit(1);
 }
 
@@ -441,81 +470,143 @@ if (isConstructionQuery && mentionedBooks.length > 0) {
 			effects: b.exclusiveAffix!.effects,
 		}));
 
-	console.log(`── 灵书构造 context for: ${query} ──`);
-	console.log(`── Model: 灵书 = 1 主位 + 2 辅助位. Each aux rolls 1 副词缀 ──`);
-	console.log(`── Roll probability: 通用(likely) > 修为(medium) > 专属(rare) ──\n`);
+	if (jsonMode) {
+		// ── JSON output for construction mode ──
+		const allAffixDocs = [...universalAffixes, ...sameSchoolAffixes, ...otherSchoolAffixes];
+		const auxRecs = recommendAux(mainBook, bookDocs);
 
-	// 1. Main book
-	console.log("## 1. Main Book (主位) — skill + 主词缀, deterministic\n");
-	console.log(formatBook(mainBook));
+		const output: RagJsonOutput = {
+			query,
+			mode: "construction",
+			books: [{
+				id: mainBook.id,
+				school: mainBook.school,
+				hits: mainBook.hits,
+				archetypes: mainBook.archetype,
+				skillEffects: mainBook.skillEffects,
+				primaryAffix: mainBook.primaryAffix,
+				exclusiveAffix: mainBook.exclusiveAffix,
+			}],
+			affixes: allAffixDocs.map(a => ({
+				id: a.id,
+				type: a.affixType,
+				...(a.school ? { school: a.school } : {}),
+				effects: a.effects,
+			})),
+			auxRecommendations: auxRecs.map(r => ({
+				bookId: r.book.id,
+				score: score(query, r.book, expandQuery(query)),
+				reason: r.reason,
+			})),
+		};
+		console.log(JSON.stringify(output, null, 2));
+	} else {
+		// ── Markdown output for construction mode ──
+		console.log(`── 灵书构造 context for: ${query} ──`);
+		console.log(`── Model: 灵书 = 1 主位 + 2 辅助位. Each aux rolls 1 副词缀 ──`);
+		console.log(`── Roll probability: 通用(likely) > 修为(medium) > 专属(rare) ──\n`);
 
-	// 2. Full 副词缀 pool — this is what Claude needs to reason about
-	console.log("\n\n## 2. 副词缀 Pool — what each aux slot can roll\n");
-	console.log("Choose 2 affixes (one per aux slot). These are ALL possible rolls:\n");
+		// 1. Main book
+		console.log("## 1. Main Book (主位) — skill + 主词缀, deterministic\n");
+		console.log(formatBook(mainBook));
 
-	console.log("### 通用词缀 (16, high probability from any aux book)\n");
-	for (const a of universalAffixes) {
-		const name = a.id.replace("通用/", "");
-		const types = a.effects.map((e: any) => e.type).join(", ");
-		console.log(`  【${name}】${types}: ${JSON.stringify(a.effects[0])}`);
-	}
+		// 2. Full 副词缀 pool — this is what Claude needs to reason about
+		console.log("\n\n## 2. 副词缀 Pool — what each aux slot can roll\n");
+		console.log("Choose 2 affixes (one per aux slot). These are ALL possible rolls:\n");
 
-	console.log(`\n### ${mainSchoolCn}修为词缀 (same-school aux book, medium probability)\n`);
-	for (const a of sameSchoolAffixes) {
-		const name = a.id.replace(/.*\//, "");
-		const types = a.effects.map((e: any) => e.type).join(", ");
-		console.log(`  【${name}】${types}: ${JSON.stringify(a.effects[0])}`);
-	}
-
-	if (otherSchoolAffixes.length > 0) {
-		console.log("\n### Other school 修为词缀 (cross-school aux book, medium probability)\n");
-		const bySchool: Record<string, AffixDoc[]> = {};
-		for (const a of otherSchoolAffixes) {
-			const s = a.school ?? "unknown";
-			(bySchool[s] ??= []).push(a);
+		console.log("### 通用词缀 (16, high probability from any aux book)\n");
+		for (const a of universalAffixes) {
+			const name = a.id.replace("通用/", "");
+			const types = a.effects.map((e: any) => e.type).join(", ");
+			console.log(`  【${name}】${types}: ${JSON.stringify(a.effects[0])}`);
 		}
-		for (const [school, affixes] of Object.entries(bySchool)) {
-			console.log(`  ${school}:`);
-			for (const a of affixes) {
-				const name = a.id.replace(/.*\//, "");
-				const types = a.effects.map((e: any) => e.type).join(", ");
-				console.log(`    【${name}】${types}`);
+
+		console.log(`\n### ${mainSchoolCn}修为词缀 (same-school aux book, medium probability)\n`);
+		for (const a of sameSchoolAffixes) {
+			const name = a.id.replace(/.*\//, "");
+			const types = a.effects.map((e: any) => e.type).join(", ");
+			console.log(`  【${name}】${types}: ${JSON.stringify(a.effects[0])}`);
+		}
+
+		if (otherSchoolAffixes.length > 0) {
+			console.log("\n### Other school 修为词缀 (cross-school aux book, medium probability)\n");
+			const bySchool: Record<string, AffixDoc[]> = {};
+			for (const a of otherSchoolAffixes) {
+				const s = a.school ?? "unknown";
+				(bySchool[s] ??= []).push(a);
+			}
+			for (const [school, affixes] of Object.entries(bySchool)) {
+				console.log(`  ${school}:`);
+				for (const a of affixes) {
+					const name = a.id.replace(/.*\//, "");
+					const types = a.effects.map((e: any) => e.type).join(", ");
+					console.log(`    【${name}】${types}`);
+				}
 			}
 		}
+
+		console.log("\n### 专属词缀 (rare roll, specific to aux book chosen)\n");
+		for (const ex of exclusives) {
+			console.log(`  ${ex.book} (${ex.school}) →【${ex.name}】${ex.types.join(", ")}`);
+		}
+
+		// 3. Aux book selection guide
+		console.log("\n\n## 3. Aux Book Selection\n");
+		console.log("Which aux book you pick determines which 修为 + 专属 are in the pool:");
+		console.log(`  Same school (${mainSchoolCn}): access to ${mainSchoolCn} 修为词缀`);
+		console.log("  Cross school: access to that school's 修为词缀 instead");
+		console.log("  通用词缀 are always available regardless of aux book choice\n");
+
+		console.log(`\n── End context. Now answer: ${query} ──`);
 	}
-
-	console.log("\n### 专属词缀 (rare roll, specific to aux book chosen)\n");
-	for (const ex of exclusives) {
-		console.log(`  ${ex.book} (${ex.school}) →【${ex.name}】${ex.types.join(", ")}`);
-	}
-
-	// 3. Aux book selection guide
-	console.log("\n\n## 3. Aux Book Selection\n");
-	console.log("Which aux book you pick determines which 修为 + 专属 are in the pool:");
-	console.log(`  Same school (${mainSchoolCn}): access to ${mainSchoolCn} 修为词缀`);
-	console.log("  Cross school: access to that school's 修为词缀 instead");
-	console.log("  通用词缀 are always available regardless of aux book choice\n");
-
-	console.log(`\n── End context. Now answer: ${query} ──`);
 }
 // ── General query ──
 else {
 	const results = retrieve(query, docs);
-	if (results.length === 0) { console.log(`No results for: ${query}`); process.exit(0); }
 
-	const bookResults = results.filter(d => d.kind === "book") as BookDoc[];
-	const affixResults = results.filter(d => d.kind === "affix") as AffixDoc[];
+	if (jsonMode) {
+		// ── JSON output for general mode ──
+		const bookResults = results.filter(d => d.kind === "book") as BookDoc[];
+		const affixResults = results.filter(d => d.kind === "affix") as AffixDoc[];
 
-	console.log(`── Retrieved ${results.length} docs (${bookResults.length} books, ${affixResults.length} affixes) for: ${query} ──\n`);
+		const output: RagJsonOutput = {
+			query,
+			mode: "general",
+			books: bookResults.map(b => ({
+				id: b.id,
+				school: b.school,
+				hits: b.hits,
+				archetypes: b.archetype,
+				skillEffects: b.skillEffects,
+				primaryAffix: b.primaryAffix,
+				exclusiveAffix: b.exclusiveAffix,
+			})),
+			affixes: affixResults.map(a => ({
+				id: a.id,
+				type: a.affixType,
+				...(a.school ? { school: a.school } : {}),
+				effects: a.effects,
+			})),
+		};
+		console.log(JSON.stringify(output, null, 2));
+	} else {
+		// ── Markdown output for general mode ──
+		if (results.length === 0) { console.log(`No results for: ${query}`); process.exit(0); }
 
-	if (bookResults.length) {
-		console.log("## Books\n");
-		console.log(bookResults.map(formatBook).join("\n\n---\n\n"));
+		const bookResults = results.filter(d => d.kind === "book") as BookDoc[];
+		const affixResults = results.filter(d => d.kind === "affix") as AffixDoc[];
+
+		console.log(`── Retrieved ${results.length} docs (${bookResults.length} books, ${affixResults.length} affixes) for: ${query} ──\n`);
+
+		if (bookResults.length) {
+			console.log("## Books\n");
+			console.log(bookResults.map(formatBook).join("\n\n---\n\n"));
+		}
+		if (affixResults.length) {
+			console.log("\n\n## Affixes\n");
+			console.log(affixResults.map(formatAffix).join("\n\n---\n\n"));
+		}
+
+		console.log(`\n── End context. Now answer: ${query} ──`);
 	}
-	if (affixResults.length) {
-		console.log("\n\n## Affixes\n");
-		console.log(affixResults.map(formatAffix).join("\n\n---\n\n"));
-	}
-
-	console.log(`\n── End context. Now answer: ${query} ──`);
 }

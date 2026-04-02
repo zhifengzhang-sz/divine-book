@@ -8,20 +8,24 @@ Divine Book (灵書) — combat simulator for a Chinese RPG. Parses skill/affix 
 - Parser: ohm-js PEG grammar (`lib/parser/skill-text.ohm` + `semantics.ts`)
 - Simulator: XState v5 state machines (`lib/sim/`)
 - Viz: React dev servers (`app/viz/`, `app/parser-viz/`)
+- Editor: Raw data editor (`app/editor/`)
 
 ## Commands
 
 - `bun run check` — typecheck + lint (must pass before committing)
 - `bun test` — all tests
-- `bun run parse` — regenerate YAML from raw data
-- `bun run parser-viz` — parser pipeline visualizer
+- `bun run parse` — regenerate YAML from `data/raw/game.data.json`
+- `bun run editor` — raw data editor (port 3002)
+- `bun run parser-viz` — parser pipeline visualizer (port 3001)
 - `bun scripts/sync-style.ts` — sync CSS style block across markdown docs
+- `bun scripts/construct-data.ts --character X --scenario Y` — generate construction context
 
 ## Key docs
 
 - `docs/parser/design.ohm.md` — parser architecture (why)
 - `docs/parser/impl.ohm.md` — implementation spec (what)
-- `data/raw/` — source of truth for game data (Chinese prose)
+- `data/raw/game.data.json` — source of truth for game data (structured JSON)
+- `data/raw/*.md` — archived raw markdown (import source, no longer primary)
 
 ## Schema migration
 
