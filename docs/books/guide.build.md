@@ -393,6 +393,8 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 
 | Model | What it provides | Doc |
 |:------|:----------------|:----|
+| Weapon support taxonomy | Feature/amplifier/sustain layers for Route 2 builds | [weapon.support.taxonomy.md](../model/weapon.support.taxonomy.md) |
+| Weapon support build | Route 2 construction: feature→slot, amplifier selection, temporal verification | [weapon.support.build.md](weapon.support.build.md) |
 | Function categories | 13 functions, three-tier structure (platform/aux/adaptable) | [function.themes.md](../model/function.themes.md) |
 | Themes & slot assignment | Theme 1-5 spectrum, slot timing, coverage, decision tree | [function.themes.md](../model/function.themes.md) |
 | Combat model (qualitative) | Damage chain, factor zones, multiplicative structure | [combat.qualitative.md](../model/combat.qualitative.md) |
