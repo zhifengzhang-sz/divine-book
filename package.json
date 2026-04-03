@@ -14,7 +14,7 @@
     "viz": "bun app/viz/serve.ts",
     "parser-viz": "bun app/parser-viz/serve.ts",
     "rag": "bun scripts/rag.ts",
-    "db": "cd ../道具数据库 && bun run dev"
+    "db": "bun ../道具数据库/serve.ts"
   },
   "dependencies": {
     "ohm-js": "^17.5.0",

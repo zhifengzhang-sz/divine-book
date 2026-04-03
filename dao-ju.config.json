@@ -1,0 +1,12 @@
+{
+  "platform": "../道具数据库",
+  "plugins": [
+    {
+      "id": "divine-book",
+      "name": "灵書",
+      "icon": "📖",
+      "lib": "./lib",
+      "dataPath": "./data/raw/game.data.json"
+    }
+  ]
+}
