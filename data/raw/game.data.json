@@ -134,8 +134,8 @@
           {
             "type": "summon_buff",
             "damage_taken_reduction_to": 120,
-            "damage_increase": 200,
-            "data_state": "fusion=50"
+            "damage_buff": 200,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -145,10 +145,10 @@
         "effects": [
           {
             "type": "dot",
-            "tick_interval": 1,
             "state": "噬心",
             "damage_per_tick": 550,
             "duration": 8,
+            "tick_interval": 1,
             "data_state": [
               "enlightenment=0",
               "fusion=50"
@@ -165,10 +165,10 @@
           },
           {
             "type": "dot",
-            "tick_interval": 1,
             "state": "噬心",
             "damage_per_tick": 3000,
             "duration": 16,
+            "tick_interval": 1,
             "data_state": [
               "enlightenment=10",
               "fusion=83"
@@ -237,9 +237,9 @@
           {
             "type": "shield_destroy_dot",
             "state": "寂灭剑心",
-            "interval": 0.5,
-            "value": 600,
-            "no_shield_assumed": 2
+            "interval": "0.5",
+            "value": "600",
+            "no_shield_assumed": "2"
           }
         ]
       },
@@ -264,7 +264,7 @@
             ]
           },
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 0,
             "data_state": [
               "enlightenment=0",
@@ -288,7 +288,7 @@
             ]
           },
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 300,
             "data_state": [
               "enlightenment=10",
@@ -340,7 +340,10 @@
             "type": "extended_dot",
             "extra_seconds": 6.5,
             "interval": 0.5,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -351,7 +354,10 @@
           {
             "type": "buff_duration",
             "value": 300,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -371,7 +377,7 @@
             ]
           },
           {
-            "type": "crit_dmg_bonus",
+            "type": "crit_damage_buff",
             "value": 350,
             "data_state": [
               "enlightenment=4",
@@ -395,10 +401,13 @@
         "effects": [
           {
             "type": "conditional_damage",
-            "value": 40,
             "condition": "enemy_hp_loss",
             "per_step": 5,
-            "data_state": "fusion=59"
+            "value": 40,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=59"
+            ]
           }
         ]
       },
@@ -408,12 +417,18 @@
         "effects": [
           {
             "type": "ignore_damage_reduction",
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 36,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -454,7 +469,7 @@
             "type": "debuff",
             "target": "skill_damage",
             "value": "x",
-            "duration": 16,
+            "duration": "16",
             "data_state": "locked"
           }
         ]
@@ -466,17 +481,26 @@
           {
             "type": "next_skill_buff",
             "value": 88,
-            "data_state": "fusion=20"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=20"
+            ]
           },
           {
             "type": "next_skill_buff",
             "value": 108,
-            "data_state": "fusion=30"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=30"
+            ]
           },
           {
             "type": "next_skill_buff",
             "value": 128,
-            "data_state": "fusion=40"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=40"
+            ]
           }
         ]
       }
@@ -512,7 +536,7 @@
         "text": "【剑引无极】：附加目标当前气血值伤害提高x%\n悟0境，融合10重：此词缀未解锁\n",
         "effects": [
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": "x",
             "data_state": "locked"
           }
@@ -523,14 +547,20 @@
         "text": "本神通攻击目标时提升x%`神通伤害`，但目标对本神通提升y%`神通伤害减免`\n融合50重：x=555, y=350\n",
         "effects": [
           {
-            "type": "skill_damage_increase_affix",
+            "type": "skill_damage_buff",
             "value": 555,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
             "type": "self_buff",
             "damage_reduction_multiplier": 350,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -543,16 +573,19 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_ref",
-            "state": "天鹤之佑"
+            "state": "天鹤之佑",
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
             "final_damage_bonus": 10,
-            "duration": 20
+            "duration": 20,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -565,7 +598,8 @@
             "threshold": 10,
             "value": 100,
             "max": 50,
-            "basis": "final_damage_bonus"
+            "basis": "final_damage_bonus",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -576,7 +610,10 @@
           {
             "type": "buff_strength",
             "value": 300,
-            "data_state": "fusion=52"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=52"
+            ]
           }
         ]
       }
@@ -589,18 +626,21 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_ref",
             "state": "天狼之啸",
-            "trigger": "on_attacked_by_skill"
+            "trigger": "on_attacked_by_skill",
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
-            "damage_increase": 8,
+            "damage_buff": 8,
+            "max_stacks": 3,
             "duration": 12,
-            "max_stacks": 3
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -609,9 +649,10 @@
         "text": "【天狼战意】：每层【天狼之啸】额外提升自身x%攻击力\nx=7\n",
         "effects": [
           {
-            "type": "attack_bonus",
+            "type": "attack_buff",
             "value": 7,
-            "per_state_stack": "天狼之啸"
+            "per_state_stack": "天狼之啸",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -622,14 +663,20 @@
           {
             "type": "buff_stack_increase",
             "value": 100,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
             "type": "per_buff_stack_damage",
             "per_stack": 5,
             "value": 5.5,
             "max": 27.5,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -737,7 +784,10 @@
             "duration": 16,
             "source": "self_max_hp",
             "trigger": "per_tick",
-            "data_state": "fusion=20"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=20"
+            ]
           },
           {
             "type": "shield",
@@ -745,7 +795,10 @@
             "duration": 16,
             "source": "self_max_hp",
             "trigger": "per_tick",
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -808,7 +861,7 @@
           },
           {
             "type": "self_buff",
-            "attack_bonus": "y",
+            "attack_buff": "y",
             "defense_bonus": "y",
             "hp_bonus": "y",
             "duration": 12,
@@ -833,7 +886,7 @@
           },
           {
             "type": "self_buff",
-            "attack_bonus": 70,
+            "attack_buff": 70,
             "defense_bonus": 70,
             "hp_bonus": 70,
             "duration": 12,
@@ -861,7 +914,7 @@
           },
           {
             "type": "self_buff",
-            "attack_bonus": 70,
+            "attack_buff": 70,
             "defense_bonus": 70,
             "hp_bonus": 70,
             "duration": 12,
@@ -889,7 +942,7 @@
           },
           {
             "type": "self_buff",
-            "attack_bonus": 70,
+            "attack_buff": 70,
             "defense_bonus": 70,
             "hp_bonus": 70,
             "duration": 12,
@@ -950,7 +1003,10 @@
             "duration": 20,
             "enhanced_value": 51,
             "hp_threshold": 30,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -963,13 +1019,15 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "echo_damage",
             "value": 25,
             "ignore_damage_bonus": true,
-            "duration": 8
+            "duration": 8,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -979,7 +1037,8 @@
         "effects": [
           {
             "type": "lifesteal",
-            "value": 75
+            "value": 75,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -990,7 +1049,10 @@
           {
             "type": "lifesteal",
             "value": 55,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1003,13 +1065,15 @@
           {
             "type": "base_attack",
             "hits": 3,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "percent_max_hp_damage",
             "value": 21,
             "per_hit": true,
-            "source": "self"
+            "source": "self",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1020,8 +1084,9 @@
           {
             "type": "conditional_stat_scaling",
             "threshold": 20,
+            "per_step": 3,
             "value": 3,
-            "per_step": 3
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1033,12 +1098,18 @@
             "type": "enlightenment_bonus",
             "value": 1,
             "max": 3,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 5,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1051,11 +1122,13 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_cleanse",
-            "count": 2
+            "count": 2,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "conditional_damage",
@@ -1063,7 +1136,8 @@
             "damage_base": "self_max_hp",
             "per_hit": true,
             "condition": "cleanse_excess",
-            "next_skill_count": 3
+            "next_skill_count": 3,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1075,7 +1149,10 @@
             "type": "on_buff_debuff_shield",
             "trigger_kind": "增益/减益/护盾",
             "value": 50.8,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1088,31 +1165,36 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "结魂锁链",
             "permanent": true,
-            "max_stacks": 1
+            "max_stacks": 1,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
             "name": "结魂锁链",
-            "damage_reduction": 5.2
+            "damage_reduction": 5.2,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "debuff",
             "name": "结魂锁链",
             "target": "damage_taken",
-            "value": 5.25
+            "value": 5.25,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "per_debuff_stack_damage",
+            "per_n_stacks": 1,
             "value": 0.5,
             "max": 2,
-            "per_n_stacks": 1,
-            "parent": "结魂锁链"
+            "parent": "结魂锁链",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1123,12 +1205,14 @@
           {
             "type": "dot_permanent_max_hp",
             "state": "结魂锁链",
-            "value": 1.6
+            "value": 1.6,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "per_debuff_damage_upgrade",
             "state": "结魂锁链",
-            "value": 4
+            "value": 4,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1139,7 +1223,10 @@
           {
             "type": "conditional_damage_debuff",
             "value": 104,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1152,16 +1239,19 @@
           {
             "type": "base_attack",
             "hits": 7,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "buff_steal",
-            "value": 2
+            "value": 2,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "percent_max_hp_damage",
             "value": 3,
-            "trigger": "per_steal"
+            "trigger": "per_steal",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1173,7 +1263,8 @@
             "type": "per_stolen_buff_debuff",
             "state": "惧意",
             "value": 14,
-            "duration": 12
+            "duration": 12,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1184,7 +1275,10 @@
           {
             "type": "debuff_stack_increase",
             "value": 100,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
             "type": "per_debuff_stack_damage",
@@ -1192,7 +1286,10 @@
             "max": 27.5,
             "per_stack": 5,
             "dot_half_bonus": true,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1205,18 +1302,21 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "不灭魔体",
-            "permanent": true
+            "permanent": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "counter_buff",
             "trigger": "on_attacked",
             "heal_on_damage_taken": 8,
-            "no_healing_bonus": true
+            "no_healing_bonus": true,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1234,7 +1334,8 @@
             "crit_rate": 50,
             "attack": 23,
             "final_damage_reduction": 23,
-            "duration": 15
+            "duration": 15,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1268,12 +1369,14 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "per_debuff_stack_damage",
             "value": 50,
-            "max": 10
+            "max": 10,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1282,11 +1385,12 @@
         "text": "【魔神降世】：技能释放前根据目标身上减益状态的最高层数提升自身攻击力，每层提升自身x%的攻击力，最多技术30层\nx=13\n",
         "effects": [
           {
-            "type": "attack_bonus",
+            "type": "attack_buff",
             "value": 13,
-            "per_debuff_stack": true,
             "max_stacks": 30,
-            "timing": "pre_cast"
+            "per_debuff_stack": true,
+            "timing": "pre_cast",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1366,8 +1470,8 @@
           },
           {
             "type": "dot",
-            "tick_interval": 0.5,
             "name": "噬心之咒",
+            "tick_interval": 0.5,
             "percent_current_hp": 2,
             "duration": 4,
             "data_state": [
@@ -1377,8 +1481,8 @@
           },
           {
             "type": "dot",
-            "tick_interval": 0.5,
             "name": "断魂之咒",
+            "tick_interval": 0.5,
             "percent_lost_hp": 2,
             "duration": 4,
             "data_state": [
@@ -1430,8 +1534,8 @@
           },
           {
             "type": "dot",
-            "tick_interval": 0.5,
             "name": "噬心之咒",
+            "tick_interval": 0.5,
             "percent_current_hp": 7,
             "duration": 4,
             "data_state": [
@@ -1441,8 +1545,8 @@
           },
           {
             "type": "dot",
-            "tick_interval": 0.5,
             "name": "断魂之咒",
+            "tick_interval": 0.5,
             "percent_lost_hp": 7,
             "duration": 4,
             "data_state": [
@@ -1505,9 +1609,12 @@
         "text": "使本神通添加的持续伤害上升x%\n融合50重：x=104\n",
         "effects": [
           {
-            "type": "dot_damage_increase",
+            "type": "dot_damage_buff",
             "value": 104,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1520,19 +1627,22 @@
           {
             "type": "base_attack",
             "hits": 6,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "贪妄业火",
             "count": 1,
-            "per_hit": true
+            "per_hit": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "dot",
             "tick_interval": 1,
             "percent_current_hp": 3,
-            "duration": 8
+            "duration": 8,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1542,12 +1652,13 @@
         "effects": [
           {
             "type": "dot",
-            "tick_interval": 1,
             "name": "瞋痴业火",
+            "tick_interval": 1,
             "percent_lost_hp": 8,
             "duration": 8,
             "trigger_stack": 2,
-            "source_state": "贪妄业火"
+            "source_state": "贪妄业火",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1558,7 +1669,10 @@
           {
             "type": "dot_frequency_increase",
             "value": 50.5,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1571,7 +1685,7 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": "1500"
           },
           {
             "type": "state_ref",
@@ -1581,9 +1695,9 @@
           {
             "type": "delayed_burst",
             "name": "无相魔劫",
-            "increase": 10,
-            "burst_damage": 10,
-            "burst_atk_damage": 5000
+            "increase": "10",
+            "burst_damage": "10",
+            "burst_atk_damage": "5000"
           }
         ]
       },
@@ -1594,7 +1708,7 @@
           {
             "type": "delayed_burst_increase",
             "state": "无相魔劫",
-            "value": 65
+            "value": "65"
           }
         ]
       },
@@ -1607,9 +1721,12 @@
             "name": "魔劫",
             "duration": 8,
             "heal_reduction": 40.8,
-            "damage_increase": 105,
-            "enhanced_damage_increase": 205,
-            "data_state": "fusion=50"
+            "damage_buff": 105,
+            "enhanced_damage_buff": 205,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1680,7 +1797,10 @@
           {
             "type": "per_self_lost_hp",
             "value": 2,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1692,21 +1812,25 @@
         "effects": [
           {
             "type": "self_hp_cost",
-            "value": 1500
+            "value": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "base_attack",
             "hits": 8,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_lost_hp_damage",
-            "value": 10
+            "value": 10,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
-            "skill_damage_increase": 20,
-            "duration": 4
+            "skill_damage_buff": 20,
+            "duration": 4,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1718,7 +1842,8 @@
             "type": "percent_max_hp_affix",
             "value": 10,
             "state": "镇杀",
-            "trigger_stack": 2
+            "trigger_stack": 2,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1739,7 +1864,7 @@
             "data_state": "fusion=50"
           },
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 75,
             "requires_enlightenment": true,
             "data_state": "fusion=50"
@@ -1754,28 +1879,33 @@
         "effects": [
           {
             "type": "self_hp_cost",
-            "value": 10
+            "value": 10,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "base_attack",
             "hits": 10,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_lost_hp_damage",
             "value": 16,
-            "self_heal": true
+            "self_heal": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "怒灵降世",
-            "duration": 4
+            "duration": 4,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
-            "attack_bonus": 20,
+            "attack_buff": 20,
             "damage_reduction": 20,
-            "duration": 4
+            "duration": 4,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1786,14 +1916,16 @@
           {
             "type": "self_buff_extend",
             "value": 3.5,
-            "state": "怒灵降世"
+            "state": "怒灵降世",
+            "data_state": "enlightenment=0"
           },
           {
             "type": "periodic_cleanse",
             "chance": 30,
             "target": "控制状态",
             "cooldown": 25,
-            "max_times": 1
+            "max_times": 1,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1802,14 +1934,20 @@
         "text": "本神通施放时，会使本次神通伤害提升x%，施放期间自身受到的伤害也提升y%\n融合50重：x=380, y=50\n",
         "effects": [
           {
-            "type": "damage_increase",
+            "type": "damage_buff",
             "value": 380,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           },
           {
             "type": "self_damage_taken_increase",
             "value": 50,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1821,12 +1959,12 @@
         "effects": [
           {
             "type": "self_hp_cost",
-            "value": 10
+            "value": "10"
           },
           {
             "type": "base_attack",
             "hits": 10,
-            "total": 1500
+            "total": "1500"
           },
           {
             "type": "state_add",
@@ -1834,8 +1972,8 @@
           },
           {
             "type": "counter_buff",
-            "reflect_received_damage": 50,
-            "reflect_percent_lost_hp": 15,
+            "reflect_received_damage": "50",
+            "reflect_percent_lost_hp": "15",
             "duration": 4
           }
         ]
@@ -1847,7 +1985,7 @@
           {
             "type": "lifesteal_with_parent",
             "state": "极怒",
-            "value": 82
+            "value": "82"
           }
         ]
       },
@@ -1858,7 +1996,10 @@
           {
             "type": "all_state_duration",
             "value": 55,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1870,35 +2011,41 @@
         "effects": [
           {
             "type": "self_hp_cost",
-            "value": 20
+            "value": 20,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "base_attack",
             "hits": 3,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_lost_hp_damage",
-            "value": 10
+            "value": 10,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "shield",
             "value": 12,
-            "duration": 8
+            "duration": 8,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "落星",
             "count": 1,
             "per_hit": true,
-            "undispellable": true
+            "undispellable": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "debuff",
             "name": "落星",
             "target": "final_damage_reduction",
             "value": 8,
-            "duration": 4
+            "duration": 4,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1908,12 +2055,14 @@
         "effects": [
           {
             "type": "shield_strength",
-            "value": 21.5
+            "value": 21.5,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "chance",
             "value": 30,
-            "effect": "no_hp_cost"
+            "effect": "no_hp_cost",
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1924,7 +2073,10 @@
           {
             "type": "conditional_damage_controlled",
             "value": 100,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1937,29 +2089,34 @@
           {
             "type": "base_attack",
             "hits": 8,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_lost_hp_damage",
             "value": 25,
-            "per_hit": true
+            "per_hit": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_hp_cost",
             "value": 5,
-            "per_hit": true
+            "per_hit": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_add",
             "state": "蛮神",
             "count": 1,
-            "per_hit": true
+            "per_hit": true,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_buff",
-            "attack_bonus": 2.5,
+            "attack_buff": 2.5,
             "crit_rate": 2.5,
-            "duration": 4
+            "duration": 4,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1969,11 +2126,13 @@
         "effects": [
           {
             "type": "periodic_dispel",
-            "count": 2
+            "count": 2,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_hp_floor",
-            "value": 10
+            "value": 10,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -1984,7 +2143,10 @@
           {
             "type": "on_shield_expire",
             "value": 100,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -1997,21 +2159,25 @@
           {
             "type": "base_attack",
             "hits": 5,
-            "total": 1500
+            "total": 1500,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_hp_cost",
-            "value": 20
+            "value": 20,
+            "data_state": "enlightenment=0"
           },
           {
             "type": "state_ref",
-            "state": "破虚"
+            "state": "破虚",
+            "data_state": "enlightenment=0"
           },
           {
             "type": "self_lost_hp_damage",
             "value": 10,
             "per_hit": true,
-            "next_skill_hits": 8
+            "next_skill_hits": 8,
+            "data_state": "enlightenment=0"
           }
         ]
       },
@@ -2025,7 +2191,10 @@
             "duration": 10,
             "damage_percent_of_skill": 25.5,
             "no_buff_double": true,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -2060,7 +2229,10 @@
           {
             "type": "buff_strength",
             "value": 20,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2070,7 +2242,10 @@
           {
             "type": "all_state_duration",
             "value": 69,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2103,7 +2278,10 @@
             "hits": 1,
             "per_hit": 1,
             "max": 10,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2113,7 +2291,10 @@
           {
             "type": "damage_reduction_during_cast",
             "value": 10,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2123,9 +2304,12 @@
           {
             "type": "execute_conditional",
             "hp_threshold": 30,
-            "damage_increase": 20,
+            "damage_buff": 20,
             "crit_rate_increase": 30,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2165,8 +2349,11 @@
             "type": "random_buff",
             "attack": 20,
             "crit_damage": 20,
-            "damage_increase": 20,
-            "data_state": "fusion=50"
+            "damage_buff": 20,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2176,7 +2363,10 @@
           {
             "type": "per_self_lost_hp",
             "value": 2.95,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2208,7 +2398,10 @@
             "type": "per_enemy_lost_hp",
             "per_percent": 1,
             "value": 0.4,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2218,7 +2411,10 @@
           {
             "type": "shield_value_increase",
             "value": 20,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2247,9 +2443,12 @@
         "text": "本神通施放时，会使本次神通提升x%攻击力的效果\n融合50重：x=20",
         "effects": [
           {
-            "type": "attack_bonus",
+            "type": "attack_buff",
             "value": 20,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       },
@@ -2257,11 +2456,14 @@
         "text": "使本神通必定`会心`造成x倍伤害，并有y%概率将之提升至z倍\n融合50重：x=1.2, y=25, z=1.5",
         "effects": [
           {
-            "type": "guaranteed_resonance",
+            "type": "guaranteed_crit",
             "base_multiplier": 1.2,
             "chance": 25,
             "upgraded_multiplier": 1.5,
-            "data_state": "fusion=50"
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
           }
         ]
       }
@@ -2272,9 +2474,12 @@
           "text": "使本神通提升x%攻击力的效果\n融合50重：x=300",
           "effects": [
             {
-              "type": "attack_bonus",
+              "type": "attack_buff",
               "value": 300,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2282,11 +2487,11 @@
           "text": "使本神通必定`会心`造成x倍伤害，并有y%概率将之提升至z倍\n融合重数>=50：x=2.97, y=25, z=3.97",
           "effects": [
             {
-              "type": "guaranteed_resonance",
+              "type": "guaranteed_crit",
               "base_multiplier": 2.97,
               "chance": 25,
               "upgraded_multiplier": 3.97,
-              "data_state": "fusion=50"
+              "data_state": "enlightenment=0"
             }
           ]
         },
@@ -2295,10 +2500,13 @@
           "effects": [
             {
               "type": "triple_bonus",
-              "attack_bonus": 15,
-              "damage_increase": 15,
-              "crit_damage_increase": 15,
-              "data_state": "fusion=50"
+              "attack_buff": 15,
+              "damage_buff": 15,
+              "crit_damage_buff": 15,
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2310,7 +2518,10 @@
               "hits": 1,
               "per_hit": 5,
               "max": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         }
@@ -2320,7 +2531,7 @@
           "text": "使本神通的所有治疗效果提升x%\n悟0境，融合50重：x=50\n悟1境，融合54重：x=295",
           "effects": [
             {
-              "type": "healing_increase",
+              "type": "healing_buff",
               "value": 50,
               "data_state": [
                 "enlightenment=0",
@@ -2328,7 +2539,7 @@
               ]
             },
             {
-              "type": "healing_increase",
+              "type": "healing_buff",
               "value": 295,
               "data_state": [
                 "enlightenment=1",
@@ -2341,9 +2552,12 @@
           "text": "本神通施放时，会使本次神通的`最终伤害加深`提升x%\n融合50重：x=50",
           "effects": [
             {
-              "type": "final_dmg_bonus",
+              "type": "final_damage_multiplier",
               "value": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2352,12 +2566,18 @@
           "effects": [
             {
               "type": "probability_to_certain",
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             },
             {
-              "type": "damage_increase",
+              "type": "damage_buff",
               "value": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2368,8 +2588,11 @@
               "type": "random_buff",
               "attack": 55,
               "crit_damage": 55,
-              "damage_increase": 55,
-              "data_state": "fusion=50"
+              "damage_buff": 55,
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         }
@@ -2381,7 +2604,10 @@
             {
               "type": "healing_to_damage",
               "value": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2391,9 +2617,12 @@
             {
               "type": "execute_conditional",
               "hp_threshold": 30,
-              "damage_increase": 100,
+              "damage_buff": 100,
               "guaranteed_crit": 1,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2404,7 +2633,10 @@
               "type": "damage_to_shield",
               "value": 50,
               "duration": 8,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2416,7 +2648,10 @@
               "attack": 20,
               "crit_rate": 20,
               "crit_damage": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         }
@@ -2428,7 +2663,10 @@
             {
               "type": "damage_reduction_during_cast",
               "value": 55,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2438,7 +2676,10 @@
             {
               "type": "flat_extra_damage",
               "value": 2500,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2448,7 +2689,10 @@
             {
               "type": "shield_value_increase",
               "value": 50,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2459,7 +2703,10 @@
               "type": "per_enemy_lost_hp",
               "per_percent": 1,
               "value": 1,
-              "data_state": "fusion=50"
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         },
@@ -2469,8 +2716,11 @@
             {
               "type": "min_lost_hp_threshold",
               "min_percent": 11,
-              "damage_increase": 50,
-              "data_state": "fusion=50"
+              "damage_buff": 50,
+              "data_state": [
+                "enlightenment=0",
+                "fusion=50"
+              ]
             }
           ]
         }

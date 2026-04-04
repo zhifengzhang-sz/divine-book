@@ -1,5 +1,6 @@
 ---
 initial date: 2026-03-24
+revised: 2026-04-04
 parent: design.md
 ---
 
@@ -95,238 +96,126 @@ strong {
 }
 </style>
 
-# Parser Workflow — From Raw Data to Simulator
+# Parser Workflow
 
 ---
 
-## §1 Generate YAML
+## §1 Data Pipeline
 
-Two commands produce the two YAML files the simulator consumes:
-
-```bash
-# Books: skill effects + primary affixes + exclusive affixes (28 books)
-bun app/parse-main-skills.ts -o data/yaml/books.yaml
-
-# Affixes: common (16) + school (17) affixes
-bun app/parse-affixes.ts -o data/yaml/affixes.yaml
+```
+effects.ts (defines type names + field names)
+    │
+    │ compiler enforces
+    ├──→ semantics/*.ts (produce effects conforming to the schema)
+    ├──→ handlers/*.ts (consume effects by type name)
+    │
+    │ re-parse (editor or batch script)
+    └──→ game.data.json (stores raw text + parsed effects)
+            │
+            │ gen-yaml.ts
+            └──→ data/yaml/*.yaml (simulator reads these)
 ```
 
-Both read from `data/raw/` and write to `data/yaml/`. The simulator loads these at runtime.
+**`effects.ts` is the single source of truth for type names and field names.** Everything else is derived from it.
+
+- **Semantic files** return `{ type: "type_name", field: value }`. The compiler checks these against effects.ts.
+- **Handlers** call `register<SchemaType>("type_name", ...)`. The compiler checks these against effects.ts.
+- **game.data.json** stores the output of the semantic files. The type names and field names in it were assigned by the semantic actions at parse time.
+- **YAML files** are generated from game.data.json by `gen-yaml.ts`. They pass the stored effects through unchanged.
 
 ---
 
-## §2 Pipeline: books.yaml
+## §2 game.data.json
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-flowchart LR
-    subgraph "Raw Data"
-        MAIN["data/raw/主书.md"]
-        EXCL["data/raw/专属词缀.md"]
-    end
+`data/raw/game.data.json` stores both the raw Chinese text and the parsed effects for every book and affix:
 
-    subgraph "Parse (per book)"
-        MAIN --> MDT["md-table.ts<br/>→ 28 RawBookEntry"]
-        EXCL --> EMAP["exclusiveMap<br/>(book → name + text)"]
-        MDT --> SPLIT["splitCell<br/>→ description + tiers"]
-        EMAP --> SPLIT
-        SPLIT --> SK["grammar.match<br/>skillDescription"]
-        SPLIT --> PA["grammar.match<br/>primaryAffix"]
-        SPLIT --> EA["grammar.match<br/>exclusiveAffix"]
-    end
-
-    subgraph "Resolve"
-        SK --> SEM["semantics<br/>→ Effect[]"]
-        PA --> SEM
-        EA --> SEM
-        SEM --> TIERS["resolveTiers<br/>→ data_state"]
-    end
-
-    TIERS --> EMIT["emit.ts<br/>→ books.yaml"]
+```json
+{
+  "books": {
+    "千锋聚灵剑": {
+      "school": "剑修",
+      "skill": {
+        "text": "对目标造成x%攻击力的剑法伤害...",
+        "effects": [{ "type": "base_attack", "total": "x", ... }]
+      },
+      "primaryAffix": { "name": "...", "text": "...", "effects": [...] },
+      "exclusiveAffix": { "name": "...", "text": "...", "effects": [...] }
+    }
+  },
+  "affixes": {
+    "universal": { ... },
+    "school": { ... }
+  }
+}
 ```
 
-**Text cleaning** (before grammar match):
-- Strip backticks (raw data uses `` `增益` `` for emphasis)
-- Strip `【name】：` prefix from affix text
-- Strip editorial notes: `（最高不超过N级）`, `（N层达到最大...）`, `（数据为没有悟境的情况）`
-- Unescape `\*` → `*`
-- Book name dash: `新-青元剑诀` → lookup as `新青元剑诀`
+The `effects` arrays are **cached parse results**. They were produced by running the `text` through the ohm parser and semantic actions. The type names and field names in them came from the semantic action code at parse time.
 
-**Tier resolution**:
-- Each tier line like `悟0境：x=1500, y=11` defines variable values
-- Effects with string vars (`total: "x"`) get resolved (`total: 1500`)
-- Each resolved effect gets `data_state: "enlightenment=0"` or `data_state: ["enlightenment=10", "fusion=51"]`
+**Editing data:** Use the editor (`bun run editor`, port 3002). Edit text, re-parse, save. The editor calls `parseEntry()` which runs the ohm grammar + semantic actions and produces fresh effects from the current code.
+
+**Generating YAML:** `bun run parse` runs `gen-yaml.ts`, which reads game.data.json and writes `data/yaml/books.yaml` and `data/yaml/affixes.yaml`.
 
 ---
 
-## §3 Pipeline: affixes.yaml
+## §3 Schema Contract
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-flowchart LR
-    subgraph "Raw Data"
-        UNI["data/raw/通用词缀.md"]
-        SCH["data/raw/修为词缀.md"]
-    end
+`lib/parser/schema/effects.ts` defines:
 
-    subgraph "Parse"
-        UNI --> UENTRY["16 universal<br/>AffixEntry"]
-        SCH --> SENTRY["17 school<br/>AffixEntry (4 schools)"]
-        UENTRY --> UMATCH["grammar.match<br/>通用词缀"]
-        SENTRY --> SMATCH["grammar.match<br/>修为词缀_剑修 / ..."]
-    end
-
-    subgraph "Resolve"
-        UMATCH --> SEM["semantics<br/>→ Effect[]"]
-        SMATCH --> SEM
-        SEM --> TIERS["resolveTiers"]
-    end
-
-    TIERS --> OUT["affixes.yaml"]
-```
-
-School name mapping: `Sword→剑修, Spell→法修, Demon→魔修, Body→体修`
-
----
-
-## §4 Schema — The Shared Contract
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-flowchart TB
-    subgraph "Ground Truth"
-        RAW["data/raw/<br/>(Chinese prose)"]
-    end
-
-    RAW -- "human reads text,<br/>writes schema once" --> SCHEMA["lib/parser/schema/{name}.ts<br/>(contract)"]
-
-    subgraph "Parser"
-        SCHEMA -- "imports types" --> SEM["semantic file<br/>(extractor)"]
-        SEM -- "compiler enforces<br/>field names" --> YAML["data/yaml/*.yaml"]
-    end
-
-    subgraph "Simulator"
-        SCHEMA -- "imports types" --> HANDLER["handler<br/>register&lt;SchemaType&gt;"]
-        YAML --> SIM["simulator"]
-        HANDLER -- "compiler enforces<br/>field names" --> SIM
-    end
-```
-
-33 schema files in `lib/parser/schema/` (28 books + 5 affixes). Each defines:
-- One TypeScript interface per effect type the book/affix produces
+- A Zod schema and TypeScript interface per effect type
+- Type name as a string literal: `type: z.literal("base_attack")`
 - Field names derived from the raw Chinese text meaning
-- `type V = string | number` — string before tier resolution, number after
+- `type V = string | number` for variable fields (string before tier resolution, number after)
 - JSDoc with the raw Chinese phrase each field maps to
-- Aggregate types: `SkillEffect`, `PrimaryAffixEffect`, `ExclusiveAffixEffect`, `Effect`
 
-### How it works
+Per-book schema files in `lib/parser/schema/` re-export shared types or define book-specific ones. The aggregate union `EffectWithMeta` covers all effect types.
 
-1. **Semantic file** imports schema types and uses typed `const effect: SchemaType = { ... }` — wrong field names are compile errors
-2. **Handler** uses `register<SchemaType>("type_name", (effect) => { ... })` — field access is type-checked
-3. **Both sides** reference the same interfaces — a mismatch between extractor and handler is impossible
+### How the compiler enforces the contract
+
+1. **Semantic file** imports schema types: `const effect: BaseAttack = { type: "base_attack", total: ... }`. Wrong type name or field name = compile error.
+2. **Handler** registers with schema type: `register<Resolved<BaseAttack>>("base_attack", (effect) => { ... })`. Wrong field access = compile error.
+3. Both sides reference the same interface. A mismatch between parser output and handler input is caught at compile time.
 
 ### Shared types across books
 
-Many books share effect types (e.g., `BaseAttack` appears in all 28). When multiple books use the same type with the same fields, they import from the first schema that defined it:
+Many books share effect types (e.g., `BaseAttack` in all 28). Import from the first schema that defined it:
 
 ```typescript
 // lib/parser/schema/春黎剑阵.ts
 export { BaseAttack } from "./千锋聚灵剑.js";
 ```
 
-If a book uses a variation with different fields, it defines a new interface.
-
 ---
 
-## §5 Verify
+## §4 When to Update
 
-After regeneration, verify the YAML:
+### Schema change (rename types or fields)
 
-```bash
-# Check books.yaml
-bun -e "
-const yaml=require('yaml');
-const fs=require('fs');
-const d=yaml.parse(fs.readFileSync('data/yaml/books.yaml','utf-8'));
-const books=Object.keys(d.books);
-console.log(books.length, 'books');
-for(const [n,b] of Object.entries(d.books)){
-  const sk=(b as any).skill?.length??0;
-  const pa=(b as any).primary_affix?.effects?.length??0;
-  const ea=(b as any).exclusive_affix?.effects?.length??0;
-  if(sk===0) console.log('  WARNING: no skill effects for', n);
-}
-"
+The schema is the source of truth. Change it first, then propagate.
 
-# Check affixes.yaml
-bun -e "
-const yaml=require('yaml');
-const fs=require('fs');
-const d=yaml.parse(fs.readFileSync('data/yaml/affixes.yaml','utf-8'));
-console.log(Object.keys(d.universal).length, 'universal affixes');
-let s=0;
-for(const v of Object.values(d.school)) s+=Object.keys(v as any).length;
-console.log(s, 'school affixes');
-"
-```
+1. Rename in `effects.ts` (type literals, interfaces, Zod schemas)
+2. `bun run check` — compiler errors show every semantic file and handler that needs updating
+3. Fix all compiler errors
+4. Re-parse all books/affixes through the editor (or batch script) — this updates game.data.json with fresh effects from the updated semantic actions
+5. `bun run parse` — regenerate YAML from the updated game.data.json
+6. `bun test` — verify no behavioral change
 
----
-
-## §6 Run Simulator
-
-The simulator reads both YAML files:
-
-```typescript
-// lib/sim/config.ts
-loadBooksYaml("data/yaml/books.yaml")     // → BooksYaml
-loadAffixesYaml("data/yaml/affixes.yaml") // → AffixesYaml
-```
-
----
-
-## §7 Full Rebuild
-
-When raw data changes:
-
-```bash
-# 1. Regenerate YAML
-bun app/parse-main-skills.ts -o data/yaml/books.yaml
-bun app/parse-affixes.ts -o data/yaml/affixes.yaml
-
-# 2. Verify
-bun test lib/parser/grammars/   # 122 grammar + semantic tests
-bun run check                   # typecheck + lint
-
-# 3. Run simulator tests
-bun test lib/sim/
-```
-
----
-
-## §8 When to Update
+**Do not find-and-replace in game.data.json.** The effects in game.data.json are derived data. Re-parse from the source of truth (semantic actions) instead.
 
 ### Raw text changes for an existing book
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-flowchart LR
-    A["1. Update .ohm<br/>(grammar)"] --> B["2. Update schema<br/>if types changed"]
-    B --> C["3. Update semantic .ts<br/>(import schema)"]
-    C --> D["4. Update handlers<br/>if fields changed"]
-    D --> E["5. Test +<br/>regenerate YAML"]
-```
+1. Edit the text in the editor (`bun run editor`)
+2. Re-parse in the editor — produces fresh effects
+3. Save — updates game.data.json
+4. `bun run parse` — regenerate YAML
+5. `bun test`
 
-### Adding a new book
+If the grammar or semantic file also needs changes:
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-flowchart LR
-    A["1. Read<br/>raw data"] --> B["2. Write schema<br/>schema/{name}.ts"]
-    B --> C["3. Write grammar<br/>.ohm file"]
-    C --> D["4. Write semantic<br/>(import schema)"]
-    D --> E["5. Write handler<br/>register&lt;Schema&gt;"]
-    E --> F["6. Test +<br/>YAML"]
-```
+1. Update `.ohm` grammar if needed
+2. Update schema if new types/fields
+3. Update semantic file
+4. Update handler if fields changed
+5. Re-parse in editor, save, `bun run parse`, `bun test`
 
 ### Adding a new effect type
 
@@ -334,4 +223,24 @@ flowchart LR
 2. Add JSDoc with the raw Chinese phrase
 3. Update the semantic file to produce it
 4. Write a handler with `register<SchemaType>`
-5. The compiler ensures both sides agree on field names
+5. Re-parse affected books in editor
+6. `bun run parse`, `bun test`
+
+---
+
+## §5 Commands
+
+```bash
+bun run editor          # data editor (port 3002) — edit text, re-parse, save
+bun run parse           # gen-yaml.ts → regenerate YAML from game.data.json
+bun run check           # typecheck + lint
+bun test                # all tests
+```
+
+---
+
+## §6 What NOT to do
+
+- **Do not edit game.data.json effects by hand.** Edit the text and re-parse. The effects are derived from the text via the parser.
+- **Do not find-and-replace type names in game.data.json.** That's patching derived data. Re-parse instead.
+- **Do not bypass the compiler.** If a rename doesn't produce compiler errors in a file that uses the old name, that file has an untyped string reference. Find it and fix the typing, or add it to the grep sweep.

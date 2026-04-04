@@ -18,16 +18,16 @@ import type { StateInstance } from "../types.js";
 import { register } from "./registry.js";
 import type { Resolved } from "./types.js";
 
-// self_buff: { attack_bonus?, defense_bonus?, final_damage_bonus?,
-//              skill_damage_increase?, duration, name? }
+// self_buff: { attack_buff?, defense_bonus?, final_damage_bonus?,
+//              skill_damage_buff?, duration, name? }
 // Creates a buff state on self with stat modifiers.
 register<SelfBuff>("self_buff", (effect) => {
 	const effects: { stat: string; value: number }[] = [];
 	const statFields = [
-		"attack_bonus",
+		"attack_buff",
 		"defense_bonus",
 		"final_damage_bonus",
-		"skill_damage_increase",
+		"skill_damage_buff",
 		"damage_reduction",
 		"crit_rate",
 		"healing_bonus",
@@ -55,7 +55,7 @@ register<SelfBuff>("self_buff", (effect) => {
 	};
 });
 
-// self_buff_extra: { buff_name, attack_bonus?, healing_bonus?, ... }
+// self_buff_extra: { buff_name, attack_buff?, healing_bonus?, ... }
 // Adds extra stat effects to an existing self_buff by name.
 // At cast time, we don't have a reference to the existing buff — just apply
 // a new buff with the same name so it stacks or refreshes.
@@ -63,10 +63,10 @@ register<SelfBuffExtra>("self_buff_extra", (effect) => {
 	const buffName = (effect.buff_name as string) ?? "self_buff";
 	const effects: { stat: string; value: number }[] = [];
 	const statFields = [
-		"attack_bonus",
+		"attack_buff",
 		"defense_bonus",
 		"final_damage_bonus",
-		"skill_damage_increase",
+		"skill_damage_buff",
 		"damage_reduction",
 		"healing_bonus",
 	];
@@ -93,7 +93,7 @@ register<SelfBuffExtra>("self_buff_extra", (effect) => {
 	};
 });
 
-// conditional_buff: { condition, percent_max_hp_increase?, damage_increase?, ... }
+// conditional_buff: { condition, percent_max_hp_increase?, damage_buff?, ... }
 // Applies a buff conditionally. Checks condition against actual game state.
 register<ConditionalBuff>("conditional_buff", (effect, _ctx) => {
 	const condition = (effect.condition as string) ?? "";
@@ -111,10 +111,10 @@ register<ConditionalBuff>("conditional_buff", (effect, _ctx) => {
 	}
 	if (!conditionMet) return {};
 	const effects: { stat: string; value: number }[] = [];
-	if (typeof effect.damage_increase === "number") {
+	if (typeof effect.damage_buff === "number") {
 		effects.push({
-			stat: "damage_increase",
-			value: effect.damage_increase as number,
+			stat: "damage_buff",
+			value: effect.damage_buff as number,
 		});
 	}
 	if (effects.length === 0) return {};
@@ -237,14 +237,14 @@ register<SelfDamageTakenIncrease>("self_damage_taken_increase", (effect) => {
 // Buff that applies to the next skill cast. In a 1-slot sim, this
 // persists since there's no subsequent cast to consume it.
 // Duration = Infinity (consumed by next cast in multi-slot mode).
-// Note: legacy data had a `stat` field; schema only has `value` (always skill_damage_increase).
+// Note: legacy data had a `stat` field; schema only has `value` (always skill_damage_buff).
 register<Resolved<NextSkillBuff>>("next_skill_buff", (effect) => {
 	const state: StateInstance = {
 		name: "next_skill_buff",
 		kind: "buff",
 		source: "",
 		target: "self",
-		effects: [{ stat: "skill_damage_increase", value: effect.value }],
+		effects: [{ stat: "skill_damage_buff", value: effect.value }],
 		remainingDuration: Number.POSITIVE_INFINITY,
 		stacks: 1,
 		maxStacks: 1,

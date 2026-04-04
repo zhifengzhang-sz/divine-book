@@ -42,6 +42,12 @@ Discovered by raw-data-to-YAML verification audit. All are pre-existing grammar/
 - **Problem:** Raw text says "接下来的三个神通命中时" (next 3 skill hits) but no field captures the "3" limit.
 - **Fix:** Add `next_skill_count` field to conditional_damage.
 
+### 12. Type sumStatEffects stat parameter
+- **Priority:** P2
+- **Effort:** S (CC: ~10 min)
+- **Problem:** `sumStatEffects` in `lib/sim/player.ts` takes `stat: string`. Any string is accepted — the compiler doesn't catch wrong stat names. During the effect type rename, `"attack_bonus"` had to be updated manually because the parameter is untyped.
+- **Fix:** Change `stat: string` to a union type of valid stat names (derived from effect field names). The compiler would then catch mismatches.
+
 ### Superseded by grammar rewrite
 
 <details>

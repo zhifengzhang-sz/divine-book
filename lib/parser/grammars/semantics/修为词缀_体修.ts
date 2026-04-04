@@ -59,7 +59,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			const effect: MinLostHpThreshold = {
 				type: "min_lost_hp_threshold",
 				min_percent: varRef1.extractVar,
-				damage_increase: varRef2.extractVar,
+				damage_buff: varRef2.extractVar,
 			};
 			return [effect];
 		},

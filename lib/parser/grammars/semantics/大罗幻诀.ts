@@ -6,7 +6,7 @@ import type {
 	CounterDebuffUpgrade,
 	CrossSlotDebuff,
 	Dot,
-	DotDamageIncrease,
+	DotDamageBuff,
 	Effect,
 	ExclusiveAffixEffect,
 	PrimaryAffixEffect,
@@ -187,8 +187,8 @@ export function addSemantics(s: ohm.Semantics): void {
 				return [upgrade, debuff];
 			},
 			exclusiveAffix(_sbstcjdcxshsx, varRef, _p) {
-				const effect: DotDamageIncrease = {
-					type: "dot_damage_increase",
+				const effect: DotDamageBuff = {
+					type: "dot_damage_buff",
 					value: varRef.extractVar,
 				};
 				return [effect];

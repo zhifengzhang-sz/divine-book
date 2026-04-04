@@ -400,11 +400,11 @@ export interface SelfBuff {
 	/** state context name */
 	name?: string;
 	/** 攻击力提升 */
-	attack_bonus?: V;
+	attack_buff?: V;
 	/** 伤害提升 */
-	damage_increase?: V;
+	damage_buff?: V;
 	/** 神通伤害提升 */
-	skill_damage_increase?: V;
+	skill_damage_buff?: V;
 	/** 最终伤害提升 */
 	final_damage_bonus?: V;
 	/** 伤害减免 */
@@ -429,9 +429,9 @@ export interface SelfBuff {
 export const SelfBuffSchema = z.object({
 	type: z.literal("self_buff"),
 	name: z.string().optional(),
-	attack_bonus: V_Schema.optional(),
-	damage_increase: V_Schema.optional(),
-	skill_damage_increase: V_Schema.optional(),
+	attack_buff: V_Schema.optional(),
+	damage_buff: V_Schema.optional(),
+	skill_damage_buff: V_Schema.optional(),
 	final_damage_bonus: V_Schema.optional(),
 	damage_reduction: V_Schema.optional(),
 	crit_rate: V_Schema.optional(),
@@ -469,9 +469,9 @@ export interface Debuff {
 	/** 无相魔劫咒: heal reduction component */
 	heal_reduction?: V;
 	/** 无相魔劫咒: damage increase component */
-	damage_increase?: V;
+	damage_buff?: V;
 	/** 无相魔劫咒: enhanced damage increase */
-	enhanced_damage_increase?: V;
+	enhanced_damage_buff?: V;
 }
 export const DebuffSchema = z.object({
 	type: z.literal("debuff"),
@@ -484,8 +484,8 @@ export const DebuffSchema = z.object({
 	sequenced: z.boolean().optional(),
 	trigger: z.string().optional(),
 	heal_reduction: V_Schema.optional(),
-	damage_increase: V_Schema.optional(),
-	enhanced_damage_increase: V_Schema.optional(),
+	damage_buff: V_Schema.optional(),
+	enhanced_damage_buff: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<Debuff>;
 
 // ══════════════════════════════════════════════════════════
@@ -601,15 +601,15 @@ export const SummonSchema = z.object({
 }).passthrough() satisfies z.ZodType<Summon>;
 
 /** 通天剑诀. "暴击伤害提高V%" */
-export interface CritDmgBonus {
-	type: "crit_dmg_bonus";
+export interface CritDamageBuff {
+	type: "crit_damage_buff";
 	/** V% — crit damage bonus */
 	value: V;
 }
-export const CritDmgBonusSchema = z.object({
-	type: z.literal("crit_dmg_bonus"),
+export const CritDamageBuffSchema = z.object({
+	type: z.literal("crit_damage_buff"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<CritDmgBonus>;
+}).passthrough() satisfies z.ZodType<CritDamageBuff>;
 
 /** 通天剑诀, 十方真魄. "自身受到伤害提高V%" */
 export interface SelfDamageTakenIncrease {
@@ -781,7 +781,7 @@ export interface ExecuteConditional {
 	/** N% — HP threshold */
 	hp_threshold: V;
 	/** x% — damage increase */
-	damage_increase: V;
+	damage_buff: V;
 	/** 通用: 暴击率提升y% */
 	crit_rate_increase?: V;
 	/** 修为_魔修: guaranteed crit */
@@ -790,7 +790,7 @@ export interface ExecuteConditional {
 export const ExecuteConditionalSchema = z.object({
 	type: z.literal("execute_conditional"),
 	hp_threshold: V_Schema,
-	damage_increase: V_Schema,
+	damage_buff: V_Schema,
 	crit_rate_increase: V_Schema.optional(),
 	guaranteed_crit: z.number().optional(),
 }).passthrough() satisfies z.ZodType<ExecuteConditional>;
@@ -825,13 +825,13 @@ export interface RandomBuff {
 	/** 致命伤害提升x% */
 	crit_damage: V;
 	/** 造成的伤害提升x% */
-	damage_increase: V;
+	damage_buff: V;
 }
 export const RandomBuffSchema = z.object({
 	type: z.literal("random_buff"),
 	attack: V_Schema,
 	crit_damage: V_Schema,
-	damage_increase: V_Schema,
+	damage_buff: V_Schema,
 }).passthrough() satisfies z.ZodType<RandomBuff>;
 
 /** 战意, 玄煞灵影诀 exclusive. "自身每多损失1%气血，伤害提升x%" */
@@ -893,8 +893,8 @@ export const NextSkillBuffSchema = z.object({
 }).passthrough() satisfies z.ZodType<NextSkillBuff>;
 
 /** 摧山, 修为_剑修, 元磁神光, 解体化形. "攻击力提升x%" */
-export interface AttackBonus {
-	type: "attack_bonus";
+export interface AttackBuff {
+	type: "attack_buff";
 	/** x% */
 	value: V;
 	/** 元磁神光: per state stack */
@@ -906,18 +906,18 @@ export interface AttackBonus {
 	/** 解体化形: "pre_cast" */
 	timing?: string;
 }
-export const AttackBonusSchema = z.object({
-	type: z.literal("attack_bonus"),
+export const AttackBuffSchema = z.object({
+	type: z.literal("attack_buff"),
 	value: V_Schema,
 	per_state_stack: V_Schema.optional(),
 	per_debuff_stack: z.boolean().optional(),
 	max_stacks: V_Schema.optional(),
 	timing: z.string().optional(),
-}).passthrough() satisfies z.ZodType<AttackBonus>;
+}).passthrough() satisfies z.ZodType<AttackBuff>;
 
 /** 通明, 修为_剑修. "必定会心造成x倍伤害" */
-export interface GuaranteedResonance {
-	type: "guaranteed_resonance";
+export interface GuaranteedCrit {
+	type: "guaranteed_crit";
 	/** x倍 — base crit multiplier */
 	base_multiplier: V;
 	/** y% — upgrade chance */
@@ -925,12 +925,12 @@ export interface GuaranteedResonance {
 	/** z倍 — upgraded crit multiplier */
 	upgraded_multiplier: V;
 }
-export const GuaranteedResonanceSchema = z.object({
-	type: z.literal("guaranteed_resonance"),
+export const GuaranteedCritSchema = z.object({
+	type: z.literal("guaranteed_crit"),
 	base_multiplier: V_Schema,
 	chance: V_Schema,
 	upgraded_multiplier: V_Schema,
-}).passthrough() satisfies z.ZodType<GuaranteedResonance>;
+}).passthrough() satisfies z.ZodType<GuaranteedCrit>;
 
 // ══════════════════════════════════════════════════════════
 // §10 School Affixes (修为词缀)
@@ -940,62 +940,62 @@ export const GuaranteedResonanceSchema = z.object({
 export interface TripleBonus {
 	type: "triple_bonus";
 	/** x% */
-	attack_bonus: V;
+	attack_buff: V;
 	/** y% */
-	damage_increase: V;
+	damage_buff: V;
 	/** z% */
-	crit_damage_increase: V;
+	crit_damage_buff: V;
 }
 export const TripleBonusSchema = z.object({
 	type: z.literal("triple_bonus"),
-	attack_bonus: V_Schema,
-	damage_increase: V_Schema,
-	crit_damage_increase: V_Schema,
+	attack_buff: V_Schema,
+	damage_buff: V_Schema,
+	crit_damage_buff: V_Schema,
 }).passthrough() satisfies z.ZodType<TripleBonus>;
 
 /** 修为_法修. "概率类效果必定触发" */
 export interface ProbabilityToCertain {
 	type: "probability_to_certain";
 	/** bonus damage increase % when probability becomes certain */
-	damage_increase?: V;
+	damage_buff?: V;
 }
 export const ProbabilityToCertainSchema = z.object({
 	type: z.literal("probability_to_certain"),
-	damage_increase: V_Schema.optional(),
+	damage_buff: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<ProbabilityToCertain>;
 
 /** 修为_法修, 通天剑诀, 皓月剑诀, 玉书天戈符, 十方真魄, 惊蜇化龙. "伤害提升x%" */
-export interface DamageIncrease {
-	type: "damage_increase";
+export interface DamageBuff {
+	type: "damage_buff";
 	/** x% */
 	value: V;
 }
-export const DamageIncreaseSchema = z.object({
-	type: z.literal("damage_increase"),
+export const DamageBuffSchema = z.object({
+	type: z.literal("damage_buff"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<DamageIncrease>;
+}).passthrough() satisfies z.ZodType<DamageBuff>;
 
 /** 修为_法修. "最终伤害提升x%" */
-export interface FinalDmgBonus {
-	type: "final_dmg_bonus";
+export interface FinalDamageMultiplier {
+	type: "final_damage_multiplier";
 	/** x% */
 	value: V;
 }
-export const FinalDmgBonusSchema = z.object({
-	type: z.literal("final_dmg_bonus"),
+export const FinalDamageMultiplierSchema = z.object({
+	type: z.literal("final_damage_multiplier"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<FinalDmgBonus>;
+}).passthrough() satisfies z.ZodType<FinalDamageMultiplier>;
 
 /** 修为_法修. "治疗量提升x%" */
-export interface HealingIncrease {
-	type: "healing_increase";
+export interface HealingBuff {
+	type: "healing_buff";
 	/** x% */
 	value: V;
 }
-export const HealingIncreaseSchema = z.object({
-	type: z.literal("healing_increase"),
+export const HealingBuffSchema = z.object({
+	type: z.literal("healing_buff"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<HealingIncrease>;
+}).passthrough() satisfies z.ZodType<HealingBuff>;
 
 /** 修为_魔修. "治疗转化为伤害x%" */
 export interface HealingToDamage {
@@ -1045,12 +1045,12 @@ export interface MinLostHpThreshold {
 	/** x% — minimum lost HP threshold */
 	min_percent: V;
 	/** y% — damage increase */
-	damage_increase: V;
+	damage_buff: V;
 }
 export const MinLostHpThresholdSchema = z.object({
 	type: z.literal("min_lost_hp_threshold"),
 	min_percent: V_Schema,
-	damage_increase: V_Schema,
+	damage_buff: V_Schema,
 }).passthrough() satisfies z.ZodType<MinLostHpThreshold>;
 
 // ══════════════════════════════════════════════════════════
@@ -1063,12 +1063,12 @@ export interface SummonBuff {
 	/** damage taken reduction */
 	damage_taken_reduction_to: V;
 	/** damage increase */
-	damage_increase: V;
+	damage_buff: V;
 }
 export const SummonBuffSchema = z.object({
 	type: z.literal("summon_buff"),
 	damage_taken_reduction_to: V_Schema,
-	damage_increase: V_Schema,
+	damage_buff: V_Schema,
 }).passthrough() satisfies z.ZodType<SummonBuff>;
 
 /** 皓月剑诀. "护盾销毁持续伤害" */
@@ -1522,15 +1522,15 @@ export const ProbabilityMultiplierSchema = z.object({
 }).passthrough() satisfies z.ZodType<ProbabilityMultiplier>;
 
 /** 大罗幻诀. "持续伤害提升x%" */
-export interface DotDamageIncrease {
-	type: "dot_damage_increase";
+export interface DotDamageBuff {
+	type: "dot_damage_buff";
 	/** x% */
 	value: V;
 }
-export const DotDamageIncreaseSchema = z.object({
-	type: z.literal("dot_damage_increase"),
+export const DotDamageBuffSchema = z.object({
+	type: z.literal("dot_damage_buff"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<DotDamageIncrease>;
+}).passthrough() satisfies z.ZodType<DotDamageBuff>;
 
 /** 梵圣真魔咒. "持续伤害频率提升x%" */
 export interface DotFrequencyIncrease {
@@ -1588,15 +1588,15 @@ export const IgnoreDamageReductionSchema = z.object({
 }).passthrough() satisfies z.ZodType<IgnoreDamageReduction>;
 
 /** 无极御剑诀. "神通伤害提升x%" */
-export interface SkillDamageIncreaseAffix {
-	type: "skill_damage_increase_affix";
+export interface SkillDamageBuff {
+	type: "skill_damage_buff";
 	/** x% */
 	value: V;
 }
-export const SkillDamageIncreaseAffixSchema = z.object({
-	type: z.literal("skill_damage_increase_affix"),
+export const SkillDamageBuffSchema = z.object({
+	type: z.literal("skill_damage_buff"),
 	value: V_Schema,
-}).passthrough() satisfies z.ZodType<SkillDamageIncreaseAffix>;
+}).passthrough() satisfies z.ZodType<SkillDamageBuff>;
 
 /** 周天星元, 大罗幻诀. "跨神通位施加减益" */
 export interface CrossSlotDebuff {
@@ -1646,7 +1646,7 @@ export interface ConditionalBuff {
 	condition: string;
 	percent_max_hp_increase?: V;
 	percent_lost_hp_increase?: V;
-	damage_increase?: V;
+	damage_buff?: V;
 	[k: string]: unknown;
 }
 export const ConditionalBuffSchema = z.object({
@@ -1654,7 +1654,7 @@ export const ConditionalBuffSchema = z.object({
 	condition: z.string(),
 	percent_max_hp_increase: V_Schema.optional(),
 	percent_lost_hp_increase: V_Schema.optional(),
-	damage_increase: V_Schema.optional(),
+	damage_buff: V_Schema.optional(),
 }).passthrough() satisfies z.ZodType<ConditionalBuff>;
 
 /** 周天星元, 天刹真魔 exclusive (compound parser). Conditional debuff on target */
@@ -1730,7 +1730,7 @@ export type Effect =
 	| CounterDebuff
 	| CounterBuff
 	| Summon
-	| CritDmgBonus
+	| CritDamageBuff
 	| SelfDamageTakenIncrease
 	| SelfCleanse
 	// State
@@ -1752,14 +1752,14 @@ export type Effect =
 	| PerEnemyLostHp
 	| ShieldValueIncrease
 	| NextSkillBuff
-	| AttackBonus
-	| GuaranteedResonance
+	| AttackBuff
+	| GuaranteedCrit
 	// School affixes
 	| TripleBonus
 	| ProbabilityToCertain
-	| DamageIncrease
-	| FinalDmgBonus
-	| HealingIncrease
+	| DamageBuff
+	| FinalDamageMultiplier
+	| HealingBuff
 	| HealingToDamage
 	| DamageToShield
 	| RandomDebuff
@@ -1793,13 +1793,13 @@ export type Effect =
 	| OnShieldExpire
 	| OnBuffDebuffShield
 	| ProbabilityMultiplier
-	| DotDamageIncrease
+	| DotDamageBuff
 	| DotFrequencyIncrease
 	| ConditionalDamageDebuff
 	| SelfHpFloor
 	| EnlightenmentBonus
 	| IgnoreDamageReduction
-	| SkillDamageIncreaseAffix
+	| SkillDamageBuff
 	| CrossSlotDebuff
 	| Chance
 	// Compound parser types (legacy exclusive affixes)
@@ -1816,14 +1816,14 @@ const allSchemas = [
 	ConditionalDamageSchema, FlatExtraDamageSchema, SelfHpCostSchema, DotSchema,
 	SelfHealSchema, ShieldSchema, SelfBuffSchema, DebuffSchema, BuffStealSchema,
 	UntargetableSchema, CounterDebuffSchema, CounterBuffSchema, SummonSchema,
-	CritDmgBonusSchema, SelfDamageTakenIncreaseSchema, SelfCleanseSchema,
+	CritDamageBuffSchema, SelfDamageTakenIncreaseSchema, SelfCleanseSchema,
 	StateRefSchema, StateAddSchema, DebuffStrengthSchema, BuffStrengthSchema,
 	AllStateDurationSchema, ConditionalDamageControlledSchema,
 	DamageReductionDuringCastSchema, ExecuteConditionalSchema, DotExtraPerTickSchema,
 	PercentMaxHpBoostSchema, RandomBuffSchema, PerSelfLostHpSchema, PerEnemyLostHpSchema,
-	ShieldValueIncreaseSchema, NextSkillBuffSchema, AttackBonusSchema,
-	GuaranteedResonanceSchema, TripleBonusSchema, ProbabilityToCertainSchema,
-	DamageIncreaseSchema, FinalDmgBonusSchema, HealingIncreaseSchema,
+	ShieldValueIncreaseSchema, NextSkillBuffSchema, AttackBuffSchema,
+	GuaranteedCritSchema, TripleBonusSchema, ProbabilityToCertainSchema,
+	DamageBuffSchema, FinalDamageMultiplierSchema, HealingBuffSchema,
 	HealingToDamageSchema, DamageToShieldSchema, RandomDebuffSchema,
 	MinLostHpThresholdSchema, SummonBuffSchema, ShieldDestroyDotSchema,
 	ExtendedDotSchema, SelfBuffExtraSchema, SelfBuffExtendSchema,
@@ -1834,9 +1834,9 @@ const allSchemas = [
 	DebuffStackIncreaseSchema, DebuffStackChanceSchema, BuffDurationSchema,
 	HealReductionSchema, LifestealSchema, OnDispelSchema, PeriodicDispelSchema,
 	OnShieldExpireSchema, OnBuffDebuffShieldSchema, ProbabilityMultiplierSchema,
-	DotDamageIncreaseSchema, DotFrequencyIncreaseSchema, ConditionalDamageDebuffSchema,
+	DotDamageBuffSchema, DotFrequencyIncreaseSchema, ConditionalDamageDebuffSchema,
 	SelfHpFloorSchema, EnlightenmentBonusSchema, IgnoreDamageReductionSchema,
-	SkillDamageIncreaseAffixSchema, CrossSlotDebuffSchema, ChanceSchema,
+	SkillDamageBuffSchema, CrossSlotDebuffSchema, ChanceSchema,
 	ConditionalBuffSchema, ConditionalDebuffCompoundSchema, ConditionalHealBuffSchema,
 ] as const;
 

@@ -1,7 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
-	AttackBonus,
+	AttackBuff,
 	BaseAttack,
 	Effect,
 	ExclusiveAffixEffect,
@@ -59,8 +59,8 @@ export function addSemantics(s: ohm.Semantics): void {
 				maxVar,
 				_c,
 			) {
-				const effect: AttackBonus = {
-					type: "attack_bonus",
+				const effect: AttackBuff = {
+					type: "attack_buff",
 					value: varRef.extractVar,
 					max_stacks: maxVar.extractVar,
 					per_debuff_stack: true,

@@ -1,5 +1,5 @@
 export type {
-	AttackBonus,
+	AttackBuff,
 	BuffStackIncrease,
 	PerBuffStackDamage,
 	SelfBuff,

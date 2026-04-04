@@ -1,7 +1,7 @@
 import type * as ohm from "ohm-js";
 
 import type {
-	AttackBonus,
+	AttackBuff,
 	BaseAttack,
 	BuffStackIncrease,
 	Effect,
@@ -50,15 +50,15 @@ export function addSemantics(s: ohm.Semantics): void {
 		) {
 			const effect: SelfBuff = {
 				type: "self_buff",
-				damage_increase: varRef.extractVar,
+				damage_buff: varRef.extractVar,
 				max_stacks: maxVar.extractVar,
 				duration: durVar.extractVar,
 			};
 			return [effect];
 		},
 		primaryAffix(_meiceng, stateName, _ewtszs, varRef, _pct, _gkl) {
-			const effect: AttackBonus = {
-				type: "attack_bonus",
+			const effect: AttackBuff = {
+				type: "attack_buff",
 				value: varRef.extractVar,
 				per_state_stack: stateName.extractVar,
 			};

@@ -76,7 +76,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			const effect: SummonBuff = {
 				type: "summon_buff",
 				damage_taken_reduction_to: dmgReductionVar.extractVar,
-				damage_increase: dmgIncreaseVar.extractVar,
+				damage_buff: dmgIncreaseVar.extractVar,
 			};
 			return [effect];
 		},

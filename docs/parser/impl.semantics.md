@@ -142,7 +142,7 @@ export function addExtractVar(s: ohm.Semantics): void  // register extractVar at
 
 ## §2 Effect Types Contract
 
-`effect-types.ts` defines:
+`schema/effects.ts` defines:
 
 ```typescript
 type VarRef = string;

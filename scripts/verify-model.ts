@@ -154,7 +154,7 @@ function checkZoneAlignment(path: string, modelEntry: any) {
 				) && fk === "M_dmg";
 			const isDotRelated =
 				[
-					"dot_damage_increase",
+					"dot_damage_buff",
 					"dot_frequency_increase",
 					"dot_extra_per_tick",
 				].includes(modelEntry.type) && fk === "D_ortho";
@@ -199,12 +199,12 @@ function checkZoneAlignment(path: string, modelEntry: any) {
 		// - self_buff_extra: S_coeff zone but may only have healing_bonus
 		// - per_hit_escalation: M_dmg zone but stat field may route to M_skill
 		// - probability_multiplier: aggregated separately
-		// - guaranteed_resonance: D_res + sigma_R both computed
+		// - guaranteed_crit: D_res + sigma_R both computed
 		// - counter_debuff: reactive — value depends on runtime state
 		// - debuffs: target field determines zone (H_red or M_final)
 		const CONDITIONAL_ZONE_TYPES = new Set([
 			"self_buff", "self_buff_extra", "per_hit_escalation",
-			"probability_multiplier", "guaranteed_resonance", "counter_debuff",
+			"probability_multiplier", "guaranteed_crit", "counter_debuff",
 			"debuff", "conditional_debuff", "cross_slot_debuff",
 		]);
 		if (CONDITIONAL_ZONE_TYPES.has(modelEntry.type)) continue;
@@ -256,7 +256,7 @@ function checkUnmapped(path: string, modelEntry: any) {
 // ---------------------------------------------------------------------------
 
 function checkResonance(path: string, modelEntry: any, sourceEntry: any) {
-	if (modelEntry.type !== "guaranteed_resonance") return;
+	if (modelEntry.type !== "guaranteed_crit") return;
 	if (!modelEntry.factors?.D_res) return;
 
 	const p = (sourceEntry.enhanced_chance ?? 0) / 100;

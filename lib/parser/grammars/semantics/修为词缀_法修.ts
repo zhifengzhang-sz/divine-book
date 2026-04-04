@@ -1,9 +1,9 @@
 import type * as ohm from "ohm-js";
 import type {
-	DamageIncrease,
+	DamageBuff,
 	Effect,
-	FinalDmgBonus,
-	HealingIncrease,
+	FinalDamageMultiplier,
+	HealingBuff,
 	ProbabilityToCertain,
 	RandomBuff,
 } from "../../schema/修为词缀_法修.js";
@@ -16,15 +16,15 @@ export function addSemantics(s: ohm.Semantics): void {
 			return child.toEffects();
 		},
 		fx_changShengTianZe(_pre, varRef, _p) {
-			const effect: HealingIncrease = {
-				type: "healing_increase",
+			const effect: HealingBuff = {
+				type: "healing_buff",
 				value: varRef.extractVar,
 			};
 			return [effect];
 		},
 		fx_mingWangZhiLu(_bst, _s, _hsbcstdzzshjs, varRef, _p) {
-			const effect: FinalDmgBonus = {
-				type: "final_dmg_bonus",
+			const effect: FinalDamageMultiplier = {
+				type: "final_damage_multiplier",
 				value: varRef.extractVar,
 			};
 			return [effect];
@@ -33,8 +33,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			const e1: ProbabilityToCertain = {
 				type: "probability_to_certain",
 			};
-			const e2: DamageIncrease = {
-				type: "damage_increase",
+			const e2: DamageBuff = {
+				type: "damage_buff",
 				value: varRef.extractVar,
 			};
 			return [e1, e2];
@@ -60,7 +60,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				type: "random_buff",
 				attack: v1.extractVar,
 				crit_damage: v2.extractVar,
-				damage_increase: v3.extractVar,
+				damage_buff: v3.extractVar,
 			};
 			return [effect];
 		},

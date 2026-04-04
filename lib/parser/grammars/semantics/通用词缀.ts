@@ -2,7 +2,7 @@ import type * as ohm from "ohm-js";
 
 import type {
 	AllStateDuration,
-	AttackBonus,
+	AttackBuff,
 	BuffStrength,
 	ConditionalDamageControlled,
 	DamageReductionDuringCast,
@@ -11,7 +11,7 @@ import type {
 	Effect,
 	ExecuteConditional,
 	FlatExtraDamage,
-	GuaranteedResonance,
+	GuaranteedCrit,
 	NextSkillBuff,
 	PerEnemyLostHp,
 	PerHitEscalationAffix,
@@ -103,7 +103,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			const effect: ExecuteConditional = {
 				type: "execute_conditional",
 				hp_threshold: threshVar.extractVar,
-				damage_increase: dmgVar.extractVar,
+				damage_buff: dmgVar.extractVar,
 				crit_rate_increase: critVar.extractVar,
 			};
 			return [effect];
@@ -136,7 +136,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				type: "random_buff",
 				attack: v1.extractVar,
 				crit_damage: v2.extractVar,
-				damage_increase: v3.extractVar,
+				damage_buff: v3.extractVar,
 			};
 			return [effect];
 		},
@@ -177,8 +177,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		ty_cuiShan(_bst, _s, _hsbcstts, varRef, _p, _gkldxg) {
-			const effect: AttackBonus = {
-				type: "attack_bonus",
+			const effect: AttackBuff = {
+				type: "attack_buff",
 				value: varRef.extractVar,
 			};
 			return [effect];
@@ -195,8 +195,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef3,
 			_bei2,
 		) {
-			const effect: GuaranteedResonance = {
-				type: "guaranteed_resonance",
+			const effect: GuaranteedCrit = {
+				type: "guaranteed_crit",
 				base_multiplier: varRef1.extractVar,
 				chance: varRef2.extractVar,
 				upgraded_multiplier: varRef3.extractVar,

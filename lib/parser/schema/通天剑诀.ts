@@ -1,7 +1,7 @@
 export type {
 	ConditionalDamage,
-	CritDmgBonus,
-	DamageIncrease,
+	CritDamageBuff,
+	DamageBuff,
 	IgnoreDamageReduction,
 	SelfDamageTakenIncrease,
 	BaseAttack,
@@ -11,12 +11,12 @@ export type {
 import type {
 	BaseAttack,
 	ConditionalDamage,
-	CritDmgBonus,
-	DamageIncrease,
+	CritDamageBuff,
+	DamageBuff,
 	IgnoreDamageReduction,
 	SelfDamageTakenIncrease,
 } from "./effects.js";
 
-export type SkillEffect = BaseAttack | CritDmgBonus | SelfDamageTakenIncrease;
+export type SkillEffect = BaseAttack | CritDamageBuff | SelfDamageTakenIncrease;
 export type PrimaryAffixEffect = ConditionalDamage;
-export type ExclusiveAffixEffect = IgnoreDamageReduction | DamageIncrease;
+export type ExclusiveAffixEffect = IgnoreDamageReduction | DamageBuff;

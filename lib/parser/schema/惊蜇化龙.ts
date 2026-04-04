@@ -1,5 +1,5 @@
 export type {
-	DamageIncrease,
+	DamageBuff,
 	PerDebuffStackTrueDamage,
 	PercentMaxHpAffix,
 	SelfBuff,
@@ -11,4 +11,4 @@ export type {
 
 import type { SelfLostHpDamage } from "./effects.js";
 
-export type SelfLostHpDamageIncrease = SelfLostHpDamage;
+export type SelfLostHpDamageBuff = SelfLostHpDamage;

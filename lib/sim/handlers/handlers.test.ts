@@ -102,7 +102,7 @@ describe("self_buff", () => {
 	test("produces APPLY_STATE with buff kind", () => {
 		const effect: EffectWithMeta = {
 			type: "self_buff",
-			attack_bonus: 70,
+			attack_buff: 70,
 			defense_bonus: 70,
 			duration: 12,
 			name: "仙佑",
@@ -253,10 +253,10 @@ describe("per_hit_escalation", () => {
 	});
 });
 
-describe("guaranteed_resonance", () => {
+describe("guaranteed_crit", () => {
 	test("produces spDamage", () => {
 		const effect: EffectWithMeta = {
-			type: "guaranteed_resonance",
+			type: "guaranteed_crit",
 			base_multiplier: 1.2,
 			chance: 25,
 			upgraded_multiplier: 1.5,
@@ -284,17 +284,17 @@ describe("probability_multiplier", () => {
 	});
 });
 
-describe("damage_increase", () => {
+describe("damage_buff", () => {
 	test("produces M_dmg zone", () => {
-		const effect: EffectWithMeta = { type: "damage_increase", value: 36 };
+		const effect: EffectWithMeta = { type: "damage_buff", value: 36 };
 		const result = resolve(effect, makeCtx());
 		expect(result?.zones?.M_dmg).toBe(0.36);
 	});
 });
 
-describe("skill_damage_increase_affix", () => {
+describe("skill_damage_buff", () => {
 	test("produces M_skill zone", () => {
-		const effect = { type: "skill_damage_increase_affix", value: 555 } as unknown as EffectWithMeta;
+		const effect = { type: "skill_damage_buff", value: 555 } as unknown as EffectWithMeta;
 		const result = resolve(effect, makeCtx());
 		expect(result?.zones?.M_skill).toBe(5.55);
 	});

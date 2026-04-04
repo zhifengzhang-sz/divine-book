@@ -1,7 +1,7 @@
 export type {
-	DamageIncrease,
-	FinalDmgBonus,
-	HealingIncrease,
+	DamageBuff,
+	FinalDamageMultiplier,
+	HealingBuff,
 	ProbabilityToCertain,
 	RandomBuff,
 	Effect,

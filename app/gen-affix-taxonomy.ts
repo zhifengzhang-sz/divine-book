@@ -180,17 +180,17 @@ function classifyAffix(
 	// Category 1: passive multipliers — everything that modifies output
 	// unconditionally (and isn't already in another category)
 	if (
-		types.has("damage_increase") ||
-		types.has("skill_damage_increase") ||
-		types.has("attack_bonus") ||
-		types.has("crit_damage_bonus") ||
+		types.has("damage_buff") ||
+		types.has("skill_damage_buff") ||
+		types.has("attack_buff") ||
+		types.has("crit_damage_buff") ||
 		types.has("buff_strength") ||
 		types.has("debuff_strength") ||
-		types.has("dot_damage_increase") ||
+		types.has("dot_damage_buff") ||
 		types.has("dot_frequency_increase") ||
 		types.has("dot_extra_per_tick") ||
-		types.has("final_damage_bonus") ||
-		types.has("healing_increase") ||
+		types.has("final_damage_multiplier") ||
+		types.has("healing_buff") ||
 		types.has("shield_value_increase") ||
 		types.has("shield_strength") ||
 		types.has("summon_buff") ||

@@ -75,10 +75,10 @@ const ARCHETYPE_RULES: Record<string, (b: BookDoc) => boolean> = {
 
 const AFFIX_SYNERGY: Record<string, string[]> = {
 	"per_hit_escalation": ["multi-hit-burst"],
-	"guaranteed_resonance": ["multi-hit-burst"],
+	"guaranteed_crit": ["multi-hit-burst"],
 	"flat_extra_damage": ["multi-hit-burst"],
 	"dot_extra_per_tick": ["dot-attrition"],
-	"dot_damage_increase": ["dot-attrition"],
+	"dot_damage_buff": ["dot-attrition"],
 	"dot_frequency_increase": ["dot-attrition"],
 	"debuff_strength": ["dot-attrition", "debuff-engine"],
 	"all_state_duration": ["dot-attrition", "buff-stacker", "counter-reactive"],
@@ -92,11 +92,11 @@ const AFFIX_SYNERGY: Record<string, string[]> = {
 	"conditional_damage_debuff": ["debuff-engine"],
 	"per_enemy_lost_hp": ["debuff-engine", "dot-attrition"],
 	"execute_conditional": ["multi-hit-burst", "debuff-engine"],
-	"damage_increase": ["multi-hit-burst", "self-destruct"],
-	"attack_bonus": ["multi-hit-burst"],
+	"damage_buff": ["multi-hit-burst", "self-destruct"],
+	"attack_buff": ["multi-hit-burst"],
 	"triple_bonus": ["multi-hit-burst"],
-	"final_dmg_bonus": ["buff-stacker"],
-	"healing_increase": ["healer"],
+	"final_damage_multiplier": ["buff-stacker"],
+	"healing_buff": ["healer"],
 	"healing_to_damage": ["healer"],
 	"random_buff": ["multi-hit-burst", "buff-stacker"],
 	"next_skill_buff": ["multi-hit-burst", "delayed-burst"],
@@ -106,12 +106,12 @@ const AFFIX_SYNERGY: Record<string, string[]> = {
 };
 
 const AFFIX_CATEGORIES: Record<string, string[]> = {
-	"伤害增幅": ["damage_increase", "flat_extra_damage", "attack_bonus", "crit_dmg_bonus", "final_dmg_bonus", "triple_bonus", "skill_damage_increase_affix"],
+	"伤害增幅": ["damage_buff", "flat_extra_damage", "attack_buff", "crit_damage_buff", "final_damage_multiplier", "triple_bonus", "skill_damage_buff"],
 	"条件增伤": ["conditional_damage_controlled", "conditional_damage_debuff", "execute_conditional", "per_self_lost_hp", "per_enemy_lost_hp", "conditional_stat_scaling", "min_lost_hp_threshold"],
-	"递增/暴击": ["per_hit_escalation", "guaranteed_resonance", "probability_to_certain", "random_buff", "probability_multiplier"],
+	"递增/暴击": ["per_hit_escalation", "guaranteed_crit", "probability_to_certain", "random_buff", "probability_multiplier"],
 	"状态强化": ["buff_strength", "debuff_strength", "all_state_duration", "buff_duration", "buff_stack_increase", "debuff_stack_increase", "debuff_stack_chance", "next_skill_buff"],
-	"持续伤害": ["dot_extra_per_tick", "dot_damage_increase", "dot_frequency_increase"],
-	"生存防御": ["damage_reduction_during_cast", "shield_value_increase", "damage_to_shield", "healing_increase", "self_damage_taken_increase"],
+	"持续伤害": ["dot_extra_per_tick", "dot_damage_buff", "dot_frequency_increase"],
+	"生存防御": ["damage_reduction_during_cast", "shield_value_increase", "damage_to_shield", "healing_buff", "self_damage_taken_increase"],
 	"治疗压制": ["heal_reduction", "healing_to_damage"],
 	"驱散/穿透": ["periodic_dispel", "ignore_damage_reduction"],
 };

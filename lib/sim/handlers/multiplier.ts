@@ -1,27 +1,27 @@
 /**
- * Multiplier handlers: probability_multiplier, damage_increase, skill_damage_increase,
- * attack_bonus, crit_damage_bonus, ignore_damage_reduction, buff_strength,
- * dot_damage_increase, dot_frequency_increase, dot_extra_per_tick,
+ * Multiplier handlers: probability_multiplier, damage_buff, skill_damage_buff,
+ * attack_buff, crit_damage_bonus, ignore_damage_reduction, buff_strength,
+ * dot_damage_buff, dot_frequency_increase, dot_extra_per_tick,
  * enlightenment_bonus, periodic_escalation
  */
 
 import type { ProbabilityMultiplier } from "../../parser/schema/解体化形.js";
 import type {
-	DamageIncrease,
+	DamageBuff,
 	IgnoreDamageReduction,
 } from "../../parser/schema/通天剑诀.js";
 import type {
 	BuffStrength,
-	AttackBonus,
+	AttackBuff,
 } from "../../parser/schema/通用词缀.js";
-import type { DotDamageIncrease } from "../../parser/schema/大罗幻诀.js";
+import type { DotDamageBuff } from "../../parser/schema/大罗幻诀.js";
 import type { DotFrequencyIncrease } from "../../parser/schema/梵圣真魔咒.js";
 import type { DotExtraPerTick } from "../../parser/schema/皓月剑诀.js";
 import type { PeriodicEscalation } from "../../parser/schema/念剑诀.js";
 import type {
-	CritDmgBonus,
+	CritDamageBuff,
 	EnlightenmentBonus,
-	SkillDamageIncreaseAffix,
+	SkillDamageBuff,
 } from "../../parser/schema/effects.js";
 import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
@@ -46,30 +46,30 @@ register<Resolved<ProbabilityMultiplier>>("probability_multiplier", (effect, ctx
 	return { zones: { M_synchro: mult } };
 });
 
-// damage_increase: { value }
+// damage_buff: { value }
 // Additive contribution to the M_dmg zone.
-register<Resolved<DamageIncrease>>("damage_increase", (effect) => ({
+register<Resolved<DamageBuff>>("damage_buff", (effect) => ({
 	zones: { M_dmg: effect.value / 100 },
 }));
 
-// skill_damage_increase_affix — schema: lib/parser/schema/effects.ts (SkillDamageIncreaseAffix)
+// skill_damage_buff — schema: lib/parser/schema/effects.ts (SkillDamageBuff)
 // Additive contribution to the M_skill zone.
-register<SkillDamageIncreaseAffix>("skill_damage_increase_affix", (effect) => ({
+register<SkillDamageBuff>("skill_damage_buff", (effect) => ({
 	zones: { M_skill: (effect.value as number) / 100 },
 }));
 
-// attack_bonus: { value }
+// attack_buff: { value }
 // ATK scaling zone (S_coeff in combat.md §2.1).
 // Cast-scoped: multiplies ATK within the damage chain for this cast.
 // NOT a persistent state — it's a zone like M_dmg or M_skill.
-register<Resolved<AttackBonus>>("attack_bonus", (effect) => ({
+register<Resolved<AttackBuff>>("attack_buff", (effect) => ({
 	zones: { S_coeff: effect.value / 100 },
 }));
 
 // crit_damage_bonus: { value }
 // Additive M_dmg zone bonus (crit damage modeled as damage increase).
-// Untyped: type string mismatch (schema type is "crit_dmg_bonus")
-register<CritDmgBonus>("crit_dmg_bonus", (effect) => ({
+// Untyped: type string mismatch (schema type is "crit_damage_buff")
+register<CritDamageBuff>("crit_damage_buff", (effect) => ({
 	zones: { M_dmg: (effect.value as number) / 100 },
 }));
 
@@ -88,9 +88,9 @@ register<Resolved<BuffStrength>>("buff_strength", (effect) => ({
 	zones: { M_dmg: effect.value / 100 },
 }));
 
-// dot_damage_increase: { value }
+// dot_damage_buff: { value }
 // Increases DoT damage. Modeled as M_dmg zone.
-register<Resolved<DotDamageIncrease>>("dot_damage_increase", (effect) => ({
+register<Resolved<DotDamageBuff>>("dot_damage_buff", (effect) => ({
 	zones: { M_dmg: effect.value / 100 },
 }));
 
@@ -106,9 +106,9 @@ register<Resolved<DotExtraPerTick>>("dot_extra_per_tick", (effect, ctx) => ({
 	flatExtra: (effect.value / 100) * ctx.atk,
 }));
 
-// enlightenment_bonus: { value, damage_increase }
+// enlightenment_bonus: { value, damage_buff }
 // Bonus based on enlightenment level. Treat as damage increase.
-// Untyped: handler reads `damage_increase`, schema (玉书天戈符.EnlightenmentBonus) has `value`
+// Untyped: handler reads `damage_buff`, schema (玉书天戈符.EnlightenmentBonus) has `value`
 register<EnlightenmentBonus>("enlightenment_bonus", (effect) => ({
 	zones: { M_dmg: ((effect.value as number) ?? 0) / 100 },
 }));

@@ -42,7 +42,7 @@ const VALUE_FIELDS = [
   "hits",
   "interval",
   "stun_duration",
-  "damage_increase",
+  "damage_buff",
   "damage_taken_reduction_to",
   "shields_per_hit",
   "percent_max_hp",

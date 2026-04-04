@@ -3,8 +3,8 @@ import type * as ohm from "ohm-js";
 import type {
 	BaseAttack,
 	ConditionalDamage,
-	CritDmgBonus,
-	DamageIncrease,
+	CritDamageBuff,
+	DamageBuff,
 	Effect,
 	ExclusiveAffixEffect,
 	IgnoreDamageReduction,
@@ -36,7 +36,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			return [effect];
 		},
 		critDmgBonus(_sbst, varRef, _pct) {
-			const effect: CritDmgBonus = { type: "crit_dmg_bonus", value: varRef.extractVar };
+			const effect: CritDamageBuff = { type: "crit_damage_buff", value: varRef.extractVar };
 			return [effect];
 		},
 		selfDmgTakenIncrease(_sfhzs, durVar, _mnsdsh, dmgVar, _pct) {
@@ -58,7 +58,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		},
 		exclusiveAffix(_sbst, _sep, _bts, varRef, _pct, _sh) {
 			const e1: IgnoreDamageReduction = { type: "ignore_damage_reduction" };
-			const e2: DamageIncrease = { type: "damage_increase", value: varRef.extractVar };
+			const e2: DamageBuff = { type: "damage_buff", value: varRef.extractVar };
 			return [e1, e2];
 		},
 		preamble(_) {

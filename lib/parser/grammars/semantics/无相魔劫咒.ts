@@ -94,8 +94,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			) {
 				const bodyFields = stateBody.toEffects()[0] as {
 					heal_reduction: string | number;
-					damage_increase: string | number;
-					enhanced_damage_increase: string | number;
+					damage_buff: string | number;
+					enhanced_damage_buff: string | number;
 				};
 				const effect: Debuff = {
 					type: "debuff",
@@ -124,8 +124,8 @@ export function addSemantics(s: ohm.Semantics): void {
 				return [
 					{
 						heal_reduction: healRedVar.extractVar,
-						damage_increase: dmgIncVar.extractVar,
-						enhanced_damage_increase: enhancedVar.extractVar,
+						damage_buff: dmgIncVar.extractVar,
+						enhanced_damage_buff: enhancedVar.extractVar,
 					},
 				];
 			},

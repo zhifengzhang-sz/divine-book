@@ -2,7 +2,7 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DamageIncrease,
+	DamageBuff,
 	Effect,
 	PeriodicCleanse,
 	SelfBuff,
@@ -89,7 +89,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		stateBuffBody(_cxqjts, varRef, _p, _dgklyshjm) {
 			const effect: SelfBuff = {
 				type: "self_buff",
-				attack_bonus: varRef.extractVar,
+				attack_buff: varRef.extractVar,
 				damage_reduction: varRef.extractVar,
 			};
 			return [effect];
@@ -137,8 +137,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef2,
 			_p2,
 		) {
-			const dmgEffect: DamageIncrease = {
-				type: "damage_increase",
+			const dmgEffect: DamageBuff = {
+				type: "damage_buff",
 				value: varRef1.extractVar,
 			};
 			const takenEffect: SelfDamageTakenIncrease = {

@@ -98,9 +98,23 @@ strong {
 # Effect Catalog — Grammar Rule to Handler Contract
 
 Extracted from semantic files (the actual `{ type: "...", ... }` objects returned).
-Cross-referenced against `lib/parser/grammars/effect-types.ts` and raw data.
+Cross-referenced against `lib/parser/grammars/schema/effects.ts` and raw data.
 
 **Source of truth**: this document. Both `effects.ts` (the contract) and handlers must conform to it.
+
+---
+
+## Naming Convention
+
+Effect type names follow Chinese game text conventions:
+
+| Chinese term | Meaning | Suffix | Example |
+|---|---|---|---|
+| 加成 | buff (additive within zone) | `*_buff` | `damage_buff`, `attack_buff` |
+| 加深 | multiplier (multiplicative, separate zone) | `*_multiplier` | `final_damage_multiplier` |
+| 提升/提高/上升 | same as 加成 | `*_buff` | `healing_buff`, `crit_damage_buff` |
+
+`effects.ts` is the source of truth for all type names. See `docs/parser/workflow.md` S1 for the data pipeline.
 
 ---
 
@@ -288,10 +302,10 @@ Multiple books. Stat buff on self.
 | Field | Type | Source |
 |-------|------|--------|
 | name? | string | state context |
-| attack_bonus? | V | 十方真魄, 甲元仙符 |
-| damage_increase? | V | 元磁神光 |
-| skill_damage_increase? | V | 惊蜇化龙 |
-| final_damage_bonus? | V | 浩然星灵诀 |
+| attack_buff? | V | 十方真魄, 甲元仙符 |
+| damage_buff? | V | 元磁神光 |
+| skill_damage_buff? | V | 惊蜇化龙 |
+| final_damage_multiplier? | V | 浩然星灵诀 |
 | damage_reduction? | V | 天魔降临咒, 十方真魄 |
 | crit_rate? | V | 九重天凤诀 |
 | healing_bonus? | V | 甲元仙符, 天刹真魔 |
@@ -316,8 +330,8 @@ Multiple books. Stat buff on self.
 | sequenced? | boolean | 新青元剑诀 |
 | trigger? | string | 天刹真魔: "on_hit" |
 | heal_reduction? | V | 无相魔劫咒 |
-| damage_increase? | V | 无相魔劫咒 |
-| enhanced_damage_increase? | V | 无相魔劫咒 |
+| damage_buff? | V | 无相魔劫咒 |
+| enhanced_damage_buff? | V | 无相魔劫咒 |
 
 ---
 
@@ -364,7 +378,7 @@ Multiple books. Stat buff on self.
 | trigger? | "on_cast" | |
 | damage_taken_multiplier? | V | |
 
-### crit_dmg_bonus
+### crit_damage_buff
 通天剑诀. "暴击伤害提高V%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -455,7 +469,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 | Field | Type | Source |
 |-------|------|--------|
 | hp_threshold | V | "N%" |
-| damage_increase | V | "x%" |
+| damage_buff | V | "x%" |
 | crit_rate_increase? | V | 通用: "暴击率提升y%" |
 | guaranteed_crit? | number | 修为_魔修: lit 1 |
 
@@ -496,7 +510,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 |-------|------|--------|
 | value | V | "x%" |
 
-### attack_bonus
+### attack_buff
 通用 摧山, 修为_剑修, 元磁神光 primary, 解体化形 primary. "攻击力提升x%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -506,7 +520,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 | max_stacks? | V | 解体化形 |
 | timing? | string | 解体化形: "pre_cast" |
 
-### guaranteed_resonance
+### guaranteed_crit
 通用 通明, 修为_剑修. "必定会心造成x倍伤害"
 | Field | Type | Source |
 |-------|------|--------|
@@ -522,17 +536,17 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 修为_剑修. "攻击力x%、伤害提升y%、致命伤害z%"
 | Field | Type | Source |
 |-------|------|--------|
-| attack_bonus | V | "x%" |
-| damage_increase | V | "y%" |
-| crit_damage_increase | V | "z%" |
+| attack_buff | V | "x%" |
+| damage_buff | V | "y%" |
+| crit_damage_buff | V | "z%" |
 
-### healing_increase
+### healing_buff
 修为_法修. "治疗量提升x%"
 | Field | Type | Source |
 |-------|------|--------|
 | value | V | "x%" |
 
-### final_dmg_bonus
+### final_damage_multiplier
 修为_法修. "最终伤害提升x%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -544,7 +558,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 |-------|------|--------|
 | (no fields) | | |
 
-### damage_increase
+### damage_buff
 通天剑诀, 皓月剑诀, 玉书天戈符, 十方真魄, 惊蜇化龙, 修为_法修. "伤害提升x%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -576,7 +590,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 | Field | Type | Source |
 |-------|------|--------|
 | min_percent | V | "x%" |
-| damage_increase | V | "y%" |
+| damage_buff | V | "y%" |
 
 ---
 
@@ -587,7 +601,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 | Field | Type | Source |
 |-------|------|--------|
 | damage_taken_reduction_to | V | |
-| damage_increase | V | |
+| damage_buff | V | |
 
 ### shield_destroy_dot
 皓月剑诀. "护盾销毁持续伤害"
@@ -786,7 +800,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 | chance_3x | V | 3x chance |
 | chance_2x | V | 2x chance |
 
-### dot_damage_increase
+### dot_damage_buff
 大罗幻诀. "持续伤害提升x%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -822,7 +836,7 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 |-------|------|--------|
 | (no fields) | | |
 
-### skill_damage_increase_affix
+### skill_damage_buff
 无极御剑诀. "神通伤害提升x%"
 | Field | Type | Source |
 |-------|------|--------|
@@ -858,16 +872,14 @@ Also: 千锋聚灵剑 book form (different fields -- see note)
 |-------------------|------------------|--------|
 | `untargetable_state` | `untargetable` | handler changes |
 | `on_buff_debuff_shield_trigger` | `on_buff_debuff_shield` | handler changes |
-| `final_damage_bonus` | `final_dmg_bonus` | handler changes |
-| `crit_damage_bonus` | `crit_dmg_bonus` | handler changes |
-| `skill_damage_increase` | `skill_damage_increase_affix` | handler changes |
+| `crit_damage_bonus` | `crit_damage_buff` | handler changes |
 
 ### Handler field name mismatches (handler reads vs semantic produces)
 | Handler | Handler reads | Semantic produces | Action |
 |---------|--------------|-------------------|--------|
 | `buff_steal` | `count` | `value` | handler changes |
 | `on_shield_expire` | `damage_percent_of_shield` | `value` | handler changes |
-| `enlightenment_bonus` | `damage_increase` | `value` | handler changes |
+| `enlightenment_bonus` | `damage_buff` | `value` | handler changes |
 | `periodic_cleanse` | `interval`, `max_triggers` | `cooldown`, `max_times` | handler changes |
 | `random_buff` | `crit_damage`, `damage` | only `attack` | handler changes |
 | `delayed_burst` | `burst_base` | `burst_damage` + `burst_atk_damage` | handler changes |

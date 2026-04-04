@@ -1,5 +1,5 @@
 export type {
-	DamageIncrease,
+	DamageBuff,
 	PeriodicCleanse,
 	SelfBuff,
 	SelfBuffExtend,

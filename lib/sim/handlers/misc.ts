@@ -17,7 +17,7 @@ import type {
 	RandomBuff as SchemaRandomBuff,
 } from "../../parser/schema/通用词缀.js";
 import type { TripleBonus } from "../../parser/schema/修为词缀_剑修.js";
-import type { HealingIncrease } from "../../parser/schema/修为词缀_法修.js";
+import type { HealingBuff } from "../../parser/schema/修为词缀_法修.js";
 import type {
 	HealingToDamage,
 	DamageToShield,
@@ -29,7 +29,7 @@ import type {
 	DelayedBurst,
 	DelayedBurstIncrease,
 	ExtendedDot,
-	FinalDmgBonus,
+	FinalDamageMultiplier,
 	OnBuffDebuffShield,
 	OnDispel,
 	OnShieldExpire,
@@ -90,10 +90,10 @@ register<Resolved<Summon>>("summon", (effect) => {
 	};
 });
 
-// summon_buff: { damage_taken_reduction_to, damage_increase, parent }
+// summon_buff: { damage_taken_reduction_to, damage_buff, parent }
 // Buffs the summon's damage output. Stored as state for player machine to read.
 register<Resolved<SummonBuff>>("summon_buff", (effect) => {
-	const damageIncrease = effect.damage_increase ?? 0;
+	const damageIncrease = effect.damage_buff ?? 0;
 	return {
 		intents: [
 			{
@@ -148,35 +148,35 @@ register<Resolved<DebuffStrength>>("debuff_strength", (effect) => ({
 	zones: { M_dmg: effect.value / 100 },
 }));
 
-// execute_conditional: { hp_threshold, damage_increase, crit_rate_increase }
+// execute_conditional: { hp_threshold, damage_buff, crit_rate_increase }
 // Bonus damage when target HP below threshold. Assume active.
 register<Resolved<ExecuteConditional>>("execute_conditional", (effect) => ({
-	zones: { M_dmg: (effect.damage_increase ?? 0) / 100 },
+	zones: { M_dmg: (effect.damage_buff ?? 0) / 100 },
 }));
 
 // shield_value_increase: { value }
 // Increases shield value. Modeled as M_dmg zone (indirect survivability).
 register<Resolved<ShieldValueIncrease>>("shield_value_increase", () => ({}));
 
-// triple_bonus: { attack_bonus, damage_increase, crit_damage_increase }
+// triple_bonus: { attack_buff, damage_buff, crit_damage_buff }
 // Grants all three bonuses simultaneously.
 register<Resolved<TripleBonus>>("triple_bonus", (effect) => ({
 	zones: {
-		S_coeff: (effect.attack_bonus ?? 0) / 100,
+		S_coeff: (effect.attack_buff ?? 0) / 100,
 		M_dmg:
-			(effect.damage_increase ?? 0) / 100 +
-			(effect.crit_damage_increase ?? 0) / 100,
+			(effect.damage_buff ?? 0) / 100 +
+			(effect.crit_damage_buff ?? 0) / 100,
 	},
 }));
 
-// healing_increase: { value }
+// healing_buff: { value }
 // Increases healing received. Applied as self buff.
-register<Resolved<HealingIncrease>>("healing_increase", (effect) => ({
+register<Resolved<HealingBuff>>("healing_buff", (effect) => ({
 	intents: [
 		{
 			type: "APPLY_STATE" as const,
 			state: {
-				name: "healing_increase",
+				name: "healing_buff",
 				kind: "buff" as const,
 				source: "",
 				target: "self" as const,
@@ -219,7 +219,7 @@ register<Resolved<RandomDebuff>>("random_debuff", (effect, ctx) => {
 	const options = [
 		{
 			name: "random_debuff_atk",
-			stat: "attack_bonus",
+			stat: "attack_buff",
 			value: -effect.attack,
 		},
 		{
@@ -255,10 +255,10 @@ register<Resolved<RandomDebuff>>("random_debuff", (effect, ctx) => {
 	};
 });
 
-// min_lost_hp_threshold: { min_percent, damage_increase }
+// min_lost_hp_threshold: { min_percent, damage_buff }
 // Ensures minimum lost HP% for damage scaling. Grants damage bonus.
 register<Resolved<MinLostHpThreshold>>("min_lost_hp_threshold", (effect) => ({
-	zones: { M_dmg: (effect.damage_increase ?? 0) / 100 },
+	zones: { M_dmg: (effect.damage_buff ?? 0) / 100 },
 }));
 
 // ── Untyped handlers (no matching schema or field mismatches) ────────
@@ -462,15 +462,15 @@ register<ShieldDestroyDot>("shield_destroy_dot", (effect, _ctx) => {
 	};
 });
 
-// final_dmg_bonus: final damage multiplier
-register<FinalDmgBonus>("final_dmg_bonus", (effect) => ({
+// final_damage_multiplier: final damage multiplier
+register<FinalDamageMultiplier>("final_damage_multiplier", (effect) => ({
 	zones: { M_final: (effect.value as number) / 100 },
 }));
 
-// probability_to_certain: handler reads `damage_increase`, not in schema (修为词缀_法修.ProbabilityToCertain)
+// probability_to_certain: handler reads `damage_buff`, not in schema (修为词缀_法修.ProbabilityToCertain)
 register<ProbabilityToCertain>("probability_to_certain", (effect) => ({
 	forceSynchroMax: true,
-	zones: { M_dmg: ((effect.damage_increase as number) ?? 0) / 100 },
+	zones: { M_dmg: ((effect.damage_buff as number) ?? 0) / 100 },
 }));
 
 // ── Newly added handlers to close coverage gaps ──────────────────
@@ -489,7 +489,7 @@ register("per_stolen_buff_debuff", (effect) => {
 				kind: "debuff" as const,
 				source: "",
 				target: "opponent" as const,
-				effects: [{ stat: "attack_bonus", value: -value }],
+				effects: [{ stat: "attack_buff", value: -value }],
 				remainingDuration: duration,
 				stacks: 1,
 				maxStacks: 999,

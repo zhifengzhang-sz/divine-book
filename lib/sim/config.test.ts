@@ -71,7 +71,7 @@ describe("selectTiers", () => {
 	});
 
 	test("effects without data_state always match", () => {
-		const effects: EffectWithMeta[] = [{ type: "damage_increase", value: 40 }];
+		const effects: EffectWithMeta[] = [{ type: "damage_buff", value: 40 }];
 		const selected = selectTiers(effects, { enlightenment: 0, fusion: 0 });
 		expect(selected).toHaveLength(1);
 		expect(selected[0].value).toBe(40);

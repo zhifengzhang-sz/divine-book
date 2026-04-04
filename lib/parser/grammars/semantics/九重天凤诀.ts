@@ -74,7 +74,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		stateBody(_cxqjtszs, varRef, _p, _dgklybkl, _sep, _cx, durVar, _m) {
 			const effect: SelfBuff = {
 				type: "self_buff",
-				attack_bonus: varRef.extractVar,
+				attack_buff: varRef.extractVar,
 				crit_rate: varRef.extractVar,
 				duration: durVar.extractVar,
 			};

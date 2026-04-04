@@ -177,7 +177,7 @@ const compound_皓月剑诀: ExclusiveParser = (cell) =>
 			type: "conditional_buff",
 			condition: "enlightenment_10",
 			percent_max_hp_increase: v.y,
-			damage_increase: v.z,
+			damage_buff: v.z,
 			...ds(d),
 		} as unknown as EffectWithMeta,
 	]);
@@ -245,7 +245,7 @@ const compound_惊蜇化龙: ExclusiveParser = (cell) =>
 			type: "conditional_buff",
 			condition: "enlightenment_max",
 			percent_lost_hp_increase: v.z,
-			damage_increase: v.w,
+			damage_buff: v.w,
 			...ds(d),
 		} as unknown as EffectWithMeta,
 	]);
@@ -253,7 +253,7 @@ const compound_惊蜇化龙: ExclusiveParser = (cell) =>
 const compound_通天剑诀: ExclusiveParser = (cell) =>
 	multiTierEffects(cell, (v, d) => [
 		{ type: "ignore_damage_reduction", ...ds(d) } as unknown as EffectWithMeta,
-		{ type: "damage_increase", value: v.x, ...ds(d) } as unknown as EffectWithMeta,
+		{ type: "damage_buff", value: v.x, ...ds(d) } as unknown as EffectWithMeta,
 	]);
 
 // ── Parser assignment table ────────────────────────────────────

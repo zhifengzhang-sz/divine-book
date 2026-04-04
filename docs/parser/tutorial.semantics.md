@@ -270,7 +270,7 @@ s.addAttribute("extractVar", {
 Every semantic action returns `Effect[]` where `Effect` is a discriminated union:
 
 ```typescript
-// From effect-types.ts
+// From schema/effects.ts
 interface BaseAttack {
   type: "base_attack";
   hits: number;       // parsed from Chinese numeral (六 → 6)

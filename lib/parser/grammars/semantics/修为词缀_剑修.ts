@@ -1,8 +1,8 @@
 import type * as ohm from "ohm-js";
 import type {
-	AttackBonus,
+	AttackBuff,
 	Effect,
-	GuaranteedResonance,
+	GuaranteedCrit,
 	PerHitEscalationAffix,
 	TripleBonus,
 } from "../../schema/修为词缀_剑修.js";
@@ -15,8 +15,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			return child.toEffects();
 		},
 		jx_cuiYunZheYue(_pre, varRef, _p, _gkldxg) {
-			const effect: AttackBonus = {
-				type: "attack_bonus",
+			const effect: AttackBuff = {
+				type: "attack_buff",
 				value: varRef.extractVar,
 			};
 			return [effect];
@@ -33,8 +33,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			varRef3,
 			_bei2,
 		) {
-			const effect: GuaranteedResonance = {
-				type: "guaranteed_resonance",
+			const effect: GuaranteedCrit = {
+				type: "guaranteed_crit",
 				base_multiplier: varRef1.extractVar,
 				chance: varRef2.extractVar,
 				upgraded_multiplier: varRef3.extractVar,
@@ -59,9 +59,9 @@ export function addSemantics(s: ohm.Semantics): void {
 		) {
 			const effect: TripleBonus = {
 				type: "triple_bonus",
-				attack_bonus: varRef1.extractVar,
-				damage_increase: varRef2.extractVar,
-				crit_damage_increase: varRef3.extractVar,
+				attack_buff: varRef1.extractVar,
+				damage_buff: varRef2.extractVar,
+				crit_damage_buff: varRef3.extractVar,
 			};
 			return [effect];
 		},

@@ -1,6 +1,6 @@
 export type {
 	ConditionalStatScaling,
-	DamageIncrease,
+	DamageBuff,
 	EnlightenmentBonus,
 	PercentMaxHpDamage,
 	BaseAttack,

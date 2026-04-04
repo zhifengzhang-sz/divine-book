@@ -219,7 +219,7 @@ describe("State management", () => {
 				kind: "buff",
 				source: "甲元仙符",
 				target: "self",
-				effects: [{ stat: "attack_bonus", value: 70 }],
+				effects: [{ stat: "attack_buff", value: 70 }],
 				remainingDuration: 12,
 				stacks: 1,
 				maxStacks: 1,

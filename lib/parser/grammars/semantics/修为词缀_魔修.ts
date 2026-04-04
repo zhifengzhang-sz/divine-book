@@ -38,7 +38,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			const effect: ExecuteConditional = {
 				type: "execute_conditional",
 				hp_threshold: threshVar.extractVar,
-				damage_increase: dmgVar.extractVar,
+				damage_buff: dmgVar.extractVar,
 				guaranteed_crit: 1,
 			};
 			return [effect];

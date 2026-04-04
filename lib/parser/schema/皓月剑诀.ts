@@ -1,5 +1,5 @@
 export type {
-	DamageIncrease,
+	DamageBuff,
 	DotExtraPerTick,
 	NoShieldDoubleDamage,
 	PercentMaxHpBoost,
@@ -13,7 +13,7 @@ export type {
 
 import type {
 	BaseAttack,
-	DamageIncrease,
+	DamageBuff,
 	DotExtraPerTick,
 	NoShieldDoubleDamage,
 	PercentMaxHpBoost,
@@ -24,4 +24,4 @@ import type {
 
 export type SkillEffect = BaseAttack | StateRef | ShieldDestroyDamage | NoShieldDoubleDamage;
 export type PrimaryAffixEffect = ShieldDestroyDot;
-export type ExclusiveAffixEffect = DotExtraPerTick | PercentMaxHpBoost | DamageIncrease;
+export type ExclusiveAffixEffect = DotExtraPerTick | PercentMaxHpBoost | DamageBuff;

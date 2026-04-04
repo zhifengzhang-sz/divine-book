@@ -3,7 +3,7 @@ import type * as ohm from "ohm-js";
 import type {
 	BaseAttack,
 	ConditionalStatScaling,
-	DamageIncrease,
+	DamageBuff,
 	Effect,
 	EnlightenmentBonus,
 	PercentMaxHpDamage,
@@ -58,7 +58,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		},
 		exclusiveAffix(_sbstdwjdjjia, varRef1, _lp, maxVar, _rp, _sep, _bsbstzcdshts, varRef2, _pct) {
 			const enlightenment: EnlightenmentBonus = { type: "enlightenment_bonus", value: varRef1.extractVar, max: maxVar.extractVar };
-			const dmgIncrease: DamageIncrease = { type: "damage_increase", value: varRef2.extractVar };
+			const dmgIncrease: DamageBuff = { type: "damage_buff", value: varRef2.extractVar };
 			return [enlightenment, dmgIncrease];
 		},
 		preamble(_) {

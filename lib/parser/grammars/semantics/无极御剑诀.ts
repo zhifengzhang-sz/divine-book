@@ -2,12 +2,12 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DamageIncrease,
+	DamageBuff,
 	Effect,
 	ExclusiveAffixEffect,
 	PercentCurrentHpDamage,
 	PrimaryAffixEffect,
-	SkillDamageIncreaseAffix,
+	SkillDamageBuff,
 	SkillEffect,
 } from "../../schema/无极御剑诀.js";
 import { addExtractVar, parseCn } from "./shared.js";
@@ -25,8 +25,8 @@ export function addSemantics(s: ohm.Semantics): void {
 			return boost.toEffects();
 		},
 		percentMaxHpBonus(_fjmb, varRef, _pct) {
-			const effect: DamageIncrease = {
-				type: "damage_increase",
+			const effect: DamageBuff = {
+				type: "damage_buff",
 				value: varRef.extractVar,
 			};
 			return [effect];
@@ -59,7 +59,7 @@ export function addSemantics(s: ohm.Semantics): void {
 			_pct2,
 			_stshjm,
 		) {
-			const e1: SkillDamageIncreaseAffix = { type: "skill_damage_increase_affix", value: varRef1.extractVar };
+			const e1: SkillDamageBuff = { type: "skill_damage_buff", value: varRef1.extractVar };
 			const e2 = {
 				type: "self_buff" as const,
 				damage_reduction_multiplier: varRef2.extractVar,

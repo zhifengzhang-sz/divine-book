@@ -2,7 +2,7 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DamageIncrease,
+	DamageBuff,
 	Effect,
 	PerDebuffStackTrueDamage,
 	PercentMaxHpAffix,
@@ -67,7 +67,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		skillDmgBuff(_tszs, varRef, _p, _stshjs) {
 			const effect: SelfBuff = {
 				type: "self_buff",
-				skill_damage_increase: varRef.extractVar,
+				skill_damage_buff: varRef.extractVar,
 			};
 			return [effect];
 		},
@@ -137,7 +137,7 @@ export function addSemantics(s: ohm.Semantics): void {
 				requires_enlightenment: true,
 			};
 			const dmgEffect = {
-				type: "damage_increase" as const,
+				type: "damage_buff" as const,
 				value: varRef2.extractVar,
 				requires_enlightenment: true,
 			};

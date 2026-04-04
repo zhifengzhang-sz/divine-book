@@ -44,7 +44,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		tripleStatBuff(_tszs, varRef, _pct, _gkljcszjczdqxz) {
 			const effect: SelfBuff = {
 				type: "self_buff",
-				attack_bonus: varRef.extractVar,
+				attack_buff: varRef.extractVar,
 				defense_bonus: varRef.extractVar,
 				hp_bonus: varRef.extractVar,
 			};

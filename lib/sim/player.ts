@@ -1081,7 +1081,7 @@ function recalcStats(ctx: PlayerContext, enqueue: Enqueue): void {
 	const t = ctx.clock.now();
 
 	const newAtk =
-		s.baseAtk * (1 + sumStatEffects(s.states, "attack_bonus") / 100);
+		s.baseAtk * (1 + sumStatEffects(s.states, "attack_buff") / 100);
 	if (newAtk !== s.atk) {
 		const prev = s.atk;
 		s.atk = newAtk;

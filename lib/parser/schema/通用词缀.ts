@@ -1,6 +1,6 @@
 export type {
 	AllStateDuration,
-	AttackBonus,
+	AttackBuff,
 	BuffStrength,
 	ConditionalDamageControlled,
 	DamageReductionDuringCast,
@@ -8,7 +8,7 @@ export type {
 	DotExtraPerTick,
 	ExecuteConditional,
 	FlatExtraDamage,
-	GuaranteedResonance,
+	GuaranteedCrit,
 	NextSkillBuff,
 	PerEnemyLostHp,
 	PerHitEscalationAffix,

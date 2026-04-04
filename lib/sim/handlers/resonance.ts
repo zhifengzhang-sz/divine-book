@@ -1,17 +1,17 @@
 /**
- * Resonance handler: guaranteed_resonance
+ * Resonance handler: guaranteed_crit
  */
 
-import type { GuaranteedResonance } from "../../parser/schema/通用词缀.js";
+import type { GuaranteedCrit } from "../../parser/schema/通用词缀.js";
 import type { Resolved } from "./types.js";
 import { register } from "./registry.js";
 
-// guaranteed_resonance: { base_multiplier, chance (%), upgraded_multiplier }
+// guaranteed_crit: { base_multiplier, chance (%), upgraded_multiplier }
 // 会心: separate attack line targeting 灵力.
 // base_multiplier always applies. With `chance`% probability, upgrades to upgraded_multiplier.
 // Example: 通明 — base 1.2×, 25% chance → 1.5×
 // Example: 灵犀九重 — base 2.97×, 25% chance → 3.97×
-register<Resolved<GuaranteedResonance>>("guaranteed_resonance", (effect, ctx) => {
+register<Resolved<GuaranteedCrit>>("guaranteed_crit", (effect, ctx) => {
 	const baseMult = effect.base_multiplier;
 	const upgradedMult = effect.upgraded_multiplier;
 	const chance = effect.chance / 100;

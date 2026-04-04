@@ -2,7 +2,7 @@ import type * as ohm from "ohm-js";
 
 import type {
 	BaseAttack,
-	DamageIncrease,
+	DamageBuff,
 	DotExtraPerTick,
 	Effect,
 	ExclusiveAffixEffect,
@@ -111,7 +111,7 @@ export function addSemantics(s: ohm.Semantics): void {
 		},
 		exclusiveAffix_2(_bstg, varRef1, _pct1, _sep, _bing, varRef2, _pct2) {
 			const e1: PercentMaxHpBoost = { type: "percent_max_hp_boost", value: varRef1.extractVar };
-			const e2: DamageIncrease = { type: "damage_increase", value: varRef2.extractVar };
+			const e2: DamageBuff = { type: "damage_buff", value: varRef2.extractVar };
 			return [e1, e2];
 		},
 		preamble(_) {

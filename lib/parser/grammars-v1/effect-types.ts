@@ -177,9 +177,9 @@ interface Shield {
 interface SelfBuff {
 	type: "self_buff";
 	name?: string; // state context
-	attack_bonus?: VarRef;
-	damage_increase?: VarRef;
-	skill_damage_increase?: VarRef;
+	attack_buff?: VarRef;
+	damage_buff?: VarRef;
+	skill_damage_buff?: VarRef;
 	final_damage_bonus?: VarRef;
 	damage_reduction?: VarRef;
 	crit_rate?: VarRef;
@@ -326,7 +326,7 @@ interface DamageReductionDuringCast {
 interface ExecuteConditional {
 	type: "execute_conditional";
 	hp_threshold: VarRef;
-	damage_increase: VarRef;
+	damage_buff: VarRef;
 	crit_rate_increase?: VarRef;
 	guaranteed_crit?: number;
 }
@@ -359,38 +359,38 @@ interface NextSkillBuff {
 	type: "next_skill_buff";
 	value: VarRef;
 }
-interface AttackBonus {
-	type: "attack_bonus";
+interface AttackBuff {
+	type: "attack_buff";
 	value: VarRef;
 	per_debuff_stack?: boolean;
 	max_stacks?: VarRef;
 	timing?: "pre_cast";
 }
-interface GuaranteedResonance {
-	type: "guaranteed_resonance";
+interface GuaranteedCrit {
+	type: "guaranteed_crit";
 	base_multiplier: VarRef;
 	chance: VarRef;
 	upgraded_multiplier: VarRef;
 }
 interface TripleBonus {
 	type: "triple_bonus";
-	attack_bonus: VarRef;
-	damage_increase: VarRef;
-	crit_damage_increase: VarRef;
+	attack_buff: VarRef;
+	damage_buff: VarRef;
+	crit_damage_buff: VarRef;
 }
 interface ProbabilityToCertain {
 	type: "probability_to_certain";
 }
-interface DamageIncrease {
-	type: "damage_increase";
+interface DamageBuff {
+	type: "damage_buff";
 	value: VarRef;
 }
-interface FinalDmgBonus {
-	type: "final_dmg_bonus";
+interface FinalDamageMultiplier {
+	type: "final_damage_multiplier";
 	value: VarRef;
 }
-interface HealingIncrease {
-	type: "healing_increase";
+interface HealingBuff {
+	type: "healing_buff";
 	value: VarRef;
 }
 interface HealingToDamage {
@@ -538,8 +538,8 @@ interface ProbabilityMultiplier {
 	chance_3x: VarRef;
 	chance_2x: VarRef;
 }
-interface DotDamageIncrease {
-	type: "dot_damage_increase";
+interface DotDamageBuff {
+	type: "dot_damage_buff";
 	value: VarRef;
 }
 interface DotFrequencyIncrease {
@@ -566,14 +566,14 @@ interface EnlightenmentBonus {
 interface IgnoreDamageReduction {
 	type: "ignore_damage_reduction";
 }
-interface SkillDamageIncreaseAffix {
-	type: "skill_damage_increase_affix";
+interface SkillDamageBuff {
+	type: "skill_damage_buff";
 	value: VarRef;
 }
 interface MinLostHpThreshold {
 	type: "min_lost_hp_threshold";
 	min_percent: VarRef;
-	damage_increase: VarRef;
+	damage_buff: VarRef;
 }
 interface CrossSlotDebuff {
 	type: "cross_slot_debuff";
@@ -646,13 +646,13 @@ export type Effect =
 	| PerEnemyLostHp
 	| ShieldValueIncrease
 	| NextSkillBuff
-	| AttackBonus
-	| GuaranteedResonance
+	| AttackBuff
+	| GuaranteedCrit
 	| TripleBonus
 	| ProbabilityToCertain
-	| DamageIncrease
-	| FinalDmgBonus
-	| HealingIncrease
+	| DamageBuff
+	| FinalDamageMultiplier
+	| HealingBuff
 	| HealingToDamage
 	| DamageToShield
 	| RandomDebuff
@@ -681,14 +681,14 @@ export type Effect =
 	| OnShieldExpire
 	| OnBuffDebuffShield
 	| ProbabilityMultiplier
-	| DotDamageIncrease
+	| DotDamageBuff
 	| DotFrequencyIncrease
 	| ConditionalDamageDebuff
 	| PerDebuffTrueDamage
 	| SelfHpFloor
 	| EnlightenmentBonus
 	| IgnoreDamageReduction
-	| SkillDamageIncreaseAffix
+	| SkillDamageBuff
 	| MinLostHpThreshold
 	| CrossSlotDebuff
 	| HealReduction;
