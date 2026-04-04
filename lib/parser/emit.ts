@@ -59,6 +59,11 @@ export function emitBooks(
 			};
 		}
 
+		if (parsed.xuanText) book.xuan_text = parsed.xuanText;
+		if (parsed.xuan) {
+			book.xuan = cleanEffects(parsed.xuan.effects);
+		}
+
 		books[name] = book;
 	}
 
@@ -146,6 +151,20 @@ export function formatYaml(books: Record<string, BookData>): string {
 				for (const effect of book.exclusive_affix.effects) {
 					lines.push(...formatEffect(effect, 8));
 				}
+			}
+		}
+
+		if (book.xuan_text) {
+			lines.push("    xuan_text: |");
+			for (const line of book.xuan_text.split("\n")) {
+				lines.push(`      ${line}`);
+			}
+		}
+
+		if (book.xuan && book.xuan.length > 0) {
+			lines.push("    xuan:");
+			for (const effect of book.xuan) {
+				lines.push(...formatEffect(effect, 6));
 			}
 		}
 	}

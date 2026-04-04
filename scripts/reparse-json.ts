@@ -144,6 +144,18 @@ for (const [name, book] of Object.entries(gameData.books) as [string, any][]) {
 		}
 	}
 
+	// Xuan (通玄)
+	if (book.xuan?.text) {
+		const { description, tiers } = splitText(book.xuan.text);
+		const effects = parseEntry(name, description, "xuanDescription");
+		if (effects.length > 0) {
+			book.xuan.effects = resolveTiers(effects, tiers);
+		} else {
+			console.warn(`  SKIP xuan ${name}: parse returned 0 effects`);
+			errorCount++;
+		}
+	}
+
 	bookCount++;
 }
 

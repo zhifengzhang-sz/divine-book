@@ -41,6 +41,7 @@ const BookEntrySchema = z.object({
 	skill: SkillSectionSchema,
 	primaryAffix: AffixSectionSchema.optional(),
 	exclusiveAffix: AffixSectionSchema.optional(),
+	xuan: SkillSectionSchema.optional(),
 });
 
 // ── Affix collections ──────────────────────────────────────────────

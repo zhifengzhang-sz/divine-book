@@ -49,6 +49,7 @@ if (!affixesOnly) {
 			skillText: book.skill?.text,
 			affixText: book.primaryAffix?.text,
 			exclusiveAffixText: book.exclusiveAffix?.text,
+			xuanText: book.xuan?.text,
 			skill: book.skill?.effects ?? [],
 		};
 
@@ -64,6 +65,10 @@ if (!affixesOnly) {
 				name: book.exclusiveAffix.name,
 				effects: book.exclusiveAffix.effects ?? [],
 			};
+		}
+
+		if (book.xuan) {
+			parsed.xuan = { effects: book.xuan.effects ?? [] };
 		}
 
 		parsedBooks.set(name, parsed);

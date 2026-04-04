@@ -41,10 +41,12 @@ export interface ParsedBook {
 	skillText?: string;
 	affixText?: string;
 	exclusiveAffixText?: string;
+	xuanText?: string;
 	states?: Record<string, StateDef>;
 	skill: EffectWithMeta[];
 	primaryAffix?: { name: string; effects: EffectWithMeta[] };
 	exclusiveAffix?: { name: string; effects: EffectWithMeta[] };
+	xuan?: { effects: EffectWithMeta[] };
 }
 
 /** Per-book parsed data — one entry in books.yaml */
@@ -56,8 +58,11 @@ export interface BookData {
 	affix_text?: string;
 	/** Raw exclusive affix description from source prose (专属词缀.md) */
 	exclusive_affix_text?: string;
+	/** Raw 通玄 description from source prose */
+	xuan_text?: string;
 	states?: Record<string, StateDef>;
 	skill?: EffectWithMeta[];
 	primary_affix?: AffixSection;
 	exclusive_affix?: AffixSection;
+	xuan?: EffectWithMeta[];
 }
