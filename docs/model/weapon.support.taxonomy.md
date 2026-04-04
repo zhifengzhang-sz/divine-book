@@ -131,11 +131,24 @@ Features are what the weapon system needs from the 灵書 set. Each feature dire
 
 Amplifiers make features stronger. They do not provide value on their own — they multiply the value of existing features.
 
-| Amplifier | What it does | How it serves features |
-|:----------|:-------------|:----------------------|
-| **Damage amp (伤害加深)** | Multiplicative scaling on all damage output (e.g. 魔劫 +205%) | Scales every feature's damage contribution |
-| **Duration extension (延续)** | Stretch feature windows to cover more weapon hits (e.g. 真言不灭 +55%) | More weapon hits benefit from the feature |
-| **Stack multiplication (叠层)** | Duplicate debuff/buff stacks (e.g. 心魔惑言 x2) | More stacks for per-stack features (结魂锁链, 索心真诀) |
+| Amplifier | Effect type | How it serves features |
+|:----------|:------------|:----------------------|
+| **Damage amp (伤害加深)** | `damage_increase`, `skill_damage_increase_affix` | Multiplicative scaling on all damage output |
+| **Duration extension (延续)** | `all_state_duration`, `buff_duration` | Stretch feature windows to cover more weapon hits |
+| **Stack multiplication (叠层)** | `debuff_stack_increase`, `buff_strength`, `probability_multiplier` | More stacks/strength for per-stack features |
+
+### Amplifier selection: by effect type, not by affix name
+
+Multiple affixes can produce the same amplifier effect at different values. Always compare by **effect type and value**, not by affix name:
+
+| Effect type | Affixes (examples) | Value | Source |
+|:------------|:-------------------|:------|:-------|
+| `all_state_duration` | 业焰 | +69% | Universal |
+| `all_state_duration` | 真言不灭 (疾风九变 exclusive) | +55% | Exclusive |
+| `buff_strength` | 龙象护身 (浩然星灵诀 exclusive) | +300% | Exclusive |
+| `buff_strength` | 清灵 | +20% | Universal |
+
+When selecting an amplifier, query `data/yaml/affixes.yaml` and `books.yaml` for all affixes with the target effect type, rank by value, and pick the strongest available source. Universal and school affixes can be carried by any book — they are not locked to one source.
 
 ---
 

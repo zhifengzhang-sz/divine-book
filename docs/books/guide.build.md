@@ -1,5 +1,6 @@
 ---
 initial date: 2026-3-8
+revised: 2026-4-3
 ---
 
 
@@ -98,11 +99,71 @@ strong {
 
 **Authors:** Z. Zhang & Claude Opus 4.6 (Anthropic)
 
-This document defines the process for constructing a 6-slot 灵書 set for PvP. It references model docs as building blocks and points to working examples.
+This document defines the end-to-end process for constructing a 6-slot 灵書 set — from data entry through reasoning to final build output.
 
 ---
 
-## Process Overview
+## Data Pipeline
+
+Construction starts from structured data, not raw text. The pipeline:
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
+flowchart LR
+    ED["Editor<br/>port 3002"] -->|"read/write"| GD["game.data.json<br/>(source of truth)"]
+    GD -->|"parser"| YAML["books.yaml<br/>affixes.yaml"]
+    YAML -->|"construct-data.ts"| CTX["context.json<br/>(per build)"]
+    CTX -->|"reasoning<br/>(Steps 1-6)"| BUILD["build table<br/>+ analysis doc"]
+    BUILD -->|"simulate.ts"| VAL["validation"]
+```
+
+### Data stores
+
+| File | Role | Updated by |
+|:-----|:-----|:-----------|
+| `data/raw/game.data.json` | Source of truth — all books, effects, affixes | Editor (`bun run editor`) |
+| `data/yaml/books.yaml` | Parsed structured YAML — effects as typed arrays | Parser (`bun run parse` or editor's gen-yaml) |
+| `data/yaml/affixes.yaml` | Parsed affix data — universal, school, exclusive | Parser |
+| `data/builds/{name}/context.json` | Build-specific context — platforms, rankings, vectors | `bun scripts/construct-data.ts` |
+
+### Tools
+
+| Command | What it does | When to use |
+|:--------|:-------------|:------------|
+| `bun run editor` | Launch data editor (port 3002) | Edit book effects, affixes, view parse results |
+| `bun run parse` | Regenerate YAML from game.data.json | After editing raw data |
+| `bun scripts/construct-data.ts --character X --scenario Y` | Generate context.json for a build | Before starting construction reasoning |
+| `bun app/function-combos.ts --fn X --platform Y --top N` | Rank aux affix pairs for a function × platform | During Step 5 (aux selection) |
+| `bun app/book-vector.ts --book X --json` | Time-series factor vectors for a book | During Step 5 (temporal analysis) |
+| `bun app/simulate.ts --sweep --json --a X --b Y` | Validate slot damage output | After Step 6 (verification) |
+
+### Preparing for construction
+
+Before reasoning, ensure data is current:
+
+```bash
+# 1. Edit data if needed
+bun run editor
+
+# 2. Regenerate YAML
+bun run parse
+
+# 3. Generate build context
+bun scripts/construct-data.ts --character "剑九" --scenario "pvp vs stronger" --school Sword
+```
+
+This produces `data/builds/剑九-pvp-vs-stronger/context.json` containing:
+- `platforms` — all books with effects, dBase, hits, native functions
+- `affixPool` — all available affixes by kind (universal, school, exclusive)
+- `functionRankings` — top aux combos per function × platform
+- `timeSeriesVectors` — per-second factor values per book
+- `constraints` — build rules
+
+---
+
+## Construction Process
+
+Six steps. Steps 1-2 are scenario-driven decisions. Steps 3-5 use context.json data. Step 6 validates.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
@@ -114,16 +175,16 @@ graph TD
     E --> F["6. Construction & Verification"]
 
     A -.- A1["Assess opponent<br/>Estimate fight duration<br/>Identify threats"]
-    B -.- B1["Theme 1: All Attack<br/>Theme 2: Attack + Buff<br/>Theme 3: Attack + Buff + Debuff"]
-    C -.- C1["For each slot:<br/>assign function categories<br/>based on slot timing"]
-    D -.- D1["For each slot:<br/>pick platform whose<br/>native functions match"]
-    E -.- E1["For each slot:<br/>fill 2 aux positions<br/>from function catalog"]
-    F -.- F1["Map affixes → source books<br/>Check conflicts<br/>Verify coverage"]
+    B -.- B1["Theme 1-5 spectrum<br/>sets offense/defense ratio"]
+    C -.- C1["Assign functions to slots<br/>based on timing + theme"]
+    D -.- D1["Pick platform from<br/>context.json platforms"]
+    E -.- E1["Pick aux from<br/>context.json functionRankings"]
+    F -.- F1["Conflict check<br/>Coverage check<br/>Sim validation"]
 ```
 
 ---
 
-## Step 1: Scenario Analysis
+### Step 1: Scenario Analysis
 
 **Input:** Opponent information (power level, known build, playstyle).
 
@@ -135,20 +196,15 @@ graph TD
 | Does the opponent have healing? | Whether F_antiheal is needed |
 | Does the opponent have damage reduction? | Whether F_dr_remove is needed |
 | Does the opponent have initial immunity? | Whether early slots should be setup (buff/debuff) instead of burst |
-| Expected fight duration? | 1 cycle (24s) or 2+ cycles (48s+) — affects buff timing and cycle-wrap value |
-
-**Examples:**
-- [剑九.md](../../data/books/剑九.md) — "Against Stronger Opponent": dual-channel principle, A/B variation, full slot-by-slot analysis
+| Expected fight duration? | 1 cycle (30s) or 2+ cycles (60s+) — affects buff timing and cycle-wrap value |
 
 ---
 
-## Step 2: Theme Selection
+### Step 2: Theme Selection
 
-**Input:** Scenario observables from step 1.
+**Input:** Scenario observables from Step 1.
 
 **Output:** A theme α ∈ [0,1] (offense/defense ratio).
-
-Theme selection is a **decision tree** over scenario observables. The first split is power gap, then enemy capabilities:
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
@@ -174,80 +230,40 @@ graph TD
 | **Theme 4** | 0.4 | 3 | Medium — limited def platforms | Dying before slot 5 |
 | **Theme 5** | 0.0 | 2 | Low — forced all-defense | Massively outpowered |
 
-At the extremes (α≈0 or α≈1), the build is forced — few choices. In the middle (α≈0.5-0.6), strategic variance peaks — the most slot variants and adaptive branching options.
-
-**Reference:** [function.themes.md §Theme Selection](../model/function.themes.md) — full decision tree with scenario observables, slot-level adaptations, pre-build inventory.
+**Reference:** [function.themes.md §Theme Selection](../model/function.themes.md)
 
 ---
 
-## Step 3: Function → Slot Assignment
+### Step 3: Function → Slot Assignment
 
 **Input:** Chosen theme + slot timing constraints.
 
 **Output:** For each slot, which function categories it must serve.
 
-### Slot Timing Constraints
-
-Slots fire sequentially at T_gap ≈ 4s. Each function has a temporal sweet spot:
+Slots fire sequentially at T_gap ≈ 6s. Each function has a temporal sweet spot:
 
 | Slot | Time | Natural functions | Why |
 |:-----|:-----|:-----------------|:----|
-| 1 | t=0s | F_burst | Alpha strike — enemy full HP |
-| 2 | t=4s | F_burst, F_exploit | Follow-up — %maxHP while enemy HP high |
-| 3 | t=8s | F_buff | Buff duration covers slots 4-6 |
-| 4 | t=12s | F_burst + utility | Under buff, enemy healing starts |
-| 5 | t=16s | F_hp_exploit, F_truedmg | Own HP low, debuffs accumulated |
-| 6 | t=20s | F_burst + F_dr_remove | Enemy DR stacked, cycle-wrap |
+| 1 | t=0 | F_burst | Alpha strike — enemy full HP |
+| 2 | t=6 | F_burst, F_exploit | Follow-up — %maxHP while enemy HP high |
+| 3 | t=12 | F_buff | Buff duration covers slots 4-6 |
+| 4 | t=18 | F_burst + utility | Under buff, enemy healing starts |
+| 5 | t=24 | F_hp_exploit, F_truedmg | Own HP low, debuffs accumulated |
+| 6 | t=30 | F_burst + F_dr_remove | Enemy DR stacked, cycle-wrap |
 
-### Function Dependencies
+**Data source:** `context.json → platforms[book].nativeFunctions` maps each platform to its native functions.
 
-Some function assignments depend on earlier slots:
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-graph LR
-    S3["Slot 3: F_buff"] -->|"amplifies"| S4["Slots 4-6"]
-    S1234["Slots 1-4: damage"] -->|"HP loss"| S5["Slot 5: F_hp_exploit"]
-    S24["Slots 2-4: debuffs"] -->|"stacks"| S5b["Slot 5: F_truedmg"]
-    S4b["Slot 4b: +50% self-dmg"] -->|"feeds"| S5c["Slot 5: hp_exploit scaling"]
-    S6["Slot 6: cycle-wrap"] -->|"amplifies"| C2["Cycle 2 Slot 1"]
-```
-
-Moving F_buff to slot 1 wastes buff duration. Moving F_hp_exploit to slot 2 has no HP loss to exploit. The ordering follows the dependency chain.
-
-### Example Assignment (Theme 3)
-
-| Slot | Native function | Aux function | Total |
-|:-----|:---------------|:-------------|:------|
-| 1 | F_burst | — | F_burst |
-| 2 | F_burst, F_exploit | — | F_burst, F_exploit |
-| 3 | F_buff, F_sustain | — | F_buff, F_sustain |
-| 4 | F_burst | F_antiheal | F_burst, F_antiheal |
-| 5 | F_hp_exploit | F_truedmg | F_hp_exploit, F_truedmg |
-| 6 | F_burst, F_dot | F_dr_remove | F_burst, F_dot, F_dr_remove |
-
-**Reference:** [function.themes.md §Function Catalog](../model/function.themes.md) — three-tier structure (native platforms, aux affixes, adaptable platforms) for all 13 functions.
+**Reference:** [function.themes.md §Function Catalog](../model/function.themes.md)
 
 ---
 
-## Step 4: Platform Selection
+### Step 4: Platform Selection
 
 **Input:** Function assignment per slot.
 
 **Output:** One platform (main skill book) per slot.
 
-For each slot, choose the platform whose native functions best match the assigned functions:
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-graph TD
-    FA["Slot assigned:<br/>F_burst + F_exploit"] --> P["Check platform matrix"]
-    P --> P1["皓月剑诀<br/>native: F_burst + F_exploit<br/>D_base=22305, D_orth=1212"]
-    P --> P2["千锋聚灵剑<br/>native: F_burst + F_exploit<br/>D_base=20265, D_orth=27"]
-    P1 -->|"stronger match"| SEL["Select 皓月剑诀"]
-```
-
-### Platform Pool
+For each slot, choose the platform from `context.json → platforms` whose `nativeFunctions` best match the assigned functions. Use `dBase` as tiebreaker (higher = better for burst slots).
 
 | Platform | D_base | Native functions | Best for slot |
 |:---------|:-------|:----------------|:-------------|
@@ -262,11 +278,11 @@ graph TD
 | `疾风九变` | 1500 | F_counter, F_sustain, F_hp_exploit | 4 alt (counter) |
 | `无相魔劫咒` | 1500 | F_delayed, F_truedmg | — (D_base too low) |
 
-**Reference:** [function.themes.md §Platform × Function Matrix](../model/function.themes.md) — complete platform-to-function mapping with baseline vectors.
+**Data source:** `context.json → platforms[book].dBase`, `platforms[book].nativeFunctions`
 
 ---
 
-## Step 5: Aux Affix Selection
+### Step 5: Aux Affix Selection
 
 **Input:** Platform per slot + function assignment.
 
@@ -276,18 +292,15 @@ Each slot has 2 aux positions. For each position, pick from:
 1. **Function-serving affixes** — core or amplifier for the slot's assigned functions
 2. **Damage amplification** — if no utility function needed
 
-### Selection Process
+**Important: select by effect type and value, not by affix name.** See the `selection.*.md` series for rigorous selection processes:
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
-graph TD
-    SLOT["Slot 4: 千锋聚灵剑<br/>Functions: F_burst + F_antiheal"]
-    SLOT --> AUX1["Aux-1: serve F_antiheal?"]
-    AUX1 -->|"yes"| A1["Pick from F_antiheal aux catalog:<br/>【天倾灵枯】(core, H_red=82)<br/>【祸星无妄】(core, random_debuff)"]
-    A1 --> PICK1["【天倾灵枯】— highest H_red"]
-    SLOT --> AUX2["Aux-2: serve F_burst"]
-    AUX2 --> A2["Pick from F_burst aux catalog:<br/>best available damage amp"]
-    A2 --> PICK2["【通明】— D_res=27%"]
+- [selection.amp.md](selection.amp.md) — amplifier selection (5-step process + complete inventory)
+
+**Data source:** `context.json → functionRankings[fnId][platformId]` provides ranked aux pairs per function × platform. Note: `functionRankings` scores by catalog name, not effect type — use selection docs for effect-type comparison.
+
+```bash
+# Ad-hoc ranking query
+bun app/function-combos.ts --fn F_burst --platform 千锋聚灵剑 --top 5
 ```
 
 ### Constraints
@@ -296,48 +309,45 @@ graph TD
 |:-----------|:-----|
 | Affix uniqueness | Each affix used at most once across all 6 slots |
 | Book uniqueness | Each book appears as aux at most once across all 6 slots |
-| Dependency pairs | Some affixes need a partner (e.g. 【索心真诀】needs [Debuff] provider → 【无相魔威】) |
+| Dependency pairs | Some affixes need a partner (e.g. 索心真诀 needs debuff provider) |
 | School match | School affixes follow aux book's school, not main's |
 | Binding validity | Affix requires must be satisfied by platform + combo provides |
 
-### Aux Catalog
-
-The function catalog lists all available aux affixes per function:
-
-```
-bun app/function-combos.ts --catalog
-```
-
-**Reference:** [function.themes.md §Function Catalog — Three-Tier Structure](../model/function.themes.md) — aux affixes (core + amplifier) for each function.
+**Data source:** `context.json → constraints.rules`, validated by `lib/construct/constraints.ts::isValidPair()`
 
 ---
 
-## Step 6: Construction & Verification
+### Step 6: Construction & Verification
 
 **Input:** Platform + 2 aux affixes per slot.
 
-**Output:** 灵書 build specification + verification.
+**Output:** Build table + verification results.
 
-### 6a. Map Affixes to Source Books
-
-Each aux affix comes from a specific source book:
+#### 6a. Map Affixes to Source Books
 
 | Affix type | How to find source book |
 |:-----------|:----------------------|
-| Exclusive (专属) | Each book has exactly one — lookup in affix registry |
-| School (修为) | Any book of that school |
-| Universal (通用) | Any book |
+| Exclusive (专属) | Each book has exactly one — lookup in `context.json → platforms[book].exclusiveAffix` |
+| School (修为) | Any book of that school — lookup in `context.json → affixPool.school` |
+| Universal (通用) | Any book — lookup in `context.json → affixPool.universal` |
 
-### 6b. Verify Conflict Rules
+#### 6b. Verify Conflict Rules
 
 | Check | Rule | Consequence of violation |
 |:------|:-----|:------------------------|
 | Core conflict | Same book as main in two slots | Later slot's skill disabled entirely |
 | Affix conflict | Same book as aux in two slots | Later slot's affix disabled |
 | Cross-type reuse | Book as main in one slot, aux in another | **No conflict** (legal) |
-| Aux uniqueness | Each book as aux at most once | Violation → affix disabled |
 
-### 6c. Coverage Check
+#### 6c. Sim Validation
+
+```bash
+bun app/simulate.ts --sweep --json --a "{platform}" --b "{default opponent}" --top 10
+```
+
+Check: is the selected affix pair in the top 10 for each slot? If not, flag it. The sim validates per-slot damage output, not cross-slot synergy.
+
+#### 6d. Coverage Check
 
 Verify all required functions are served:
 
@@ -350,9 +360,29 @@ Verify all required functions are served:
 
 ---
 
+## Iteration
+
+A single pass through Steps 1-6 produces **Proposal 1**. Identify its weaknesses, then iterate:
+
+```
+Proposal 1 → weaknesses → Proposal 2 → weaknesses → ... → final build
+```
+
+Each iteration follows the same structure:
+1. State the weaknesses from the previous proposal
+2. For each weakness, list possible enhancements
+3. Analyze each enhancement (what it gains, what it loses, explicit tradeoff)
+4. Verdict: fix it, or accept as structural tradeoff with mitigation
+
+When all weaknesses are either fixed or accepted, the build is at a **local optimum**. Further improvement requires changing the feature assignment (Step 3), not just swapping aux affixes (Step 5).
+
+**Working example:** [pvp.so.1.md](pvp.so.1.md) → [pvp.so.2.md](pvp.so.2.md) → [pvp.so.3.md](pvp.so.3.md) → [pvp.so.4.md](pvp.so.4.md)
+
+---
+
 ## Adaptive Branching
 
-After constructing a base build from a theme, prepare **variants** for flex slots. Slot 4 sits at the offense/defense boundary and has the most variants.
+After reaching a local optimum, prepare **variants** for matchup-dependent slots.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#3e44514D', 'primaryTextColor': '#abb2bf', 'primaryBorderColor': '#4b5263', 'lineColor': '#61afef', 'secondaryColor': '#2c313a4D', 'secondaryTextColor': '#abb2bf', 'secondaryBorderColor': '#4b5263', 'tertiaryColor': '#282c344D', 'mainBkg': '#3e44514D', 'nodeBorder': '#4b5263', 'clusterBkg': '#2c313a4D', 'clusterBorder': '#4b5263', 'titleColor': '#e5c07b', 'edgeLabelBackground': '#282c34', 'textColor': '#abb2bf', 'background': '#282c34'}}}%%
@@ -361,21 +391,30 @@ graph TD
     THEME --> BASE["Base Build"]
     BASE --> S1["Slot 1 Flex"]
     S1 --> S1A["1a: Alpha strike (春黎)"]
-    S1 --> S1B["1b: Buff lead (甲元) — Theme 5"]
+    S1 --> S1B["1b: Counter (大罗)"]
+    S1 --> S1C["1c: Buff lead (甲元) — Theme 5"]
     BASE --> S3["Slot 3 Flex"]
     S3 --> S3A["3a: Buff (甲元) — Theme 2-5"]
     S3 --> S3B["3b: Burst (念剑/大罗) — Theme 1"]
     BASE --> S4["Slot 4 Flex"]
     S4 --> S4A["4a: Burst + antiheal (千锋)"]
-    S4 --> S4B["4b: Burst + self-dmg (千锋)"]
-    S4 --> S4C["4c: Pure burst (千锋)"]
-    S4 --> S4D["4d: Survive (十方) — Theme 4"]
-    S4 --> S4E["4e: Counter (疾风) — Theme 4-5"]
+    S4 --> S4B["4b: Survive (十方) — Theme 4"]
+    S4 --> S4C["4c: Counter (疾风) — Theme 4-5"]
 ```
 
 Pre-build multiple 灵書 for flex slots. Choose which set to equip before each match based on opponent assessment.
 
-**Reference:** [function.themes.md §Adaptive Strategies](../model/function.themes.md) — decision tree, adaptation variants, pre-build inventory.
+**Reference:** [function.themes.md §Adaptive Strategies](../model/function.themes.md)
+
+---
+
+## Specializations
+
+For specific routes, use the specialized construction guide on top of this generic process:
+
+| Route | Specialization doc | What it adds |
+|:------|:-------------------|:-------------|
+| Route 2: Weapon support | [weapon.support.build.md](weapon.support.build.md) | Feature/amplifier/sustain layers, slot-to-feature mapping |
 
 ---
 
@@ -383,9 +422,10 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 
 | Example | Scenario | Theme | Doc |
 |:--------|:---------|:------|:----|
-| 剑九 vs stronger (Var A) | Asymmetric power, dual-channel opener | Theme 3 (attack + buff + debuff) | [剑九.md §Variation A](../../data/books/剑九.md) |
-| 剑九 vs stronger (Var B) | Counter-reflection opener vs aggressive enemy | Theme 3, counter variant | [剑九.md §Variation B](../../data/books/剑九.md) |
-| 剑九 vs weaker | Weaker opponent, pure offense | Theme 2 (attack + buff) | [剑九.md §pvp weaker](../../data/books/剑九.md) |
+| 剑九 vs stronger (Var A) | Asymmetric power, dual-channel opener | Theme 3 | [剑九.md §Var A](../../data/books/剑九.md) |
+| 剑九 vs stronger (Var B) | Counter-reflection opener vs aggressive | Theme 3 | [剑九.md §Var B](../../data/books/剑九.md) |
+| 剑九 vs weaker | Weaker opponent, pure offense | Theme 2 | [剑九.md §pvp weaker](../../data/books/剑九.md) |
+| pvp vs stronger iteration | 4-proposal iteration chain | Theme 3 | [pvp.so.1.md](pvp.so.1.md) → [pvp.so.4.md](pvp.so.4.md) |
 
 ---
 
@@ -394,20 +434,9 @@ Pre-build multiple 灵書 for flex slots. Choose which set to equip before each 
 | Model | What it provides | Doc |
 |:------|:----------------|:----|
 | Weapon support taxonomy | Feature/amplifier/sustain layers for Route 2 builds | [weapon.support.taxonomy.md](../model/weapon.support.taxonomy.md) |
-| Weapon support build | Route 2 construction: feature→slot, amplifier selection, temporal verification | [weapon.support.build.md](weapon.support.build.md) |
 | Function categories | 13 functions, three-tier structure (platform/aux/adaptable) | [function.themes.md](../model/function.themes.md) |
 | Themes & slot assignment | Theme 1-5 spectrum, slot timing, coverage, decision tree | [function.themes.md](../model/function.themes.md) |
 | Combat model (qualitative) | Damage chain, factor zones, multiplicative structure | [combat.qualitative.md](../model/combat.qualitative.md) |
 | Binding quality (BQ) | Affix pair scoring: utilization, platform fit, zone breadth | [impl.binding.quality.md](../model/impl.binding.quality.md) |
 | Time-series model | Temporal factor vectors, summon envelopes, buff duration | [impl.time.series.md](../model/impl.time.series.md) |
 | Domain categories | Effect types, target categories, zone mapping | [domain.category.md](../data/domain.category.md) |
-
-### Tools
-
-| Tool | Purpose | When to use |
-|:-----|:--------|:-----------|
-| `bun app/function-combos.ts --catalog` | List aux affixes per function | Step 5 (aux selection) |
-| `bun app/function-combos.ts --fn X --platform Y --top N` | Rank combos for a function × platform | Step 5 (aux ranking) |
-| `bun app/book-vector.ts --book X --json` | Time-series factor vectors | Step 5 (temporal analysis) |
-| `bun scripts/construct-data.ts --character X --scenario Y` | Full context generation | [workflow.construct.md](workflow.construct.md) |
-| `bun app/book-vector-chart.ts --platform X` | HTML chart visualization | Step 5 (visual inspection) |

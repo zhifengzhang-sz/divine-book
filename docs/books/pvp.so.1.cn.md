@@ -110,11 +110,12 @@ strong {
 }
 </style>
 
-# PvP 以弱胜强 — 灵書构筑
+# PvP 以弱胜强 — 灵書构筑（提案一）
 
 **角色：** 剑九（剑修）
 **路线：** 路线二（辅助法宝）
 **方法：** [weapon.support.build.md](weapon.support.build.md)
+**数据：** `data/builds/剑九-pvp-vs-stronger/context.json`（由 `bun scripts/construct-data.ts` 生成）
 
 ---
 
@@ -155,7 +156,9 @@ strong {
 
 ## 第四步：功法书选择
 
-为每格的功能匹配最合适的功法书平台。
+**数据来源：** `context.json → platforms[book].nativeFunctions`, `platforms[book].dBase`
+
+为每个号位的功能匹配最合适的功法书平台。
 
 | 号位 | 功能 | 功法书 | 理由 |
 |:-----|:-----|:-------|:-----|
@@ -170,7 +173,9 @@ strong {
 
 ## 第五步：辅词缀选择
 
-每格判断：功能是否能独立运作（自足），还是需要辅助来激活（赋能）？自足则用**增幅器**，需赋能则用**功能辅助**。
+**数据来源：** `context.json → functionRankings`, `context.json → platforms[book].exclusiveAffix`
+
+每个号位判断：功能是否能独立运作（自足），还是需要辅助来激活（赋能）？自足则用**增幅器**，需赋能则用**功能辅助**。
 
 ### 1号位 — `春黎剑阵`（分身）
 
@@ -290,9 +295,12 @@ strong {
 
 ## 参考
 
-| 文档 | 作用 |
+| 资源 | 作用 |
 |:-----|:-----|
+| `data/builds/剑九-pvp-vs-stronger/context.json` | 第4-5步的数据来源 |
+| `data/yaml/books.yaml` | 解析后的功法书效果（context.json的上游） |
+| `data/raw/game.data.json` | 全部游戏数据的真实来源 |
 | [weapon.support.build.md](weapon.support.build.md) | 本文所遵循的构筑方法 |
 | [weapon.support.taxonomy.md](../model/weapon.support.taxonomy.md) | 功能/增幅器/续航定义 |
-| [guide.build.md](guide.build.md) | 通用六步流程 |
+| [guide.build.md](guide.build.md) | 通用六步流程 + 数据管线 |
 | [剑九.md](../../data/books/剑九.md) | 同一构筑的逐格详细分析 |

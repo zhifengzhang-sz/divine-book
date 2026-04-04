@@ -147,21 +147,18 @@ Each slot should name **1-2 features**, not more.
 
 ---
 
-## Amplifier Selection Principle
+## Aux Selection
 
-For each slot's 2 aux positions:
+Each aux position fills a **role** from the taxonomy. The selection process differs by role:
 
-1. If the feature needs **enablement** (can't function alone) → aux serves the feature directly
-2. If the feature is **self-sufficient** → aux is an **amplifier** (damage amp, duration extension, or stack multiplication)
+| Scenario | What you're selecting | Selection method | Doc |
+|:---------|:---------------------|:-----------------|:----|
+| **Amplifier** | Best value for a target effect type | Query all sources by effect type → rank by value → pick highest | [selection.amp.md](selection.amp.md) |
+| **Feature enablement** | Specific exclusive that provides a unique mechanic | No choice — the mechanic exists on exactly one affix | — |
+| **Feature addition** | Second feature for the slot | Evaluate all affixes that provide the target feature | — |
+| **Sustain** | Defensive effect within sustain budget | Evaluate by survivability contribution | — |
 
-The choice between amplifier types depends on the feature:
-
-| Feature type | Best amplifier | Why |
-|:-------------|:---------------|:----|
-| Buff with short duration | Duration extension | More weapon hits covered |
-| Buff with low base value | Stack multiplication | Higher multiplier |
-| Per-stack debuff | Stack multiplication | More stacks = more scaling |
-| Any high-damage feature | Damage amp | Multiplicative on top |
+For amplifier selection, follow the 5-step process in [selection.amp.md](selection.amp.md). The other scenarios will be documented in future `selection.*.md` docs as needed.
 
 ---
 

@@ -150,9 +150,9 @@ Weaknesses (from Proposal 2):
 | 1 主位 | Platform | `春黎剑阵` (clone) | `大罗幻诀` (counter) |
 | 1 辅1 | Aux 1 | `解体化形` 心逐神随 (x4) | `解体化形` 心逐神随 (x4) — **unchanged** |
 | 1 辅2 | Aux 2 | `千锋聚灵剑` 灵犀九重 (crit) | `天轮魔经` 心魔惑言 (x2 debuff stacks) |
-| 5 辅1 | Aux 1 | `天轮魔经` 心魔惑言 (x2) | `疾风九变` 真言不灭 (+55% all state duration) |
+| 5 辅1 | Aux 1 | `天轮魔经` 心魔惑言 (x2) | `疾风九变` 业焰 (+69% all state duration) |
 
-**Cascade effect:** 天轮魔经 moves from Slot 5 to Slot 1. Slot 5 needs a new 辅1 — 疾风九变（真言不灭）fills it, extending Slot 5's state durations by +55%.
+**Cascade effect:** 天轮魔经 moves from Slot 5 to Slot 1. Slot 5 needs a new 辅1 — 疾风九变（【业焰】）fills it. 业焰 is a universal affix with `all_state_duration +69%` — strictly better than 疾风九变's own exclusive 真言不灭 (+55%) for the same effect type.
 
 ### Analysis
 
@@ -175,11 +175,11 @@ Weaknesses (from Proposal 2):
 
 **What Slot 5 gains from cascade:**
 
-真言不灭 (+55% all state duration) at Slot 5 extends:
-- 天人五衰: 15s → 23.25s (covers t=24~47.25 instead of t=24~39)
-- 魔劫: 8s → 12.4s (covers t=24~36.4 instead of t=24~32)
+业焰 (+69% all state duration) at Slot 5 extends:
+- 天人五衰: 15s → 25.35s (covers t=24~49.35 instead of t=24~39)
+- 魔劫: 8s → 13.52s (covers t=24~37.52 instead of t=24~32)
 
-This **partially addresses Proposal 1's weakness #2** (buff expiry at t=24). While 仙佑 is unchanged, 魔劫's extended window (+4.4s) provides longer damage amp coverage post-buff.
+This **partially addresses Proposal 1's weakness #2** (buff expiry at t=24). While 仙佑 is unchanged, 魔劫's extended window (+5.52s) provides longer damage amp coverage post-buff.
 
 **What Slot 5 loses from cascade:**
 
@@ -193,7 +193,7 @@ This **partially addresses Proposal 1's weakness #2** (buff expiry at t=24). Whi
 | **Damage channels** | Dual: HP + SP (via crit) | Single: HP only |
 | **Enemy dependency** | None — clone works regardless | Counter-DoTs require enemy aggression |
 | **Debuff count at t=18** | Low (few debuffs before Slot 4) | High (噬心/断魂/命損 from t=0) |
-| **Slot 5 魔劫 duration** | 8s (t=24~32) | 12.4s (t=24~36.4) |
+| **Slot 5 魔劫 duration** | 8s (t=24~32) | 13.52s (t=24~37.52) |
 | **Best against** | Passive enemy, high 灵力 pool | Aggressive enemy, high 最终伤害减免 |
 
 ### Verdict
@@ -215,7 +215,7 @@ Neither strictly dominates. The choice depends on the **matchup**:
 | 2 | 洪荒真剑 | `皓月剑诀` | `春黎剑阵`（专属） | `无极御剑诀`（专属） | — |
 | 3 | 风花真法 | `甲元仙符` | `浩然星灵诀`（专属） | `周天星元`（专属） | — |
 | 4 | 九阳真魔言 | `天魔降临咒` | `皓月剑诀`（专属） | `梵圣真魔咒`（专属） | — |
-| 5 | | `天刹真魔` | `疾风九变`（专属） | `无相魔劫咒`（专属） | **辅1 changed** |
+| 5 | | `天刹真魔` | `疾风九变`（【业焰】） | `无相魔劫咒`（专属） | **辅1 changed** |
 | 6 | 造化真灵 | `十方真魄` | `惊蜇化龙`（专属） | `通天剑诀`（专属） | — |
 
 ### Taxonomy Summary
@@ -226,7 +226,7 @@ Neither strictly dominates. The choice depends on the **matchup**:
 | 2 | Anti-defense (皓月 shield strip), debuff (噬心 DoT trap) | Damage amp (无极剑阵 +205% net) | — |
 | 3 | Buff (仙佑 +280%), weapon interface (奇能诡道) | Stack mult (龙象护身 x4) | Healing (天光虹露 +190%) |
 | 4 | Debuff (结魂锁链 permanent) | Damage amp (追神真诀 +300%), duration ext (天魔真解 x2 tick) | — |
-| 5 | Damage amp (魔劫 +205%, extended 12.4s) | Duration ext (真言不灭 +55%) | Defense (不灭魔体 8%), disruption (天人五衰, extended 23.25s) |
+| 5 | Damage amp (魔劫 +205%, extended 13.52s) | Duration ext (业焰 +69%) | Defense (不灭魔体 8%), disruption (天人五衰, extended 25.35s) |
 | 6 | Reduction shred (神威冲云 ignore all), debuff reader (索心真诀) | — | Sustain (怒灵降世 cleanse + buff) |
 
 ### Weaknesses

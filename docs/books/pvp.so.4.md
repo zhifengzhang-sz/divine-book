@@ -208,7 +208,7 @@ Additionally, if Proposal 1 (clone opener) is chosen, 大罗幻诀 is available 
 
 **Aux variation?** This is where Proposal 3 already created a variation:
 - **Proposal 1 aux:** 心魔惑言 (x2 debuff stacks) + 无相魔威 (魔劫 +205%, 8s)
-- **Proposal 3 aux:** 真言不灭 (+55% duration) + 无相魔威 (魔劫 +205%, 12.4s)
+- **Proposal 3 aux:** 业焰 (+69% duration) + 无相魔威 (魔劫 +205%, 13.52s)
 
 The aux choice at Slot 5 is **coupled to the Slot 1 decision** — 天轮魔经 (心魔惑言) can only be at Slot 1 or Slot 5, not both. This is not an independent variation point.
 
@@ -260,7 +260,7 @@ Additionally, the finisher's main damage comes from **aux**, not the platform: �
 flowchart TD
     S1["Slot 1<br/>VARIATION POINT"]
     S1 -->|"clone"| VA["Variation A<br/>春黎剑阵 + 灵犀九重<br/>Slot 5: 心魔惑言"]
-    S1 -->|"counter"| VB["Variation B<br/>大罗幻诀 + 心魔惑言<br/>Slot 5: 真言不灭"]
+    S1 -->|"counter"| VB["Variation B<br/>大罗幻诀 + 心魔惑言<br/>Slot 5: 业焰"]
 
     S2["Slot 2: 皓月剑诀 — LOCKED"]
     S3["Slot 3: 甲元仙符 — LOCKED"]
