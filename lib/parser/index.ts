@@ -189,6 +189,7 @@ function parseBook(entry: RawBookEntry, exclusiveText: string, exclusiveAffixNam
 		school: entry.school,
 		skillText: entry.skillText.replace(/<br\s*\/?>/gi, "\n"),
 		affixText: entry.affixText.replace(/<br\s*\/?>/gi, "\n"),
+		xuanText: entry.xuanText.replace(/<br\s*\/?>/gi, "\n"),
 		exclusiveAffixText: exclusiveText.replace(/<br\s*\/?>/gi, "\n"),
 		skill: resolvedSkill,
 		primaryAffix,

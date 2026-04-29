@@ -39,6 +39,10 @@ interface RawBookData {
 		text: string;
 		effects: EffectWithMeta[];
 	};
+	xuan?: {
+		text: string;
+		effects: EffectWithMeta[];
+	};
 }
 
 interface RawAffixData {

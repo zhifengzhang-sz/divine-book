@@ -2,7 +2,8 @@
  * Layer 1: Markdown Table Reader
  *
  * Parses raw markdown tables in 主书.md.
- * Each school section has a `| 功法书 | 功能 | 主词缀 |` table.
+ * Most schools have `| 功法书 | 功能 | 主词缀 |` (3 columns).
+ * 剑修 has `| 功法书 | 功能 | 通玄 | 主词缀 |` (4 columns).
  */
 
 export interface RawBookEntry {
@@ -10,6 +11,7 @@ export interface RawBookEntry {
 	school: string;
 	skillText: string;
 	affixText: string;
+	xuanText: string;
 }
 
 export const SCHOOL_MAP: Record<string, string> = {
@@ -41,6 +43,10 @@ export function readMainSkillTables(markdown: string): RawBookEntry[] {
 		if (!currentSchool) continue;
 		if (!/^\|\s*功法书\s*\|/.test(line)) continue;
 
+		// Detect 4-column table (Sword: 功法书 | 功能 | 通玄 | 主词缀)
+		// vs 3-column table (others: 功法書 | 功能 | 通玄) — labeled 主词缀 but is 通玄
+		const hasSeparateAffix = line.split("|").length - 2 >= 4;
+
 		// Skip separator row
 		i += 2;
 
@@ -54,13 +60,15 @@ export function readMainSkillTables(markdown: string): RawBookEntry[] {
 			if (cells.length >= 2) {
 				const name = cells[0].replace(/`/g, "").trim();
 				const skillText = cells[1] || "";
-				const affixText = cells[2] || "";
+				const xuanText = cells[2] || "";
+				const affixText = hasSeparateAffix ? (cells[3] || "") : "";
 
 				if (name) {
 					entries.push({
 						name,
 						school: currentSchool,
 						skillText,
+						xuanText,
 						affixText,
 					});
 				}

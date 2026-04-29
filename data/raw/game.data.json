@@ -296,6 +296,10 @@
             ]
           }
         ]
+      },
+      "xuan": {
+        "text": "1. 通玄契道\n剑域即开，初劫碎甲，次劫断灵，终劫湮魂。凝聚剑心，召唤持续20秒的【寂灭剑域】；自身每获得一种攻击类神通状态，立即触发一段【寂灭剑域】的通玄剑气伤害，最多触发10段。\n【寂灭剑域】：每秒攻击1次，每段造成x%+功法融合重数*y%的通玄剑气伤害\n通1玄：x=800,y=15\n 2. \n",
+        "effects": []
       }
     },
     "念剑诀": {
@@ -589,20 +593,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天鹤祈瑞",
-        "text": "【天鹤祈瑞】：自身每拥有x%最终伤害加深，本技能附加y%攻击力的伤害，最多计算z%最终伤害加深\nx=10, y=100, z=50\n",
-        "effects": [
-          {
-            "type": "conditional_stat_scaling",
-            "threshold": 10,
-            "value": 100,
-            "max": 50,
-            "basis": "final_damage_bonus",
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "龙象护身",
         "text": "使本神通添加的`增益`效果强度提升x%\n融合52重：x=300\n",
@@ -614,6 +604,19 @@
               "enlightenment=0",
               "fusion=52"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【天鹤祈瑞】：自身每拥有x%最终伤害加深，本技能附加y%攻击力的伤害，最多计算z%最终伤害加深\nx=10, y=100, z=50\n",
+        "effects": [
+          {
+            "type": "conditional_stat_scaling",
+            "threshold": 10,
+            "value": 100,
+            "max": 50,
+            "basis": "final_damage_bonus",
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -644,18 +647,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天狼战意",
-        "text": "【天狼战意】：每层【天狼之啸】额外提升自身x%攻击力\nx=7\n",
-        "effects": [
-          {
-            "type": "attack_buff",
-            "value": 7,
-            "per_state_stack": "天狼之啸",
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "真极穿空",
         "text": "使本神通添加的`增益`状态层数增加x%，自身每5层增益状态，提升y%伤害，最大提升z%伤害（25层达到最大提升伤害）\n融合50重：x=100, y=5.5, z=27.5\n",
@@ -677,6 +668,17 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【天狼战意】：每层【天狼之啸】额外提升自身x%攻击力\nx=7\n",
+        "effects": [
+          {
+            "type": "attack_buff",
+            "value": 7,
+            "per_state_stack": "天狼之啸",
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -774,34 +776,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天书灵盾",
-        "text": "【天书灵盾】：【灵鹤】每次恢复气血时会为目标添加一个x%自身最大气血值的护盾，持续16秒\n融合20重：x=3.5\n融合50重：x=4.4\n",
-        "effects": [
-          {
-            "type": "shield",
-            "value": 3.5,
-            "duration": 16,
-            "source": "self_max_hp",
-            "trigger": "per_tick",
-            "data_state": [
-              "enlightenment=0",
-              "fusion=20"
-            ]
-          },
-          {
-            "type": "shield",
-            "value": 4.4,
-            "duration": 16,
-            "source": "self_max_hp",
-            "trigger": "per_tick",
-            "data_state": [
-              "enlightenment=0",
-              "fusion=50"
-            ]
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "奇能诡道",
         "text": "1. 当本神通为敌方添加`减益`状态时，有x%概率额外多附加1层该减益状态\n 2. 若本神通施加`伤害加深类`（神通伤害加深/技能伤害加深/最终伤害加深）`增益`状态时，则会额外对目标施加负面状态【逆转阴阳】：敌方会减少y倍触发属性的伤害减免类效果，持续时间与触发的增益状态相同\n悟1境，融合20重：x=20, y=0.6\n悟2境，融合50重：x=93.5, y=0.7\n",
@@ -837,6 +811,33 @@
             "value": 0.7,
             "data_state": [
               "enlightenment=2",
+              "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【天书灵盾】：【灵鹤】每次恢复气血时会为目标添加一个x%自身最大气血值的护盾，持续16秒\n融合20重：x=3.5\n融合50重：x=4.4\n",
+        "effects": [
+          {
+            "type": "shield",
+            "value": 3.5,
+            "duration": 16,
+            "source": "self_max_hp",
+            "trigger": "per_tick",
+            "data_state": [
+              "enlightenment=0",
+              "fusion=20"
+            ]
+          },
+          {
+            "type": "shield",
+            "value": 4.4,
+            "duration": 16,
+            "source": "self_max_hp",
+            "trigger": "per_tick",
+            "data_state": [
+              "enlightenment=0",
               "fusion=50"
             ]
           }
@@ -953,8 +954,25 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天光虹露",
+      "exclusiveAffix": {
+        "name": "天倾灵枯",
+        "text": "本神通施放后，会对敌方添加持续20秒的【灵枯】：治疗量降低x%，若敌方气血值低于30%，所降低的治疗量增至y%\n融合50重：x=31, y=51\n",
+        "effects": [
+          {
+            "type": "heal_reduction",
+            "value": 31,
+            "state": "灵枯",
+            "duration": 20,
+            "enhanced_value": 51,
+            "hp_threshold": 30,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
         "text": "【天光虹露】：【仙佑】状态额外使自身获得x%治疗加成\n悟0境，此词缀未解锁\n悟1境，融合51重：x=70\n悟7境，融合51重：x=170\n悟8境，融合51重：x=190\n",
         "effects": [
           {
@@ -991,24 +1009,6 @@
             ]
           }
         ]
-      },
-      "exclusiveAffix": {
-        "name": "天倾灵枯",
-        "text": "本神通施放后，会对敌方添加持续20秒的【灵枯】：治疗量降低x%，若敌方气血值低于30%，所降低的治疗量增至y%\n融合50重：x=31, y=51\n",
-        "effects": [
-          {
-            "type": "heal_reduction",
-            "value": 31,
-            "state": "灵枯",
-            "duration": 20,
-            "enhanced_value": 51,
-            "hp_threshold": 30,
-            "data_state": [
-              "enlightenment=0",
-              "fusion=50"
-            ]
-          }
-        ]
       }
     },
     "星元化岳": {
@@ -1031,17 +1031,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天龙轮转",
-        "text": "【天龙轮转】：真灵天龙造成伤害时，恢复自身本次伤害x%的气血值\nx=75\n",
-        "effects": [
-          {
-            "type": "lifesteal",
-            "value": 75,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "仙灵汲元",
         "text": "本神通造成伤害时，会使本次神通获得x%的吸血效果\n融合50重：x=55\n",
@@ -1053,6 +1042,16 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【天龙轮转】：真灵天龙造成伤害时，恢复自身本次伤害x%的气血值\nx=75\n",
+        "effects": [
+          {
+            "type": "lifesteal",
+            "value": 75,
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1077,19 +1076,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "天灵怒威",
-        "text": "【天灵怒威】：当前气血高于x%时获得伤害加成，每额外高出y%气血值获得y%伤害加成\nx=20, y=3\n",
-        "effects": [
-          {
-            "type": "conditional_stat_scaling",
-            "threshold": 20,
-            "per_step": 3,
-            "value": 3,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "天人合一",
         "text": "使本神通的悟境等级加1（最高不超过3级），并使本神通造成的伤害提升x%\n融合50重：x=5\n",
@@ -1110,6 +1096,18 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【天灵怒威】：当前气血高于x%时获得伤害加成，每额外高出y%气血值获得y%伤害加成\nx=20, y=3\n",
+        "effects": [
+          {
+            "type": "conditional_stat_scaling",
+            "threshold": 20,
+            "per_step": 3,
+            "value": 3,
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1198,8 +1196,21 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "魔念生息",
+      "exclusiveAffix": {
+        "name": "引灵摘魂",
+        "text": "使本神通攻击带有`减益`状态的敌方时，会使本次伤害提升x%\n融合50重：x=104\n",
+        "effects": [
+          {
+            "type": "conditional_damage_debuff",
+            "value": 104,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
         "text": "【魔念生息】：敌方处于【结魂锁链】下，每秒受到x%最大气血值的伤害，并且【结魂锁链】提升敌方受到的伤害上限提升至y%\nx=1.6, y=4\n",
         "effects": [
           {
@@ -1213,20 +1224,6 @@
             "state": "结魂锁链",
             "value": 4,
             "data_state": "enlightenment=0"
-          }
-        ]
-      },
-      "exclusiveAffix": {
-        "name": "引灵摘魂",
-        "text": "使本神通攻击带有`减益`状态的敌方时，会使本次伤害提升x%\n融合50重：x=104\n",
-        "effects": [
-          {
-            "type": "conditional_damage_debuff",
-            "value": 104,
-            "data_state": [
-              "enlightenment=0",
-              "fusion=50"
-            ]
           }
         ]
       }
@@ -1255,19 +1252,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "魔意震慑",
-        "text": "【魔意震慑】：每偷取目标一个增益状态对目标附加一层【惧意】状态：攻击力降低x%，持续12秒\nx=14\n",
-        "effects": [
-          {
-            "type": "per_stolen_buff_debuff",
-            "state": "惧意",
-            "value": 14,
-            "duration": 12,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "心魔惑言",
         "text": "使本神通添加的`减益`状态层数增加x%，敌方每有5层减益状态会使本神通所有伤害提升y%，最大提升z%（持续伤害效果受一半伤害加成）\n*注*：25层能达到最大提升伤害\n融合50重：x=100, y=5.5, z=27.5\n",
@@ -1290,6 +1274,18 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【魔意震慑】：每偷取目标一个增益状态对目标附加一层【惧意】状态：攻击力降低x%，持续12秒\nx=14\n",
+        "effects": [
+          {
+            "type": "per_stolen_buff_debuff",
+            "state": "惧意",
+            "value": 14,
+            "duration": 12,
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1320,25 +1316,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "魔妄吞天",
-        "text": "【魔妄吞天】：在【不灭魔体】状态下受到攻击时，为目标附加【天人五衰】：每3秒轮流降低目标x%致命率、x%暴击伤害、x%暴击率、y%攻击力、y%最终伤害减免，持续15秒\nx=50, y=23\n",
-        "effects": [
-          {
-            "type": "self_buff_extra",
-            "state": "不灭魔体",
-            "target_state": "天人五衰",
-            "interval": 3,
-            "lethal_rate": 50,
-            "crit_damage": 50,
-            "crit_rate": 50,
-            "attack": 23,
-            "final_damage_reduction": 23,
-            "duration": 15,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "魔骨明心",
         "text": "1. 本神通命中时，若敌方具有`减益`状态，则提升自身x%的治疗量，持续8秒\n 2. 在`神通悟境`的条件下：本神通每次造成伤害时，降低敌方y%`最终伤害减免`，持续1秒\n融合50重：x=90, y=20\n",
@@ -1359,6 +1336,24 @@
             "data_state": "fusion=50"
           }
         ]
+      },
+      "xuan": {
+        "text": "【魔妄吞天】：在【不灭魔体】状态下受到攻击时，为目标附加【天人五衰】：每3秒轮流降低目标x%致命率、x%暴击伤害、x%暴击率、y%攻击力、y%最终伤害减免，持续15秒\nx=50, y=23\n",
+        "effects": [
+          {
+            "type": "self_buff_extra",
+            "state": "不灭魔体",
+            "target_state": "天人五衰",
+            "interval": 3,
+            "lethal_rate": 50,
+            "crit_damage": 50,
+            "crit_rate": 50,
+            "attack": 23,
+            "final_damage_reduction": 23,
+            "duration": 15,
+            "data_state": "enlightenment=0"
+          }
+        ]
       }
     },
     "解体化形": {
@@ -1376,20 +1371,6 @@
             "type": "per_debuff_stack_damage",
             "value": 50,
             "max": 10,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
-      "primaryAffix": {
-        "name": "魔神降世",
-        "text": "【魔神降世】：技能释放前根据目标身上减益状态的最高层数提升自身攻击力，每层提升自身x%的攻击力，最多技术30层\nx=13\n",
-        "effects": [
-          {
-            "type": "attack_buff",
-            "value": 13,
-            "max_stacks": 30,
-            "per_debuff_stack": true,
-            "timing": "pre_cast",
             "data_state": "enlightenment=0"
           }
         ]
@@ -1417,6 +1398,19 @@
               "enlightenment=2",
               "fusion=63"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【魔神降世】：技能释放前根据目标身上减益状态的最高层数提升自身攻击力，每层提升自身x%的攻击力，最多技术30层\nx=13\n",
+        "effects": [
+          {
+            "type": "attack_buff",
+            "value": 13,
+            "max_stacks": 30,
+            "per_debuff_stack": true,
+            "timing": "pre_cast",
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1556,8 +1550,21 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "魔魂咒界",
+      "exclusiveAffix": {
+        "name": "古魔之魂",
+        "text": "使本神通添加的持续伤害上升x%\n融合50重：x=104\n",
+        "effects": [
+          {
+            "type": "dot_damage_buff",
+            "value": 104,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
         "text": "【魔魂咒界】：【罗天魔咒】状态下附加异常概率提升至60%，受到攻击时，额外给目标附加【命损】：`最终伤害减免`减低x%，持续8秒\n悟0境，融合20重：x=46\n悟10境，融合52重：x=100\n",
         "effects": [
           {
@@ -1603,20 +1610,6 @@
             ]
           }
         ]
-      },
-      "exclusiveAffix": {
-        "name": "古魔之魂",
-        "text": "使本神通添加的持续伤害上升x%\n融合50重：x=104\n",
-        "effects": [
-          {
-            "type": "dot_damage_buff",
-            "value": 104,
-            "data_state": [
-              "enlightenment=0",
-              "fusion=50"
-            ]
-          }
-        ]
       }
     },
     "梵圣真魔咒": {
@@ -1646,22 +1639,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "魔心焚尽",
-        "text": "【魔心焚尽】：目标每获得两个【贪妄业火】，会额外附加一层持续8秒的【瞋痴业火】：每秒造成目标x%已损气血值伤害\nx=8\n",
-        "effects": [
-          {
-            "type": "dot",
-            "name": "瞋痴业火",
-            "tick_interval": 1,
-            "percent_lost_hp": 8,
-            "duration": 8,
-            "trigger_stack": 2,
-            "source_state": "贪妄业火",
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "天魔真解",
         "text": "使本神通添加的持续伤害效果触发间隙缩短x%\n融合50重：x=50.5\n",
@@ -1673,6 +1650,21 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【魔心焚尽】：目标每获得两个【贪妄业火】，会额外附加一层持续8秒的【瞋痴业火】：每秒造成目标x%已损气血值伤害\nx=8\n",
+        "effects": [
+          {
+            "type": "dot",
+            "name": "瞋痴业火",
+            "tick_interval": 1,
+            "percent_lost_hp": 8,
+            "duration": 8,
+            "trigger_stack": 2,
+            "source_state": "贪妄业火",
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1701,17 +1693,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "灭劫魔威",
-        "text": "【灭劫魔威】：【无相魔劫】状态结束时的伤害提升65% （数据为没有悟境的情况）\n",
-        "effects": [
-          {
-            "type": "delayed_burst_increase",
-            "state": "无相魔劫",
-            "value": "65"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "无相魔威",
         "text": "本神通命中时，对目标施加负面状态【魔劫】，持续8秒\n【魔劫】：降低敌方x%的治疗量，并使神通造成的伤害提升y%，若目标不存在任何治疗状态，伤害提升效果进一步提升至z%\n融合50重：x=40.8, y=105, z=205\n",
@@ -1727,6 +1708,16 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【灭劫魔威】：【无相魔劫】状态结束时的伤害提升65% （数据为没有悟境的情况）\n",
+        "effects": [
+          {
+            "type": "delayed_burst_increase",
+            "state": "无相魔劫",
+            "value": "65"
           }
         ]
       }
@@ -1775,21 +1766,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿之怒",
-        "text": "【星猿之怒】：【怒意滔天】每造成4次伤害，额外附加x%自身已损气血值和期间消耗气血值的伤害\n悟1境，融合51重：x=12\n",
-        "effects": [
-          {
-            "type": "self_lost_hp_damage",
-            "value": 12,
-            "every_n_hits": 4,
-            "data_state": [
-              "enlightenment=1",
-              "fusion=51"
-            ]
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "怒血战意",
         "text": "本神通造成伤害时，自身每多损失1%最大气血值，会使本次伤害提升x%\n融合50重：x=2\n",
@@ -1800,6 +1776,20 @@
             "data_state": [
               "enlightenment=0",
               "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【星猿之怒】：【怒意滔天】每造成4次伤害，额外附加x%自身已损气血值和期间消耗气血值的伤害\n悟1境，融合51重：x=12\n",
+        "effects": [
+          {
+            "type": "self_lost_hp_damage",
+            "value": 12,
+            "every_n_hits": 4,
+            "data_state": [
+              "enlightenment=1",
+              "fusion=51"
             ]
           }
         ]
@@ -1834,19 +1824,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿幻杀",
-        "text": "【星猿幻杀】：本技能每段攻击必定给目标附加一层【镇杀】：每叠加两层便会消耗并造成目标x%最大气血值伤害\nx=10\n",
-        "effects": [
-          {
-            "type": "percent_max_hp_affix",
-            "value": 10,
-            "state": "镇杀",
-            "trigger_stack": 2,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "索心真诀",
         "text": "1. 本神通造成伤害时，目标每有1层`减益`状态，会使本次额外造成目标x%最大气血值的真实伤害，最多造成y%最大气血值的真实伤害\n*注*：10层能达到最大气血值的真实伤害\n 2. 在`神通悟境`的条件下：本神通附加自身已损气血的伤害提高z%，并使造成的伤害提升w%\n融合50重：x=2.1, y=21, z=50, w=75\n",
@@ -1868,6 +1845,18 @@
             "value": 75,
             "requires_enlightenment": true,
             "data_state": "fusion=50"
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【星猿幻杀】：本技能每段攻击必定给目标附加一层【镇杀】：每叠加两层便会消耗并造成目标x%最大气血值伤害\nx=10\n",
+        "effects": [
+          {
+            "type": "percent_max_hp_affix",
+            "value": 10,
+            "state": "镇杀",
+            "trigger_stack": 2,
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1909,26 +1898,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿弃天",
-        "text": "【星猿弃天】：延长x秒【怒灵降世】持续时间，并且每秒有y%概率驱散自身所有`控制状态`，25秒内最多触发1次驱散状态\nx=3.5, y=30\n",
-        "effects": [
-          {
-            "type": "self_buff_extend",
-            "value": 3.5,
-            "state": "怒灵降世",
-            "data_state": "enlightenment=0"
-          },
-          {
-            "type": "periodic_cleanse",
-            "chance": 30,
-            "target": "控制状态",
-            "cooldown": 25,
-            "max_times": 1,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "破釜沉舟",
         "text": "本神通施放时，会使本次神通伤害提升x%，施放期间自身受到的伤害也提升y%\n融合50重：x=380, y=50\n",
@@ -1948,6 +1917,25 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【星猿弃天】：延长x秒【怒灵降世】持续时间，并且每秒有y%概率驱散自身所有`控制状态`，25秒内最多触发1次驱散状态\nx=3.5, y=30\n",
+        "effects": [
+          {
+            "type": "self_buff_extend",
+            "value": 3.5,
+            "state": "怒灵降世",
+            "data_state": "enlightenment=0"
+          },
+          {
+            "type": "periodic_cleanse",
+            "chance": 30,
+            "target": "控制状态",
+            "cooldown": 25,
+            "max_times": 1,
+            "data_state": "enlightenment=0"
           }
         ]
       }
@@ -1978,17 +1966,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿复灵",
-        "text": "【星猿复灵】：恢复【极怒】造成伤害82%的气血值\n",
-        "effects": [
-          {
-            "type": "lifesteal_with_parent",
-            "state": "极怒",
-            "value": "82"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "真言不灭",
         "text": "使本神通添加的`所有状态`持续时间延长x%\n融合50重：x=55\n",
@@ -2000,6 +1977,16 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【星猿复灵】：恢复【极怒】造成伤害82%的气血值\n",
+        "effects": [
+          {
+            "type": "lifesteal_with_parent",
+            "state": "极怒",
+            "value": "82"
           }
         ]
       }
@@ -2049,8 +2036,21 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿援护",
+      "exclusiveAffix": {
+        "name": "乘胜逐北",
+        "text": "本神通造成伤害时，若敌方处于`控制状态`，则使本次伤害提升x%\n融合50重：x=100\n",
+        "effects": [
+          {
+            "type": "conditional_damage_controlled",
+            "value": 100,
+            "data_state": [
+              "enlightenment=0",
+              "fusion=50"
+            ]
+          }
+        ]
+      },
+      "xuan": {
         "text": "【星猿援护】：获得的护盾提升至自身x%最大气血值，且有y%的概率不消耗气血值\nx=21.5, y=30\n",
         "effects": [
           {
@@ -2063,20 +2063,6 @@
             "value": 30,
             "effect": "no_hp_cost",
             "data_state": "enlightenment=0"
-          }
-        ]
-      },
-      "exclusiveAffix": {
-        "name": "乘胜逐北",
-        "text": "本神通造成伤害时，若敌方处于`控制状态`，则使本次伤害提升x%\n融合50重：x=100\n",
-        "effects": [
-          {
-            "type": "conditional_damage_controlled",
-            "value": 100,
-            "data_state": [
-              "enlightenment=0",
-              "fusion=50"
-            ]
           }
         ]
       }
@@ -2120,22 +2106,6 @@
           }
         ]
       },
-      "primaryAffix": {
-        "name": "星猿永生",
-        "text": "【星猿永生】：本技能造成伤害前优先驱散目标两个增益效果，释放本技能时气血不会降至x%以下\nx=10\n",
-        "effects": [
-          {
-            "type": "periodic_dispel",
-            "count": 2,
-            "data_state": "enlightenment=0"
-          },
-          {
-            "type": "self_hp_floor",
-            "value": 10,
-            "data_state": "enlightenment=0"
-          }
-        ]
-      },
       "exclusiveAffix": {
         "name": "玉石俱焚",
         "text": "当本神通所添加的`护盾`消失时，会对敌方额外造成护盾值x%的伤害\n融合50重：x=100\n",
@@ -2147,6 +2117,21 @@
               "enlightenment=0",
               "fusion=50"
             ]
+          }
+        ]
+      },
+      "xuan": {
+        "text": "【星猿永生】：本技能造成伤害前优先驱散目标两个增益效果，释放本技能时气血不会降至x%以下\nx=10\n",
+        "effects": [
+          {
+            "type": "periodic_dispel",
+            "count": 2,
+            "data_state": "enlightenment=0"
+          },
+          {
+            "type": "self_hp_floor",
+            "value": 10,
+            "data_state": "enlightenment=0"
           }
         ]
       }
