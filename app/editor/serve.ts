@@ -7,9 +7,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ParsedBook } from "../../lib/data/types.js";
-import type { EffectWithMeta } from "../../lib/parser/schema/effects.js";
 import { emitBooks, formatYaml } from "../../lib/parser/emit.js";
 import { loadGrammars, parseEntry } from "../../lib/parser/index.js";
+import type { EffectWithMeta } from "../../lib/parser/schema/effects.js";
 
 const port = Number(process.env.PORT ?? 3002);
 const root = resolve(import.meta.dirname ?? ".", "../..");
@@ -34,6 +34,10 @@ interface BookEntry {
 	};
 	exclusiveAffix?: {
 		name: string;
+		text: string;
+		effects: Record<string, unknown>[];
+	};
+	xuan?: {
 		text: string;
 		effects: Record<string, unknown>[];
 	};

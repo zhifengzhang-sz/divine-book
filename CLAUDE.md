@@ -8,7 +8,7 @@ Divine Book (灵書) — combat simulator for a Chinese RPG. Parses skill/affix 
 - Parser: ohm-js PEG grammar (`lib/parser/skill-text.ohm` + `semantics.ts`)
 - Simulator: XState v5 state machines (`lib/sim/`)
 - Viz: React dev servers (`app/viz/`, `app/parser-viz/`)
-- Editor: Raw data editor (`app/editor/`)
+- Editor plugin: `lib/ui/` (see `docs/editor/architecture.md`), dev server: `app/editor/`
 
 ## Commands
 

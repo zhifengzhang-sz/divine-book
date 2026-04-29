@@ -7,10 +7,13 @@
     "./parser": "./parser/index.ts",
     "./data": "./data/store.ts",
     "./sim": "./sim/index.ts",
-    "./construct": "./construct/index.ts"
+    "./construct": "./construct/index.ts",
+    "./plugin": "./ui/plugin.tsx"
   },
   "peerDependencies": {
     "ohm-js": "^17.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "xstate": "^5.28.0",
     "yaml": "^2.7.1",
     "zod": "^4.3.6"
